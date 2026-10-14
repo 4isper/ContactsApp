@@ -27,6 +27,7 @@ fun ContactsScreen(
         mutableStateOf(hasPermission(context, Manifest.permission.READ_CONTACTS))
     }
     var pendingCall by remember { mutableStateOf<Contact?>(null) }
+    var pendingConfirm by remember { mutableStateOf<Contact?>(null) }
 
     val readPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -62,14 +63,23 @@ fun ContactsScreen(
         ContactList(
             uiState = uiState,
             onSearchQueryChange = viewModel::onSearchQueryChange,
-            onContactClick = { contact ->
+            onContactClick = { pendingConfirm = it },
+            onRetry = viewModel::refresh,
+            modifier = modifier,
+        )
+    }
+
+    pendingConfirm?.let { contact ->
+        ConfirmCallDialog(
+            contact = contact,
+            onConfirm = {
+                pendingConfirm = null
                 tryPlaceCall(context, contact) { pending ->
                     pendingCall = pending
                     callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
                 }
             },
-            onRetry = viewModel::refresh,
-            modifier = modifier,
+            onDismiss = { pendingConfirm = null },
         )
     }
 }

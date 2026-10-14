@@ -15,4 +15,6 @@
 
     <string name="call_failed">Не удалось позвонить</string>
     <string name="call_no_permission_dialer">Нет разрешения на звонки — открываю набор номера</string>
+    <string name="action_call">Позвонить</string>
+    <string name="action_cancel">Отмена</string>
 </resources>
