@@ -1,3 +1,18 @@
 <resources>
     <string name="app_name">ContactsApp</string>
+
+    <string name="permission_contacts_rationale">Приложению нужно разрешение на доступ к контактам</string>
+    <string name="permission_allow">Разрешить</string>
+    <string name="permission_open_settings">Открыть настройки</string>
+
+    <string name="search_label">Поиск</string>
+    <string name="contacts_empty">Контакты не найдены</string>
+    <string name="contacts_nothing_found">Ничего не найдено</string>
+    <string name="contacts_load_error">Не удалось загрузить контакты</string>
+    <string name="action_retry">Повторить</string>
+
+    <string name="phone_label_mobile">%1$s (mobile)</string>
+
+    <string name="call_failed">Не удалось позвонить</string>
+    <string name="call_no_permission_dialer">Нет разрешения на звонки — открываю набор номера</string>
 </resources>
