@@ -17,6 +17,7 @@ data class ContactDetails(
     val contactId: Long,
     val name: String,
     val phones: List<PhoneNumber>,
+    val photoUri: String? = null,
 ) {
     val primaryPhone: String
         get() = phones.firstOrNull()?.number.orEmpty()

@@ -18,6 +18,7 @@ private val CONTACT_PROJECTION = arrayOf(
     ContactsContract.CommonDataKinds.Phone.NUMBER,
     ContactsContract.CommonDataKinds.Phone.TYPE,
     ContactsContract.CommonDataKinds.Phone.LABEL,
+    ContactsContract.CommonDataKinds.Phone.PHOTO_THUMBNAIL_URI,
 )
 
 private const val CONTACT_SORT_ORDER =
@@ -30,6 +31,7 @@ internal data class PhoneRow(
     val phone: String,
     val type: Int,
     val label: String?,
+    val photoUri: String? = null,
 )
 
 internal fun mapPhoneKind(type: Int): PhoneKind = when (type) {
@@ -61,7 +63,12 @@ internal fun aggregateContacts(rows: List<PhoneRow>): List<ContactDetails> =
                 }
                 .distinctBy { it.number }
             if (phones.isEmpty()) return@mapNotNull null
-            ContactDetails(contactId = contactId, name = name, phones = phones)
+            ContactDetails(
+                contactId = contactId,
+                name = name,
+                phones = phones,
+                photoUri = group.firstNotNullOfOrNull { it.photoUri },
+            )
         }
         .sortedBy { it.name }
 
@@ -108,6 +115,8 @@ class PhoneContactsDataSource(
                 it.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.TYPE)
             val labelIndex =
                 it.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.LABEL)
+            val photoIndex =
+                it.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.PHOTO_THUMBNAIL_URI)
 
             while (it.moveToNext()) {
                 rows.add(
@@ -117,6 +126,7 @@ class PhoneContactsDataSource(
                         phone = it.getString(phoneIndex)?.trim().orEmpty(),
                         type = it.getInt(typeIndex),
                         label = it.getString(labelIndex),
+                        photoUri = it.getString(photoIndex),
                     ),
                 )
             }

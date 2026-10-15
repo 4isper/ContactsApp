@@ -113,6 +113,25 @@ class AggregateContactsTest {
     }
 
     @Test
+    fun `takes first non-null photo uri`() {
+        val rows = listOf(
+            row(1, "Anna", "111"),
+            row(1, "Anna", "112"),
+        )
+
+        val withoutPhoto = aggregateContacts(rows).single()
+        assertEquals(null, withoutPhoto.photoUri)
+
+        val withPhoto = aggregateContacts(
+            listOf(
+                row(1, "Anna", "111"),
+                row(1, "Anna", "112").copy(photoUri = "content://photo/1"),
+            ),
+        ).single()
+        assertEquals("content://photo/1", withPhoto.photoUri)
+    }
+
+    @Test
     fun `empty rows return empty list`() {
         assertTrue(aggregateContacts(emptyList()).isEmpty())
     }
