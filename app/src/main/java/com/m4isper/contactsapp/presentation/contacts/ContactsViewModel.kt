@@ -1,8 +1,8 @@
-package com.m4isper.contactsapp.presentation
+package com.m4isper.contactsapp.presentation.contacts
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.m4isper.contactsapp.domain.model.Contact
+import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
@@ -19,7 +19,7 @@ import java.util.Locale
 
 sealed interface ContactsContent {
     data object Loading : ContactsContent
-    data class Contacts(val items: List<Contact>, val isSearching: Boolean) : ContactsContent
+    data class Contacts(val items: List<ContactDetails>, val isSearching: Boolean) : ContactsContent
     data class Empty(val isSearching: Boolean) : ContactsContent
     data class Error(val message: String?) : ContactsContent
 }
@@ -29,7 +29,7 @@ data class ContactsUiState(
     val content: ContactsContent = ContactsContent.Loading,
 )
 
-private const val SUBSCRIBE_TIMEOUT_MILLIS = 5_000L
+internal const val SUBSCRIBE_TIMEOUT_MILLIS = 5_000L
 
 @Inject
 @ViewModelKey
@@ -38,7 +38,7 @@ class ContactsViewModel(
     private val getContactsUseCase: GetContactsUseCase,
 ) : ViewModel() {
 
-    private val _allContacts = MutableStateFlow<List<Contact>>(emptyList())
+    private val _allContacts = MutableStateFlow<List<ContactDetails>>(emptyList())
     private val _isLoading = MutableStateFlow(false)
     private val _searchQuery = MutableStateFlow("")
     private val _failure = MutableStateFlow<Throwable?>(null)
@@ -50,8 +50,9 @@ class ContactsViewModel(
                 all
             } else {
                 val q = trimmed.lowercase(Locale.ROOT)
-                all.filter {
-                    it.name.lowercase(Locale.ROOT).contains(q) || it.phone.contains(trimmed)
+                all.filter { contact ->
+                    contact.name.lowercase(Locale.ROOT).contains(q) ||
+                        contact.phones.any { it.number.contains(trimmed) }
                 }
             }
             val content = when {

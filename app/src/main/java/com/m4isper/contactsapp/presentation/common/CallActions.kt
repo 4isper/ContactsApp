@@ -1,6 +1,8 @@
-package com.m4isper.contactsapp.presentation
+package com.m4isper.contactsapp.presentation.common
 
 import android.Manifest
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -11,7 +13,7 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.m4isper.contactsapp.R
-import com.m4isper.contactsapp.domain.model.Contact
+import com.m4isper.contactsapp.presentation.contacts.ContactsViewModel
 
 private const val TAG = "ContactsCall"
 
@@ -54,29 +56,52 @@ internal fun openDialer(context: Context, phone: String) {
     }
 }
 
+internal fun openSms(context: Context, phone: String) {
+    runCatching {
+        val smsIntent = Intent(Intent.ACTION_SENDTO).apply {
+            data = Uri.fromParts("sms", phone, null)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(smsIntent)
+    }.onFailure { e ->
+        Log.w(TAG, "openSms failed", e)
+        Toast.makeText(context, context.getString(R.string.sms_failed), Toast.LENGTH_SHORT).show()
+    }
+}
+
+internal fun copyNumber(context: Context, phone: String) {
+    val clipboard = context.getSystemService(ClipboardManager::class.java)
+    clipboard?.setPrimaryClip(ClipData.newPlainText("phone", phone))
+    Toast.makeText(
+        context,
+        context.getString(R.string.copied_to_clipboard),
+        Toast.LENGTH_SHORT,
+    ).show()
+}
+
 internal fun tryPlaceCall(
     context: Context,
-    contact: Contact,
-    onPermissionNeeded: (Contact) -> Unit,
+    phone: String,
+    onPermissionNeeded: (String) -> Unit,
 ) {
     val granted = hasPermission(context, Manifest.permission.CALL_PHONE)
-    Log.d(TAG, "tryPlaceCall: contact='${contact.name}', callPermissionGranted=$granted")
+    Log.d(TAG, "tryPlaceCall: phone='$phone', callPermissionGranted=$granted")
     if (granted) {
-        placeCall(context, contact.phone)
+        placeCall(context, phone)
     } else {
-        onPermissionNeeded(contact)
+        onPermissionNeeded(phone)
     }
 }
 
 internal fun onCallPermissionResult(
     context: Context,
     isGranted: Boolean,
-    contact: Contact?,
+    phone: String?,
 ) {
-    Log.d(TAG, "onCallPermissionResult: isGranted=$isGranted, contact=${contact?.name}")
-    if (contact == null) return
+    Log.d(TAG, "onCallPermissionResult: isGranted=$isGranted, phone=$phone")
+    if (phone == null) return
     if (isGranted) {
-        placeCall(context, contact.phone)
+        placeCall(context, phone)
     } else {
         // Fallback без разрешения: открываем дайлер, чтобы звонок всё равно работал.
         Toast.makeText(
@@ -84,7 +109,7 @@ internal fun onCallPermissionResult(
             context.getString(R.string.call_no_permission_dialer),
             Toast.LENGTH_SHORT,
         ).show()
-        openDialer(context, contact.phone)
+        openDialer(context, phone)
     }
 }
 

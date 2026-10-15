@@ -1,6 +1,8 @@
-package com.m4isper.contactsapp.presentation
+package com.m4isper.contactsapp.presentation.contacts
 
-import com.m4isper.contactsapp.domain.model.Contact
+import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.PhoneKind
+import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import kotlinx.coroutines.Dispatchers
@@ -16,13 +18,28 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+private fun details(
+    id: Long,
+    name: String,
+    vararg phones: String,
+) = ContactDetails(
+    contactId = id,
+    name = name,
+    phones = phones.map { PhoneNumber(it, PhoneKind.MOBILE) },
+)
+
 private class FakeContactsRepository(
-    var contacts: List<Contact> = emptyList(),
+    var contacts: List<ContactDetails> = emptyList(),
     var failure: Throwable? = null,
 ) : ContactsRepository {
-    override suspend fun getContacts(): List<Contact> {
+    override suspend fun getContacts(): List<ContactDetails> {
         failure?.let { throw it }
         return contacts
+    }
+
+    override suspend fun getContactDetails(contactId: Long): ContactDetails? {
+        failure?.let { throw it }
+        return contacts.firstOrNull { it.contactId == contactId }
     }
 }
 
@@ -42,8 +59,8 @@ class ContactsViewModelTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         val repository = FakeContactsRepository(
             listOf(
-                Contact(id = 1, name = "Anna", phone = "111"),
-                Contact(id = 2, name = "Bob", phone = "222"),
+                details(1, "Anna", "111", "112"),
+                details(2, "Bob", "222"),
             ),
         )
         val viewModel = viewModel(repository)
@@ -62,8 +79,8 @@ class ContactsViewModelTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         val repository = FakeContactsRepository(
             listOf(
-                Contact(id = 1, name = "Anna", phone = "111"),
-                Contact(id = 2, name = "Bob", phone = "222"),
+                details(1, "Anna", "111"),
+                details(2, "Bob", "222"),
             ),
         )
         val viewModel = viewModel(repository)
@@ -83,10 +100,35 @@ class ContactsViewModelTest {
     }
 
     @Test
+    fun `search filters by phone number`() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val repository = FakeContactsRepository(
+            listOf(
+                details(1, "Anna", "111"),
+                details(2, "Bob", "222"),
+            ),
+        )
+        val viewModel = viewModel(repository)
+        backgroundScope.launch { viewModel.uiState.collect { } }
+        viewModel.refresh()
+        advanceUntilIdle()
+
+        viewModel.onSearchQueryChange("222")
+        advanceUntilIdle()
+
+        val content = viewModel.uiState.value.content
+        assertTrue(content is ContactsContent.Contacts)
+        assertEquals(
+            listOf("Bob"),
+            (content as ContactsContent.Contacts).items.map { it.name },
+        )
+    }
+
+    @Test
     fun `search with no match emits searching empty`() = runTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         val repository = FakeContactsRepository(
-            listOf(Contact(id = 1, name = "Anna", phone = "111")),
+            listOf(details(1, "Anna", "111")),
         )
         val viewModel = viewModel(repository)
         backgroundScope.launch { viewModel.uiState.collect { } }
@@ -135,7 +177,7 @@ class ContactsViewModelTest {
     fun `clear resets list to non-searching empty`() = runTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         val repository = FakeContactsRepository(
-            listOf(Contact(id = 1, name = "Anna", phone = "111")),
+            listOf(details(1, "Anna", "111")),
         )
         val viewModel = viewModel(repository)
         backgroundScope.launch { viewModel.uiState.collect { } }

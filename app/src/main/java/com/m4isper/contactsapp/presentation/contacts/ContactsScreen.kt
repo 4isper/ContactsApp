@@ -1,4 +1,4 @@
-package com.m4isper.contactsapp.presentation
+package com.m4isper.contactsapp.presentation.contacts
 
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -12,11 +12,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.m4isper.contactsapp.domain.model.Contact
+import com.m4isper.contactsapp.presentation.common.PermissionRequest
+import com.m4isper.contactsapp.presentation.common.hasPermission
+import com.m4isper.contactsapp.presentation.common.openAppSettings
+import com.m4isper.contactsapp.presentation.common.syncContactsPermission
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
 @Composable
 fun ContactsScreen(
+    onContactClick: (Long) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ContactsViewModel = metroViewModel(),
 ) {
@@ -26,8 +30,6 @@ fun ContactsScreen(
     var hasReadPermission by remember {
         mutableStateOf(hasPermission(context, Manifest.permission.READ_CONTACTS))
     }
-    var pendingCall by remember { mutableStateOf<Contact?>(null) }
-    var pendingConfirm by remember { mutableStateOf<Contact?>(null) }
 
     val readPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -36,14 +38,6 @@ fun ContactsScreen(
         if (isGranted) {
             viewModel.refresh()
         }
-    }
-
-    val callPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-    ) { isGranted ->
-        val contact = pendingCall
-        pendingCall = null
-        onCallPermissionResult(context, isGranted, contact)
     }
 
     LifecycleResumeEffect(context) {
@@ -63,23 +57,9 @@ fun ContactsScreen(
         ContactList(
             uiState = uiState,
             onSearchQueryChange = viewModel::onSearchQueryChange,
-            onContactClick = { pendingConfirm = it },
+            onContactClick = onContactClick,
             onRetry = viewModel::refresh,
             modifier = modifier,
-        )
-    }
-
-    pendingConfirm?.let { contact ->
-        ConfirmCallDialog(
-            contact = contact,
-            onConfirm = {
-                pendingConfirm = null
-                tryPlaceCall(context, contact) { pending ->
-                    pendingCall = pending
-                    callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
-                }
-            },
-            onDismiss = { pendingConfirm = null },
         )
     }
 }

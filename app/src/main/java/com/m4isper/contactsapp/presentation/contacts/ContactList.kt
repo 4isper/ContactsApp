@@ -1,4 +1,4 @@
-package com.m4isper.contactsapp.presentation
+package com.m4isper.contactsapp.presentation.contacts
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -8,15 +8,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -25,14 +22,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.m4isper.contactsapp.R
-import com.m4isper.contactsapp.domain.model.Contact
+import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.presentation.common.ErrorState
+import com.m4isper.contactsapp.presentation.common.LoadingState
 
-internal fun groupContactsByFirstLetter(contacts: List<Contact>): Map<Char, List<Contact>> {
+internal fun groupContactsByFirstLetter(contacts: List<ContactDetails>): Map<Char, List<ContactDetails>> {
     return contacts
         .filter { it.name.isNotBlank() }
         .groupBy {
@@ -46,7 +45,7 @@ internal fun groupContactsByFirstLetter(contacts: List<Contact>): Map<Char, List
 internal fun ContactList(
     uiState: ContactsUiState,
     onSearchQueryChange: (String) -> Unit,
-    onContactClick: (Contact) -> Unit,
+    onContactClick: (Long) -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -77,16 +76,6 @@ internal fun ContactList(
 }
 
 @Composable
-private fun LoadingState() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
-    ) {
-        CircularProgressIndicator()
-    }
-}
-
-@Composable
 private fun EmptyState(isSearching: Boolean) {
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -105,32 +94,9 @@ private fun EmptyState(isSearching: Boolean) {
 }
 
 @Composable
-private fun ErrorState(message: String?, onRetry: () -> Unit) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(24.dp),
-        ) {
-            Text(
-                text = message ?: stringResource(R.string.contacts_load_error),
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Button(onClick = onRetry) {
-                Text(stringResource(R.string.action_retry))
-            }
-        }
-    }
-}
-
-@Composable
 private fun GroupedContacts(
-    contacts: List<Contact>,
-    onContactClick: (Contact) -> Unit,
+    contacts: List<ContactDetails>,
+    onContactClick: (Long) -> Unit,
 ) {
     val grouped = groupContactsByFirstLetter(contacts)
 
@@ -148,16 +114,16 @@ private fun GroupedContacts(
             }
             items(
                 items = group,
-                key = { "${it.id}_${it.phone}" },
+                key = { it.contactId },
             ) { contact ->
-                ContactItem(contact = contact) { onContactClick(contact) }
+                ContactItem(contact = contact) { onContactClick(contact.contactId) }
             }
         }
     }
 }
 
 @Composable
-private fun ContactItem(contact: Contact, onClick: () -> Unit) {
+private fun ContactItem(contact: ContactDetails, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -187,12 +153,21 @@ private fun ContactItem(contact: Contact, onClick: () -> Unit) {
                 text = contact.name,
                 style = MaterialTheme.typography.titleMedium,
             )
-            if (contact.phone.isNotBlank()) {
-                Text(
-                    text = stringResource(R.string.phone_label_mobile, contact.phone),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
+            Text(
+                text = contactSubtitle(contact),
+                style = MaterialTheme.typography.bodyMedium,
+            )
         }
     }
+}
+
+@Composable
+private fun contactSubtitle(contact: ContactDetails): String {
+    val primary = contact.primaryPhone
+    if (contact.phoneCount <= 1) return primary
+    return "$primary · " + pluralStringResource(
+        R.plurals.phone_count_extra,
+        contact.phoneCount - 1,
+        contact.phoneCount - 1,
+    )
 }

@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
-import com.m4isper.contactsapp.presentation.ContactsScreen
+import com.m4isper.contactsapp.presentation.navigation.ContactsNavHost
 import com.m4isper.contactsapp.ui.theme.ContactsAppTheme
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 
@@ -26,7 +26,7 @@ class MainActivity : ComponentActivity() {
                     LocalMetroViewModelFactory provides vmFactory,
                 ) {
                     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                        ContactsScreen(
+                        ContactsNavHost(
                             modifier = Modifier.padding(innerPadding),
                         )
                     }

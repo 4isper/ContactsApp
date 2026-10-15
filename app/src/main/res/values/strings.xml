@@ -17,4 +17,23 @@
     <string name="call_no_permission_dialer">Нет разрешения на звонки — открываю набор номера</string>
     <string name="action_call">Позвонить</string>
     <string name="action_cancel">Отмена</string>
+
+    <string name="phone_type_mobile">Мобильный</string>
+    <string name="phone_type_home">Домашний</string>
+    <string name="phone_type_work">Рабочий</string>
+    <string name="phone_type_other">Другой</string>
+
+    <string name="contact_not_found">Контакт не найден</string>
+    <string name="copied_to_clipboard">Номер скопирован</string>
+    <string name="sms_failed">Не удалось открыть сообщения</string>
+    <string name="action_back">Назад</string>
+    <string name="action_send_sms">SMS</string>
+    <string name="action_copy_number">Копировать</string>
+
+    <plurals name="phone_count_extra">
+        <item quantity="one">ещё %d номер</item>
+        <item quantity="few">ещё %d номера</item>
+        <item quantity="many">ещё %d номеров</item>
+        <item quantity="other">ещё %d номера</item>
+    </plurals>
 </resources>
