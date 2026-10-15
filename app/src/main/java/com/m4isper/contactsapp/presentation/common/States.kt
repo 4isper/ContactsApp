@@ -29,7 +29,10 @@ internal fun LoadingState() {
 }
 
 @Composable
-internal fun ErrorState(message: String?, onRetry: () -> Unit) {
+internal fun ErrorState(
+    message: String?,
+    onRetry: () -> Unit,
+) {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,

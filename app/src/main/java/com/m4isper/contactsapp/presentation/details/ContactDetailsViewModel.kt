@@ -19,9 +19,16 @@ import kotlinx.coroutines.launch
 
 sealed interface DetailsContent {
     data object Loading : DetailsContent
-    data class Content(val details: ContactDetails) : DetailsContent
+
+    data class Content(
+        val details: ContactDetails,
+    ) : DetailsContent
+
     data object NotFound : DetailsContent
-    data class Error(val message: String?) : DetailsContent
+
+    data class Error(
+        val message: String?,
+    ) : DetailsContent
 }
 
 data class DetailsUiState(
@@ -34,20 +41,20 @@ data class DetailsUiState(
 class ContactDetailsViewModel(
     private val getContactDetailsUseCase: GetContactDetailsUseCase,
 ) : ViewModel() {
-
-    private val _contactId = MutableStateFlow<Long?>(null)
-    private val _details = MutableStateFlow<ContactDetails?>(null)
-    private val _isLoading = MutableStateFlow(false)
-    private val _failure = MutableStateFlow<Throwable?>(null)
+    private val selectedContactId = MutableStateFlow<Long?>(null)
+    private val loadedDetails = MutableStateFlow<ContactDetails?>(null)
+    private val isLoading = MutableStateFlow(false)
+    private val loadFailure = MutableStateFlow<Throwable?>(null)
 
     val uiState: StateFlow<DetailsUiState> =
-        combine(_details, _isLoading, _failure) { details, loading, failure ->
-            val content = when {
-                failure != null -> DetailsContent.Error(failure.message)
-                loading && details == null -> DetailsContent.Loading
-                details == null -> DetailsContent.NotFound
-                else -> DetailsContent.Content(details)
-            }
+        combine(loadedDetails, isLoading, loadFailure) { details, loading, failure ->
+            val content =
+                when {
+                    failure != null -> DetailsContent.Error(failure.message)
+                    loading && details == null -> DetailsContent.Loading
+                    details == null -> DetailsContent.NotFound
+                    else -> DetailsContent.Content(details)
+                }
             DetailsUiState(content)
         }.stateIn(
             scope = viewModelScope,
@@ -56,26 +63,28 @@ class ContactDetailsViewModel(
         )
 
     fun load(contactId: Long) {
-        if (_contactId.value == contactId && (_details.value != null || _isLoading.value)) return
-        _contactId.value = contactId
-        _details.value = null
+        if (selectedContactId.value == contactId && (loadedDetails.value != null || isLoading.value)) return
+        selectedContactId.value = contactId
+        loadedDetails.value = null
         refresh()
     }
 
+    // Catch-all осознанный: любая ошибка загрузки превращается в Error-стейт.
+    @Suppress("TooGenericExceptionCaught")
     fun refresh() {
-        val contactId = _contactId.value ?: return
-        if (_isLoading.value) return
+        val contactId = selectedContactId.value ?: return
+        if (isLoading.value) return
         viewModelScope.launch {
-            _isLoading.value = true
-            _failure.value = null
+            isLoading.value = true
+            loadFailure.value = null
             try {
-                _details.value = getContactDetailsUseCase(contactId)
+                loadedDetails.value = getContactDetailsUseCase(contactId)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _failure.value = e
+                loadFailure.value = e
             } finally {
-                _isLoading.value = false
+                isLoading.value = false
             }
         }
     }

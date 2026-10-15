@@ -30,10 +30,11 @@ internal fun ContactAvatar(
     modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = modifier
-            .size(size)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.primary),
+        modifier =
+            modifier
+                .size(size)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -47,9 +48,10 @@ internal fun ContactAvatar(
                 model = photoUri,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(CircleShape),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape),
             )
         }
     }

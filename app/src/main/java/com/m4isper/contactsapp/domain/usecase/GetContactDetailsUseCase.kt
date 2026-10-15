@@ -8,6 +8,5 @@ import dev.zacsweers.metro.Inject
 class GetContactDetailsUseCase(
     private val repository: ContactsRepository,
 ) {
-    suspend operator fun invoke(contactId: Long): ContactDetails? =
-        repository.getContactDetails(contactId)
+    suspend operator fun invoke(contactId: Long): ContactDetails? = repository.getContactDetails(contactId)
 }

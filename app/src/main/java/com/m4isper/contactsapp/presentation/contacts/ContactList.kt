@@ -42,15 +42,13 @@ import com.m4isper.contactsapp.presentation.common.ErrorState
 import com.m4isper.contactsapp.presentation.common.LoadingState
 import kotlinx.coroutines.launch
 
-internal fun groupContactsByFirstLetter(contacts: List<ContactDetails>): Map<Char, List<ContactDetails>> {
-    return contacts
+internal fun groupContactsByFirstLetter(contacts: List<ContactDetails>): Map<Char, List<ContactDetails>> =
+    contacts
         .filter { it.name.isNotBlank() }
         .groupBy {
             val first = it.name.first().uppercaseChar()
             if (first.isLetter()) first else '#'
-        }
-        .toSortedMap()
-}
+        }.toSortedMap()
 
 /** Индекс первого элемента (sticky-заголовка) каждой буквы в LazyColumn. */
 internal fun letterIndices(grouped: Map<Char, List<ContactDetails>>): Map<Char, Int> {
@@ -77,22 +75,25 @@ internal fun ContactList(
             onValueChange = onSearchQueryChange,
             label = { Text(stringResource(R.string.search_label)) },
             singleLine = true,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
         )
 
         when (val content = uiState.content) {
             is ContactsContent.Loading -> LoadingState()
             is ContactsContent.Empty -> EmptyState(isSearching = content.isSearching)
-            is ContactsContent.Error -> ErrorState(
-                message = content.message,
-                onRetry = onRetry,
-            )
-            is ContactsContent.Contacts -> GroupedContacts(
-                contacts = content.items,
-                onContactClick = onContactClick,
-            )
+            is ContactsContent.Error ->
+                ErrorState(
+                    message = content.message,
+                    onRetry = onRetry,
+                )
+            is ContactsContent.Contacts ->
+                GroupedContacts(
+                    contacts = content.items,
+                    onContactClick = onContactClick,
+                )
         }
     }
 }
@@ -104,11 +105,12 @@ private fun EmptyState(isSearching: Boolean) {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = if (isSearching) {
-                stringResource(R.string.contacts_nothing_found)
-            } else {
-                stringResource(R.string.contacts_empty)
-            },
+            text =
+                if (isSearching) {
+                    stringResource(R.string.contacts_nothing_found)
+                } else {
+                    stringResource(R.string.contacts_empty)
+                },
             style = MaterialTheme.typography.bodyLarge,
             color = Color.Gray,
         )
@@ -137,18 +139,20 @@ private fun GroupedContacts(
         Row(modifier = Modifier.fillMaxSize()) {
             LazyColumn(
                 state = listState,
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxSize(),
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .fillMaxSize(),
             ) {
                 grouped.forEach { (letter, group) ->
                     stickyHeader {
                         Text(
                             text = letter.toString(),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.surface)
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .background(MaterialTheme.colorScheme.surface)
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
                             fontWeight = FontWeight.Bold,
                         )
                     }
@@ -192,7 +196,10 @@ private fun FastScroller(
     onRelease: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    fun letterAt(y: Float, height: Int): Char? {
+    fun letterAt(
+        y: Float,
+        height: Int,
+    ): Char? {
         if (height <= 0 || letters.isEmpty()) return null
         val index = ((y / height) * letters.size).toInt().coerceIn(letters.indices)
         return letters[index]
@@ -201,46 +208,52 @@ private fun FastScroller(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
-        modifier = modifier
-            .fillMaxHeight()
-            .width(28.dp)
-            .pointerInput(letters) {
-                awaitEachGesture {
-                    val down = awaitFirstDown(requireUnconsumed = false)
-                    letterAt(down.position.y, size.height)?.let(onLetter)
-                    do {
-                        val event = awaitPointerEvent()
-                        val change = event.changes.firstOrNull { it.id == down.id }
-                        if (change == null || !change.pressed) break
-                        letterAt(change.position.y, size.height)?.let(onLetter)
-                        change.consume()
-                    } while (true)
-                    onRelease()
-                }
-            },
+        modifier =
+            modifier
+                .fillMaxHeight()
+                .width(28.dp)
+                .pointerInput(letters) {
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        letterAt(down.position.y, size.height)?.let(onLetter)
+                        do {
+                            val event = awaitPointerEvent()
+                            val change = event.changes.firstOrNull { it.id == down.id }
+                            if (change == null || !change.pressed) break
+                            letterAt(change.position.y, size.height)?.let(onLetter)
+                            change.consume()
+                        } while (true)
+                        onRelease()
+                    }
+                },
     ) {
         letters.forEach { letter ->
             Text(
                 text = letter.toString(),
                 fontSize = 10.sp,
                 fontWeight = if (letter == activeLetter) FontWeight.Bold else FontWeight.Normal,
-                color = if (letter == activeLetter) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    Color.Gray
-                },
+                color =
+                    if (letter == activeLetter) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        Color.Gray
+                    },
             )
         }
     }
 }
 
 @Composable
-private fun ContactItem(contact: ContactDetails, onClick: () -> Unit) {
+private fun ContactItem(
+    contact: ContactDetails,
+    onClick: () -> Unit,
+) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(12.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable { onClick() }
+                .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         ContactAvatar(
@@ -269,9 +282,10 @@ private fun ContactItem(contact: ContactDetails, onClick: () -> Unit) {
 private fun contactSubtitle(contact: ContactDetails): String {
     val primary = contact.primaryPhone
     if (contact.phoneCount <= 1) return primary
-    return "$primary · " + pluralStringResource(
-        R.plurals.phone_count_extra,
-        contact.phoneCount - 1,
-        contact.phoneCount - 1,
-    )
+    return "$primary · " +
+        pluralStringResource(
+            R.plurals.phone_count_extra,
+            contact.phoneCount - 1,
+            contact.phoneCount - 1,
+        )
 }

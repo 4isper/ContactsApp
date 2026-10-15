@@ -9,14 +9,14 @@ import dev.zacsweers.metrox.viewmodel.ViewModelGraph
 
 @DependencyGraph(AppScope::class)
 interface AppGraph : ViewModelGraph {
-
     @Provides
     @AppContext
-    fun provideContext(application: Application): Context =
-        application.applicationContext
+    fun provideContext(application: Application): Context = application.applicationContext
 
     @DependencyGraph.Factory
     fun interface Factory {
-        fun create(@Provides application: Application): AppGraph
+        fun create(
+            @Provides application: Application,
+        ): AppGraph
     }
 }

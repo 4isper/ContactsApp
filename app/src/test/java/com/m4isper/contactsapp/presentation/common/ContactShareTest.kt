@@ -7,19 +7,20 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class ContactShareTest {
-
     @Test
     fun `builds vcard with name and typed numbers`() {
-        val details = ContactDetails(
-            contactId = 7,
-            name = "Anna",
-            phones = listOf(
-                PhoneNumber("111", PhoneKind.MOBILE),
-                PhoneNumber("222", PhoneKind.HOME),
-                PhoneNumber("333", PhoneKind.WORK),
-                PhoneNumber("444", PhoneKind.OTHER),
-            ),
-        )
+        val details =
+            ContactDetails(
+                contactId = 7,
+                name = "Anna",
+                phones =
+                    listOf(
+                        PhoneNumber("111", PhoneKind.MOBILE),
+                        PhoneNumber("222", PhoneKind.HOME),
+                        PhoneNumber("333", PhoneKind.WORK),
+                        PhoneNumber("444", PhoneKind.OTHER),
+                    ),
+            )
 
         val vcard = buildVCard(details)
 
@@ -38,11 +39,12 @@ class ContactShareTest {
 
     @Test
     fun `escapes special chars in name`() {
-        val details = ContactDetails(
-            contactId = 1,
-            name = "Doe, John; Jr\n III\\Sr",
-            phones = listOf(PhoneNumber("111", PhoneKind.MOBILE)),
-        )
+        val details =
+            ContactDetails(
+                contactId = 1,
+                name = "Doe, John; Jr\n III\\Sr",
+                phones = listOf(PhoneNumber("111", PhoneKind.MOBILE)),
+            )
 
         val vcard = buildVCard(details)
 

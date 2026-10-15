@@ -31,14 +31,15 @@ fun ContactsScreen(
         mutableStateOf(hasPermission(context, Manifest.permission.READ_CONTACTS))
     }
 
-    val readPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-    ) { isGranted ->
-        hasReadPermission = isGranted
-        if (isGranted) {
-            viewModel.refresh()
+    val readPermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+        ) { isGranted ->
+            hasReadPermission = isGranted
+            if (isGranted) {
+                viewModel.refresh()
+            }
         }
-    }
 
     LifecycleResumeEffect(context) {
         syncContactsPermission(context, viewModel) { hasReadPermission = it }

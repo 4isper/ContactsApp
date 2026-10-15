@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -58,7 +57,10 @@ import com.m4isper.contactsapp.presentation.common.shareContact
 import com.m4isper.contactsapp.presentation.common.tryPlaceCall
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
-private data class CallTarget(val name: String, val phone: String)
+private data class CallTarget(
+    val name: String,
+    val phone: String,
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,13 +76,14 @@ fun ContactDetailsScreen(
     var pendingCall by remember { mutableStateOf<String?>(null) }
     var pendingConfirm by remember { mutableStateOf<CallTarget?>(null) }
 
-    val callPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-    ) { isGranted ->
-        val phone = pendingCall
-        pendingCall = null
-        onCallPermissionResult(context, isGranted, phone)
-    }
+    val callPermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+        ) { isGranted ->
+            val phone = pendingCall
+            pendingCall = null
+            onCallPermissionResult(context, isGranted, phone)
+        }
 
     fun requestCall(phone: String) {
         tryPlaceCall(context, phone) { needed ->
@@ -101,55 +104,37 @@ fun ContactDetailsScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        (uiState.content as? DetailsContent.Content)?.details?.name
-                            ?: stringResource(R.string.action_back),
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.action_back),
-                        )
-                    }
-                },
-                actions = {
-                    val shareable = (uiState.content as? DetailsContent.Content)?.details
-                    if (shareable != null) {
-                        IconButton(onClick = { shareContact(context, shareable) }) {
-                            Icon(
-                                Icons.Filled.Share,
-                                contentDescription = stringResource(R.string.share_contact),
-                            )
-                        }
-                    }
-                },
+            DetailsTopBar(
+                title = (uiState.content as? DetailsContent.Content)?.details?.name,
+                shareable = (uiState.content as? DetailsContent.Content)?.details,
+                onBack = onBack,
+                onShare = { shareContact(context, it) },
             )
         },
     ) { innerPadding ->
-        val screenModifier = Modifier
-            .fillMaxSize()
-            .padding(innerPadding)
+        val screenModifier =
+            Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
 
         when (val content = uiState.content) {
             is DetailsContent.Loading -> LoadingState()
             is DetailsContent.NotFound -> NotFoundState()
-            is DetailsContent.Error -> ErrorState(
-                message = content.message,
-                onRetry = viewModel::refresh,
-            )
-            is DetailsContent.Content -> DetailsContent(
-                details = content.details,
-                onCallClick = {
-                    pendingConfirm = CallTarget(content.details.name, it.number)
-                },
-                onSmsClick = { openSms(context, it.number) },
-                onCopyClick = { copyNumber(context, it.number) },
-                modifier = screenModifier,
-            )
+            is DetailsContent.Error ->
+                ErrorState(
+                    message = content.message,
+                    onRetry = viewModel::refresh,
+                )
+            is DetailsContent.Content ->
+                DetailsContent(
+                    details = content.details,
+                    onCallClick = {
+                        pendingConfirm = CallTarget(content.details.name, it.number)
+                    },
+                    onSmsClick = { openSms(context, it.number) },
+                    onCopyClick = { copyNumber(context, it.number) },
+                    modifier = screenModifier,
+                )
         }
     }
 
@@ -164,6 +149,37 @@ fun ContactDetailsScreen(
             onDismiss = { pendingConfirm = null },
         )
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DetailsTopBar(
+    title: String?,
+    shareable: ContactDetails?,
+    onBack: () -> Unit,
+    onShare: (ContactDetails) -> Unit,
+) {
+    TopAppBar(
+        title = { Text(title ?: stringResource(R.string.action_back)) },
+        navigationIcon = {
+            IconButton(onClick = onBack) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.action_back),
+                )
+            }
+        },
+        actions = {
+            if (shareable != null) {
+                IconButton(onClick = { onShare(shareable) }) {
+                    Icon(
+                        Icons.Filled.Share,
+                        contentDescription = stringResource(R.string.share_contact),
+                    )
+                }
+            }
+        },
+    )
 }
 
 @Composable
@@ -207,12 +223,16 @@ private fun DetailsContent(
 }
 
 @Composable
-private fun DetailsHeader(name: String, photoUri: String?) {
+private fun DetailsHeader(
+    name: String,
+    photoUri: String?,
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 24.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 24.dp),
     ) {
         ContactAvatar(
             name = name,
@@ -238,10 +258,11 @@ private fun PhoneRow(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clickable { onClick() }
+                .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {

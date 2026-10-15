@@ -17,28 +17,36 @@ import com.m4isper.contactsapp.presentation.contacts.ContactsViewModel
 
 private const val TAG = "ContactsCall"
 
-internal fun hasPermission(context: Context, permission: String): Boolean =
+internal fun hasPermission(
+    context: Context,
+    permission: String,
+): Boolean =
     ContextCompat.checkSelfPermission(context, permission) ==
         PackageManager.PERMISSION_GRANTED
 
 internal fun openAppSettings(context: Context) {
-    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-        data = "package:${context.packageName}".toUri()
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    }
+    val intent =
+        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = "package:${context.packageName}".toUri()
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
     context.startActivity(intent)
 }
 
 private fun telUri(phone: String): Uri = Uri.fromParts("tel", phone, null)
 
 /** Возвращает true, если интент звонка запущен. */
-internal fun placeCall(context: Context, phone: String): Boolean {
+internal fun placeCall(
+    context: Context,
+    phone: String,
+): Boolean {
     Log.d(TAG, "placeCall: phone='$phone'")
     return runCatching {
-        val callIntent = Intent(Intent.ACTION_CALL).apply {
-            data = telUri(phone)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
+        val callIntent =
+            Intent(Intent.ACTION_CALL).apply {
+                data = telUri(phone)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
         context.startActivity(callIntent)
     }.onFailure { e ->
         Log.w(TAG, "placeCall failed", e)
@@ -46,22 +54,30 @@ internal fun placeCall(context: Context, phone: String): Boolean {
     }.isSuccess
 }
 
-internal fun openDialer(context: Context, phone: String) {
+internal fun openDialer(
+    context: Context,
+    phone: String,
+) {
     runCatching {
-        val dialIntent = Intent(Intent.ACTION_DIAL).apply {
-            data = telUri(phone)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
+        val dialIntent =
+            Intent(Intent.ACTION_DIAL).apply {
+                data = telUri(phone)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
         context.startActivity(dialIntent)
     }
 }
 
-internal fun openSms(context: Context, phone: String) {
+internal fun openSms(
+    context: Context,
+    phone: String,
+) {
     runCatching {
-        val smsIntent = Intent(Intent.ACTION_SENDTO).apply {
-            data = Uri.fromParts("sms", phone, null)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
+        val smsIntent =
+            Intent(Intent.ACTION_SENDTO).apply {
+                data = Uri.fromParts("sms", phone, null)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
         context.startActivity(smsIntent)
     }.onFailure { e ->
         Log.w(TAG, "openSms failed", e)
@@ -69,14 +85,18 @@ internal fun openSms(context: Context, phone: String) {
     }
 }
 
-internal fun copyNumber(context: Context, phone: String) {
+internal fun copyNumber(
+    context: Context,
+    phone: String,
+) {
     val clipboard = context.getSystemService(ClipboardManager::class.java)
     clipboard?.setPrimaryClip(ClipData.newPlainText("phone", phone))
-    Toast.makeText(
-        context,
-        context.getString(R.string.copied_to_clipboard),
-        Toast.LENGTH_SHORT,
-    ).show()
+    Toast
+        .makeText(
+            context,
+            context.getString(R.string.copied_to_clipboard),
+            Toast.LENGTH_SHORT,
+        ).show()
 }
 
 internal fun tryPlaceCall(
@@ -104,11 +124,12 @@ internal fun onCallPermissionResult(
         placeCall(context, phone)
     } else {
         // Fallback без разрешения: открываем дайлер, чтобы звонок всё равно работал.
-        Toast.makeText(
-            context,
-            context.getString(R.string.call_no_permission_dialer),
-            Toast.LENGTH_SHORT,
-        ).show()
+        Toast
+            .makeText(
+                context,
+                context.getString(R.string.call_no_permission_dialer),
+                Toast.LENGTH_SHORT,
+            ).show()
         openDialer(context, phone)
     }
 }

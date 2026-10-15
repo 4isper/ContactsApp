@@ -15,7 +15,9 @@ import kotlinx.serialization.Serializable
 data object ContactsListKey : NavKey
 
 @Serializable
-data class ContactDetailsKey(val contactId: Long) : NavKey
+data class ContactDetailsKey(
+    val contactId: Long,
+) : NavKey
 
 @Composable
 fun ContactsNavHost(modifier: Modifier = Modifier) {
@@ -24,21 +26,22 @@ fun ContactsNavHost(modifier: Modifier = Modifier) {
     NavDisplay(
         backStack = backStack,
         onBack = { backStack.removeLastOrNull() },
-        entryProvider = entryProvider {
-            entry<ContactsListKey> {
-                ContactsScreen(
-                    onContactClick = { contactId ->
-                        backStack.add(ContactDetailsKey(contactId))
-                    },
-                )
-            }
-            entry<ContactDetailsKey> { key ->
-                ContactDetailsScreen(
-                    contactId = key.contactId,
-                    onBack = dropUnlessResumed { backStack.removeLastOrNull() },
-                )
-            }
-        },
+        entryProvider =
+            entryProvider {
+                entry<ContactsListKey> {
+                    ContactsScreen(
+                        onContactClick = { contactId ->
+                            backStack.add(ContactDetailsKey(contactId))
+                        },
+                    )
+                }
+                entry<ContactDetailsKey> { key ->
+                    ContactDetailsScreen(
+                        contactId = key.contactId,
+                        onBack = dropUnlessResumed { backStack.removeLastOrNull() },
+                    )
+                }
+            },
         modifier = modifier,
     )
 }

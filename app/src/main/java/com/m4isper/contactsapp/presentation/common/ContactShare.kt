@@ -12,12 +12,13 @@ import java.io.File
 
 private const val SHARE_TAG = "ContactsShare"
 
-internal fun vcardType(kind: PhoneKind): String = when (kind) {
-    PhoneKind.MOBILE -> "CELL"
-    PhoneKind.HOME -> "HOME"
-    PhoneKind.WORK -> "WORK"
-    PhoneKind.OTHER -> "VOICE"
-}
+internal fun vcardType(kind: PhoneKind): String =
+    when (kind) {
+        PhoneKind.MOBILE -> "CELL"
+        PhoneKind.HOME -> "HOME"
+        PhoneKind.WORK -> "WORK"
+        PhoneKind.OTHER -> "VOICE"
+    }
 
 private fun escapeVCard(value: String): String =
     value
@@ -26,41 +27,49 @@ private fun escapeVCard(value: String): String =
         .replace(",", "\\,")
         .replace("\n", "\\n")
 
-internal fun buildVCard(details: ContactDetails): String = buildString {
-    appendLine("BEGIN:VCARD")
-    appendLine("VERSION:3.0")
-    appendLine("FN:${escapeVCard(details.name)}")
-    details.phones.forEach { phone ->
-        appendLine("TEL;TYPE=${vcardType(phone.kind)}:${phone.number}")
+internal fun buildVCard(details: ContactDetails): String =
+    buildString {
+        appendLine("BEGIN:VCARD")
+        appendLine("VERSION:3.0")
+        appendLine("FN:${escapeVCard(details.name)}")
+        details.phones.forEach { phone ->
+            appendLine("TEL;TYPE=${vcardType(phone.kind)}:${phone.number}")
+        }
+        appendLine("END:VCARD")
     }
-    appendLine("END:VCARD")
-}
 
-internal fun shareContact(context: Context, details: ContactDetails) {
+internal fun shareContact(
+    context: Context,
+    details: ContactDetails,
+) {
     runCatching {
         val file = File(context.cacheDir, "contact_${details.contactId}.vcf")
         file.writeText(buildVCard(details))
-        val uri = FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            file,
-        )
-        val sendIntent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/vcard"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
+        val uri =
+            FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file,
+            )
+        val sendIntent =
+            Intent(Intent.ACTION_SEND).apply {
+                type = "text/vcard"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
         context.startActivity(
-            Intent.createChooser(sendIntent, context.getString(R.string.share_contact))
+            Intent
+                .createChooser(sendIntent, context.getString(R.string.share_contact))
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
         )
     }.onFailure { e ->
         Log.w(SHARE_TAG, "shareContact failed", e)
-        Toast.makeText(
-            context,
-            context.getString(R.string.share_failed),
-            Toast.LENGTH_SHORT,
-        ).show()
+        Toast
+            .makeText(
+                context,
+                context.getString(R.string.share_failed),
+                Toast.LENGTH_SHORT,
+            ).show()
     }
 }

@@ -7,21 +7,25 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-private fun details(id: Long, name: String, vararg phones: String) = ContactDetails(
+private fun details(
+    id: Long,
+    name: String,
+    vararg phones: String,
+) = ContactDetails(
     contactId = id,
     name = name,
     phones = phones.map { PhoneNumber(it, PhoneKind.MOBILE) },
 )
 
 class GroupContactsTest {
-
     @Test
     fun `groups by uppercase first letter sorted`() {
-        val contacts = listOf(
-            details(10, "bob", "1"),
-            details(20, "Anna", "2"),
-            details(30, "alex", "3"),
-        )
+        val contacts =
+            listOf(
+                details(10, "bob", "1"),
+                details(20, "Anna", "2"),
+                details(30, "alex", "3"),
+            )
 
         val grouped = groupContactsByFirstLetter(contacts)
 
@@ -32,10 +36,11 @@ class GroupContactsTest {
 
     @Test
     fun `non-letter first char goes to hash group`() {
-        val contacts = listOf(
-            details(1, "1st Contact", "1"),
-            details(2, "+Unknown", "2"),
-        )
+        val contacts =
+            listOf(
+                details(1, "1st Contact", "1"),
+                details(2, "+Unknown", "2"),
+            )
 
         val grouped = groupContactsByFirstLetter(contacts)
 
@@ -45,10 +50,11 @@ class GroupContactsTest {
 
     @Test
     fun `blank names are filtered out`() {
-        val contacts = listOf(
-            details(1, "   ", "1"),
-            details(2, "Anna", "2"),
-        )
+        val contacts =
+            listOf(
+                details(1, "   ", "1"),
+                details(2, "Anna", "2"),
+            )
 
         val grouped = groupContactsByFirstLetter(contacts)
 
@@ -62,13 +68,14 @@ class GroupContactsTest {
 
     @Test
     fun `letter indices point at sticky headers`() {
-        val grouped = groupContactsByFirstLetter(
-            listOf(
-                details(1, "bob", "1"),
-                details(2, "Anna", "2"),
-                details(3, "alex", "3", "4"),
-            ),
-        )
+        val grouped =
+            groupContactsByFirstLetter(
+                listOf(
+                    details(1, "bob", "1"),
+                    details(2, "Anna", "2"),
+                    details(3, "alex", "3", "4"),
+                ),
+            )
 
         val indices = letterIndices(grouped)
 

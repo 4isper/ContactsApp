@@ -45,150 +45,160 @@ private class FakeContactsRepository(
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ContactsViewModelTest {
-
     @After
     fun tearDown() {
         Dispatchers.resetMain()
     }
 
-    private fun viewModel(repository: FakeContactsRepository) =
-        ContactsViewModel(GetContactsUseCase(repository))
+    private fun viewModel(repository: FakeContactsRepository) = ContactsViewModel(GetContactsUseCase(repository))
 
     @Test
-    fun `refresh emits loaded contacts`() = runTest {
-        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-        val repository = FakeContactsRepository(
-            listOf(
-                details(1, "Anna", "111", "112"),
-                details(2, "Bob", "222"),
-            ),
-        )
-        val viewModel = viewModel(repository)
-        backgroundScope.launch { viewModel.uiState.collect { } }
+    fun `refresh emits loaded contacts`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(
+                    listOf(
+                        details(1, "Anna", "111", "112"),
+                        details(2, "Bob", "222"),
+                    ),
+                )
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
 
-        viewModel.refresh()
-        advanceUntilIdle()
+            viewModel.refresh()
+            advanceUntilIdle()
 
-        val content = viewModel.uiState.value.content
-        assertTrue(content is ContactsContent.Contacts)
-        assertEquals(2, (content as ContactsContent.Contacts).items.size)
-    }
-
-    @Test
-    fun `search filters by name case-insensitively`() = runTest {
-        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-        val repository = FakeContactsRepository(
-            listOf(
-                details(1, "Anna", "111"),
-                details(2, "Bob", "222"),
-            ),
-        )
-        val viewModel = viewModel(repository)
-        backgroundScope.launch { viewModel.uiState.collect { } }
-        viewModel.refresh()
-        advanceUntilIdle()
-
-        viewModel.onSearchQueryChange("ANN")
-        advanceUntilIdle()
-
-        val content = viewModel.uiState.value.content
-        assertTrue(content is ContactsContent.Contacts)
-        assertEquals(
-            listOf("Anna"),
-            (content as ContactsContent.Contacts).items.map { it.name },
-        )
-    }
+            val content = viewModel.uiState.value.content
+            assertTrue(content is ContactsContent.Contacts)
+            assertEquals(2, (content as ContactsContent.Contacts).items.size)
+        }
 
     @Test
-    fun `search filters by phone number`() = runTest {
-        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-        val repository = FakeContactsRepository(
-            listOf(
-                details(1, "Anna", "111"),
-                details(2, "Bob", "222"),
-            ),
-        )
-        val viewModel = viewModel(repository)
-        backgroundScope.launch { viewModel.uiState.collect { } }
-        viewModel.refresh()
-        advanceUntilIdle()
+    fun `search filters by name case-insensitively`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(
+                    listOf(
+                        details(1, "Anna", "111"),
+                        details(2, "Bob", "222"),
+                    ),
+                )
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
 
-        viewModel.onSearchQueryChange("222")
-        advanceUntilIdle()
+            viewModel.onSearchQueryChange("ANN")
+            advanceUntilIdle()
 
-        val content = viewModel.uiState.value.content
-        assertTrue(content is ContactsContent.Contacts)
-        assertEquals(
-            listOf("Bob"),
-            (content as ContactsContent.Contacts).items.map { it.name },
-        )
-    }
-
-    @Test
-    fun `search with no match emits searching empty`() = runTest {
-        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-        val repository = FakeContactsRepository(
-            listOf(details(1, "Anna", "111")),
-        )
-        val viewModel = viewModel(repository)
-        backgroundScope.launch { viewModel.uiState.collect { } }
-        viewModel.refresh()
-        advanceUntilIdle()
-
-        viewModel.onSearchQueryChange("zzz")
-        advanceUntilIdle()
-
-        val content = viewModel.uiState.value.content
-        assertTrue(content is ContactsContent.Empty)
-        assertTrue((content as ContactsContent.Empty).isSearching)
-    }
+            val content = viewModel.uiState.value.content
+            assertTrue(content is ContactsContent.Contacts)
+            assertEquals(
+                listOf("Anna"),
+                (content as ContactsContent.Contacts).items.map { it.name },
+            )
+        }
 
     @Test
-    fun `refresh failure emits error with cause message`() = runTest {
-        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-        val repository = FakeContactsRepository(failure = SecurityException("denied"))
-        val viewModel = viewModel(repository)
-        backgroundScope.launch { viewModel.uiState.collect { } }
+    fun `search filters by phone number`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(
+                    listOf(
+                        details(1, "Anna", "111"),
+                        details(2, "Bob", "222"),
+                    ),
+                )
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
 
-        viewModel.refresh()
-        advanceUntilIdle()
+            viewModel.onSearchQueryChange("222")
+            advanceUntilIdle()
 
-        val content = viewModel.uiState.value.content
-        assertTrue(content is ContactsContent.Error)
-        assertEquals("denied", (content as ContactsContent.Error).message)
-    }
-
-    @Test
-    fun `refresh failure without message emits error with null message`() = runTest {
-        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-        val repository = FakeContactsRepository(failure = RuntimeException())
-        val viewModel = viewModel(repository)
-        backgroundScope.launch { viewModel.uiState.collect { } }
-
-        viewModel.refresh()
-        advanceUntilIdle()
-
-        val content = viewModel.uiState.value.content
-        assertTrue(content is ContactsContent.Error)
-        assertEquals(null, (content as ContactsContent.Error).message)
-    }
+            val content = viewModel.uiState.value.content
+            assertTrue(content is ContactsContent.Contacts)
+            assertEquals(
+                listOf("Bob"),
+                (content as ContactsContent.Contacts).items.map { it.name },
+            )
+        }
 
     @Test
-    fun `clear resets list to non-searching empty`() = runTest {
-        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-        val repository = FakeContactsRepository(
-            listOf(details(1, "Anna", "111")),
-        )
-        val viewModel = viewModel(repository)
-        backgroundScope.launch { viewModel.uiState.collect { } }
-        viewModel.refresh()
-        advanceUntilIdle()
+    fun `search with no match emits searching empty`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(
+                    listOf(details(1, "Anna", "111")),
+                )
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
 
-        viewModel.clear()
-        advanceUntilIdle()
+            viewModel.onSearchQueryChange("zzz")
+            advanceUntilIdle()
 
-        val content = viewModel.uiState.value.content
-        assertTrue(content is ContactsContent.Empty)
-        assertEquals(false, (content as ContactsContent.Empty).isSearching)
-    }
+            val content = viewModel.uiState.value.content
+            assertTrue(content is ContactsContent.Empty)
+            assertTrue((content as ContactsContent.Empty).isSearching)
+        }
+
+    @Test
+    fun `refresh failure emits error with cause message`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeContactsRepository(failure = SecurityException("denied"))
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            val content = viewModel.uiState.value.content
+            assertTrue(content is ContactsContent.Error)
+            assertEquals("denied", (content as ContactsContent.Error).message)
+        }
+
+    @Test
+    fun `refresh failure without message emits error with null message`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeContactsRepository(failure = RuntimeException())
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            val content = viewModel.uiState.value.content
+            assertTrue(content is ContactsContent.Error)
+            assertEquals(null, (content as ContactsContent.Error).message)
+        }
+
+    @Test
+    fun `clear resets list to non-searching empty`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(
+                    listOf(details(1, "Anna", "111")),
+                )
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            viewModel.clear()
+            advanceUntilIdle()
+
+            val content = viewModel.uiState.value.content
+            assertTrue(content is ContactsContent.Empty)
+            assertEquals(false, (content as ContactsContent.Empty).isSearching)
+        }
 }

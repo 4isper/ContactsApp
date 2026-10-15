@@ -19,9 +19,19 @@ import java.util.Locale
 
 sealed interface ContactsContent {
     data object Loading : ContactsContent
-    data class Contacts(val items: List<ContactDetails>, val isSearching: Boolean) : ContactsContent
-    data class Empty(val isSearching: Boolean) : ContactsContent
-    data class Error(val message: String?) : ContactsContent
+
+    data class Contacts(
+        val items: List<ContactDetails>,
+        val isSearching: Boolean,
+    ) : ContactsContent
+
+    data class Empty(
+        val isSearching: Boolean,
+    ) : ContactsContent
+
+    data class Error(
+        val message: String?,
+    ) : ContactsContent
 }
 
 data class ContactsUiState(
@@ -37,30 +47,31 @@ internal const val SUBSCRIBE_TIMEOUT_MILLIS = 5_000L
 class ContactsViewModel(
     private val getContactsUseCase: GetContactsUseCase,
 ) : ViewModel() {
-
-    private val _allContacts = MutableStateFlow<List<ContactDetails>>(emptyList())
-    private val _isLoading = MutableStateFlow(false)
-    private val _searchQuery = MutableStateFlow("")
-    private val _failure = MutableStateFlow<Throwable?>(null)
+    private val allContacts = MutableStateFlow<List<ContactDetails>>(emptyList())
+    private val isLoading = MutableStateFlow(false)
+    private val searchQueryFlow = MutableStateFlow("")
+    private val loadFailure = MutableStateFlow<Throwable?>(null)
 
     val uiState: StateFlow<ContactsUiState> =
-        combine(_allContacts, _isLoading, _searchQuery, _failure) { all, loading, query, failure ->
+        combine(allContacts, isLoading, searchQueryFlow, loadFailure) { all, loading, query, failure ->
             val trimmed = query.trim()
-            val visible = if (trimmed.isBlank()) {
-                all
-            } else {
-                val q = trimmed.lowercase(Locale.ROOT)
-                all.filter { contact ->
-                    contact.name.lowercase(Locale.ROOT).contains(q) ||
-                        contact.phones.any { it.number.contains(trimmed) }
+            val visible =
+                if (trimmed.isBlank()) {
+                    all
+                } else {
+                    val q = trimmed.lowercase(Locale.ROOT)
+                    all.filter { contact ->
+                        contact.name.lowercase(Locale.ROOT).contains(q) ||
+                            contact.phones.any { it.number.contains(trimmed) }
+                    }
                 }
-            }
-            val content = when {
-                failure != null -> ContactsContent.Error(failure.message)
-                loading && visible.isEmpty() -> ContactsContent.Loading
-                visible.isEmpty() -> ContactsContent.Empty(trimmed.isNotBlank())
-                else -> ContactsContent.Contacts(visible, trimmed.isNotBlank())
-            }
+            val content =
+                when {
+                    failure != null -> ContactsContent.Error(failure.message)
+                    loading && visible.isEmpty() -> ContactsContent.Loading
+                    visible.isEmpty() -> ContactsContent.Empty(trimmed.isNotBlank())
+                    else -> ContactsContent.Contacts(visible, trimmed.isNotBlank())
+                }
             ContactsUiState(searchQuery = query, content = content)
         }.stateIn(
             scope = viewModelScope,
@@ -69,27 +80,29 @@ class ContactsViewModel(
         )
 
     fun onSearchQueryChange(query: String) {
-        _searchQuery.value = query
+        searchQueryFlow.value = query
     }
 
+    // Catch-all осознанный: любая ошибка загрузки превращается в Error-стейт.
+    @Suppress("TooGenericExceptionCaught")
     fun refresh() {
-        if (_isLoading.value) return
+        if (isLoading.value) return
         viewModelScope.launch {
-            _isLoading.value = true
-            _failure.value = null
+            isLoading.value = true
+            loadFailure.value = null
             try {
-                _allContacts.value = getContactsUseCase()
+                allContacts.value = getContactsUseCase()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _failure.value = e
+                loadFailure.value = e
             } finally {
-                _isLoading.value = false
+                isLoading.value = false
             }
         }
     }
 
     fun clear() {
-        _allContacts.value = emptyList()
+        allContacts.value = emptyList()
     }
 }

@@ -12,14 +12,15 @@ import dev.zacsweers.metro.SingleIn
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-private val CONTACT_PROJECTION = arrayOf(
-    ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
-    ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
-    ContactsContract.CommonDataKinds.Phone.NUMBER,
-    ContactsContract.CommonDataKinds.Phone.TYPE,
-    ContactsContract.CommonDataKinds.Phone.LABEL,
-    ContactsContract.CommonDataKinds.Phone.PHOTO_THUMBNAIL_URI,
-)
+private val CONTACT_PROJECTION =
+    arrayOf(
+        ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
+        ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+        ContactsContract.CommonDataKinds.Phone.NUMBER,
+        ContactsContract.CommonDataKinds.Phone.TYPE,
+        ContactsContract.CommonDataKinds.Phone.LABEL,
+        ContactsContract.CommonDataKinds.Phone.PHOTO_THUMBNAIL_URI,
+    )
 
 private const val CONTACT_SORT_ORDER =
     "${ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME} ASC"
@@ -34,14 +35,15 @@ internal data class PhoneRow(
     val photoUri: String? = null,
 )
 
-internal fun mapPhoneKind(type: Int): PhoneKind = when (type) {
-    ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE -> PhoneKind.MOBILE
-    ContactsContract.CommonDataKinds.Phone.TYPE_HOME -> PhoneKind.HOME
-    ContactsContract.CommonDataKinds.Phone.TYPE_WORK,
-    ContactsContract.CommonDataKinds.Phone.TYPE_WORK_MOBILE,
-    -> PhoneKind.WORK
-    else -> PhoneKind.OTHER
-}
+internal fun mapPhoneKind(type: Int): PhoneKind =
+    when (type) {
+        ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE -> PhoneKind.MOBILE
+        ContactsContract.CommonDataKinds.Phone.TYPE_HOME -> PhoneKind.HOME
+        ContactsContract.CommonDataKinds.Phone.TYPE_WORK,
+        ContactsContract.CommonDataKinds.Phone.TYPE_WORK_MOBILE,
+        -> PhoneKind.WORK
+        else -> PhoneKind.OTHER
+    }
 
 /** Чистая агрегация строк в контакты по CONTACT_ID. */
 internal fun aggregateContacts(rows: List<PhoneRow>): List<ContactDetails> =
@@ -50,18 +52,19 @@ internal fun aggregateContacts(rows: List<PhoneRow>): List<ContactDetails> =
         .groupBy { it.contactId }
         .mapNotNull { (contactId, group) ->
             val name = group.firstOrNull { it.name.isNotBlank() }?.name ?: return@mapNotNull null
-            val phones = group
-                .map {
-                    PhoneNumber(
-                        number = it.phone,
-                        kind = mapPhoneKind(it.type),
-                        customLabel = it.label?.takeIf { label ->
-                            it.type == ContactsContract.CommonDataKinds.Phone.TYPE_CUSTOM &&
-                                label.isNotBlank()
-                        },
-                    )
-                }
-                .distinctBy { it.number }
+            val phones =
+                group
+                    .map {
+                        PhoneNumber(
+                            number = it.phone,
+                            kind = mapPhoneKind(it.type),
+                            customLabel =
+                                it.label?.takeIf { label ->
+                                    it.type == ContactsContract.CommonDataKinds.Phone.TYPE_CUSTOM &&
+                                        label.isNotBlank()
+                                },
+                        )
+                    }.distinctBy { it.number }
             if (phones.isEmpty()) return@mapNotNull null
             ContactDetails(
                 contactId = contactId,
@@ -69,8 +72,7 @@ internal fun aggregateContacts(rows: List<PhoneRow>): List<ContactDetails> =
                 phones = phones,
                 photoUri = group.firstNotNullOfOrNull { it.photoUri },
             )
-        }
-        .sortedBy { it.name }
+        }.sortedBy { it.name }
 
 /**
  * Единственное место, знающее про [ContactsContract].
@@ -81,28 +83,34 @@ internal fun aggregateContacts(rows: List<PhoneRow>): List<ContactDetails> =
 class PhoneContactsDataSource(
     @AppContext private val context: Context,
 ) {
-    suspend fun loadContacts(): List<ContactDetails> = withContext(Dispatchers.IO) {
-        aggregateContacts(queryRows(selection = null, args = null))
-    }
+    suspend fun loadContacts(): List<ContactDetails> =
+        withContext(Dispatchers.IO) {
+            aggregateContacts(queryRows(selection = null, args = null))
+        }
 
-    suspend fun loadContact(contactId: Long): ContactDetails? = withContext(Dispatchers.IO) {
-        aggregateContacts(
-            queryRows(
-                selection = "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?",
-                args = arrayOf(contactId.toString()),
-            ),
-        ).firstOrNull()
-    }
+    suspend fun loadContact(contactId: Long): ContactDetails? =
+        withContext(Dispatchers.IO) {
+            aggregateContacts(
+                queryRows(
+                    selection = "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?",
+                    args = arrayOf(contactId.toString()),
+                ),
+            ).firstOrNull()
+        }
 
-    private fun queryRows(selection: String?, args: Array<String>?): List<PhoneRow> {
+    private fun queryRows(
+        selection: String?,
+        args: Array<String>?,
+    ): List<PhoneRow> {
         val rows = mutableListOf<PhoneRow>()
-        val cursor = context.contentResolver.query(
-            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-            CONTACT_PROJECTION,
-            selection,
-            args,
-            CONTACT_SORT_ORDER,
-        )
+        val cursor =
+            context.contentResolver.query(
+                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                CONTACT_PROJECTION,
+                selection,
+                args,
+                CONTACT_SORT_ORDER,
+            )
 
         cursor?.use {
             val idIndex =
