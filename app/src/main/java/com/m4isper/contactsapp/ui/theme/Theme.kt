@@ -8,29 +8,51 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme =
     darkColorScheme(
-        primary = Purple80,
-        secondary = PurpleGrey80,
-        tertiary = Pink80,
+        primary = TealPrimaryDark,
+        onPrimary = TealOnPrimaryDark,
+        primaryContainer = TealPrimaryContainerDark,
+        onPrimaryContainer = TealOnPrimaryContainerDark,
+        secondary = TealSecondaryDark,
+        tertiary = AmberTertiaryDark,
+        onTertiary = AmberOnTertiaryDark,
+        tertiaryContainer = AmberTertiaryContainerDark,
+        onTertiaryContainer = AmberOnTertiaryContainerDark,
+        surface = SurfaceDark,
+        surfaceContainerLowest = SurfaceContainerLowestDark,
+        surfaceContainerLow = SurfaceContainerLowDark,
+        surfaceContainer = SurfaceContainerDark,
+        surfaceContainerHigh = SurfaceContainerHighDark,
+        surfaceContainerHighest = SurfaceContainerHighestDark,
+        onSurface = OnSurfaceDark,
+        onSurfaceVariant = OnSurfaceVariantDark,
+        outline = OutlineDark,
     )
 
 private val LightColorScheme =
     lightColorScheme(
-        primary = Purple40,
-        secondary = PurpleGrey40,
-        tertiary = Pink40,
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-     */
+        primary = TealPrimaryLight,
+        onPrimary = TealOnPrimaryLight,
+        primaryContainer = TealPrimaryContainerLight,
+        onPrimaryContainer = TealOnPrimaryContainerLight,
+        secondary = TealSecondaryLight,
+        tertiary = AmberTertiaryLight,
+        onTertiary = AmberOnTertiaryLight,
+        tertiaryContainer = AmberTertiaryContainerLight,
+        onTertiaryContainer = AmberOnTertiaryContainerLight,
+        surface = SurfaceLight,
+        surfaceContainerLowest = SurfaceContainerLowestLight,
+        surfaceContainerLow = SurfaceContainerLowLight,
+        surfaceContainer = SurfaceContainerLight,
+        surfaceContainerHigh = SurfaceContainerHighLight,
+        surfaceContainerHighest = SurfaceContainerHighestLight,
+        onSurface = OnSurfaceLight,
+        onSurfaceVariant = OnSurfaceVariantLight,
+        outline = OutlineLight,
     )
 
 @Composable
@@ -51,9 +73,14 @@ fun ContactsAppTheme(
             else -> LightColorScheme
         }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content,
-    )
+    CompositionLocalProvider(
+        LocalSpacing provides Spacing(),
+    ) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            shapes = AppShapes,
+            typography = Typography,
+            content = content,
+        )
+    }
 }

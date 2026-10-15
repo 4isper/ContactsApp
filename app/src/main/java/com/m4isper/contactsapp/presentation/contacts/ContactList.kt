@@ -1,7 +1,6 @@
 package com.m4isper.contactsapp.presentation.contacts
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
@@ -21,11 +20,18 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.PersonSearch
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,7 +40,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
@@ -47,10 +52,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.presentation.common.ContactAvatar
-import com.m4isper.contactsapp.presentation.common.ErrorState
 import com.m4isper.contactsapp.presentation.common.Loadable
-import com.m4isper.contactsapp.presentation.common.LoadingState
+import com.m4isper.contactsapp.ui.components.EmptyState
+import com.m4isper.contactsapp.ui.components.ErrorState
+import com.m4isper.contactsapp.ui.components.ListAvatar
+import com.m4isper.contactsapp.ui.components.LoadingState
+import com.m4isper.contactsapp.ui.components.SearchField
+import com.m4isper.contactsapp.ui.theme.LocalSpacing
 import kotlinx.coroutines.launch
 
 internal fun groupContactsByFirstLetter(contacts: List<ContactDetails>): Map<Char, List<ContactDetails>> =
@@ -79,27 +87,54 @@ internal fun ContactList(
     onFavoritesOnlyChange: () -> Unit,
     onContactClick: (Long) -> Unit,
     onRetry: () -> Unit,
+    onRefresh: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxSize()) {
-        OutlinedTextField(
-            value = uiState.searchQuery,
-            onValueChange = onSearchQueryChange,
-            label = { Text(stringResource(R.string.search_label)) },
-            singleLine = true,
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+    ) { innerPadding ->
+        Column(
             modifier =
                 Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp)
-                    .padding(top = 12.dp)
-                    .testTag("search_field"),
+                    .fillMaxSize()
+                    .padding(innerPadding),
+        ) {
+            FilterHeader(
+                searchQuery = uiState.searchQuery,
+                showFavoritesOnly = uiState.showFavoritesOnly,
+                onSearchQueryChange = onSearchQueryChange,
+                onFavoritesOnlyChange = onFavoritesOnlyChange,
+            )
+            ContactListBody(
+                uiState = uiState,
+                onContactClick = onContactClick,
+                onRetry = onRetry,
+                onRefresh = onRefresh,
+            )
+        }
+    }
+}
+
+@Composable
+private fun FilterHeader(
+    searchQuery: String,
+    showFavoritesOnly: Boolean,
+    onSearchQueryChange: (String) -> Unit,
+    onFavoritesOnlyChange: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val spacing = LocalSpacing.current
+    Column(modifier = modifier.fillMaxWidth()) {
+        SearchField(
+            value = searchQuery,
+            onValueChange = onSearchQueryChange,
         )
         FilterChip(
-            selected = uiState.showFavoritesOnly,
+            selected = showFavoritesOnly,
             onClick = onFavoritesOnlyChange,
             label = { Text(stringResource(R.string.filter_favorites)) },
             leadingIcon =
-                if (uiState.showFavoritesOnly) {
+                if (showFavoritesOnly) {
                     {
                         Icon(
                             Icons.Filled.Favorite,
@@ -109,21 +144,35 @@ internal fun ContactList(
                 } else {
                     null
                 },
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp).testTag("favorites_chip"),
+            modifier =
+                Modifier
+                    .padding(horizontal = spacing.m, vertical = spacing.xs)
+                    .testTag("favorites_chip"),
         )
+    }
+}
 
+@Composable
+private fun ContactListBody(
+    uiState: ContactsUiState,
+    onContactClick: (Long) -> Unit,
+    onRetry: () -> Unit,
+    onRefresh: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val pullState = rememberPullToRefreshState()
+    PullToRefreshBox(
+        isRefreshing = uiState.isRefreshing,
+        onRefresh = onRefresh,
+        state = pullState,
+        modifier = modifier.fillMaxSize(),
+    ) {
         when (val content = uiState.content) {
             is Loadable.Loading -> LoadingState()
             is Loadable.Empty ->
-                EmptyState(
-                    text =
-                        when {
-                            uiState.showFavoritesOnly && !uiState.isSearching ->
-                                stringResource(R.string.favorites_empty)
-                            uiState.isSearching ->
-                                stringResource(R.string.contacts_nothing_found)
-                            else -> stringResource(R.string.contacts_empty)
-                        },
+                EmptyPlaceholder(
+                    showFavoritesOnly = uiState.showFavoritesOnly,
+                    isSearching = uiState.isSearching,
                 )
             is Loadable.Error ->
                 ErrorState(
@@ -141,17 +190,26 @@ internal fun ContactList(
 }
 
 @Composable
-private fun EmptyState(text: String) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyLarge,
-            color = Color.Gray,
-        )
-    }
+private fun EmptyPlaceholder(
+    showFavoritesOnly: Boolean,
+    isSearching: Boolean,
+) {
+    EmptyState(
+        icon =
+            when {
+                showFavoritesOnly && !isSearching -> Icons.Filled.FavoriteBorder
+                isSearching -> Icons.Filled.Search
+                else -> Icons.Filled.PersonSearch
+            },
+        title =
+            when {
+                showFavoritesOnly && !isSearching ->
+                    stringResource(R.string.favorites_empty)
+                isSearching ->
+                    stringResource(R.string.contacts_nothing_found)
+                else -> stringResource(R.string.contacts_empty)
+            },
+    )
 }
 
 @Composable
@@ -160,6 +218,7 @@ private fun GroupedContacts(
     favorites: Set<Long>,
     onContactClick: (Long) -> Unit,
 ) {
+    val spacing = LocalSpacing.current
     val grouped = groupContactsByFirstLetter(contacts)
     val indices = remember(grouped) { letterIndices(grouped) }
     val listState = rememberLazyListState()
@@ -186,19 +245,23 @@ private fun GroupedContacts(
                     stickyHeader {
                         Text(
                             text = letter.toString(),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
                                     .background(MaterialTheme.colorScheme.surface)
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                            fontWeight = FontWeight.Bold,
+                                    .padding(
+                                        horizontal = spacing.m,
+                                        vertical = spacing.s,
+                                    ),
                         )
                     }
                     items(
                         items = group,
                         key = { it.contactId },
                     ) { contact ->
-                        ContactItem(
+                        ContactCard(
                             contact = contact,
                             isFavorite = contact.contactId in favorites,
                         ) { onContactClick(contact.contactId) }
@@ -229,7 +292,7 @@ private fun GroupedContacts(
                             .background(
                                 MaterialTheme.colorScheme.primary,
                                 CircleShape,
-                            ).padding(24.dp),
+                            ).padding(spacing.xl),
                 )
             }
         }
@@ -294,7 +357,7 @@ private fun FastScroller(
                     if (letter == activeLetter) {
                         MaterialTheme.colorScheme.primary
                     } else {
-                        Color.Gray
+                        MaterialTheme.colorScheme.onSurfaceVariant
                     },
             )
         }
@@ -302,47 +365,55 @@ private fun FastScroller(
 }
 
 @Composable
-private fun ContactItem(
+private fun ContactCard(
     contact: ContactDetails,
     isFavorite: Boolean,
     onClick: () -> Unit,
 ) {
-    Row(
+    val spacing = LocalSpacing.current
+    Card(
+        onClick = onClick,
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            ),
         modifier =
             Modifier
                 .fillMaxWidth()
-                .clickable { onClick() }
-                .padding(12.dp)
+                .padding(horizontal = spacing.m, vertical = spacing.xs)
                 .testTag("contact_row_${contact.contactId}"),
-        verticalAlignment = Alignment.CenterVertically,
     ) {
-        ContactAvatar(
-            name = contact.name,
-            photoUri = contact.photoUri,
-            size = 48.dp,
-            textStyle = MaterialTheme.typography.titleMedium,
-        )
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = contact.name,
-                style = MaterialTheme.typography.titleMedium,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(spacing.m),
+        ) {
+            ListAvatar(
+                name = contact.name,
+                photoUri = contact.photoUri,
             )
-            Text(
-                text = contactSubtitle(contact),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
 
-        if (isFavorite) {
-            Icon(
-                Icons.Filled.Favorite,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(16.dp),
-            )
+            Spacer(modifier = Modifier.width(spacing.m))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = contact.name,
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    text = contactSubtitle(contact),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            if (isFavorite) {
+                Icon(
+                    Icons.Filled.Favorite,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.size(spacing.m + spacing.s),
+                )
+            }
         }
     }
 }

@@ -60,6 +60,7 @@ fun ContactsScreen(
             onFavoritesOnlyChange = viewModel::onToggleFavoritesOnly,
             onContactClick = onContactClick,
             onRetry = viewModel::refresh,
+            onRefresh = viewModel::refresh,
             modifier = modifier,
         )
     }

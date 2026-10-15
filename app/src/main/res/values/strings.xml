@@ -41,4 +41,8 @@
         <item quantity="one">%d more number</item>
         <item quantity="other">%d more numbers</item>
     </plurals>
+    <plurals name="phone_count">
+        <item quantity="one">%d number</item>
+        <item quantity="other">%d numbers</item>
+    </plurals>
 </resources>

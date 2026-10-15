@@ -36,6 +36,7 @@ class ContactListUiTest {
                 onFavoritesOnlyChange = {},
                 onContactClick = {},
                 onRetry = {},
+                onRefresh = {},
             )
         }
 
@@ -53,6 +54,7 @@ class ContactListUiTest {
                 onFavoritesOnlyChange = {},
                 onContactClick = { clicked = it },
                 onRetry = {},
+                onRefresh = {},
             )
         }
 
@@ -71,6 +73,7 @@ class ContactListUiTest {
                 onFavoritesOnlyChange = { toggled = true },
                 onContactClick = {},
                 onRetry = {},
+                onRefresh = {},
             )
         }
 
@@ -95,6 +98,7 @@ class ContactListUiTest {
                 onFavoritesOnlyChange = viewModel::onToggleFavoritesOnly,
                 onContactClick = {},
                 onRetry = viewModel::refresh,
+                onRefresh = viewModel::refresh,
             )
         }
         viewModel.refresh()

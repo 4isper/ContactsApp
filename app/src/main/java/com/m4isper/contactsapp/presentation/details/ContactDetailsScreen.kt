@@ -1,10 +1,6 @@
 package com.m4isper.contactsapp.presentation.details
 
-import android.Manifest
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -21,11 +18,16 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Message
+import androidx.compose.material.icons.filled.PersonSearch
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -37,12 +39,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.R
@@ -50,15 +51,16 @@ import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.presentation.common.ConfirmCallDialog
-import com.m4isper.contactsapp.presentation.common.ContactAvatar
-import com.m4isper.contactsapp.presentation.common.ErrorState
 import com.m4isper.contactsapp.presentation.common.Loadable
-import com.m4isper.contactsapp.presentation.common.LoadingState
 import com.m4isper.contactsapp.presentation.common.copyNumber
-import com.m4isper.contactsapp.presentation.common.onCallPermissionResult
 import com.m4isper.contactsapp.presentation.common.openSms
+import com.m4isper.contactsapp.presentation.common.rememberCallHandler
 import com.m4isper.contactsapp.presentation.common.shareContact
-import com.m4isper.contactsapp.presentation.common.tryPlaceCall
+import com.m4isper.contactsapp.ui.components.DetailsAvatar
+import com.m4isper.contactsapp.ui.components.EmptyState
+import com.m4isper.contactsapp.ui.components.ErrorState
+import com.m4isper.contactsapp.ui.components.LoadingState
+import com.m4isper.contactsapp.ui.theme.LocalSpacing
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
 private data class CallTarget(
@@ -66,7 +68,6 @@ private data class CallTarget(
     val phone: String,
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContactDetailsScreen(
     contactId: Long,
@@ -76,25 +77,9 @@ fun ContactDetailsScreen(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val requestCall = rememberCallHandler()
 
-    var pendingCall by remember { mutableStateOf<String?>(null) }
     var pendingConfirm by remember { mutableStateOf<CallTarget?>(null) }
-
-    val callPermissionLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.RequestPermission(),
-        ) { isGranted ->
-            val phone = pendingCall
-            pendingCall = null
-            onCallPermissionResult(context, isGranted, phone)
-        }
-
-    fun requestCall(phone: String) {
-        tryPlaceCall(context, phone) { needed ->
-            pendingCall = needed
-            callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
-        }
-    }
 
     LaunchedEffect(contactId) {
         viewModel.load(contactId)
@@ -127,7 +112,11 @@ fun ContactDetailsScreen(
 
         when (val content = uiState.content) {
             is Loadable.Loading -> LoadingState()
-            is Loadable.Empty -> NotFoundState()
+            is Loadable.Empty ->
+                EmptyState(
+                    icon = Icons.Filled.PersonSearch,
+                    title = stringResource(R.string.contact_not_found),
+                )
             is Loadable.Error ->
                 ErrorState(
                     message = content.message,
@@ -197,9 +186,9 @@ private fun DetailsTopBar(
                         contentDescription = stringResource(R.string.action_toggle_favorite),
                         tint =
                             if (isFavorite) {
-                                MaterialTheme.colorScheme.primary
+                                MaterialTheme.colorScheme.tertiary
                             } else {
-                                MaterialTheme.colorScheme.onSurface
+                                MaterialTheme.colorScheme.onSurfaceVariant
                             },
                     )
                 }
@@ -215,20 +204,6 @@ private fun DetailsTopBar(
 }
 
 @Composable
-private fun NotFoundState() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = stringResource(R.string.contact_not_found),
-            style = MaterialTheme.typography.bodyLarge,
-            color = Color.Gray,
-        )
-    }
-}
-
-@Composable
 private fun DetailsContent(
     details: ContactDetails,
     onCallClick: (PhoneNumber) -> Unit,
@@ -238,7 +213,15 @@ private fun DetailsContent(
 ) {
     LazyColumn(modifier = modifier.fillMaxSize()) {
         item(key = "header") {
-            DetailsHeader(name = details.name, photoUri = details.photoUri)
+            DetailsHeader(
+                details = details,
+                onCallPrimary = {
+                    details.phones.firstOrNull()?.let(onCallClick)
+                },
+                onSmsPrimary = {
+                    details.phones.firstOrNull()?.let(onSmsClick)
+                },
+            )
         }
         items(
             items = details.phones,
@@ -256,28 +239,71 @@ private fun DetailsContent(
 
 @Composable
 private fun DetailsHeader(
-    name: String,
-    photoUri: String?,
+    details: ContactDetails,
+    onCallPrimary: () -> Unit,
+    onSmsPrimary: () -> Unit,
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
+    val spacing = LocalSpacing.current
+    Card(
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            ),
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(vertical = 24.dp),
+                .padding(horizontal = spacing.m)
+                .padding(top = spacing.m),
     ) {
-        ContactAvatar(
-            name = name,
-            photoUri = photoUri,
-            size = 72.dp,
-            textStyle = MaterialTheme.typography.headlineMedium,
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            text = name,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = spacing.xl),
+        ) {
+            DetailsAvatar(
+                name = details.name,
+                photoUri = details.photoUri,
+            )
+            Spacer(modifier = Modifier.height(spacing.m))
+            Text(
+                text = details.name,
+                style = MaterialTheme.typography.headlineSmall,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                text =
+                    pluralStringResource(
+                        R.plurals.phone_count,
+                        details.phoneCount,
+                        details.phoneCount,
+                    ),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.height(spacing.m))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(spacing.s),
+            ) {
+                FilledTonalButton(onClick = onCallPrimary) {
+                    Icon(
+                        Icons.Filled.Call,
+                        contentDescription = null,
+                    )
+                    Spacer(modifier = Modifier.width(spacing.s))
+                    Text(stringResource(R.string.action_call))
+                }
+                OutlinedButton(onClick = onSmsPrimary) {
+                    Icon(
+                        Icons.Filled.Message,
+                        contentDescription = null,
+                    )
+                    Spacer(modifier = Modifier.width(spacing.s))
+                    Text(stringResource(R.string.action_send_sms))
+                }
+            }
+        }
     }
 }
 
@@ -289,44 +315,53 @@ private fun PhoneRow(
     onCopyClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
+    val spacing = LocalSpacing.current
+    Card(
+        onClick = onClick,
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            ),
         modifier =
             modifier
                 .fillMaxWidth()
-                .clickable { onClick() }
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .padding(horizontal = spacing.m, vertical = spacing.xs)
                 .testTag("phone_row_${phone.number}"),
-        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = phone.number,
-                style = MaterialTheme.typography.titleMedium,
-            )
-            Text(
-                text = phoneKindLabel(phone),
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray,
-            )
-        }
-        IconButton(onClick = onSmsClick) {
-            Icon(
-                Icons.Filled.Message,
-                contentDescription = stringResource(R.string.action_send_sms),
-            )
-        }
-        IconButton(onClick = onCopyClick) {
-            Icon(
-                Icons.Filled.ContentCopy,
-                contentDescription = stringResource(R.string.action_copy_number),
-            )
-        }
-        IconButton(onClick = onClick) {
-            Icon(
-                Icons.Filled.Call,
-                contentDescription = stringResource(R.string.action_call),
-                tint = MaterialTheme.colorScheme.primary,
-            )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(spacing.m),
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = phone.number,
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    text = phoneKindLabel(phone),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            IconButton(onClick = onSmsClick) {
+                Icon(
+                    Icons.Filled.Message,
+                    contentDescription = stringResource(R.string.action_send_sms),
+                )
+            }
+            IconButton(onClick = onCopyClick) {
+                Icon(
+                    Icons.Filled.ContentCopy,
+                    contentDescription = stringResource(R.string.action_copy_number),
+                )
+            }
+            IconButton(onClick = onClick) {
+                Icon(
+                    Icons.Filled.Call,
+                    contentDescription = stringResource(R.string.action_call),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
         }
     }
 }

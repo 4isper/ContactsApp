@@ -23,6 +23,7 @@ data class ContactsUiState(
     val searchQuery: String = "",
     val showFavoritesOnly: Boolean = false,
     val favorites: Set<Long> = emptySet(),
+    val isRefreshing: Boolean = false,
     val content: Loadable<List<ContactDetails>> = Loadable.Loading,
 ) {
     val isSearching: Boolean
@@ -91,6 +92,7 @@ class ContactsViewModel(
                 searchQuery = load.query,
                 showFavoritesOnly = favoritesOnly,
                 favorites = favorites,
+                isRefreshing = load.loading,
                 content = content,
             )
         }.stateIn(

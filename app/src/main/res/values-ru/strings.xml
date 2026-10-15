@@ -43,4 +43,10 @@
         <item quantity="many">ещё %d номеров</item>
         <item quantity="other">ещё %d номера</item>
     </plurals>
+    <plurals name="phone_count">
+        <item quantity="one">%d номер</item>
+        <item quantity="few">%d номера</item>
+        <item quantity="many">%d номеров</item>
+        <item quantity="other">%d номера</item>
+    </plurals>
 </resources>
