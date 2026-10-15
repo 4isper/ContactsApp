@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
+import com.m4isper.contactsapp.presentation.common.Loadable
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
@@ -17,27 +18,13 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Locale
 
-sealed interface ContactsContent {
-    data object Loading : ContactsContent
-
-    data class Contacts(
-        val items: List<ContactDetails>,
-        val isSearching: Boolean,
-    ) : ContactsContent
-
-    data class Empty(
-        val isSearching: Boolean,
-    ) : ContactsContent
-
-    data class Error(
-        val message: String?,
-    ) : ContactsContent
-}
-
 data class ContactsUiState(
     val searchQuery: String = "",
-    val content: ContactsContent = ContactsContent.Loading,
-)
+    val content: Loadable<List<ContactDetails>> = Loadable.Loading,
+) {
+    val isSearching: Boolean
+        get() = searchQuery.isNotBlank()
+}
 
 internal const val SUBSCRIBE_TIMEOUT_MILLIS = 5_000L
 
@@ -67,10 +54,10 @@ class ContactsViewModel(
                 }
             val content =
                 when {
-                    failure != null -> ContactsContent.Error(failure.message)
-                    loading && visible.isEmpty() -> ContactsContent.Loading
-                    visible.isEmpty() -> ContactsContent.Empty(trimmed.isNotBlank())
-                    else -> ContactsContent.Contacts(visible, trimmed.isNotBlank())
+                    failure != null -> Loadable.Error(failure.message)
+                    loading && visible.isEmpty() -> Loadable.Loading
+                    visible.isEmpty() -> Loadable.Empty
+                    else -> Loadable.Content(visible)
                 }
             ContactsUiState(searchQuery = query, content = content)
         }.stateIn(

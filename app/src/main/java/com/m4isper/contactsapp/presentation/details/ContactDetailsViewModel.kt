@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
+import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.contacts.SUBSCRIBE_TIMEOUT_MILLIS
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
@@ -17,22 +18,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-sealed interface DetailsContent {
-    data object Loading : DetailsContent
-
-    data class Content(
-        val details: ContactDetails,
-    ) : DetailsContent
-
-    data object NotFound : DetailsContent
-
-    data class Error(
-        val message: String?,
-    ) : DetailsContent
-}
-
 data class DetailsUiState(
-    val content: DetailsContent = DetailsContent.Loading,
+    val content: Loadable<ContactDetails> = Loadable.Loading,
 )
 
 @Inject
@@ -50,10 +37,10 @@ class ContactDetailsViewModel(
         combine(loadedDetails, isLoading, loadFailure) { details, loading, failure ->
             val content =
                 when {
-                    failure != null -> DetailsContent.Error(failure.message)
-                    loading && details == null -> DetailsContent.Loading
-                    details == null -> DetailsContent.NotFound
-                    else -> DetailsContent.Content(details)
+                    failure != null -> Loadable.Error(failure.message)
+                    loading && details == null -> Loadable.Loading
+                    details == null -> Loadable.Empty
+                    else -> Loadable.Content(details)
                 }
             DetailsUiState(content)
         }.stateIn(

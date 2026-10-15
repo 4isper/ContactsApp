@@ -5,6 +5,7 @@ import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
+import com.m4isper.contactsapp.presentation.common.Loadable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -64,8 +65,8 @@ class ContactDetailsViewModelTest {
             advanceUntilIdle()
 
             val content = viewModel.uiState.value.content
-            assertTrue(content is DetailsContent.Content)
-            assertEquals("Anna", (content as DetailsContent.Content).details.name)
+            assertTrue(content is Loadable.Content)
+            assertEquals("Anna", (content as Loadable.Content).data.name)
         }
 
     @Test
@@ -78,7 +79,7 @@ class ContactDetailsViewModelTest {
             viewModel.load(42)
             advanceUntilIdle()
 
-            assertTrue(viewModel.uiState.value.content is DetailsContent.NotFound)
+            assertTrue(viewModel.uiState.value.content is Loadable.Empty)
         }
 
     @Test
@@ -93,8 +94,8 @@ class ContactDetailsViewModelTest {
             advanceUntilIdle()
 
             val content = viewModel.uiState.value.content
-            assertTrue(content is DetailsContent.Error)
-            assertEquals("denied", (content as DetailsContent.Error).message)
+            assertTrue(content is Loadable.Error)
+            assertEquals("denied", (content as Loadable.Error).message)
         }
 
     @Test

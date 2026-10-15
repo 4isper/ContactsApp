@@ -5,6 +5,7 @@ import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
+import com.m4isper.contactsapp.presentation.common.Loadable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -70,8 +71,8 @@ class ContactsViewModelTest {
             advanceUntilIdle()
 
             val content = viewModel.uiState.value.content
-            assertTrue(content is ContactsContent.Contacts)
-            assertEquals(2, (content as ContactsContent.Contacts).items.size)
+            assertTrue(content is Loadable.Content)
+            assertEquals(2, (content as Loadable.Content).data.size)
         }
 
     @Test
@@ -94,10 +95,10 @@ class ContactsViewModelTest {
             advanceUntilIdle()
 
             val content = viewModel.uiState.value.content
-            assertTrue(content is ContactsContent.Contacts)
+            assertTrue(content is Loadable.Content)
             assertEquals(
                 listOf("Anna"),
-                (content as ContactsContent.Contacts).items.map { it.name },
+                (content as Loadable.Content).data.map { it.name },
             )
         }
 
@@ -121,10 +122,10 @@ class ContactsViewModelTest {
             advanceUntilIdle()
 
             val content = viewModel.uiState.value.content
-            assertTrue(content is ContactsContent.Contacts)
+            assertTrue(content is Loadable.Content)
             assertEquals(
                 listOf("Bob"),
-                (content as ContactsContent.Contacts).items.map { it.name },
+                (content as Loadable.Content).data.map { it.name },
             )
         }
 
@@ -145,8 +146,8 @@ class ContactsViewModelTest {
             advanceUntilIdle()
 
             val content = viewModel.uiState.value.content
-            assertTrue(content is ContactsContent.Empty)
-            assertTrue((content as ContactsContent.Empty).isSearching)
+            assertTrue(content is Loadable.Empty)
+            assertTrue(viewModel.uiState.value.isSearching)
         }
 
     @Test
@@ -161,8 +162,8 @@ class ContactsViewModelTest {
             advanceUntilIdle()
 
             val content = viewModel.uiState.value.content
-            assertTrue(content is ContactsContent.Error)
-            assertEquals("denied", (content as ContactsContent.Error).message)
+            assertTrue(content is Loadable.Error)
+            assertEquals("denied", (content as Loadable.Error).message)
         }
 
     @Test
@@ -177,8 +178,8 @@ class ContactsViewModelTest {
             advanceUntilIdle()
 
             val content = viewModel.uiState.value.content
-            assertTrue(content is ContactsContent.Error)
-            assertEquals(null, (content as ContactsContent.Error).message)
+            assertTrue(content is Loadable.Error)
+            assertEquals(null, (content as Loadable.Error).message)
         }
 
     @Test
@@ -198,7 +199,7 @@ class ContactsViewModelTest {
             advanceUntilIdle()
 
             val content = viewModel.uiState.value.content
-            assertTrue(content is ContactsContent.Empty)
-            assertEquals(false, (content as ContactsContent.Empty).isSearching)
+            assertTrue(content is Loadable.Empty)
+            assertEquals(false, viewModel.uiState.value.isSearching)
         }
 }

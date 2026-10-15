@@ -49,6 +49,7 @@ import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.presentation.common.ConfirmCallDialog
 import com.m4isper.contactsapp.presentation.common.ContactAvatar
 import com.m4isper.contactsapp.presentation.common.ErrorState
+import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.LoadingState
 import com.m4isper.contactsapp.presentation.common.copyNumber
 import com.m4isper.contactsapp.presentation.common.onCallPermissionResult
@@ -105,8 +106,10 @@ fun ContactDetailsScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             DetailsTopBar(
-                title = (uiState.content as? DetailsContent.Content)?.details?.name,
-                shareable = (uiState.content as? DetailsContent.Content)?.details,
+                title =
+                    (uiState.content as? Loadable.Content)?.data?.name
+                        ?: stringResource(R.string.app_name),
+                shareable = (uiState.content as? Loadable.Content)?.data,
                 onBack = onBack,
                 onShare = { shareContact(context, it) },
             )
@@ -118,18 +121,18 @@ fun ContactDetailsScreen(
                 .padding(innerPadding)
 
         when (val content = uiState.content) {
-            is DetailsContent.Loading -> LoadingState()
-            is DetailsContent.NotFound -> NotFoundState()
-            is DetailsContent.Error ->
+            is Loadable.Loading -> LoadingState()
+            is Loadable.Empty -> NotFoundState()
+            is Loadable.Error ->
                 ErrorState(
                     message = content.message,
                     onRetry = viewModel::refresh,
                 )
-            is DetailsContent.Content ->
+            is Loadable.Content ->
                 DetailsContent(
-                    details = content.details,
+                    details = content.data,
                     onCallClick = {
-                        pendingConfirm = CallTarget(content.details.name, it.number)
+                        pendingConfirm = CallTarget(content.data.name, it.number)
                     },
                     onSmsClick = { openSms(context, it.number) },
                     onCopyClick = { copyNumber(context, it.number) },

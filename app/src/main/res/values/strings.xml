@@ -14,6 +14,7 @@
     <string name="phone_label_mobile">%1$s (mobile)</string>
 
     <string name="call_failed">Couldn\'t place the call</string>
+    <string name="dialer_failed">Couldn\'t open the dialer</string>
     <string name="call_no_permission_dialer">No permission to call — opening the dialer</string>
     <string name="action_call">Call</string>
     <string name="action_cancel">Cancel</string>
@@ -29,6 +30,7 @@
     <string name="action_back">Back</string>
     <string name="action_send_sms">SMS</string>
     <string name="action_copy_number">Copy</string>
+    <string name="fast_scroller_desc">Quick letter navigation</string>
     <string name="share_contact">Share contact</string>
     <string name="share_failed">Couldn\'t share the contact</string>
 

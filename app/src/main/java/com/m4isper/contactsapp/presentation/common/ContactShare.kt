@@ -2,7 +2,6 @@ package com.m4isper.contactsapp.presentation.common
 
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.m4isper.contactsapp.R
@@ -43,7 +42,8 @@ internal fun shareContact(
     details: ContactDetails,
 ) {
     runCatching {
-        val file = File(context.cacheDir, "contact_${details.contactId}.vcf")
+        // Одно фиксированное имя: повторные шаринги перезаписывают файл, кэш не растёт.
+        val file = File(context.cacheDir, "shared_contact.vcf")
         file.writeText(buildVCard(details))
         val uri =
             FileProvider.getUriForFile(
@@ -64,7 +64,7 @@ internal fun shareContact(
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
         )
     }.onFailure { e ->
-        Log.w(SHARE_TAG, "shareContact failed", e)
+        logw(SHARE_TAG, "shareContact failed", e)
         Toast
             .makeText(
                 context,

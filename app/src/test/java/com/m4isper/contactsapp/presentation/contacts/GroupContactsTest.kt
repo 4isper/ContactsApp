@@ -87,4 +87,25 @@ class GroupContactsTest {
     fun `letter indices of empty map is empty`() {
         assertTrue(letterIndices(emptyMap()).isEmpty())
     }
+
+    @Test
+    fun `letter index at maps touch position to index`() {
+        // 4 буквы на высоте 1000px: каждая занимает 250px.
+        assertEquals(0, letterIndexAt(y = 0f, height = 1000, size = 4))
+        assertEquals(0, letterIndexAt(y = 249f, height = 1000, size = 4))
+        assertEquals(1, letterIndexAt(y = 250f, height = 1000, size = 4))
+        assertEquals(3, letterIndexAt(y = 999f, height = 1000, size = 4))
+    }
+
+    @Test
+    fun `letter index at clamps out of bounds touches`() {
+        assertEquals(0, letterIndexAt(y = -50f, height = 1000, size = 4))
+        assertEquals(3, letterIndexAt(y = 5000f, height = 1000, size = 4))
+    }
+
+    @Test
+    fun `letter index at returns null for degenerate input`() {
+        assertEquals(null, letterIndexAt(y = 10f, height = 0, size = 4))
+        assertEquals(null, letterIndexAt(y = 10f, height = 1000, size = 0))
+    }
 }

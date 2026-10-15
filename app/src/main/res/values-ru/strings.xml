@@ -14,6 +14,7 @@
     <string name="phone_label_mobile">%1$s (mobile)</string>
 
     <string name="call_failed">Не удалось позвонить</string>
+    <string name="dialer_failed">Не удалось открыть набор номера</string>
     <string name="call_no_permission_dialer">Нет разрешения на звонки — открываю набор номера</string>
     <string name="action_call">Позвонить</string>
     <string name="action_cancel">Отмена</string>
@@ -29,6 +30,7 @@
     <string name="action_back">Назад</string>
     <string name="action_send_sms">SMS</string>
     <string name="action_copy_number">Копировать</string>
+    <string name="fast_scroller_desc">Быстрая навигация по буквам</string>
     <string name="share_contact">Поделиться контактом</string>
     <string name="share_failed">Не удалось поделиться контактом</string>
 

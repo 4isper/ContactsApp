@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -32,6 +33,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,6 +43,7 @@ import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.presentation.common.ContactAvatar
 import com.m4isper.contactsapp.presentation.common.ErrorState
+import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.LoadingState
 import kotlinx.coroutines.launch
 
@@ -82,16 +87,16 @@ internal fun ContactList(
         )
 
         when (val content = uiState.content) {
-            is ContactsContent.Loading -> LoadingState()
-            is ContactsContent.Empty -> EmptyState(isSearching = content.isSearching)
-            is ContactsContent.Error ->
+            is Loadable.Loading -> LoadingState()
+            is Loadable.Empty -> EmptyState(isSearching = uiState.isSearching)
+            is Loadable.Error ->
                 ErrorState(
                     message = content.message,
                     onRetry = onRetry,
                 )
-            is ContactsContent.Contacts ->
+            is Loadable.Content ->
                 GroupedContacts(
-                    contacts = content.items,
+                    contacts = content.data,
                     onContactClick = onContactClick,
                 )
         }
@@ -168,6 +173,7 @@ private fun GroupedContacts(
                 FastScroller(
                     letters = grouped.keys.toList(),
                     activeLetter = activeLetter,
+                    barDescription = stringResource(R.string.fast_scroller_desc),
                     onLetter = ::jumpTo,
                     onRelease = { activeLetter = null },
                 )
@@ -181,17 +187,34 @@ private fun GroupedContacts(
                 Text(
                     text = letter.toString(),
                     style = MaterialTheme.typography.displayLarge,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    modifier =
+                        Modifier
+                            .background(
+                                MaterialTheme.colorScheme.primary,
+                                CircleShape,
+                            ).padding(24.dp),
                 )
             }
         }
     }
 }
 
+/** Чистый маппинг Y-координаты касания в букву индекса. */
+internal fun letterIndexAt(
+    y: Float,
+    height: Int,
+    size: Int,
+): Int? {
+    if (height <= 0 || size <= 0) return null
+    return ((y / height) * size).toInt().coerceIn(0, size - 1)
+}
+
 @Composable
 private fun FastScroller(
     letters: List<Char>,
     activeLetter: Char?,
+    barDescription: String,
     onLetter: (Char) -> Unit,
     onRelease: () -> Unit,
     modifier: Modifier = Modifier,
@@ -199,11 +222,7 @@ private fun FastScroller(
     fun letterAt(
         y: Float,
         height: Int,
-    ): Char? {
-        if (height <= 0 || letters.isEmpty()) return null
-        val index = ((y / height) * letters.size).toInt().coerceIn(letters.indices)
-        return letters[index]
-    }
+    ): Char? = letterIndexAt(y, height, letters.size)?.let { letters[it] }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -212,7 +231,10 @@ private fun FastScroller(
             modifier
                 .fillMaxHeight()
                 .width(28.dp)
-                .pointerInput(letters) {
+                .semantics {
+                    contentDescription = barDescription
+                    stateDescription = activeLetter?.toString() ?: ""
+                }.pointerInput(letters) {
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false)
                         letterAt(down.position.y, size.height)?.let(onLetter)
