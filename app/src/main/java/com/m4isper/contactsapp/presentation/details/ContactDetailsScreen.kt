@@ -20,6 +20,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Message
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -53,6 +54,7 @@ import com.m4isper.contactsapp.presentation.common.LoadingState
 import com.m4isper.contactsapp.presentation.common.copyNumber
 import com.m4isper.contactsapp.presentation.common.onCallPermissionResult
 import com.m4isper.contactsapp.presentation.common.openSms
+import com.m4isper.contactsapp.presentation.common.shareContact
 import com.m4isper.contactsapp.presentation.common.tryPlaceCall
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
@@ -112,6 +114,17 @@ fun ContactDetailsScreen(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.action_back),
                         )
+                    }
+                },
+                actions = {
+                    val shareable = (uiState.content as? DetailsContent.Content)?.details
+                    if (shareable != null) {
+                        IconButton(onClick = { shareContact(context, shareable) }) {
+                            Icon(
+                                Icons.Filled.Share,
+                                contentDescription = stringResource(R.string.share_contact),
+                            )
+                        }
                     }
                 },
             )

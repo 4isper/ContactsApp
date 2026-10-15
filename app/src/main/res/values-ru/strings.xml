@@ -29,6 +29,8 @@
     <string name="action_back">Назад</string>
     <string name="action_send_sms">SMS</string>
     <string name="action_copy_number">Копировать</string>
+    <string name="share_contact">Поделиться контактом</string>
+    <string name="share_failed">Не удалось поделиться контактом</string>
 
     <plurals name="phone_count_extra">
         <item quantity="one">ещё %d номер</item>

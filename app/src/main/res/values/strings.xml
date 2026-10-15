@@ -29,6 +29,8 @@
     <string name="action_back">Back</string>
     <string name="action_send_sms">SMS</string>
     <string name="action_copy_number">Copy</string>
+    <string name="share_contact">Share contact</string>
+    <string name="share_failed">Couldn\'t share the contact</string>
 
     <plurals name="phone_count_extra">
         <item quantity="one">%d more number</item>
