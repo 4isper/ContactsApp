@@ -1,39 +1,37 @@
 <resources>
-    <string name="app_name">ContactsApp</string>
+    <string name="app_name">Contacts</string>
 
-    <string name="permission_contacts_rationale">Приложению нужно разрешение на доступ к контактам</string>
-    <string name="permission_allow">Разрешить</string>
-    <string name="permission_open_settings">Открыть настройки</string>
+    <string name="permission_contacts_rationale">The app needs permission to access your contacts</string>
+    <string name="permission_allow">Allow</string>
+    <string name="permission_open_settings">Open settings</string>
 
-    <string name="search_label">Поиск</string>
-    <string name="contacts_empty">Контакты не найдены</string>
-    <string name="contacts_nothing_found">Ничего не найдено</string>
-    <string name="contacts_load_error">Не удалось загрузить контакты</string>
-    <string name="action_retry">Повторить</string>
+    <string name="search_label">Search</string>
+    <string name="contacts_empty">No contacts found</string>
+    <string name="contacts_nothing_found">Nothing found</string>
+    <string name="contacts_load_error">Couldn\'t load contacts</string>
+    <string name="action_retry">Retry</string>
 
     <string name="phone_label_mobile">%1$s (mobile)</string>
 
-    <string name="call_failed">Не удалось позвонить</string>
-    <string name="call_no_permission_dialer">Нет разрешения на звонки — открываю набор номера</string>
-    <string name="action_call">Позвонить</string>
-    <string name="action_cancel">Отмена</string>
+    <string name="call_failed">Couldn\'t place the call</string>
+    <string name="call_no_permission_dialer">No permission to call — opening the dialer</string>
+    <string name="action_call">Call</string>
+    <string name="action_cancel">Cancel</string>
 
-    <string name="phone_type_mobile">Мобильный</string>
-    <string name="phone_type_home">Домашний</string>
-    <string name="phone_type_work">Рабочий</string>
-    <string name="phone_type_other">Другой</string>
+    <string name="phone_type_mobile">Mobile</string>
+    <string name="phone_type_home">Home</string>
+    <string name="phone_type_work">Work</string>
+    <string name="phone_type_other">Other</string>
 
-    <string name="contact_not_found">Контакт не найден</string>
-    <string name="copied_to_clipboard">Номер скопирован</string>
-    <string name="sms_failed">Не удалось открыть сообщения</string>
-    <string name="action_back">Назад</string>
+    <string name="contact_not_found">Contact not found</string>
+    <string name="copied_to_clipboard">Number copied</string>
+    <string name="sms_failed">Couldn\'t open messaging</string>
+    <string name="action_back">Back</string>
     <string name="action_send_sms">SMS</string>
-    <string name="action_copy_number">Копировать</string>
+    <string name="action_copy_number">Copy</string>
 
     <plurals name="phone_count_extra">
-        <item quantity="one">ещё %d номер</item>
-        <item quantity="few">ещё %d номера</item>
-        <item quantity="many">ещё %d номеров</item>
-        <item quantity="other">ещё %d номера</item>
+        <item quantity="one">%d more number</item>
+        <item quantity="other">%d more numbers</item>
     </plurals>
 </resources>
