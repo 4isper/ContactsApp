@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
@@ -20,6 +21,8 @@ import java.util.Locale
 
 data class ContactsUiState(
     val searchQuery: String = "",
+    val showFavoritesOnly: Boolean = false,
+    val favorites: Set<Long> = emptySet(),
     val content: Loadable<List<ContactDetails>> = Loadable.Loading,
 ) {
     val isSearching: Boolean
@@ -28,38 +31,68 @@ data class ContactsUiState(
 
 internal const val SUBSCRIBE_TIMEOUT_MILLIS = 5_000L
 
+private data class ContactsLoad(
+    val all: List<ContactDetails>,
+    val loading: Boolean,
+    val query: String,
+    val failure: Throwable?,
+)
+
 @Inject
 @ViewModelKey
 @ContributesIntoMap(AppScope::class)
 class ContactsViewModel(
     private val getContactsUseCase: GetContactsUseCase,
+    observeFavoritesUseCase: ObserveFavoritesUseCase,
 ) : ViewModel() {
     private val allContacts = MutableStateFlow<List<ContactDetails>>(emptyList())
     private val isLoading = MutableStateFlow(false)
     private val searchQueryFlow = MutableStateFlow("")
     private val loadFailure = MutableStateFlow<Throwable?>(null)
+    private val favoritesOnlyFlow = MutableStateFlow(false)
+
+    private val favoritesFlow: StateFlow<Set<Long>> =
+        observeFavoritesUseCase()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(SUBSCRIBE_TIMEOUT_MILLIS),
+                initialValue = emptySet(),
+            )
 
     val uiState: StateFlow<ContactsUiState> =
-        combine(allContacts, isLoading, searchQueryFlow, loadFailure) { all, loading, query, failure ->
-            val trimmed = query.trim()
+        combine(
+            combine(allContacts, isLoading, searchQueryFlow, loadFailure, ::ContactsLoad),
+            favoritesFlow,
+            favoritesOnlyFlow,
+        ) { load, favorites, favoritesOnly ->
+            val trimmed = load.query.trim()
             val visible =
-                if (trimmed.isBlank()) {
-                    all
-                } else {
-                    val q = trimmed.lowercase(Locale.ROOT)
-                    all.filter { contact ->
-                        contact.name.lowercase(Locale.ROOT).contains(q) ||
-                            contact.phones.any { it.number.contains(trimmed) }
+                load.all
+                    .filter { !favoritesOnly || it.contactId in favorites }
+                    .let { list ->
+                        if (trimmed.isBlank()) {
+                            list
+                        } else {
+                            val q = trimmed.lowercase(Locale.ROOT)
+                            list.filter { contact ->
+                                contact.name.lowercase(Locale.ROOT).contains(q) ||
+                                    contact.phones.any { it.number.contains(trimmed) }
+                            }
+                        }
                     }
-                }
             val content =
                 when {
-                    failure != null -> Loadable.Error(failure.message)
-                    loading && visible.isEmpty() -> Loadable.Loading
+                    load.failure != null -> Loadable.Error(load.failure.message)
+                    load.loading && visible.isEmpty() -> Loadable.Loading
                     visible.isEmpty() -> Loadable.Empty
                     else -> Loadable.Content(visible)
                 }
-            ContactsUiState(searchQuery = query, content = content)
+            ContactsUiState(
+                searchQuery = load.query,
+                showFavoritesOnly = favoritesOnly,
+                favorites = favorites,
+                content = content,
+            )
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(SUBSCRIBE_TIMEOUT_MILLIS),
@@ -68,6 +101,10 @@ class ContactsViewModel(
 
     fun onSearchQueryChange(query: String) {
         searchQueryFlow.value = query
+    }
+
+    fun onToggleFavoritesOnly() {
+        favoritesOnlyFlow.value = !favoritesOnlyFlow.value
     }
 
     // Catch-all осознанный: любая ошибка загрузки превращается в Error-стейт.

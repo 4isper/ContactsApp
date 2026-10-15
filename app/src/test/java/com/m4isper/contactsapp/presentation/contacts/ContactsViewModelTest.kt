@@ -4,10 +4,15 @@ import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
+import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -32,7 +37,11 @@ private fun details(
 private class FakeContactsRepository(
     var contacts: List<ContactDetails> = emptyList(),
     var failure: Throwable? = null,
-) : ContactsRepository {
+    initialFavorites: Set<Long> = emptySet(),
+) : ContactsRepository,
+    FavoritesRepository {
+    private val favoritesFlow = MutableStateFlow(initialFavorites)
+
     override suspend fun getContacts(): List<ContactDetails> {
         failure?.let { throw it }
         return contacts
@@ -41,6 +50,18 @@ private class FakeContactsRepository(
     override suspend fun getContactDetails(contactId: Long): ContactDetails? {
         failure?.let { throw it }
         return contacts.firstOrNull { it.contactId == contactId }
+    }
+
+    override fun observeFavorites(): Flow<Set<Long>> = favoritesFlow.asStateFlow()
+
+    override suspend fun toggleFavorite(contactId: Long) {
+        val current = favoritesFlow.value
+        favoritesFlow.value =
+            if (contactId in current) {
+                current - contactId
+            } else {
+                current + contactId
+            }
     }
 }
 
@@ -51,7 +72,11 @@ class ContactsViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun viewModel(repository: FakeContactsRepository) = ContactsViewModel(GetContactsUseCase(repository))
+    private fun viewModel(repository: FakeContactsRepository) =
+        ContactsViewModel(
+            GetContactsUseCase(repository),
+            ObserveFavoritesUseCase(repository),
+        )
 
     @Test
     fun `refresh emits loaded contacts`() =
@@ -201,5 +226,53 @@ class ContactsViewModelTest {
             val content = viewModel.uiState.value.content
             assertTrue(content is Loadable.Empty)
             assertEquals(false, viewModel.uiState.value.isSearching)
+        }
+
+    @Test
+    fun `favorites only filter shows only favorites`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(
+                    listOf(
+                        details(1, "Anna", "111"),
+                        details(2, "Bob", "222"),
+                    ),
+                    initialFavorites = setOf(2),
+                )
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            viewModel.onToggleFavoritesOnly()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertTrue(state.showFavoritesOnly)
+            val content = state.content
+            assertTrue(content is Loadable.Content)
+            assertEquals(listOf("Bob"), (content as Loadable.Content).data.map { it.name })
+        }
+
+    @Test
+    fun `favorites only with no favorites emits empty`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(
+                    listOf(details(1, "Anna", "111")),
+                )
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            viewModel.onToggleFavoritesOnly()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertTrue(state.content is Loadable.Empty)
+            assertEquals(false, state.isSearching)
         }
 }

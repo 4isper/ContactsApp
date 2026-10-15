@@ -31,6 +31,9 @@
     <string name="action_send_sms">SMS</string>
     <string name="action_copy_number">Copy</string>
     <string name="fast_scroller_desc">Quick letter navigation</string>
+    <string name="filter_favorites">Favorites</string>
+    <string name="favorites_empty">No favorite contacts</string>
+    <string name="action_toggle_favorite">Toggle favorite</string>
     <string name="share_contact">Share contact</string>
     <string name="share_failed">Couldn\'t share the contact</string>
 

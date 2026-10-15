@@ -62,6 +62,7 @@ dependencies {
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.kotlinx.serialization.core)
     implementation(libs.coil.compose)
+    implementation(libs.androidx.datastore.preferences)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)

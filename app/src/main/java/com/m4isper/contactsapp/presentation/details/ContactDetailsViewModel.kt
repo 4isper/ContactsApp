@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
+import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
+import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.contacts.SUBSCRIBE_TIMEOUT_MILLIS
 import dev.zacsweers.metro.AppScope
@@ -20,6 +22,7 @@ import kotlinx.coroutines.launch
 
 data class DetailsUiState(
     val content: Loadable<ContactDetails> = Loadable.Loading,
+    val isFavorite: Boolean = false,
 )
 
 @Inject
@@ -27,14 +30,24 @@ data class DetailsUiState(
 @ContributesIntoMap(AppScope::class)
 class ContactDetailsViewModel(
     private val getContactDetailsUseCase: GetContactDetailsUseCase,
+    private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
+    observeFavoritesUseCase: ObserveFavoritesUseCase,
 ) : ViewModel() {
     private val selectedContactId = MutableStateFlow<Long?>(null)
     private val loadedDetails = MutableStateFlow<ContactDetails?>(null)
     private val isLoading = MutableStateFlow(false)
     private val loadFailure = MutableStateFlow<Throwable?>(null)
 
+    private val favoritesFlow: StateFlow<Set<Long>> =
+        observeFavoritesUseCase()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(SUBSCRIBE_TIMEOUT_MILLIS),
+                initialValue = emptySet(),
+            )
+
     val uiState: StateFlow<DetailsUiState> =
-        combine(loadedDetails, isLoading, loadFailure) { details, loading, failure ->
+        combine(loadedDetails, isLoading, loadFailure, favoritesFlow) { details, loading, failure, favorites ->
             val content =
                 when {
                     failure != null -> Loadable.Error(failure.message)
@@ -42,7 +55,10 @@ class ContactDetailsViewModel(
                     details == null -> Loadable.Empty
                     else -> Loadable.Content(details)
                 }
-            DetailsUiState(content)
+            DetailsUiState(
+                content = content,
+                isFavorite = details?.contactId in favorites,
+            )
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(SUBSCRIBE_TIMEOUT_MILLIS),
@@ -54,6 +70,13 @@ class ContactDetailsViewModel(
         selectedContactId.value = contactId
         loadedDetails.value = null
         refresh()
+    }
+
+    fun toggleFavorite() {
+        val contactId = selectedContactId.value ?: return
+        viewModelScope.launch {
+            toggleFavoriteUseCase(contactId)
+        }
     }
 
     // Catch-all осознанный: любая ошибка загрузки превращается в Error-стейт.

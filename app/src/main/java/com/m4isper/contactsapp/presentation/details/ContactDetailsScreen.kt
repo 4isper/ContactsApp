@@ -18,6 +18,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -110,8 +113,10 @@ fun ContactDetailsScreen(
                     (uiState.content as? Loadable.Content)?.data?.name
                         ?: stringResource(R.string.app_name),
                 shareable = (uiState.content as? Loadable.Content)?.data,
+                isFavorite = uiState.isFavorite,
                 onBack = onBack,
                 onShare = { shareContact(context, it) },
+                onToggleFavorite = viewModel::toggleFavorite,
             )
         },
     ) { innerPadding ->
@@ -159,13 +164,18 @@ fun ContactDetailsScreen(
 private fun DetailsTopBar(
     title: String?,
     shareable: ContactDetails?,
+    isFavorite: Boolean,
     onBack: () -> Unit,
     onShare: (ContactDetails) -> Unit,
+    onToggleFavorite: () -> Unit,
 ) {
     TopAppBar(
         title = { Text(title ?: stringResource(R.string.action_back)) },
         navigationIcon = {
-            IconButton(onClick = onBack) {
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier.testTag("back_button"),
+            ) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = stringResource(R.string.action_back),
@@ -174,6 +184,25 @@ private fun DetailsTopBar(
         },
         actions = {
             if (shareable != null) {
+                IconButton(
+                    onClick = onToggleFavorite,
+                    modifier = Modifier.testTag("favorite_button"),
+                ) {
+                    Icon(
+                        if (isFavorite) {
+                            Icons.Filled.Favorite
+                        } else {
+                            Icons.Filled.FavoriteBorder
+                        },
+                        contentDescription = stringResource(R.string.action_toggle_favorite),
+                        tint =
+                            if (isFavorite) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
+                    )
+                }
                 IconButton(onClick = { onShare(shareable) }) {
                     Icon(
                         Icons.Filled.Share,
@@ -265,7 +294,8 @@ private fun PhoneRow(
             modifier
                 .fillMaxWidth()
                 .clickable { onClick() }
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .testTag("phone_row_${phone.number}"),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {

@@ -57,6 +57,7 @@ fun ContactsScreen(
         ContactList(
             uiState = uiState,
             onSearchQueryChange = viewModel::onSearchQueryChange,
+            onFavoritesOnlyChange = viewModel::onToggleFavoritesOnly,
             onContactClick = onContactClick,
             onRetry = viewModel::refresh,
             modifier = modifier,
