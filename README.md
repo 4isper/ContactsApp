@@ -15,21 +15,22 @@ A native Android contacts manager built with modern Jetpack libraries and Clean 
 
 ## Architecture
 
-Clean Architecture with a strict dependency rule — `presentation → domain ← data`:
+Multi-module Clean Architecture with a build-enforced dependency rule — `:domain` (pure JVM) ← `:data` (android-library) ← `:app`:
 
 ```
-app/src/main/java/com/m4isper/contactsapp/
-├── presentation/   # screens, ViewModels, UiState (contacts/, details/, editor/, common/, navigation/)
-├── domain/         # pure models, repository interfaces, use cases
-├── data/           # ContentResolver sources, repository implementations
-├── di/             # Metro dependency graph
-└── ui/             # design system: theme tokens + components
+ContactsApp/
+├── domain/   # pure models, repository interfaces, use cases (+ fast JVM tests)
+├── data/     # ContentResolver sources, repository implementations
+└── app/      # presentation/, di/, ui/
+    ├── presentation/   # screens, ViewModels, UiState (contacts/, details/, editor/, common/, navigation/)
+    ├── di/             # Metro dependency graph (needs :data on classpath for codegen)
+    └── ui/             # design system: theme tokens + components
 ```
 
 - **DI — Metro** (compile-time, no KSP/KAPT) instead of Hilt: smaller generated code, faster builds.
 - **Navigation — Navigation 3** (`NavDisplay` + `NavBackStack`) with Material adaptive `ListDetailSceneStrategy` for tablets/foldables and custom slide/fade transition specs.
 - **State** — single `UiState` + sealed `Loadable<T>` (Loading/Empty/Content/Error) per screen.
-- **Static analysis** — Detekt + ktlint are part of the build (`detekt`, `ktlintCheck`).
+- **Static analysis** — Detekt + ktlint applied to every module (`detekt`, `ktlintCheck`).
 
 ## Stack
 
@@ -48,7 +49,7 @@ Android permissions used: `READ_CONTACTS` (list), `WRITE_CONTACTS` (editor), `CA
 
 ```bash
 ./gradlew :app:assembleDebug          # debug APK
-./gradlew :app:testDebugUnitTest      # 50 unit tests
+./gradlew :domain:test :data:testDebugUnitTest :app:testDebugUnitTest  # 50 unit tests
 ./gradlew :app:connectedDebugAndroidTest  # 16 Compose UI tests (needs a running emulator)
-./gradlew :app:detekt :app:ktlintCheck    # static analysis
+./gradlew detekt ktlintCheck          # static analysis, all modules
 ```
