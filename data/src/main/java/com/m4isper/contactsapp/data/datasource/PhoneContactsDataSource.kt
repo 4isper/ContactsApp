@@ -2,7 +2,6 @@ package com.m4isper.contactsapp.data.datasource
 
 import android.content.Context
 import android.provider.ContactsContract
-import com.m4isper.contactsapp.di.AppContext
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
@@ -81,7 +80,7 @@ internal fun aggregateContacts(rows: List<PhoneRow>): List<ContactDetails> =
 @Inject
 @SingleIn(AppScope::class)
 class PhoneContactsDataSource(
-    @AppContext private val context: Context,
+    private val context: Context,
 ) {
     suspend fun loadContacts(): List<ContactDetails> =
         withContext(Dispatchers.IO) {

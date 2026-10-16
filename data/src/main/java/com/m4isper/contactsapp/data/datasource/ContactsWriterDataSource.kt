@@ -6,7 +6,6 @@ import android.content.Context
 import android.provider.ContactsContract
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
-import com.m4isper.contactsapp.di.AppContext
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.EditablePhone
 import com.m4isper.contactsapp.domain.model.PhoneKind
@@ -163,7 +162,7 @@ internal fun buildUpdateOperations(
 @Inject
 @SingleIn(AppScope::class)
 class ContactsWriterDataSource(
-    @AppContext private val context: Context,
+    private val context: Context,
 ) {
     suspend fun createContact(form: ContactForm): Unit =
         withContext(Dispatchers.IO) {
