@@ -18,6 +18,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 @RunWith(AndroidJUnit4::class)
 class ContactListUiTest {
@@ -35,6 +37,7 @@ class ContactListUiTest {
                 onSearchQueryChange = {},
                 onFavoritesOnlyChange = {},
                 onContactClick = {},
+                onAddClick = {},
                 onRetry = {},
                 onRefresh = {},
             )
@@ -46,13 +49,14 @@ class ContactListUiTest {
 
     @Test
     fun contactRowClickReportsContactId() {
-        var clicked: Long? = null
+        val clicked = AtomicReference<Long?>(null)
         compose.setContent {
             ContactList(
                 uiState = ContactsUiState(content = Loadable.Content(listOf(anna, bob))),
                 onSearchQueryChange = {},
                 onFavoritesOnlyChange = {},
-                onContactClick = { clicked = it },
+                onContactClick = { clicked.set(it) },
+                onAddClick = {},
                 onRetry = {},
                 onRefresh = {},
             )
@@ -60,18 +64,19 @@ class ContactListUiTest {
 
         compose.onNodeWithTag("contact_row_2").performClick()
 
-        assertEquals(2L, clicked)
+        assertEquals(2L, clicked.get())
     }
 
     @Test
     fun favoritesChipClickReportsToggle() {
-        var toggled = false
+        val toggled = AtomicBoolean(false)
         compose.setContent {
             ContactList(
                 uiState = ContactsUiState(content = Loadable.Content(listOf(anna))),
                 onSearchQueryChange = {},
-                onFavoritesOnlyChange = { toggled = true },
+                onFavoritesOnlyChange = { toggled.set(true) },
                 onContactClick = {},
+                onAddClick = {},
                 onRetry = {},
                 onRefresh = {},
             )
@@ -79,7 +84,7 @@ class ContactListUiTest {
 
         compose.onNodeWithTag("favorites_chip").performClick()
 
-        assertEquals(true, toggled)
+        assertEquals(true, toggled.get())
     }
 
     @Test
@@ -97,6 +102,7 @@ class ContactListUiTest {
                 onSearchQueryChange = viewModel::onSearchQueryChange,
                 onFavoritesOnlyChange = viewModel::onToggleFavoritesOnly,
                 onContactClick = {},
+                onAddClick = {},
                 onRetry = viewModel::refresh,
                 onRefresh = viewModel::refresh,
             )
@@ -115,5 +121,25 @@ class ContactListUiTest {
         }
         compose.onNodeWithTag("contact_row_1").assertIsDisplayed()
         compose.onNodeWithTag("contact_row_2").assertDoesNotExist()
+    }
+
+    @Test
+    fun addFabClickReportsAdd() {
+        val added = AtomicBoolean(false)
+        compose.setContent {
+            ContactList(
+                uiState = ContactsUiState(content = Loadable.Content(listOf(anna))),
+                onSearchQueryChange = {},
+                onFavoritesOnlyChange = {},
+                onContactClick = {},
+                onAddClick = { added.set(true) },
+                onRetry = {},
+                onRefresh = {},
+            )
+        }
+
+        compose.onNodeWithTag("add_contact_fab").performClick()
+
+        assertEquals(true, added.get())
     }
 }

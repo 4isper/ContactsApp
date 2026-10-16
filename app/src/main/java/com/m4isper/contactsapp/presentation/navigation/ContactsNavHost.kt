@@ -23,6 +23,7 @@ import androidx.navigation3.ui.NavDisplay
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.presentation.contacts.ContactsScreen
 import com.m4isper.contactsapp.presentation.details.ContactDetailsScreen
+import com.m4isper.contactsapp.presentation.editor.ContactEditorScreen
 import com.m4isper.contactsapp.ui.components.EmptyState
 import kotlinx.serialization.Serializable
 
@@ -32,6 +33,11 @@ data object ContactsListKey : NavKey
 @Serializable
 data class ContactDetailsKey(
     val contactId: Long,
+) : NavKey
+
+@Serializable
+data class ContactEditorKey(
+    val contactId: Long? = null,
 ) : NavKey
 
 /**
@@ -93,6 +99,9 @@ fun ContactsNavHost(modifier: Modifier = Modifier) {
                             onContactClick = { contactId ->
                                 navigateToDetails(backStack, contactId)
                             },
+                            onAddClick = {
+                                backStack.add(ContactEditorKey(null))
+                            },
                         )
                     }
                     entry<ContactDetailsKey>(
@@ -100,6 +109,14 @@ fun ContactsNavHost(modifier: Modifier = Modifier) {
                     ) { key ->
                         ContactDetailsScreen(
                             contactId = key.contactId,
+                            onBack = dropUnlessResumed { backStack.removeLastOrNull() },
+                            onEdit = { backStack.add(ContactEditorKey(key.contactId)) },
+                        )
+                    }
+                    entry<ContactEditorKey> { key ->
+                        ContactEditorScreen(
+                            contactId = key.contactId,
+                            onDone = { backStack.removeLastOrNull() },
                             onBack = dropUnlessResumed { backStack.removeLastOrNull() },
                         )
                     }

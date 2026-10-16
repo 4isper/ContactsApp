@@ -18,6 +18,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.concurrent.atomic.AtomicBoolean
 
 @RunWith(AndroidJUnit4::class)
 class ContactDetailsUiTest {
@@ -41,7 +42,7 @@ class ContactDetailsUiTest {
     fun showsNameAndNumbers() {
         val viewModel = viewModel(FakeAndroidRepository(listOf(testDetails(7, "Anna", "111", "112"))))
         compose.setContent {
-            ContactDetailsScreen(contactId = 7, onBack = {}, viewModel = viewModel)
+            ContactDetailsScreen(contactId = 7, onBack = {}, onEdit = {}, viewModel = viewModel)
         }
         awaitContent(viewModel)
 
@@ -55,7 +56,7 @@ class ContactDetailsUiTest {
     fun showsNotFoundForUnknownContact() {
         val viewModel = viewModel(FakeAndroidRepository())
         compose.setContent {
-            ContactDetailsScreen(contactId = 42, onBack = {}, viewModel = viewModel)
+            ContactDetailsScreen(contactId = 42, onBack = {}, onEdit = {}, viewModel = viewModel)
         }
         compose.waitUntil(timeoutMillis = 5_000) {
             viewModel.uiState.value.content is Loadable.Empty
@@ -68,7 +69,7 @@ class ContactDetailsUiTest {
     fun phoneTapOpensConfirmDialogAndDismissClosesIt() {
         val viewModel = viewModel(FakeAndroidRepository(listOf(testDetails(7, "Anna", "111"))))
         compose.setContent {
-            ContactDetailsScreen(contactId = 7, onBack = {}, viewModel = viewModel)
+            ContactDetailsScreen(contactId = 7, onBack = {}, onEdit = {}, viewModel = viewModel)
         }
         awaitContent(viewModel)
 
@@ -83,7 +84,7 @@ class ContactDetailsUiTest {
     fun starTogglesFavoriteState() {
         val viewModel = viewModel(FakeAndroidRepository(listOf(testDetails(7, "Anna", "111"))))
         compose.setContent {
-            ContactDetailsScreen(contactId = 7, onBack = {}, viewModel = viewModel)
+            ContactDetailsScreen(contactId = 7, onBack = {}, onEdit = {}, viewModel = viewModel)
         }
         awaitContent(viewModel)
         assertEquals(false, viewModel.uiState.value.isFavorite)
@@ -101,15 +102,34 @@ class ContactDetailsUiTest {
 
     @Test
     fun backButtonReportsOnBack() {
-        var backed = false
+        val backed = AtomicBoolean(false)
         val viewModel = viewModel(FakeAndroidRepository(listOf(testDetails(7, "Anna", "111"))))
         compose.setContent {
-            ContactDetailsScreen(contactId = 7, onBack = { backed = true }, viewModel = viewModel)
+            ContactDetailsScreen(contactId = 7, onBack = { backed.set(true) }, onEdit = {}, viewModel = viewModel)
         }
         awaitContent(viewModel)
 
         compose.onNodeWithTag("back_button").performClick()
 
-        assertEquals(true, backed)
+        assertEquals(true, backed.get())
+    }
+
+    @Test
+    fun editButtonReportsOnEdit() {
+        val edited = AtomicBoolean(false)
+        val viewModel = viewModel(FakeAndroidRepository(listOf(testDetails(7, "Anna", "111"))))
+        compose.setContent {
+            ContactDetailsScreen(
+                contactId = 7,
+                onBack = {},
+                onEdit = { edited.set(true) },
+                viewModel = viewModel,
+            )
+        }
+        awaitContent(viewModel)
+
+        compose.onNodeWithTag("edit_button").performClick()
+
+        assertEquals(true, edited.get())
     }
 }

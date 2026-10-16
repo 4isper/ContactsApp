@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Message
@@ -72,6 +73,7 @@ private data class CallTarget(
 fun ContactDetailsScreen(
     contactId: Long,
     onBack: () -> Unit,
+    onEdit: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ContactDetailsViewModel = metroViewModel(),
 ) {
@@ -100,6 +102,7 @@ fun ContactDetailsScreen(
                 shareable = (uiState.content as? Loadable.Content)?.data,
                 isFavorite = uiState.isFavorite,
                 onBack = onBack,
+                onEdit = onEdit,
                 onShare = { shareContact(context, it) },
                 onToggleFavorite = viewModel::toggleFavorite,
             )
@@ -155,6 +158,7 @@ private fun DetailsTopBar(
     shareable: ContactDetails?,
     isFavorite: Boolean,
     onBack: () -> Unit,
+    onEdit: () -> Unit,
     onShare: (ContactDetails) -> Unit,
     onToggleFavorite: () -> Unit,
 ) {
@@ -173,6 +177,15 @@ private fun DetailsTopBar(
         },
         actions = {
             if (shareable != null) {
+                IconButton(
+                    onClick = onEdit,
+                    modifier = Modifier.testTag("edit_button"),
+                ) {
+                    Icon(
+                        Icons.Filled.Edit,
+                        contentDescription = stringResource(R.string.action_edit),
+                    )
+                }
                 IconButton(
                     onClick = onToggleFavorite,
                     modifier = Modifier.testTag("favorite_button"),

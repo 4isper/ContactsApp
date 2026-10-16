@@ -36,4 +36,11 @@ class FavoritesDataSource(
             prefs[FAVORITE_IDS] = if (id in current) current - id else current + id
         }
     }
+
+    suspend fun remove(contactId: Long) {
+        context.favoritesDataStore.edit { prefs ->
+            val current = prefs[FAVORITE_IDS] ?: emptySet()
+            prefs[FAVORITE_IDS] = current - contactId.toString()
+        }
+    }
 }

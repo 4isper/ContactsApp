@@ -17,4 +17,6 @@ class FavoritesRepositoryImpl(
     override fun observeFavorites(): Flow<Set<Long>> = dataSource.favorites
 
     override suspend fun toggleFavorite(contactId: Long) = dataSource.toggle(contactId)
+
+    override suspend fun removeFavorite(contactId: Long) = dataSource.remove(contactId)
 }

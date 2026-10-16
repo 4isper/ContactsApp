@@ -1,6 +1,7 @@
 package com.m4isper.contactsapp.presentation.details
 
 import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
@@ -38,6 +39,8 @@ private class FakeDetailsRepository(
         return contacts
     }
 
+    override suspend fun getContactForm(contactId: Long): ContactForm? = null
+
     override suspend fun getContactDetails(contactId: Long): ContactDetails? {
         failure?.let { throw it }
         return contacts.firstOrNull { it.contactId == contactId }
@@ -54,6 +57,19 @@ private class FakeDetailsRepository(
                 current + contactId
             }
     }
+
+    override suspend fun removeFavorite(contactId: Long) {
+        favoritesFlow.value = favoritesFlow.value - contactId
+    }
+
+    override suspend fun createContact(form: ContactForm) = Unit
+
+    override suspend fun updateContact(
+        contactId: Long,
+        form: ContactForm,
+    ) = Unit
+
+    override suspend fun deleteContact(contactId: Long) = Unit
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -133,6 +149,8 @@ class ContactDetailsViewModelTest {
                 object : ContactsRepository, FavoritesRepository {
                     override suspend fun getContacts(): List<ContactDetails> = emptyList()
 
+                    override suspend fun getContactForm(contactId: Long): ContactForm? = null
+
                     override suspend fun getContactDetails(contactId: Long): ContactDetails? {
                         calls++
                         return null
@@ -141,6 +159,17 @@ class ContactDetailsViewModelTest {
                     override fun observeFavorites(): Flow<Set<Long>> = MutableStateFlow(emptySet())
 
                     override suspend fun toggleFavorite(contactId: Long) = Unit
+
+                    override suspend fun removeFavorite(contactId: Long) = Unit
+
+                    override suspend fun createContact(form: ContactForm) = Unit
+
+                    override suspend fun updateContact(
+                        contactId: Long,
+                        form: ContactForm,
+                    ) = Unit
+
+                    override suspend fun deleteContact(contactId: Long) = Unit
                 }
             val viewModel =
                 ContactDetailsViewModel(

@@ -20,6 +20,7 @@ import dev.zacsweers.metrox.viewmodel.metroViewModel
 @Composable
 fun ContactsScreen(
     onContactClick: (Long) -> Unit,
+    onAddClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ContactsViewModel = metroViewModel(),
 ) {
@@ -59,6 +60,7 @@ fun ContactsScreen(
             onSearchQueryChange = viewModel::onSearchQueryChange,
             onFavoritesOnlyChange = viewModel::onToggleFavoritesOnly,
             onContactClick = onContactClick,
+            onAddClick = onAddClick,
             onRetry = viewModel::refresh,
             onRefresh = viewModel::refresh,
             modifier = modifier,

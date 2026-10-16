@@ -1,6 +1,7 @@
 package com.m4isper.contactsapp.presentation.contacts
 
 import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
@@ -47,6 +48,8 @@ private class FakeContactsRepository(
         return contacts
     }
 
+    override suspend fun getContactForm(contactId: Long): ContactForm? = null
+
     override suspend fun getContactDetails(contactId: Long): ContactDetails? {
         failure?.let { throw it }
         return contacts.firstOrNull { it.contactId == contactId }
@@ -63,6 +66,19 @@ private class FakeContactsRepository(
                 current + contactId
             }
     }
+
+    override suspend fun removeFavorite(contactId: Long) {
+        favoritesFlow.value = favoritesFlow.value - contactId
+    }
+
+    override suspend fun createContact(form: ContactForm) = Unit
+
+    override suspend fun updateContact(
+        contactId: Long,
+        form: ContactForm,
+    ) = Unit
+
+    override suspend fun deleteContact(contactId: Long) = Unit
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)

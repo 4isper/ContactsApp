@@ -1,6 +1,7 @@
 package com.m4isper.contactsapp.domain.usecase
 
 import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
@@ -24,8 +25,19 @@ private class StubContactsRepository(
 ) : ContactsRepository {
     override suspend fun getContacts(): List<ContactDetails> = contacts
 
+    override suspend fun getContactForm(contactId: Long): ContactForm? = null
+
     override suspend fun getContactDetails(contactId: Long): ContactDetails? =
         contacts.firstOrNull { it.contactId == contactId }
+
+    override suspend fun createContact(form: ContactForm) = Unit
+
+    override suspend fun updateContact(
+        contactId: Long,
+        form: ContactForm,
+    ) = Unit
+
+    override suspend fun deleteContact(contactId: Long) = Unit
 }
 
 class GetContactsUseCaseTest {

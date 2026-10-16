@@ -22,6 +22,7 @@ internal fun PermissionRequest(
     onGrantClick: () -> Unit,
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
+    rationale: String? = null,
 ) {
     Box(
         modifier = modifier.fillMaxSize(),
@@ -32,7 +33,7 @@ internal fun PermissionRequest(
             modifier = Modifier.padding(24.dp),
         ) {
             Text(
-                text = stringResource(R.string.permission_contacts_rationale),
+                text = rationale ?: stringResource(R.string.permission_contacts_rationale),
                 textAlign = TextAlign.Center,
             )
             Spacer(modifier = Modifier.height(12.dp))

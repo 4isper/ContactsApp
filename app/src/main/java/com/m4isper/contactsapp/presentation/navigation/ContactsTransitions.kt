@@ -15,38 +15,43 @@ internal const val NAV_TRANSITION_DURATION_MILLIS = 300
 
 private const val EXIT_PARALLAX_DIVISOR = 3
 
-private fun AnimatedContentTransitionScope<Scene<NavKey>>.isTwoPane(): Boolean = targetState.entries.size > 1
+private fun AnimatedContentTransitionScope<Scene<NavKey>>.isSameScene(): Boolean = initialState.key == targetState.key
+
+private fun slideForward(): ContentTransform =
+    (
+        slideInHorizontally(tween(NAV_TRANSITION_DURATION_MILLIS)) { it } +
+            fadeIn(tween(NAV_TRANSITION_DURATION_MILLIS))
+    ) togetherWith
+        (
+            slideOutHorizontally(tween(NAV_TRANSITION_DURATION_MILLIS)) {
+                -it / EXIT_PARALLAX_DIVISOR
+            } +
+                fadeOut(tween(NAV_TRANSITION_DURATION_MILLIS))
+        )
+
+private fun fadeInPlace(): ContentTransform =
+    fadeIn(tween(NAV_TRANSITION_DURATION_MILLIS)) togetherWith
+        fadeOut(tween(NAV_TRANSITION_DURATION_MILLIS))
 
 /**
- * Вперёд: на телефоне — системный слайд справа, на двух панелях список стоит,
- * детали мягко проявляются внутри своей панели.
+ * Вперёд: смена сцены (в т.ч. редактор на любом экране) — системный слайд справа,
+ * смена детали внутри той же двухпанельной сцены — мягкий фейд на месте.
  */
 internal fun contactsTransitionSpec(): AnimatedContentTransitionScope<Scene<NavKey>>.() -> ContentTransform =
     {
-        if (isTwoPane()) {
-            fadeIn(tween(NAV_TRANSITION_DURATION_MILLIS)) togetherWith
-                fadeOut(tween(NAV_TRANSITION_DURATION_MILLIS))
-        } else {
-            (
-                slideInHorizontally(tween(NAV_TRANSITION_DURATION_MILLIS)) { it } +
-                    fadeIn(tween(NAV_TRANSITION_DURATION_MILLIS))
-            ) togetherWith
-                (
-                    slideOutHorizontally(tween(NAV_TRANSITION_DURATION_MILLIS)) { -it / EXIT_PARALLAX_DIVISOR } +
-                        fadeOut(tween(NAV_TRANSITION_DURATION_MILLIS))
-                )
-        }
+        if (isSameScene()) fadeInPlace() else slideForward()
     }
 
-/** Назад: зеркально вперёд. */
+/** Назад и предиктивный жест — зеркально вперёд. */
 internal fun contactsPopTransitionSpec(): AnimatedContentTransitionScope<Scene<NavKey>>.() -> ContentTransform =
     {
-        if (isTwoPane()) {
-            fadeIn(tween(NAV_TRANSITION_DURATION_MILLIS)) togetherWith
-                fadeOut(tween(NAV_TRANSITION_DURATION_MILLIS))
+        if (isSameScene()) {
+            fadeInPlace()
         } else {
             (
-                slideInHorizontally(tween(NAV_TRANSITION_DURATION_MILLIS)) { -it / EXIT_PARALLAX_DIVISOR } +
+                slideInHorizontally(tween(NAV_TRANSITION_DURATION_MILLIS)) {
+                    -it / EXIT_PARALLAX_DIVISOR
+                } +
                     fadeIn(tween(NAV_TRANSITION_DURATION_MILLIS))
             ) togetherWith
                 (

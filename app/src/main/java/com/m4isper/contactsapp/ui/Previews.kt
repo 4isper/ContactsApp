@@ -75,6 +75,7 @@ private fun ContactListContent() {
         onSearchQueryChange = {},
         onFavoritesOnlyChange = {},
         onContactClick = {},
+        onAddClick = {},
         onRetry = {},
         onRefresh = {},
     )
