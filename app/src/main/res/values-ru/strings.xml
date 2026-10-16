@@ -1,0 +1,70 @@
+<resources>
+    <string name="app_name">Контакты</string>
+
+    <string name="permission_contacts_rationale">Приложению нужно разрешение на доступ к контактам</string>
+    <string name="permission_allow">Разрешить</string>
+    <string name="permission_open_settings">Открыть настройки</string>
+
+    <string name="search_label">Поиск</string>
+    <string name="contacts_empty">Контакты не найдены</string>
+    <string name="contacts_nothing_found">Ничего не найдено</string>
+    <string name="contacts_load_error">Не удалось загрузить контакты</string>
+    <string name="action_retry">Повторить</string>
+
+    <string name="phone_label_mobile">%1$s (mobile)</string>
+
+    <string name="call_failed">Не удалось позвонить</string>
+    <string name="dialer_failed">Не удалось открыть набор номера</string>
+    <string name="call_no_permission_dialer">Нет разрешения на звонки — открываю набор номера</string>
+    <string name="action_call">Позвонить</string>
+    <string name="action_cancel">Отмена</string>
+
+    <string name="phone_type_mobile">Мобильный</string>
+    <string name="phone_type_home">Домашний</string>
+    <string name="phone_type_work">Рабочий</string>
+    <string name="phone_type_other">Другой</string>
+
+    <string name="contact_not_found">Контакт не найден</string>
+    <string name="copied_to_clipboard">Номер скопирован</string>
+    <string name="sms_failed">Не удалось открыть сообщения</string>
+    <string name="action_back">Назад</string>
+    <string name="action_send_sms">SMS</string>
+    <string name="action_copy_number">Копировать</string>
+    <string name="fast_scroller_desc">Быстрая навигация по буквам</string>
+    <string name="permission_write_rationale">Приложению нужно разрешение на изменение контактов</string>
+    <string name="editor_title_new">Новый контакт</string>
+    <string name="editor_name_label">Имя</string>
+    <string name="editor_phone_label">Номер телефона</string>
+    <string name="editor_kind_label">Подпись</string>
+    <string name="editor_add_phone">Добавить номер</string>
+    <string name="editor_save">Сохранить</string>
+    <string name="editor_delete">Удалить контакт</string>
+    <string name="editor_delete_title">Удалить контакт?</string>
+    <string name="editor_delete_message">Это действие нельзя отменить</string>
+    <string name="action_delete">Удалить</string>
+    <string name="editor_discard_title">Отменить изменения?</string>
+    <string name="editor_discard_message">Несохранённые изменения будут потеряны</string>
+    <string name="action_discard">Не сохранять</string>
+    <string name="action_edit">Редактировать</string>
+    <string name="form_error_empty">Укажите имя или номер</string>
+    <string name="form_error_blank_phone">Заполните все номера или удалите пустые</string>
+    <string name="contact_select_prompt">Выберите контакт из списка</string>
+    <string name="filter_favorites">Избранное</string>
+    <string name="favorites_empty">Нет избранных контактов</string>
+    <string name="action_toggle_favorite">В избранное</string>
+    <string name="share_contact">Поделиться контактом</string>
+    <string name="share_failed">Не удалось поделиться контактом</string>
+
+    <plurals name="phone_count_extra">
+        <item quantity="one">ещё %d номер</item>
+        <item quantity="few">ещё %d номера</item>
+        <item quantity="many">ещё %d номеров</item>
+        <item quantity="other">ещё %d номера</item>
+    </plurals>
+    <plurals name="phone_count">
+        <item quantity="one">%d номер</item>
+        <item quantity="few">%d номера</item>
+        <item quantity="many">%d номеров</item>
+        <item quantity="other">%d номера</item>
+    </plurals>
+</resources>
