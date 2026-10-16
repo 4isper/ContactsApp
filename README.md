@@ -1,6 +1,6 @@
 # ContactsApp
 
-A native Android contacts manager built with modern Jetpack libraries and Clean Architecture: browse, search and favorite phone contacts, view details, create, edit, delete and share them (vCard), and place calls — in English and Russian, on phones, tablets and foldables, in light and dark themes.
+A native Android contacts manager built with modern Jetpack libraries and Clean Architecture: browse, search and favorite contacts, view details, create, edit, delete and share them (vCard), and place calls — in English and Russian, on phones, tablets and foldables, in light and dark themes.
 
 | Fold, dark theme | Phone, light theme, details |
 |---|---|
@@ -8,9 +8,9 @@ A native Android contacts manager built with modern Jetpack libraries and Clean 
 
 ## Features
 
-- Contact list: search, favorites filter, alphabetical grouping with fast scroller, pull-to-refresh
-- Contact details: phone numbers with type labels, photos, call (with confirmation), SMS, copy, vCard sharing, favorites toggle
-- Contact editor: create, update and delete contacts, dynamic phone rows, validation, unsaved-changes guard
+- Contact list: search by name, phone and email; favorites filter; alphabetical grouping with fast scroller; pull-to-refresh; phoneless contacts stay visible
+- Contact details: phones, emails, addresses, websites, organization, note and birthday; call (with confirmation), SMS, email, map, open link and copy actions; vCard sharing; favorites toggle
+- Contact editor: create, update and delete contacts; photo pick with preview and removal; dynamic typed rows for phones, emails, addresses and websites with custom labels; birthday picker with optional year; validation and unsaved-changes guard
 - Favorites persisted with DataStore; Material You dynamic color; adaptive two-pane layout on wide screens
 
 ## Architecture
@@ -49,7 +49,7 @@ Android permissions used: `READ_CONTACTS` (list), `WRITE_CONTACTS` (editor), `CA
 
 ```bash
 ./gradlew :app:assembleDebug          # debug APK
-./gradlew :domain:test :data:testDebugUnitTest :app:testDebugUnitTest  # 50 unit tests
-./gradlew :app:connectedDebugAndroidTest  # 16 Compose UI tests (needs a running emulator)
+./gradlew :domain:test :data:testDebugUnitTest :app:testDebugUnitTest  # 65 unit tests
+./gradlew :app:connectedDebugAndroidTest  # 17 Compose UI tests (needs a running emulator)
 ./gradlew detekt ktlintCheck          # static analysis, all modules
 ```
