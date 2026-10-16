@@ -6,7 +6,6 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.m4isper.contactsapp.di.AppContext
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
@@ -22,7 +21,7 @@ private val FAVORITE_IDS = stringSetPreferencesKey("favorite_contact_ids")
 @Inject
 @SingleIn(AppScope::class)
 class FavoritesDataSource(
-    @AppContext private val context: Context,
+    private val context: Context,
 ) {
     val favorites: Flow<Set<Long>> =
         context.favoritesDataStore.data
