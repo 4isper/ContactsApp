@@ -31,6 +31,7 @@
     <string name="action_send_sms">SMS</string>
     <string name="action_copy_number">Копировать</string>
     <string name="fast_scroller_desc">Быстрая навигация по буквам</string>
+    <string name="contact_select_prompt">Выберите контакт из списка</string>
     <string name="filter_favorites">Избранное</string>
     <string name="favorites_empty">Нет избранных контактов</string>
     <string name="action_toggle_favorite">В избранное</string>
