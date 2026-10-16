@@ -8,13 +8,13 @@ import com.m4isper.contactsapp.ui.components.ConfirmDialog
 @Composable
 internal fun ConfirmCallDialog(
     contactName: String,
-    contactPhone: String,
+    phoneText: String,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     ConfirmDialog(
         title = contactName,
-        text = stringResource(R.string.phone_label_mobile, contactPhone),
+        text = phoneText,
         confirmLabel = stringResource(R.string.action_call),
         onConfirm = onConfirm,
         onDismiss = onDismiss,

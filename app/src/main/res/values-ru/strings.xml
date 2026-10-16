@@ -11,7 +11,7 @@
     <string name="contacts_load_error">Не удалось загрузить контакты</string>
     <string name="action_retry">Повторить</string>
 
-    <string name="phone_label_mobile">%1$s (mobile)</string>
+    <string name="phone_with_kind">%1$s (%2$s)</string>
 
     <string name="call_failed">Не удалось позвонить</string>
     <string name="dialer_failed">Не удалось открыть набор номера</string>
@@ -24,12 +24,26 @@
     <string name="phone_type_work">Рабочий</string>
     <string name="phone_type_other">Другой</string>
 
+    <string name="email_type_home">Домашний</string>
+    <string name="email_type_work">Рабочий</string>
+    <string name="email_type_other">Другой</string>
+
+    <string name="address_type_home">Домашний</string>
+    <string name="address_type_work">Рабочий</string>
+    <string name="address_type_other">Другой</string>
+
     <string name="contact_not_found">Контакт не найден</string>
-    <string name="copied_to_clipboard">Номер скопирован</string>
+    <string name="copied_to_clipboard">Скопировано</string>
     <string name="sms_failed">Не удалось открыть сообщения</string>
+    <string name="email_failed">Не удалось открыть почтовое приложение</string>
+    <string name="map_failed">Не удалось открыть карты</string>
+    <string name="website_failed">Не удалось открыть ссылку</string>
     <string name="action_back">Назад</string>
     <string name="action_send_sms">SMS</string>
-    <string name="action_copy_number">Копировать</string>
+    <string name="action_send_email">Написать</string>
+    <string name="action_open_map">Карта</string>
+    <string name="action_open_website">Открыть</string>
+    <string name="action_copy">Копировать</string>
     <string name="fast_scroller_desc">Быстрая навигация по буквам</string>
     <string name="permission_write_rationale">Приложению нужно разрешение на изменение контактов</string>
     <string name="editor_title_new">Новый контакт</string>
@@ -46,7 +60,7 @@
     <string name="editor_discard_message">Несохранённые изменения будут потеряны</string>
     <string name="action_discard">Не сохранять</string>
     <string name="action_edit">Редактировать</string>
-    <string name="form_error_empty">Укажите имя или номер</string>
+    <string name="form_error_empty">Заполните хотя бы одно поле</string>
     <string name="form_error_blank_phone">Заполните все номера или удалите пустые</string>
     <string name="contact_select_prompt">Выберите контакт из списка</string>
     <string name="filter_favorites">Избранное</string>
@@ -54,6 +68,29 @@
     <string name="action_toggle_favorite">В избранное</string>
     <string name="share_contact">Поделиться контактом</string>
     <string name="share_failed">Не удалось поделиться контактом</string>
+
+    <string name="editor_add_photo">Добавить фото</string>
+    <string name="editor_change_photo">Изменить фото</string>
+    <string name="editor_remove_photo">Удалить фото</string>
+    <string name="editor_photo_desc">Фото контакта</string>
+    <string name="editor_section_emails">Email</string>
+    <string name="editor_section_addresses">Адреса</string>
+    <string name="editor_section_websites">Сайты</string>
+    <string name="editor_section_organization">Организация</string>
+    <string name="editor_section_birthday">День рождения</string>
+    <string name="editor_section_note">Заметка</string>
+    <string name="editor_add_email">Добавить email</string>
+    <string name="editor_add_address">Добавить адрес</string>
+    <string name="editor_add_website">Добавить сайт</string>
+    <string name="editor_email_label">Email</string>
+    <string name="editor_address_label">Адрес</string>
+    <string name="editor_website_label">Сайт</string>
+    <string name="editor_organization_company">Компания</string>
+    <string name="editor_organization_title">Должность</string>
+    <string name="editor_note_label">Заметка</string>
+    <string name="editor_birthday_add">Добавить день рождения</string>
+    <string name="editor_birthday_no_year">Без года</string>
+    <string name="editor_birthday_remove">Удалить день рождения</string>
 
     <plurals name="phone_count_extra">
         <item quantity="one">ещё %d номер</item>
@@ -66,5 +103,11 @@
         <item quantity="few">%d номера</item>
         <item quantity="many">%d номеров</item>
         <item quantity="other">%d номера</item>
+    </plurals>
+    <plurals name="email_count">
+        <item quantity="one">%d email</item>
+        <item quantity="few">%d email</item>
+        <item quantity="many">%d email</item>
+        <item quantity="other">%d email</item>
     </plurals>
 </resources>

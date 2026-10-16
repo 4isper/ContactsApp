@@ -77,7 +77,8 @@ class ContactsViewModel(
                             val q = trimmed.lowercase(Locale.ROOT)
                             list.filter { contact ->
                                 contact.name.lowercase(Locale.ROOT).contains(q) ||
-                                    contact.phones.any { it.number.contains(trimmed) }
+                                    contact.phones.any { it.number.contains(trimmed) } ||
+                                    contact.emails.any { it.address.lowercase(Locale.ROOT).contains(q) }
                             }
                         }
                     }

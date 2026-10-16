@@ -5,7 +5,9 @@ import android.content.Intent
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.domain.model.AddressKind
 import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.EmailKind
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import java.io.File
 
@@ -17,6 +19,20 @@ internal fun vcardType(kind: PhoneKind): String =
         PhoneKind.HOME -> "HOME"
         PhoneKind.WORK -> "WORK"
         PhoneKind.OTHER -> "VOICE"
+    }
+
+internal fun vcardEmailType(kind: EmailKind): String =
+    when (kind) {
+        EmailKind.HOME -> "HOME"
+        EmailKind.WORK -> "WORK"
+        EmailKind.OTHER -> "OTHER"
+    }
+
+internal fun vcardAddressType(kind: AddressKind): String =
+    when (kind) {
+        AddressKind.HOME -> "HOME"
+        AddressKind.WORK -> "WORK"
+        AddressKind.OTHER -> "OTHER"
     }
 
 private fun escapeVCard(value: String): String =
@@ -34,6 +50,25 @@ internal fun buildVCard(details: ContactDetails): String =
         details.phones.forEach { phone ->
             appendLine("TEL;TYPE=${vcardType(phone.kind)}:${phone.number}")
         }
+        details.emails.forEach { email ->
+            appendLine("EMAIL;TYPE=${vcardEmailType(email.kind)}:${email.address}")
+        }
+        details.addresses.forEach { address ->
+            appendLine("ADR;TYPE=${vcardAddressType(address.kind)}:;;${escapeVCard(address.address)};;;;")
+        }
+        details.websites.forEach { website ->
+            appendLine("URL:${website.url}")
+        }
+        details.organization?.let { organization ->
+            if (organization.company.isNotBlank()) {
+                appendLine("ORG:${escapeVCard(organization.company)}")
+            }
+            if (organization.title.isNotBlank()) {
+                appendLine("TITLE:${escapeVCard(organization.title)}")
+            }
+        }
+        details.note?.let { note -> appendLine("NOTE:${escapeVCard(note)}") }
+        details.birthday?.let { birthday -> appendLine("BDAY:${birthday.toStorageString()}") }
         appendLine("END:VCARD")
     }
 

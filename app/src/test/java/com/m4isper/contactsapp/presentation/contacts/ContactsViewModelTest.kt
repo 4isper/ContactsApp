@@ -2,6 +2,8 @@ package com.m4isper.contactsapp.presentation.contacts
 
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
+import com.m4isper.contactsapp.domain.model.EmailAddress
+import com.m4isper.contactsapp.domain.model.EmailKind
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
@@ -82,6 +84,8 @@ private class FakeContactsRepository(
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
+// Подавление осознанное: тест-аггрегатор поведения списка, декомпозиция по файлам не нужна.
+@Suppress("TooManyFunctions")
 class ContactsViewModelTest {
     @After
     fun tearDown() {
@@ -160,6 +164,37 @@ class ContactsViewModelTest {
             advanceUntilIdle()
 
             viewModel.onSearchQueryChange("222")
+            advanceUntilIdle()
+
+            val content = viewModel.uiState.value.content
+            assertTrue(content is Loadable.Content)
+            assertEquals(
+                listOf("Bob"),
+                (content as Loadable.Content).data.map { it.name },
+            )
+        }
+
+    @Test
+    fun `search filters by email`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(
+                    listOf(
+                        details(1, "Anna", "111"),
+                        ContactDetails(
+                            contactId = 2,
+                            name = "Bob",
+                            emails = listOf(EmailAddress("bob@example.com", EmailKind.OTHER)),
+                        ),
+                    ),
+                )
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            viewModel.onSearchQueryChange("bob@")
             advanceUntilIdle()
 
             val content = viewModel.uiState.value.content

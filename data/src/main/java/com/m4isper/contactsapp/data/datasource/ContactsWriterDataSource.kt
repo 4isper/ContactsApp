@@ -1,163 +1,41 @@
 package com.m4isper.contactsapp.data.datasource
 
-import android.content.ContentProviderOperation
 import android.content.ContentUris
 import android.content.Context
+import android.database.Cursor
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import android.provider.ContactsContract
+import android.provider.ContactsContract.CommonDataKinds.Email
+import android.provider.ContactsContract.CommonDataKinds.Event
+import android.provider.ContactsContract.CommonDataKinds.Note
+import android.provider.ContactsContract.CommonDataKinds.Organization
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
+import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
+import android.provider.ContactsContract.CommonDataKinds.Website
 import com.m4isper.contactsapp.domain.model.ContactForm
-import com.m4isper.contactsapp.domain.model.EditablePhone
-import com.m4isper.contactsapp.domain.model.PhoneKind
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 
-/** Существующая строка номера: нужна для diff при обновлении. */
-data class ExistingPhone(
-    val dataId: Long,
-    val rawContactId: Long,
-    val number: String,
-    val type: Int,
-    val label: String?,
-)
+private const val MAX_PHOTO_PX = 720
+private const val PHOTO_QUALITY = 85
 
-/** Сырые строки контакта: номера + флаг наличия name-строки. */
-data class ContactRows(
-    val phones: List<ExistingPhone>,
-    val hasNameRow: Boolean,
-)
-
-internal fun phoneTypeInt(phone: EditablePhone): Int =
-    if (phone.kind == PhoneKind.OTHER && !phone.customLabel.isNullOrBlank()) {
-        Phone.TYPE_CUSTOM
-    } else {
-        when (phone.kind) {
-            PhoneKind.MOBILE -> Phone.TYPE_MOBILE
-            PhoneKind.HOME -> Phone.TYPE_HOME
-            PhoneKind.WORK -> Phone.TYPE_WORK
-            PhoneKind.OTHER -> Phone.TYPE_OTHER
-        }
-    }
-
-private fun phoneInsert(
-    rawContactId: Long?,
-    rawContactBackRef: Int?,
-    phone: EditablePhone,
-): ContentProviderOperation.Builder {
-    val builder =
-        ContentProviderOperation
-            .newInsert(ContactsContract.Data.CONTENT_URI)
-            .withValue(ContactsContract.Data.MIMETYPE, Phone.CONTENT_ITEM_TYPE)
-            .withValue(Phone.NUMBER, phone.number)
-            .withValue(Phone.TYPE, phoneTypeInt(phone))
-    if (rawContactBackRef != null) {
-        builder.withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactBackRef)
-    } else {
-        builder.withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactId)
-    }
-    if (phone.kind == PhoneKind.OTHER && !phone.customLabel.isNullOrBlank()) {
-        builder.withValue(Phone.LABEL, phone.customLabel)
-    }
-    return builder
-}
-
-/** Операции создания контакта в локальном аккаунте. */
-internal fun buildCreateOperations(form: ContactForm): ArrayList<ContentProviderOperation> {
-    val ops = ArrayList<ContentProviderOperation>()
-    ops +=
-        ContentProviderOperation
-            .newInsert(ContactsContract.RawContacts.CONTENT_URI)
-            .withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, null)
-            .withValue(ContactsContract.RawContacts.ACCOUNT_NAME, null)
-            .build()
-    ops +=
-        ContentProviderOperation
-            .newInsert(ContactsContract.Data.CONTENT_URI)
-            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-            .withValue(ContactsContract.Data.MIMETYPE, StructuredName.CONTENT_ITEM_TYPE)
-            .withValue(StructuredName.DISPLAY_NAME, form.name)
-            .build()
-    form.phones
-        .filter { it.number.isNotBlank() }
-        .forEach { phone ->
-            ops += phoneInsert(rawContactId = null, rawContactBackRef = 0, phone = phone).build()
-        }
-    return ops
-}
-
-/**
- * Операции обновления: имя — update, номера — diff по [ExistingPhone.dataId]:
- * совпавшие — update, новые — insert, пропавшие — delete.
- */
-internal fun buildUpdateOperations(
-    rawContactId: Long,
-    rows: ContactRows,
-    form: ContactForm,
-): ArrayList<ContentProviderOperation> {
-    val ops = ArrayList<ContentProviderOperation>()
-    val existingById = rows.phones.associateBy { it.dataId }
-
-    if (rows.hasNameRow) {
-        ops +=
-            ContentProviderOperation
-                .newUpdate(ContactsContract.Data.CONTENT_URI)
-                .withSelection(
-                    "${ContactsContract.Data.RAW_CONTACT_ID}=? AND " +
-                        "${ContactsContract.Data.MIMETYPE}=?",
-                    arrayOf(
-                        rawContactId.toString(),
-                        StructuredName.CONTENT_ITEM_TYPE,
-                    ),
-                ).withValue(StructuredName.DISPLAY_NAME, form.name)
-                .build()
-    } else {
-        ops +=
-            ContentProviderOperation
-                .newInsert(ContactsContract.Data.CONTENT_URI)
-                .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactId)
-                .withValue(ContactsContract.Data.MIMETYPE, StructuredName.CONTENT_ITEM_TYPE)
-                .withValue(StructuredName.DISPLAY_NAME, form.name)
-                .build()
-    }
-
-    val formIds = form.phones.mapNotNullTo(mutableSetOf()) { it.dataId }
-    rows.phones
-        .filter { it.dataId !in formIds }
-        .forEach { removed ->
-            ops +=
-                ContentProviderOperation
-                    .newDelete(ContactsContract.Data.CONTENT_URI)
-                    .withSelection(
-                        "${ContactsContract.Data._ID}=?",
-                        arrayOf(removed.dataId.toString()),
-                    ).build()
-        }
-
-    form.phones
-        .filter { it.number.isNotBlank() }
-        .forEach { phone ->
-            val known = phone.dataId?.let { existingById[it] }
-            if (known != null) {
-                ops +=
-                    ContentProviderOperation
-                        .newUpdate(ContactsContract.Data.CONTENT_URI)
-                        .withSelection(
-                            "${ContactsContract.Data._ID}=?",
-                            arrayOf(known.dataId.toString()),
-                        ).withValue(Phone.NUMBER, phone.number)
-                        .withValue(Phone.TYPE, phoneTypeInt(phone))
-                        .build()
-            } else {
-                ops +=
-                    phoneInsert(rawContactId = rawContactId, rawContactBackRef = null, phone = phone)
-                        .build()
-            }
-        }
-    return ops
-}
+private val WRITER_DATA_PROJECTION =
+    arrayOf(
+        ContactsContract.Data._ID,
+        ContactsContract.Data.RAW_CONTACT_ID,
+        ContactsContract.Data.MIMETYPE,
+        ContactsContract.Data.DATA1,
+        ContactsContract.Data.DATA2,
+        ContactsContract.Data.DATA3,
+        ContactsContract.Data.DATA4,
+    )
 
 @Inject
 @SingleIn(AppScope::class)
@@ -168,7 +46,7 @@ class ContactsWriterDataSource(
         withContext(Dispatchers.IO) {
             context.contentResolver.applyBatch(
                 ContactsContract.AUTHORITY,
-                buildCreateOperations(form),
+                buildCreateOperations(form, photo = preparePhoto(form)),
             )
         }
 
@@ -180,57 +58,21 @@ class ContactsWriterDataSource(
         withContext(Dispatchers.IO) {
             context.contentResolver.applyBatch(
                 ContactsContract.AUTHORITY,
-                buildUpdateOperations(rawContactId, rows, form),
+                buildUpdateOperations(rawContactId, rows, form, photo = preparePhoto(form)),
             )
         }
 
     suspend fun loadContactRows(contactId: Long): ContactRows =
         withContext(Dispatchers.IO) {
-            val phones = mutableListOf<ExistingPhone>()
-            var hasNameRow = false
             val cursor =
                 context.contentResolver.query(
                     ContactsContract.Data.CONTENT_URI,
-                    arrayOf(
-                        ContactsContract.Data._ID,
-                        ContactsContract.Data.RAW_CONTACT_ID,
-                        ContactsContract.Data.MIMETYPE,
-                        Phone.NUMBER,
-                        Phone.TYPE,
-                        Phone.LABEL,
-                    ),
-                    "${ContactsContract.Data.CONTACT_ID}=? AND " +
-                        "${ContactsContract.Data.MIMETYPE} IN (?, ?)",
-                    arrayOf(
-                        contactId.toString(),
-                        Phone.CONTENT_ITEM_TYPE,
-                        StructuredName.CONTENT_ITEM_TYPE,
-                    ),
+                    WRITER_DATA_PROJECTION,
+                    "${ContactsContract.Data.CONTACT_ID}=?",
+                    arrayOf(contactId.toString()),
                     null,
                 )
-            cursor?.use {
-                val idIndex = it.getColumnIndexOrThrow(ContactsContract.Data._ID)
-                val rawIndex = it.getColumnIndexOrThrow(ContactsContract.Data.RAW_CONTACT_ID)
-                val mimeIndex = it.getColumnIndexOrThrow(ContactsContract.Data.MIMETYPE)
-                val numberIndex = it.getColumnIndexOrThrow(Phone.NUMBER)
-                val typeIndex = it.getColumnIndexOrThrow(Phone.TYPE)
-                val labelIndex = it.getColumnIndexOrThrow(Phone.LABEL)
-                while (it.moveToNext()) {
-                    if (it.getString(mimeIndex) == StructuredName.CONTENT_ITEM_TYPE) {
-                        hasNameRow = true
-                    } else {
-                        phones +=
-                            ExistingPhone(
-                                dataId = it.getLong(idIndex),
-                                rawContactId = it.getLong(rawIndex),
-                                number = it.getString(numberIndex).orEmpty(),
-                                type = it.getInt(typeIndex),
-                                label = it.getString(labelIndex),
-                            )
-                    }
-                }
-            }
-            ContactRows(phones = phones, hasNameRow = hasNameRow)
+            cursor?.use { parseContactRows(it) } ?: ContactRows(hasNameRow = false)
         }
 
     suspend fun loadRawContactId(contactId: Long): Long? =
@@ -277,4 +119,126 @@ class ContactsWriterDataSource(
                 )
             }
         }
+
+    /** Байты фото для записи: null, если фото не менялось или его нужно только удалить. */
+    private fun preparePhoto(form: ContactForm): ByteArray? =
+        if (form.photoChanged) {
+            form.photoUri?.let(Uri::parse)?.let(::readDownscaledPhoto)
+        } else {
+            null
+        }
+
+    private fun readDownscaledPhoto(uri: Uri): ByteArray {
+        val resolver = context.contentResolver
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) {
+            throw IllegalArgumentException("Unsupported image: $uri")
+        }
+        val options =
+            BitmapFactory.Options().apply {
+                inSampleSize = sampleSize(bounds.outWidth, bounds.outHeight, MAX_PHOTO_PX)
+            }
+        val decoded =
+            resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, options) }
+                ?: throw IllegalArgumentException("Can't read image: $uri")
+        val scaled = scaleDown(decoded, MAX_PHOTO_PX)
+        return try {
+            ByteArrayOutputStream().use { out ->
+                scaled.compress(Bitmap.CompressFormat.JPEG, PHOTO_QUALITY, out)
+                out.toByteArray()
+            }
+        } finally {
+            scaled.recycle()
+            if (scaled !== decoded) decoded.recycle()
+        }
+    }
+}
+
+private fun parseContactRows(cursor: Cursor): ContactRows {
+    val phones = mutableListOf<ExistingPhone>()
+    val emails = mutableListOf<ExistingEmail>()
+    val addresses = mutableListOf<ExistingAddress>()
+    val websites = mutableListOf<ExistingWebsite>()
+    var organization: ExistingOrganization? = null
+    var note: ExistingNote? = null
+    var birthday: ExistingBirthday? = null
+    var hasNameRow = false
+    val idIndex = cursor.getColumnIndexOrThrow(ContactsContract.Data._ID)
+    val rawIndex = cursor.getColumnIndexOrThrow(ContactsContract.Data.RAW_CONTACT_ID)
+    val mimeIndex = cursor.getColumnIndexOrThrow(ContactsContract.Data.MIMETYPE)
+    val data1Index = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA1)
+    val data2Index = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA2)
+    val data3Index = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA3)
+    val data4Index = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA4)
+    while (cursor.moveToNext()) {
+        val dataId = cursor.getLong(idIndex)
+        val rawId = cursor.getLong(rawIndex)
+        val data1 = cursor.getString(data1Index).orEmpty()
+        when (cursor.getString(mimeIndex)) {
+            StructuredName.CONTENT_ITEM_TYPE -> hasNameRow = true
+            Phone.CONTENT_ITEM_TYPE ->
+                phones +=
+                    ExistingPhone(dataId, rawId, data1, cursor.getInt(data2Index), cursor.getString(data3Index))
+            Email.CONTENT_ITEM_TYPE ->
+                emails +=
+                    ExistingEmail(dataId, rawId, data1, cursor.getInt(data2Index), cursor.getString(data3Index))
+            StructuredPostal.CONTENT_ITEM_TYPE ->
+                addresses +=
+                    ExistingAddress(dataId, rawId, data1, cursor.getInt(data2Index), cursor.getString(data3Index))
+            Website.CONTENT_ITEM_TYPE ->
+                websites += ExistingWebsite(dataId, rawId, data1)
+            Organization.CONTENT_ITEM_TYPE ->
+                if (organization == null) {
+                    organization =
+                        ExistingOrganization(dataId, rawId, data1, cursor.getString(data4Index).orEmpty())
+                }
+            Note.CONTENT_ITEM_TYPE ->
+                if (note == null) {
+                    note = ExistingNote(dataId, rawId, data1)
+                }
+            Event.CONTENT_ITEM_TYPE ->
+                if (cursor.getInt(data2Index) == Event.TYPE_BIRTHDAY && birthday == null) {
+                    birthday = ExistingBirthday(dataId, rawId, data1)
+                }
+        }
+    }
+    return ContactRows(
+        hasNameRow = hasNameRow,
+        phones = phones,
+        emails = emails,
+        addresses = addresses,
+        websites = websites,
+        organization = organization,
+        note = note,
+        birthday = birthday,
+    )
+}
+
+/** Степень двойки, после которой декодированная картинка станет меньше max. */
+internal fun sampleSize(
+    width: Int,
+    height: Int,
+    max: Int,
+): Int {
+    var sample = 1
+    while (width / (sample * 2) >= max || height / (sample * 2) >= max) {
+        sample *= 2
+    }
+    return sample
+}
+
+private fun scaleDown(
+    bitmap: Bitmap,
+    max: Int,
+): Bitmap {
+    val largest = maxOf(bitmap.width, bitmap.height)
+    if (largest <= max) return bitmap
+    val ratio = max.toFloat() / largest
+    return Bitmap.createScaledBitmap(
+        bitmap,
+        (bitmap.width * ratio).toInt().coerceAtLeast(1),
+        (bitmap.height * ratio).toInt().coerceAtLeast(1),
+        true,
+    )
 }

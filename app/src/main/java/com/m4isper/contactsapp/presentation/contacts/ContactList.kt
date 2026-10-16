@@ -433,13 +433,22 @@ private fun ContactCard(
 }
 
 @Composable
-private fun contactSubtitle(contact: ContactDetails): String {
-    val primary = contact.primaryPhone
-    if (contact.phoneCount <= 1) return primary
-    return "$primary · " +
-        pluralStringResource(
-            R.plurals.phone_count_extra,
-            contact.phoneCount - 1,
-            contact.phoneCount - 1,
-        )
-}
+private fun contactSubtitle(contact: ContactDetails): String =
+    if (contact.phones.isEmpty()) {
+        contact.emails
+            .firstOrNull()
+            ?.address
+            .orEmpty()
+    } else {
+        val primary = contact.primaryPhone
+        if (contact.phoneCount <= 1) {
+            primary
+        } else {
+            "$primary · " +
+                pluralStringResource(
+                    R.plurals.phone_count_extra,
+                    contact.phoneCount - 1,
+                    contact.phoneCount - 1,
+                )
+        }
+    }

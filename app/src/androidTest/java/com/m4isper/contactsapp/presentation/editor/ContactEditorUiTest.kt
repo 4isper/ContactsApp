@@ -2,10 +2,12 @@ package com.m4isper.contactsapp.presentation.editor
 
 import android.Manifest
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
@@ -143,6 +145,36 @@ class ContactEditorUiTest {
     }
 
     @Test
+    fun addEmailButton_addsRowAndSavesEmail() {
+        val repository = FakeAndroidRepository()
+        val viewModel = viewModel(repository)
+        compose.setContent {
+            ContactEditorScreen(
+                contactId = null,
+                onDone = {},
+                onBack = {},
+                viewModel = viewModel,
+            )
+        }
+
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_add_email_button"))
+        compose.onNodeWithTag("editor_add_email_button").performClick()
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_email_field"))
+        compose.onNodeWithTag("editor_email_field").performTextInput("anna@example.com")
+        compose.onNodeWithTag("editor_save_button").performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
+        compose.waitForIdle()
+        assertEquals(
+            listOf("anna@example.com"),
+            repository.created
+                .single()
+                .emails
+                .map { it.address },
+        )
+    }
+
+    @Test
     fun editMode_deleteRemovesContact() {
         val repository = FakeAndroidRepository(listOf(testDetails(7, "Anna", "111")))
         val viewModel = viewModel(repository)
@@ -159,6 +191,7 @@ class ContactEditorUiTest {
             viewModel.uiState.value.name == "Anna"
         }
 
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_delete_button"))
         compose.onNodeWithTag("editor_delete_button").performClick()
         compose.onNodeWithTag("confirm_delete_button").performClick()
 

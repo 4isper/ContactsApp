@@ -1,12 +1,25 @@
 package com.m4isper.contactsapp.data.repository
 
 import android.provider.ContactsContract
+import com.m4isper.contactsapp.data.datasource.ContactsDataSource
 import com.m4isper.contactsapp.data.datasource.ContactsWriterDataSource
-import com.m4isper.contactsapp.data.datasource.PhoneContactsDataSource
+import com.m4isper.contactsapp.data.datasource.ExistingAddress
+import com.m4isper.contactsapp.data.datasource.ExistingEmail
+import com.m4isper.contactsapp.data.datasource.ExistingPhone
+import com.m4isper.contactsapp.data.datasource.customLabelOf
+import com.m4isper.contactsapp.data.datasource.mapAddressKind
+import com.m4isper.contactsapp.data.datasource.mapEmailKind
 import com.m4isper.contactsapp.data.datasource.mapPhoneKind
+import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
+import com.m4isper.contactsapp.domain.model.EditableAddress
+import com.m4isper.contactsapp.domain.model.EditableBirthday
+import com.m4isper.contactsapp.domain.model.EditableEmail
+import com.m4isper.contactsapp.domain.model.EditableNote
+import com.m4isper.contactsapp.domain.model.EditableOrganization
 import com.m4isper.contactsapp.domain.model.EditablePhone
+import com.m4isper.contactsapp.domain.model.EditableWebsite
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
@@ -17,7 +30,7 @@ import dev.zacsweers.metro.SingleIn
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
 class ContactsRepositoryImpl(
-    private val dataSource: PhoneContactsDataSource,
+    private val dataSource: ContactsDataSource,
     private val writer: ContactsWriterDataSource,
 ) : ContactsRepository {
     override suspend fun getContacts(): List<ContactDetails> = dataSource.loadContacts()
@@ -29,20 +42,21 @@ class ContactsRepositoryImpl(
         val rows = writer.loadContactRows(contactId)
         return ContactForm(
             name = details.name,
-            phones =
-                rows.phones.map { row ->
-                    EditablePhone(
-                        dataId = row.dataId,
-                        number = row.number,
-                        kind = mapPhoneKind(row.type),
-                        customLabel =
-                            row.label?.takeIf {
-                                row.type ==
-                                    ContactsContract.CommonDataKinds.Phone.TYPE_CUSTOM &&
-                                    it.isNotBlank()
-                            },
-                    )
-                },
+            phones = rows.phones.map { it.toEditable() },
+            emails = rows.emails.map { it.toEditable() },
+            addresses = rows.addresses.map { it.toEditable() },
+            websites = rows.websites.map { EditableWebsite(dataId = it.dataId, url = it.url) },
+            organization =
+                rows.organization
+                    ?.let { EditableOrganization(dataId = it.dataId, company = it.company, title = it.title) }
+                    ?: EditableOrganization(),
+            note = rows.note?.let { EditableNote(dataId = it.dataId, note = it.note) } ?: EditableNote(),
+            birthday =
+                rows.birthday
+                    ?.let { EditableBirthday(dataId = it.dataId, value = Birthday.parse(it.raw)) }
+                    ?: EditableBirthday(),
+            photoUri = details.photoUri,
+            photoChanged = false,
         )
     }
 
@@ -62,3 +76,32 @@ class ContactsRepositoryImpl(
 
     override suspend fun deleteContact(contactId: Long) = writer.deleteContact(contactId)
 }
+
+private fun ExistingPhone.toEditable(): EditablePhone =
+    EditablePhone(
+        dataId = dataId,
+        number = number,
+        kind = mapPhoneKind(type),
+        customLabel = customLabelOf(type, label, ContactsContract.CommonDataKinds.Phone.TYPE_CUSTOM),
+    )
+
+private fun ExistingEmail.toEditable(): EditableEmail =
+    EditableEmail(
+        dataId = dataId,
+        address = address,
+        kind = mapEmailKind(type),
+        customLabel = customLabelOf(type, label, ContactsContract.CommonDataKinds.Email.TYPE_CUSTOM),
+    )
+
+private fun ExistingAddress.toEditable(): EditableAddress =
+    EditableAddress(
+        dataId = dataId,
+        address = address,
+        kind = mapAddressKind(type),
+        customLabel =
+            customLabelOf(
+                type,
+                label,
+                ContactsContract.CommonDataKinds.StructuredPostal.TYPE_CUSTOM,
+            ),
+    )

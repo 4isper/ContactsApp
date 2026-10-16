@@ -1,36 +1,24 @@
 package com.m4isper.contactsapp.data.datasource
 
-import android.provider.ContactsContract
+import android.provider.ContactsContract.CommonDataKinds.Email
+import android.provider.ContactsContract.CommonDataKinds.Phone
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AggregateContactsTest {
-    private fun row(
-        contactId: Long,
-        name: String,
-        phone: String,
-        type: Int = ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE,
-        label: String? = null,
-    ) = PhoneRow(
-        contactId = contactId,
-        name = name,
-        phone = phone,
-        type = type,
-        label = label,
-    )
-
     @Test
-    fun `groups rows by contact id`() {
+    fun `groups phone rows by contact id`() {
+        val headers = listOf(header(1, "Anna"), header(2, "Bob"))
         val rows =
             listOf(
-                row(1, "Anna", "111"),
-                row(1, "Anna", "112", ContactsContract.CommonDataKinds.Phone.TYPE_HOME),
-                row(2, "Bob", "222"),
+                phoneRow(1, "111"),
+                phoneRow(1, "112", Phone.TYPE_HOME),
+                phoneRow(2, "222"),
             )
 
-        val result = aggregateContacts(rows)
+        val result = aggregateContacts(headers, rows)
 
         assertEquals(2, result.size)
         val anna = result.first { it.contactId == 1L }
@@ -43,102 +31,103 @@ class AggregateContactsTest {
     }
 
     @Test
-    fun `sorts contacts by name`() {
-        val rows =
-            listOf(
-                row(2, "Bob", "222"),
-                row(1, "Anna", "111"),
-            )
+    fun `keeps contacts without phones and emails`() {
+        val headers = listOf(header(1, "Anna"), header(2, "Bob"))
+        val rows = listOf(phoneRow(1, "111"))
 
-        val result = aggregateContacts(rows)
+        val result = aggregateContacts(headers, rows)
 
-        assertEquals(listOf("Anna", "Bob"), result.map { it.name })
+        assertEquals(listOf(1L, 2L), result.map { it.contactId })
+        assertTrue(result.first { it.contactId == 2L }.phones.isEmpty())
     }
 
     @Test
-    fun `drops blank names and phones`() {
-        val rows =
-            listOf(
-                row(1, "   ", "111"),
-                row(2, "Bob", "   "),
-                row(3, "Anna", "113"),
-            )
+    fun `preserves header order`() {
+        val headers = listOf(header(2, "Bob"), header(1, "Anna"))
 
-        val result = aggregateContacts(rows)
+        val result = aggregateContacts(headers, emptyList())
 
-        assertEquals(listOf(3L), result.map { it.contactId })
+        assertEquals(listOf("Bob", "Anna"), result.map { it.name })
     }
 
     @Test
-    fun `deduplicates identical numbers`() {
+    fun `drops blank names`() {
+        val headers = listOf(header(1, "   "), header(2, "Bob"), header(3, "Anna"))
+
+        val result = aggregateContacts(headers, emptyList())
+
+        assertEquals(listOf(2L, 3L), result.map { it.contactId })
+    }
+
+    @Test
+    fun `ignores blank and deduplicates identical numbers`() {
+        val headers = listOf(header(1, "Anna"))
         val rows =
             listOf(
-                row(1, "Anna", "111"),
-                row(1, "Anna", "111", ContactsContract.CommonDataKinds.Phone.TYPE_WORK),
+                phoneRow(1, "   "),
+                phoneRow(1, "111"),
+                phoneRow(1, "111", Phone.TYPE_WORK),
             )
 
-        val result = aggregateContacts(rows)
+        val result = aggregateContacts(headers, rows)
 
-        assertEquals(1, result.single().phones.size)
+        assertEquals(listOf("111"), result.single().phones.map { it.number })
     }
 
     @Test
     fun `keeps custom label only for custom type`() {
+        val headers = listOf(header(1, "Anna"))
         val rows =
             listOf(
-                row(
-                    1,
-                    "Anna",
-                    "111",
-                    ContactsContract.CommonDataKinds.Phone.TYPE_CUSTOM,
-                    "Sister",
-                ),
-                row(
-                    1,
-                    "Anna",
-                    "112",
-                    ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE,
-                    "Ignored",
-                ),
+                phoneRow(1, "111", Phone.TYPE_CUSTOM, "Sister"),
+                phoneRow(1, "112", Phone.TYPE_MOBILE, "Ignored"),
             )
 
-        val phones = aggregateContacts(rows).single().phones
+        val phones = aggregateContacts(headers, rows).single().phones
 
         assertEquals("Sister", phones.first { it.number == "111" }.customLabel)
         assertEquals(null, phones.first { it.number == "112" }.customLabel)
     }
 
     @Test
-    fun `maps work mobile type to work kind`() {
+    fun `includes and deduplicates emails`() {
+        val headers = listOf(header(1, "Anna"))
+        val rows =
+            listOf(
+                emailRow(1, "anna@example.com", Email.TYPE_HOME),
+                emailRow(1, "anna@example.com", Email.TYPE_WORK),
+                emailRow(1, "other@example.com", Email.TYPE_CUSTOM, "Side"),
+            )
+
+        val emails = aggregateContacts(headers, rows).single().emails
+
         assertEquals(
-            PhoneKind.WORK,
-            mapPhoneKind(ContactsContract.CommonDataKinds.Phone.TYPE_WORK_MOBILE),
+            listOf("anna@example.com", "other@example.com"),
+            emails.map { it.address },
         )
+        assertEquals("Side", emails.last().customLabel)
     }
 
     @Test
-    fun `takes first non-null photo uri`() {
-        val rows =
-            listOf(
-                row(1, "Anna", "111"),
-                row(1, "Anna", "112"),
-            )
-
-        val withoutPhoto = aggregateContacts(rows).single()
+    fun `takes photo uri from header`() {
+        val withoutPhoto = aggregateContacts(listOf(header(1, "Anna")), emptyList()).single()
         assertEquals(null, withoutPhoto.photoUri)
 
         val withPhoto =
-            aggregateContacts(
-                listOf(
-                    row(1, "Anna", "111"),
-                    row(1, "Anna", "112").copy(photoUri = "content://photo/1"),
-                ),
-            ).single()
+            aggregateContacts(listOf(header(1, "Anna", photoUri = "content://photo/1")), emptyList()).single()
         assertEquals("content://photo/1", withPhoto.photoUri)
     }
 
     @Test
-    fun `empty rows return empty list`() {
-        assertTrue(aggregateContacts(emptyList()).isEmpty())
+    fun `maps work mobile type to work kind`() {
+        assertEquals(
+            PhoneKind.WORK,
+            mapPhoneKind(Phone.TYPE_WORK_MOBILE),
+        )
+    }
+
+    @Test
+    fun `empty input returns empty list`() {
+        assertTrue(aggregateContacts(emptyList(), emptyList()).isEmpty())
     }
 }

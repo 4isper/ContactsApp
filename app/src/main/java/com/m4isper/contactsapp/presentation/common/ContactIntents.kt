@@ -27,12 +27,62 @@ internal fun openSms(
     }
 }
 
-internal fun copyNumber(
+internal fun openEmail(
     context: Context,
-    phone: String,
+    address: String,
+) {
+    runCatching {
+        val emailIntent =
+            Intent(Intent.ACTION_SENDTO).apply {
+                data = Uri.fromParts("mailto", address, null)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        context.startActivity(emailIntent)
+    }.onFailure { e ->
+        logw(INTENTS_TAG, "openEmail failed", e)
+        Toast.makeText(context, context.getString(R.string.email_failed), Toast.LENGTH_SHORT).show()
+    }
+}
+
+internal fun openMap(
+    context: Context,
+    address: String,
+) {
+    runCatching {
+        val mapIntent =
+            Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=${Uri.encode(address)}")).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        context.startActivity(mapIntent)
+    }.onFailure { e ->
+        logw(INTENTS_TAG, "openMap failed", e)
+        Toast.makeText(context, context.getString(R.string.map_failed), Toast.LENGTH_SHORT).show()
+    }
+}
+
+internal fun openWebsite(
+    context: Context,
+    url: String,
+) {
+    runCatching {
+        val normalized = if (url.contains("://")) url else "https://$url"
+        val webIntent =
+            Intent(Intent.ACTION_VIEW, Uri.parse(normalized)).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        context.startActivity(webIntent)
+    }.onFailure { e ->
+        logw(INTENTS_TAG, "openWebsite failed", e)
+        Toast.makeText(context, context.getString(R.string.website_failed), Toast.LENGTH_SHORT).show()
+    }
+}
+
+internal fun copyToClipboard(
+    context: Context,
+    text: String,
 ) {
     val clipboard = context.getSystemService(ClipboardManager::class.java)
-    clipboard?.setPrimaryClip(ClipData.newPlainText("phone", phone))
+    clipboard?.setPrimaryClip(ClipData.newPlainText("contact", text))
     Toast
         .makeText(
             context,
