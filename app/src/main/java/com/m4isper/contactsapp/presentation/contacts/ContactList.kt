@@ -1,6 +1,8 @@
 package com.m4isper.contactsapp.presentation.contacts
 
+import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
@@ -26,6 +28,7 @@ import androidx.compose.material.icons.filled.PersonSearch
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -35,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,7 +46,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -55,6 +61,8 @@ import androidx.compose.ui.unit.sp
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.presentation.common.Loadable
+import com.m4isper.contactsapp.presentation.common.shareContacts
+import com.m4isper.contactsapp.ui.components.ConfirmDialog
 import com.m4isper.contactsapp.ui.components.EmptyState
 import com.m4isper.contactsapp.ui.components.ErrorState
 import com.m4isper.contactsapp.ui.components.ListAvatar
@@ -91,19 +99,60 @@ internal fun ContactList(
     onAddClick: () -> Unit,
     onRetry: () -> Unit,
     onRefresh: () -> Unit,
+    onContactSelected: (Long) -> Unit,
+    onClearSelection: () -> Unit,
+    onSelectAll: (List<Long>) -> Unit,
+    onDeleteSelected: () -> Unit,
+    onShareSelected: () -> Unit,
+    onEventHandled: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    val event = uiState.event
+    LaunchedEffect(event) {
+        when (event) {
+            is ContactsEvent.Share -> {
+                shareContacts(context, event.contacts)
+                onEventHandled()
+            }
+            ContactsEvent.DeleteFailed -> {
+                Toast.makeText(context, R.string.batch_delete_failed, Toast.LENGTH_SHORT).show()
+                onEventHandled()
+            }
+            null -> Unit
+        }
+    }
+
+    val visibleIds = (uiState.content as? Loadable.Content)?.data?.map { it.contactId }.orEmpty()
+    val allSelected = visibleIds.isNotEmpty() && uiState.selection.containsAll(visibleIds)
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddClick,
-                modifier = Modifier.testTag("add_contact_fab"),
-            ) {
-                Icon(
-                    Icons.Filled.Add,
-                    contentDescription = stringResource(R.string.editor_title_new),
+        topBar = {
+            if (uiState.isSelectionMode) {
+                SelectionTopBar(
+                    count = uiState.selection.size,
+                    allSelected = allSelected,
+                    onClose = onClearSelection,
+                    onSelectAll = { onSelectAll(visibleIds) },
+                    onShare = onShareSelected,
+                    onDelete = { showDeleteDialog = true },
                 )
+            }
+        },
+        floatingActionButton = {
+            if (!uiState.isSelectionMode) {
+                FloatingActionButton(
+                    onClick = onAddClick,
+                    modifier = Modifier.testTag("add_contact_fab"),
+                ) {
+                    Icon(
+                        Icons.Filled.Add,
+                        contentDescription = stringResource(R.string.editor_title_new),
+                    )
+                }
             }
         },
     ) { innerPadding ->
@@ -113,19 +162,48 @@ internal fun ContactList(
                     .fillMaxSize()
                     .padding(innerPadding),
         ) {
-            FilterHeader(
-                searchQuery = uiState.searchQuery,
-                showFavoritesOnly = uiState.showFavoritesOnly,
-                onSearchQueryChange = onSearchQueryChange,
-                onFavoritesOnlyChange = onFavoritesOnlyChange,
-            )
+            if (!uiState.isSelectionMode) {
+                FilterHeader(
+                    searchQuery = uiState.searchQuery,
+                    showFavoritesOnly = uiState.showFavoritesOnly,
+                    onSearchQueryChange = onSearchQueryChange,
+                    onFavoritesOnlyChange = onFavoritesOnlyChange,
+                )
+            }
             ContactListBody(
                 uiState = uiState,
-                onContactClick = onContactClick,
+                onContactClick = { contactId ->
+                    if (uiState.isSelectionMode) {
+                        onContactSelected(contactId)
+                    } else {
+                        onContactClick(contactId)
+                    }
+                },
+                onContactLongClick = onContactSelected,
                 onRetry = onRetry,
                 onRefresh = onRefresh,
             )
         }
+    }
+
+    if (showDeleteDialog) {
+        ConfirmDialog(
+            title =
+                pluralStringResource(
+                    R.plurals.batch_delete_title,
+                    uiState.selection.size,
+                    uiState.selection.size,
+                ),
+            text = stringResource(R.string.editor_delete_message),
+            confirmLabel = stringResource(R.string.action_delete),
+            onConfirm = {
+                showDeleteDialog = false
+                onDeleteSelected()
+            },
+            onDismiss = { showDeleteDialog = false },
+            danger = true,
+            confirmTestTag = "confirm_batch_delete",
+        )
     }
 }
 
@@ -170,6 +248,7 @@ private fun FilterHeader(
 private fun ContactListBody(
     uiState: ContactsUiState,
     onContactClick: (Long) -> Unit,
+    onContactLongClick: (Long) -> Unit,
     onRetry: () -> Unit,
     onRefresh: () -> Unit,
     modifier: Modifier = Modifier,
@@ -197,7 +276,10 @@ private fun ContactListBody(
                 GroupedContacts(
                     contacts = content.data,
                     favorites = uiState.favorites,
+                    selection = uiState.selection,
+                    isSelectionMode = uiState.isSelectionMode,
                     onContactClick = onContactClick,
+                    onContactLongClick = onContactLongClick,
                 )
         }
     }
@@ -230,7 +312,10 @@ private fun EmptyPlaceholder(
 private fun GroupedContacts(
     contacts: List<ContactDetails>,
     favorites: Set<Long>,
+    selection: Set<Long>,
+    isSelectionMode: Boolean,
     onContactClick: (Long) -> Unit,
+    onContactLongClick: (Long) -> Unit,
 ) {
     val spacing = LocalSpacing.current
     val grouped = groupContactsByFirstLetter(contacts)
@@ -278,7 +363,11 @@ private fun GroupedContacts(
                         ContactCard(
                             contact = contact,
                             isFavorite = contact.contactId in favorites,
-                        ) { onContactClick(contact.contactId) }
+                            selected = contact.contactId in selection,
+                            isSelectionMode = isSelectionMode,
+                            onClick = { onContactClick(contact.contactId) },
+                            onLongClick = { onContactLongClick(contact.contactId) },
+                        )
                     }
                 }
             }
@@ -382,20 +471,32 @@ private fun FastScroller(
 private fun ContactCard(
     contact: ContactDetails,
     isFavorite: Boolean,
+    selected: Boolean,
+    isSelectionMode: Boolean,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
 ) {
     val spacing = LocalSpacing.current
     Card(
-        onClick = onClick,
         colors =
             CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                containerColor =
+                    if (selected) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.surfaceContainerLow
+                    },
             ),
         modifier =
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = spacing.m, vertical = spacing.xs)
-                .testTag("contact_row_${contact.contactId}"),
+                .clip(MaterialTheme.shapes.medium)
+                .testTag("contact_row_${contact.contactId}")
+                .combinedClickable(
+                    onClick = onClick,
+                    onLongClick = onLongClick,
+                ),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -420,7 +521,12 @@ private fun ContactCard(
                 )
             }
 
-            if (isFavorite) {
+            if (isSelectionMode) {
+                Checkbox(
+                    checked = selected,
+                    onCheckedChange = null,
+                )
+            } else if (isFavorite) {
                 Icon(
                     Icons.Filled.Favorite,
                     contentDescription = null,

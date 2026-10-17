@@ -64,13 +64,22 @@ internal fun ContactListDarkPreview() {
     }
 }
 
+@Preview(name = "List selection mode", showBackground = true)
 @Composable
-private fun ContactListContent() {
+internal fun ContactListSelectionPreview() {
+    ThemedPreview(darkTheme = false) {
+        ContactListContent(selection = setOf(1, 2))
+    }
+}
+
+@Composable
+private fun ContactListContent(selection: Set<Long> = emptySet()) {
     ContactList(
         uiState =
             ContactsUiState(
                 content = Loadable.Content(PreviewContacts),
                 favorites = setOf(1),
+                selection = selection,
             ),
         onSearchQueryChange = {},
         onFavoritesOnlyChange = {},
@@ -78,6 +87,12 @@ private fun ContactListContent() {
         onAddClick = {},
         onRetry = {},
         onRefresh = {},
+        onContactSelected = {},
+        onClearSelection = {},
+        onSelectAll = {},
+        onDeleteSelected = {},
+        onShareSelected = {},
+        onEventHandled = {},
     )
 }
 

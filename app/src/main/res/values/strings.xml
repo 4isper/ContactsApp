@@ -89,6 +89,11 @@
     <string name="action_toggle_favorite">Toggle favorite</string>
     <string name="share_contact">Share contact</string>
     <string name="share_failed">Couldn\'t share the contact</string>
+    <string name="action_close">Close</string>
+    <string name="action_share">Share</string>
+    <string name="action_select_all">Select all</string>
+    <string name="action_deselect_all">Deselect all</string>
+    <string name="batch_delete_failed">Couldn\'t delete contacts</string>
 
     <string name="editor_add_photo">Add photo</string>
     <string name="editor_change_photo">Change photo</string>
@@ -128,5 +133,13 @@
     <plurals name="email_count">
         <item quantity="one">%d email</item>
         <item quantity="other">%d emails</item>
+    </plurals>
+    <plurals name="selection_count">
+        <item quantity="one">%d selected</item>
+        <item quantity="other">%d selected</item>
+    </plurals>
+    <plurals name="batch_delete_title">
+        <item quantity="one">Delete %d contact?</item>
+        <item quantity="other">Delete %d contacts?</item>
     </plurals>
 </resources>

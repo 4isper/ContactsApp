@@ -89,6 +89,11 @@
     <string name="action_toggle_favorite">В избранное</string>
     <string name="share_contact">Поделиться контактом</string>
     <string name="share_failed">Не удалось поделиться контактом</string>
+    <string name="action_close">Закрыть</string>
+    <string name="action_share">Поделиться</string>
+    <string name="action_select_all">Выбрать все</string>
+    <string name="action_deselect_all">Снять выделение</string>
+    <string name="batch_delete_failed">Не удалось удалить контакты</string>
 
     <string name="editor_add_photo">Добавить фото</string>
     <string name="editor_change_photo">Изменить фото</string>
@@ -134,5 +139,17 @@
         <item quantity="few">%d email</item>
         <item quantity="many">%d email</item>
         <item quantity="other">%d email</item>
+    </plurals>
+    <plurals name="selection_count">
+        <item quantity="one">Выбран %d</item>
+        <item quantity="few">Выбрано %d</item>
+        <item quantity="many">Выбрано %d</item>
+        <item quantity="other">Выбрано %d</item>
+    </plurals>
+    <plurals name="batch_delete_title">
+        <item quantity="one">Удалить %d контакт?</item>
+        <item quantity="few">Удалить %d контакта?</item>
+        <item quantity="many">Удалить %d контактов?</item>
+        <item quantity="other">Удалить %d контакта?</item>
     </plurals>
 </resources>

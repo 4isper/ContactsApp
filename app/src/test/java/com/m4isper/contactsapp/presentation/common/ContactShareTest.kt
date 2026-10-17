@@ -14,6 +14,7 @@ import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.model.PostalAddress
 import com.m4isper.contactsapp.domain.model.Website
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ContactShareTest {
@@ -153,6 +154,22 @@ class ContactShareTest {
         assertEquals("IMPP;X-SERVICE-TYPE=Telegram:tg_anna", lines[4])
         assertEquals("IMPP;X-SERVICE-TYPE=AIM:aim_anna", lines[5])
         assertEquals("Custom", vcardImService(InstantMessage("x", ImProtocol.CUSTOM)))
+    }
+
+    @Test
+    fun `builds one vcard block per contact for batch share`() {
+        val contacts =
+            listOf(
+                ContactDetails(contactId = 1, name = "Anna"),
+                ContactDetails(contactId = 2, name = "Bob"),
+            )
+
+        val vcards = buildVCards(contacts)
+
+        assertEquals(2, Regex("BEGIN:VCARD").findAll(vcards).count())
+        assertEquals(2, Regex("END:VCARD").findAll(vcards).count())
+        assertTrue(vcards.contains("FN:Anna"))
+        assertTrue(vcards.contains("FN:Bob"))
     }
 
     @Test

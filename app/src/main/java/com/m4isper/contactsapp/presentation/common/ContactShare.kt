@@ -97,14 +97,27 @@ internal fun buildVCard(details: ContactDetails): String =
         appendLine("END:VCARD")
     }
 
+/** Склеенный поток из нескольких vCard: валидный формат для файла .vcf с несколькими контактами. */
+internal fun buildVCards(contacts: List<ContactDetails>): String =
+    contacts.joinToString(separator = "") { buildVCard(it) }
+
 internal fun shareContact(
     context: Context,
     details: ContactDetails,
+) = shareContacts(context, listOf(details))
+
+internal fun shareContacts(
+    context: Context,
+    contacts: List<ContactDetails>,
 ) {
+    if (contacts.isEmpty()) {
+        showShareFailed(context)
+        return
+    }
     runCatching {
         // Одно фиксированное имя: повторные шаринги перезаписывают файл, кэш не растёт.
-        val file = File(context.cacheDir, "shared_contact.vcf")
-        file.writeText(buildVCard(details))
+        val file = File(context.cacheDir, "shared_contacts.vcf")
+        file.writeText(buildVCards(contacts))
         val uri =
             FileProvider.getUriForFile(
                 context,
@@ -124,12 +137,16 @@ internal fun shareContact(
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
         )
     }.onFailure { e ->
-        logw(SHARE_TAG, "shareContact failed", e)
-        Toast
-            .makeText(
-                context,
-                context.getString(R.string.share_failed),
-                Toast.LENGTH_SHORT,
-            ).show()
+        logw(SHARE_TAG, "shareContacts failed", e)
+        showShareFailed(context)
     }
+}
+
+private fun showShareFailed(context: Context) {
+    Toast
+        .makeText(
+            context,
+            context.getString(R.string.share_failed),
+            Toast.LENGTH_SHORT,
+        ).show()
 }

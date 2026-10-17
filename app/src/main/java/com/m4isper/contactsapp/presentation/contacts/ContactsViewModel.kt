@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.NameParts
+import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
@@ -26,9 +28,25 @@ data class ContactsUiState(
     val favorites: Set<Long> = emptySet(),
     val isRefreshing: Boolean = false,
     val content: Loadable<List<ContactDetails>> = Loadable.Loading,
+    val selection: Set<Long> = emptySet(),
+    val event: ContactsEvent? = null,
 ) {
     val isSearching: Boolean
         get() = searchQuery.isNotBlank()
+
+    val isSelectionMode: Boolean
+        get() = selection.isNotEmpty()
+}
+
+/** Одноразовое событие экрана: UI обрабатывает его и сбрасывает через [ContactsViewModel.onEventHandled]. */
+sealed interface ContactsEvent {
+    /** Подготовленные к vCard-шарингу контакты из выделения. */
+    data class Share(
+        val contacts: List<ContactDetails>,
+    ) : ContactsEvent
+
+    /** Не удалось удалить выделенные контакты. */
+    data object DeleteFailed : ContactsEvent
 }
 
 internal const val SUBSCRIBE_TIMEOUT_MILLIS = 5_000L
@@ -46,12 +64,16 @@ private data class ContactsLoad(
 class ContactsViewModel(
     private val getContactsUseCase: GetContactsUseCase,
     observeFavoritesUseCase: ObserveFavoritesUseCase,
+    private val getContactDetailsUseCase: GetContactDetailsUseCase,
+    private val deleteContactsUseCase: DeleteContactsUseCase,
 ) : ViewModel() {
     private val allContacts = MutableStateFlow<List<ContactDetails>>(emptyList())
     private val isLoading = MutableStateFlow(false)
     private val searchQueryFlow = MutableStateFlow("")
     private val loadFailure = MutableStateFlow<Throwable?>(null)
     private val favoritesOnlyFlow = MutableStateFlow(false)
+    private val selectionFlow = MutableStateFlow<Set<Long>>(emptySet())
+    private val eventFlow = MutableStateFlow<ContactsEvent?>(null)
 
     private val favoritesFlow: StateFlow<Set<Long>> =
         observeFavoritesUseCase()
@@ -66,7 +88,9 @@ class ContactsViewModel(
             combine(allContacts, isLoading, searchQueryFlow, loadFailure, ::ContactsLoad),
             favoritesFlow,
             favoritesOnlyFlow,
-        ) { load, favorites, favoritesOnly ->
+            selectionFlow,
+            eventFlow,
+        ) { load, favorites, favoritesOnly, selection, event ->
             val trimmed = load.query.trim()
             val visible =
                 load.all
@@ -97,6 +121,8 @@ class ContactsViewModel(
                 favorites = favorites,
                 isRefreshing = load.loading,
                 content = content,
+                selection = selection,
+                event = event,
             )
         }.stateIn(
             scope = viewModelScope,
@@ -105,11 +131,70 @@ class ContactsViewModel(
         )
 
     fun onSearchQueryChange(query: String) {
+        selectionFlow.value = emptySet()
         searchQueryFlow.value = query
     }
 
     fun onToggleFavoritesOnly() {
+        selectionFlow.value = emptySet()
         favoritesOnlyFlow.value = !favoritesOnlyFlow.value
+    }
+
+    /** Тап по карточке в режиме выделения и long-press в любом режиме переключают выделение. */
+    fun onContactSelected(contactId: Long) {
+        val current = selectionFlow.value
+        selectionFlow.value = if (contactId in current) current - contactId else current + contactId
+    }
+
+    fun onClearSelection() {
+        selectionFlow.value = emptySet()
+    }
+
+    /** Повторный вызов «выбрать все» снимает выделение. */
+    fun onSelectAll(contactIds: List<Long>) {
+        val all = contactIds.toSet()
+        selectionFlow.value = if (selectionFlow.value.containsAll(all)) emptySet() else all
+    }
+
+    // Catch-all осознанный: ошибку удаления показываем одноразовым событием, список не меняем.
+    @Suppress("TooGenericExceptionCaught")
+    fun onDeleteSelected() {
+        val ids = selectionFlow.value
+        if (ids.isEmpty()) return
+        viewModelScope.launch {
+            try {
+                deleteContactsUseCase(ids)
+                allContacts.value = allContacts.value.filterNot { it.contactId in ids }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                eventFlow.value = ContactsEvent.DeleteFailed
+            } finally {
+                selectionFlow.value = emptySet()
+            }
+        }
+    }
+
+    /** Догружает полные детали выделенных контактов: в списке они облегчённые, для vCard этого мало. */
+    @Suppress("TooGenericExceptionCaught")
+    fun onShareSelected() {
+        val ids = selectionFlow.value.toList()
+        if (ids.isEmpty()) return
+        viewModelScope.launch {
+            val contacts =
+                try {
+                    ids.mapNotNull { getContactDetailsUseCase(it) }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    emptyList()
+                }
+            eventFlow.value = ContactsEvent.Share(contacts)
+        }
+    }
+
+    fun onEventHandled() {
+        eventFlow.value = null
     }
 
     // Catch-all осознанный: любая ошибка загрузки превращается в Error-стейт.
@@ -119,6 +204,7 @@ class ContactsViewModel(
         viewModelScope.launch {
             isLoading.value = true
             loadFailure.value = null
+            selectionFlow.value = emptySet()
             try {
                 allContacts.value = getContactsUseCase()
             } catch (e: CancellationException) {
@@ -133,6 +219,7 @@ class ContactsViewModel(
 
     fun clear() {
         allContacts.value = emptyList()
+        selectionFlow.value = emptySet()
     }
 }
 

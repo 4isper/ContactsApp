@@ -4,12 +4,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.m4isper.contactsapp.FakeAndroidRepository
+import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
@@ -29,6 +33,14 @@ class ContactListUiTest {
     private val anna = testDetails(1, "Anna", "111")
     private val bob = testDetails(2, "Bob", "222")
 
+    private fun viewModel(repository: FakeAndroidRepository) =
+        ContactsViewModel(
+            GetContactsUseCase(repository),
+            ObserveFavoritesUseCase(repository),
+            GetContactDetailsUseCase(repository),
+            DeleteContactsUseCase(repository, repository),
+        )
+
     @Test
     fun showsContactNames() {
         compose.setContent {
@@ -40,6 +52,12 @@ class ContactListUiTest {
                 onAddClick = {},
                 onRetry = {},
                 onRefresh = {},
+                onContactSelected = {},
+                onClearSelection = {},
+                onSelectAll = {},
+                onDeleteSelected = {},
+                onShareSelected = {},
+                onEventHandled = {},
             )
         }
 
@@ -59,6 +77,12 @@ class ContactListUiTest {
                 onAddClick = {},
                 onRetry = {},
                 onRefresh = {},
+                onContactSelected = {},
+                onClearSelection = {},
+                onSelectAll = {},
+                onDeleteSelected = {},
+                onShareSelected = {},
+                onEventHandled = {},
             )
         }
 
@@ -79,6 +103,12 @@ class ContactListUiTest {
                 onAddClick = {},
                 onRetry = {},
                 onRefresh = {},
+                onContactSelected = {},
+                onClearSelection = {},
+                onSelectAll = {},
+                onDeleteSelected = {},
+                onShareSelected = {},
+                onEventHandled = {},
             )
         }
 
@@ -90,11 +120,7 @@ class ContactListUiTest {
     @Test
     fun searchFieldFiltersListThroughViewModel() {
         val repository = FakeAndroidRepository(listOf(anna, bob))
-        val viewModel =
-            ContactsViewModel(
-                GetContactsUseCase(repository),
-                ObserveFavoritesUseCase(repository),
-            )
+        val viewModel = viewModel(repository)
         compose.setContent {
             val uiState by viewModel.uiState.collectAsState()
             ContactList(
@@ -105,6 +131,12 @@ class ContactListUiTest {
                 onAddClick = {},
                 onRetry = viewModel::refresh,
                 onRefresh = viewModel::refresh,
+                onContactSelected = viewModel::onContactSelected,
+                onClearSelection = viewModel::onClearSelection,
+                onSelectAll = viewModel::onSelectAll,
+                onDeleteSelected = viewModel::onDeleteSelected,
+                onShareSelected = viewModel::onShareSelected,
+                onEventHandled = viewModel::onEventHandled,
             )
         }
         viewModel.refresh()
@@ -135,11 +167,108 @@ class ContactListUiTest {
                 onAddClick = { added.set(true) },
                 onRetry = {},
                 onRefresh = {},
+                onContactSelected = {},
+                onClearSelection = {},
+                onSelectAll = {},
+                onDeleteSelected = {},
+                onShareSelected = {},
+                onEventHandled = {},
             )
         }
 
         compose.onNodeWithTag("add_contact_fab").performClick()
 
         assertEquals(true, added.get())
+    }
+
+    @Test
+    fun longPressStartsSelectionAndConfirmedDeleteRemovesContact() {
+        val repository = FakeAndroidRepository(listOf(anna, bob))
+        val viewModel = viewModel(repository)
+        compose.setContent {
+            val uiState by viewModel.uiState.collectAsState()
+            ContactList(
+                uiState = uiState,
+                onSearchQueryChange = viewModel::onSearchQueryChange,
+                onFavoritesOnlyChange = viewModel::onToggleFavoritesOnly,
+                onContactClick = {},
+                onAddClick = {},
+                onRetry = viewModel::refresh,
+                onRefresh = viewModel::refresh,
+                onContactSelected = viewModel::onContactSelected,
+                onClearSelection = viewModel::onClearSelection,
+                onSelectAll = viewModel::onSelectAll,
+                onDeleteSelected = viewModel::onDeleteSelected,
+                onShareSelected = viewModel::onShareSelected,
+                onEventHandled = viewModel::onEventHandled,
+            )
+        }
+        viewModel.refresh()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.content is Loadable.Content
+        }
+
+        compose.onNodeWithTag("contact_row_1").performTouchInput { longClick() }
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.selection == setOf(1L)
+        }
+        compose.onNodeWithTag("selection_top_bar").assertIsDisplayed()
+
+        compose.onNodeWithTag("delete_selected_button").performClick()
+        compose.onNodeWithTag("confirm_batch_delete").performClick()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            repository.deleted.isNotEmpty()
+        }
+        compose.waitUntil(timeoutMillis = 5_000) {
+            !viewModel.uiState.value.isSelectionMode
+        }
+
+        assertEquals(listOf(1L), repository.deleted)
+        compose.onNodeWithTag("selection_top_bar").assertDoesNotExist()
+    }
+
+    @Test
+    fun selectAllButtonTogglesVisibleContacts() {
+        val repository = FakeAndroidRepository(listOf(anna, bob))
+        val viewModel = viewModel(repository)
+        compose.setContent {
+            val uiState by viewModel.uiState.collectAsState()
+            ContactList(
+                uiState = uiState,
+                onSearchQueryChange = viewModel::onSearchQueryChange,
+                onFavoritesOnlyChange = viewModel::onToggleFavoritesOnly,
+                onContactClick = {},
+                onAddClick = {},
+                onRetry = viewModel::refresh,
+                onRefresh = viewModel::refresh,
+                onContactSelected = viewModel::onContactSelected,
+                onClearSelection = viewModel::onClearSelection,
+                onSelectAll = viewModel::onSelectAll,
+                onDeleteSelected = viewModel::onDeleteSelected,
+                onShareSelected = viewModel::onShareSelected,
+                onEventHandled = viewModel::onEventHandled,
+            )
+        }
+        viewModel.refresh()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.content is Loadable.Content
+        }
+
+        compose.onNodeWithTag("contact_row_2").performTouchInput { longClick() }
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.selection == setOf(2L)
+        }
+
+        compose.onNodeWithTag("select_all_button").performClick()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.selection == setOf(1L, 2L)
+        }
+
+        compose.onNodeWithTag("select_all_button").performClick()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.selection
+                .isEmpty()
+        }
+        compose.onNodeWithTag("selection_top_bar").assertDoesNotExist()
     }
 }

@@ -9,6 +9,8 @@ import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
+import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
@@ -45,6 +47,7 @@ private class FakeContactsRepository(
 ) : ContactsRepository,
     FavoritesRepository {
     private val favoritesFlow = MutableStateFlow(initialFavorites)
+    val deleted = mutableListOf<Long>()
 
     override suspend fun getContacts(): List<ContactDetails> {
         failure?.let { throw it }
@@ -81,7 +84,11 @@ private class FakeContactsRepository(
         form: ContactForm,
     ) = Unit
 
-    override suspend fun deleteContact(contactId: Long) = Unit
+    override suspend fun deleteContact(contactId: Long) {
+        failure?.let { throw it }
+        deleted += contactId
+        contacts = contacts.filterNot { it.contactId == contactId }
+    }
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -97,6 +104,8 @@ class ContactsViewModelTest {
         ContactsViewModel(
             GetContactsUseCase(repository),
             ObserveFavoritesUseCase(repository),
+            GetContactDetailsUseCase(repository),
+            DeleteContactsUseCase(repository, repository),
         )
 
     @Test
@@ -393,5 +402,198 @@ class ContactsViewModelTest {
             val state = viewModel.uiState.value
             assertTrue(state.content is Loadable.Empty)
             assertEquals(false, state.isSearching)
+        }
+
+    @Test
+    fun `long press enters selection and row taps toggle it`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(
+                    listOf(
+                        details(1, "Anna", "111"),
+                        details(2, "Bob", "222"),
+                    ),
+                )
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            viewModel.onContactSelected(1)
+            advanceUntilIdle()
+            assertEquals(setOf(1L), viewModel.uiState.value.selection)
+            assertTrue(viewModel.uiState.value.isSelectionMode)
+
+            viewModel.onContactSelected(2)
+            viewModel.onContactSelected(1)
+            advanceUntilIdle()
+            assertEquals(setOf(2L), viewModel.uiState.value.selection)
+        }
+
+    @Test
+    fun `clear selection exits selection mode`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+            viewModel.onContactSelected(1)
+            advanceUntilIdle()
+
+            viewModel.onClearSelection()
+            advanceUntilIdle()
+
+            assertEquals(emptySet<Long>(), viewModel.uiState.value.selection)
+            assertEquals(false, viewModel.uiState.value.isSelectionMode)
+        }
+
+    @Test
+    fun `select all toggles whole visible list`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(
+                    listOf(
+                        details(1, "Anna", "111"),
+                        details(2, "Bob", "222"),
+                    ),
+                )
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            viewModel.onSelectAll(listOf(1, 2))
+            advanceUntilIdle()
+            assertEquals(setOf(1L, 2L), viewModel.uiState.value.selection)
+
+            viewModel.onSelectAll(listOf(1, 2))
+            advanceUntilIdle()
+            assertEquals(emptySet<Long>(), viewModel.uiState.value.selection)
+        }
+
+    @Test
+    fun `search query change clears selection`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+            viewModel.onContactSelected(1)
+            advanceUntilIdle()
+
+            viewModel.onSearchQueryChange("ann")
+            advanceUntilIdle()
+
+            assertEquals(emptySet<Long>(), viewModel.uiState.value.selection)
+        }
+
+    @Test
+    fun `favorites toggle clears selection`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+            viewModel.onContactSelected(1)
+            advanceUntilIdle()
+
+            viewModel.onToggleFavoritesOnly()
+            advanceUntilIdle()
+
+            assertEquals(emptySet<Long>(), viewModel.uiState.value.selection)
+        }
+
+    @Test
+    fun `delete selected removes contacts favorites and selection`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(
+                    listOf(
+                        details(1, "Anna", "111"),
+                        details(2, "Bob", "222"),
+                    ),
+                    initialFavorites = setOf(1, 2),
+                )
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            viewModel.onContactSelected(1)
+            viewModel.onContactSelected(2)
+            advanceUntilIdle()
+            viewModel.onDeleteSelected()
+            advanceUntilIdle()
+
+            assertEquals(listOf(1L, 2L), repository.deleted)
+            val state = viewModel.uiState.value
+            assertEquals(emptySet<Long>(), state.selection)
+            assertEquals(emptySet<Long>(), state.favorites)
+            assertTrue(state.content is Loadable.Empty)
+        }
+
+    @Test
+    fun `delete failure emits event keeps list and clears selection`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+            repository.failure = RuntimeException("boom")
+            viewModel.onContactSelected(1)
+            advanceUntilIdle()
+
+            viewModel.onDeleteSelected()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(ContactsEvent.DeleteFailed, state.event)
+            assertEquals(emptySet<Long>(), state.selection)
+            assertEquals(emptyList<Long>(), repository.deleted)
+            assertTrue(state.content is Loadable.Content)
+        }
+
+    @Test
+    fun `share selected emits details and handled event clears it`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(
+                    listOf(
+                        details(1, "Anna", "111"),
+                        details(2, "Bob", "222"),
+                    ),
+                )
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+            viewModel.onContactSelected(2)
+            advanceUntilIdle()
+
+            viewModel.onShareSelected()
+            advanceUntilIdle()
+
+            val event = viewModel.uiState.value.event
+            assertTrue(event is ContactsEvent.Share)
+            assertEquals(
+                listOf(2L),
+                (event as ContactsEvent.Share).contacts.map { it.contactId },
+            )
+
+            viewModel.onEventHandled()
+            advanceUntilIdle()
+            assertEquals(null, viewModel.uiState.value.event)
         }
 }

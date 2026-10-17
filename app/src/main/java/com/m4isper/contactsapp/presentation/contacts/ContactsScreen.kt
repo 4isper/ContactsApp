@@ -1,6 +1,7 @@
 package com.m4isper.contactsapp.presentation.contacts
 
 import android.Manifest
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -46,6 +47,10 @@ fun ContactsScreen(
         onPauseOrDispose { /* no-op */ }
     }
 
+    BackHandler(enabled = uiState.isSelectionMode) {
+        viewModel.onClearSelection()
+    }
+
     if (!hasReadPermission) {
         PermissionRequest(
             modifier = modifier,
@@ -63,6 +68,12 @@ fun ContactsScreen(
             onAddClick = onAddClick,
             onRetry = viewModel::refresh,
             onRefresh = viewModel::refresh,
+            onContactSelected = viewModel::onContactSelected,
+            onClearSelection = viewModel::onClearSelection,
+            onSelectAll = viewModel::onSelectAll,
+            onDeleteSelected = viewModel::onDeleteSelected,
+            onShareSelected = viewModel::onShareSelected,
+            onEventHandled = viewModel::onEventHandled,
             modifier = modifier,
         )
     }
