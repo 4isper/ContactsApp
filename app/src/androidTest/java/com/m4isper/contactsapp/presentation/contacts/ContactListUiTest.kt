@@ -15,6 +15,7 @@ import com.m4isper.contactsapp.FakeAndroidRepository
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.ImportContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.testDetails
@@ -39,6 +40,7 @@ class ContactListUiTest {
             ObserveFavoritesUseCase(repository),
             GetContactDetailsUseCase(repository),
             DeleteContactsUseCase(repository, repository),
+            ImportContactsUseCase(repository),
         )
 
     @Test
@@ -57,6 +59,8 @@ class ContactListUiTest {
                 onSelectAll = {},
                 onDeleteSelected = {},
                 onShareSelected = {},
+                onImportText = {},
+                onExportRequested = {},
                 onEventHandled = {},
             )
         }
@@ -82,6 +86,8 @@ class ContactListUiTest {
                 onSelectAll = {},
                 onDeleteSelected = {},
                 onShareSelected = {},
+                onImportText = {},
+                onExportRequested = {},
                 onEventHandled = {},
             )
         }
@@ -108,6 +114,8 @@ class ContactListUiTest {
                 onSelectAll = {},
                 onDeleteSelected = {},
                 onShareSelected = {},
+                onImportText = {},
+                onExportRequested = {},
                 onEventHandled = {},
             )
         }
@@ -136,6 +144,8 @@ class ContactListUiTest {
                 onSelectAll = viewModel::onSelectAll,
                 onDeleteSelected = viewModel::onDeleteSelected,
                 onShareSelected = viewModel::onShareSelected,
+                onImportText = viewModel.files::onImportText,
+                onExportRequested = viewModel.files::onExportRequested,
                 onEventHandled = viewModel::onEventHandled,
             )
         }
@@ -172,6 +182,8 @@ class ContactListUiTest {
                 onSelectAll = {},
                 onDeleteSelected = {},
                 onShareSelected = {},
+                onImportText = {},
+                onExportRequested = {},
                 onEventHandled = {},
             )
         }
@@ -200,6 +212,8 @@ class ContactListUiTest {
                 onSelectAll = viewModel::onSelectAll,
                 onDeleteSelected = viewModel::onDeleteSelected,
                 onShareSelected = viewModel::onShareSelected,
+                onImportText = viewModel.files::onImportText,
+                onExportRequested = viewModel.files::onExportRequested,
                 onEventHandled = viewModel::onEventHandled,
             )
         }
@@ -246,6 +260,8 @@ class ContactListUiTest {
                 onSelectAll = viewModel::onSelectAll,
                 onDeleteSelected = viewModel::onDeleteSelected,
                 onShareSelected = viewModel::onShareSelected,
+                onImportText = viewModel.files::onImportText,
+                onExportRequested = viewModel.files::onExportRequested,
                 onEventHandled = viewModel::onEventHandled,
             )
         }
@@ -270,5 +286,33 @@ class ContactListUiTest {
                 .isEmpty()
         }
         compose.onNodeWithTag("selection_top_bar").assertDoesNotExist()
+    }
+
+    @Test
+    fun moreMenuShowsImportAndExport() {
+        compose.setContent {
+            ContactList(
+                uiState = ContactsUiState(content = Loadable.Content(listOf(anna))),
+                onSearchQueryChange = {},
+                onFavoritesOnlyChange = {},
+                onContactClick = {},
+                onAddClick = {},
+                onRetry = {},
+                onRefresh = {},
+                onContactSelected = {},
+                onClearSelection = {},
+                onSelectAll = {},
+                onDeleteSelected = {},
+                onShareSelected = {},
+                onImportText = {},
+                onExportRequested = {},
+                onEventHandled = {},
+            )
+        }
+
+        compose.onNodeWithTag("more_actions_button").performClick()
+
+        compose.onNodeWithTag("import_menu_item").assertIsDisplayed()
+        compose.onNodeWithTag("export_menu_item").assertIsDisplayed()
     }
 }

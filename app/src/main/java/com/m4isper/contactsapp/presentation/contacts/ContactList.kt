@@ -1,6 +1,10 @@
 package com.m4isper.contactsapp.presentation.contacts
 
+import android.Manifest
+import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -24,14 +28,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PersonSearch
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -61,7 +69,7 @@ import androidx.compose.ui.unit.sp
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.presentation.common.Loadable
-import com.m4isper.contactsapp.presentation.common.shareContacts
+import com.m4isper.contactsapp.presentation.common.hasPermission
 import com.m4isper.contactsapp.ui.components.ConfirmDialog
 import com.m4isper.contactsapp.ui.components.EmptyState
 import com.m4isper.contactsapp.ui.components.ErrorState
@@ -69,7 +77,21 @@ import com.m4isper.contactsapp.ui.components.ListAvatar
 import com.m4isper.contactsapp.ui.components.LoadingState
 import com.m4isper.contactsapp.ui.components.SearchField
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+private const val EXPORT_FILE_NAME = "contacts.vcf"
+
+/** MIME-типы, под которыми файловые менеджеры отдают .vcf. */
+private val VCARD_IMPORT_MIME_TYPES =
+    arrayOf(
+        "text/vcard",
+        "text/x-vcard",
+        "text/directory",
+        "text/plain",
+        "application/octet-stream",
+    )
 
 internal fun groupContactsByFirstLetter(contacts: List<ContactDetails>): Map<Char, List<ContactDetails>> =
     contacts
@@ -104,24 +126,61 @@ internal fun ContactList(
     onSelectAll: (List<Long>) -> Unit,
     onDeleteSelected: () -> Unit,
     onShareSelected: () -> Unit,
+    onImportText: (String) -> Unit,
+    onExportRequested: () -> Unit,
     onEventHandled: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var pendingExportUri by remember { mutableStateOf<Uri?>(null) }
+
+    val importLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) {
+                scope.launch {
+                    val text =
+                        withContext(Dispatchers.IO) {
+                            context.contentResolver
+                                .openInputStream(uri)
+                                ?.bufferedReader()
+                                ?.use { it.readText() }
+                        }
+                    if (text.isNullOrBlank()) {
+                        Toast.makeText(context, R.string.import_failed, Toast.LENGTH_SHORT).show()
+                    } else {
+                        onImportText(text)
+                    }
+                }
+            }
+        }
+
+    val exportLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.CreateDocument("text/vcard"),
+        ) { uri ->
+            if (uri != null) {
+                pendingExportUri = uri
+                onExportRequested()
+            }
+        }
+
+    val writePermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) {
+                importLauncher.launch(VCARD_IMPORT_MIME_TYPES)
+            } else {
+                Toast.makeText(context, R.string.import_no_permission, Toast.LENGTH_SHORT).show()
+            }
+        }
 
     val event = uiState.event
     LaunchedEffect(event) {
-        when (event) {
-            is ContactsEvent.Share -> {
-                shareContacts(context, event.contacts)
-                onEventHandled()
-            }
-            ContactsEvent.DeleteFailed -> {
-                Toast.makeText(context, R.string.batch_delete_failed, Toast.LENGTH_SHORT).show()
-                onEventHandled()
-            }
-            null -> Unit
+        if (event != null) {
+            val exportUri = pendingExportUri
+            pendingExportUri = null
+            handleContactsEvent(context, event, exportUri, onEventHandled)
         }
     }
 
@@ -168,6 +227,14 @@ internal fun ContactList(
                     showFavoritesOnly = uiState.showFavoritesOnly,
                     onSearchQueryChange = onSearchQueryChange,
                     onFavoritesOnlyChange = onFavoritesOnlyChange,
+                    onImportClick = {
+                        if (hasPermission(context, Manifest.permission.WRITE_CONTACTS)) {
+                            importLauncher.launch(VCARD_IMPORT_MIME_TYPES)
+                        } else {
+                            writePermissionLauncher.launch(Manifest.permission.WRITE_CONTACTS)
+                        }
+                    },
+                    onExportClick = { exportLauncher.launch(EXPORT_FILE_NAME) },
                 )
             }
             ContactListBody(
@@ -213,34 +280,71 @@ private fun FilterHeader(
     showFavoritesOnly: Boolean,
     onSearchQueryChange: (String) -> Unit,
     onFavoritesOnlyChange: () -> Unit,
+    onImportClick: () -> Unit,
+    onExportClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val spacing = LocalSpacing.current
+    var menuOpen by remember { mutableStateOf(false) }
     Column(modifier = modifier.fillMaxWidth()) {
         SearchField(
             value = searchQuery,
             onValueChange = onSearchQueryChange,
         )
-        FilterChip(
-            selected = showFavoritesOnly,
-            onClick = onFavoritesOnlyChange,
-            label = { Text(stringResource(R.string.filter_favorites)) },
-            leadingIcon =
-                if (showFavoritesOnly) {
-                    {
-                        Icon(
-                            Icons.Filled.Favorite,
-                            contentDescription = null,
-                        )
-                    }
-                } else {
-                    null
-                },
-            modifier =
-                Modifier
-                    .padding(horizontal = spacing.m, vertical = spacing.xs)
-                    .testTag("favorites_chip"),
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            FilterChip(
+                selected = showFavoritesOnly,
+                onClick = onFavoritesOnlyChange,
+                label = { Text(stringResource(R.string.filter_favorites)) },
+                leadingIcon =
+                    if (showFavoritesOnly) {
+                        {
+                            Icon(
+                                Icons.Filled.Favorite,
+                                contentDescription = null,
+                            )
+                        }
+                    } else {
+                        null
+                    },
+                modifier =
+                    Modifier
+                        .padding(horizontal = spacing.m, vertical = spacing.xs)
+                        .testTag("favorites_chip"),
+            )
+            Box {
+                IconButton(
+                    onClick = { menuOpen = true },
+                    modifier = Modifier.testTag("more_actions_button"),
+                ) {
+                    Icon(
+                        Icons.Filled.MoreVert,
+                        contentDescription = stringResource(R.string.action_more),
+                    )
+                }
+                DropdownMenu(
+                    expanded = menuOpen,
+                    onDismissRequest = { menuOpen = false },
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.action_import)) },
+                        onClick = {
+                            menuOpen = false
+                            onImportClick()
+                        },
+                        modifier = Modifier.testTag("import_menu_item"),
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.action_export)) },
+                        onClick = {
+                            menuOpen = false
+                            onExportClick()
+                        },
+                        modifier = Modifier.testTag("export_menu_item"),
+                    )
+                }
+            }
+        }
     }
 }
 

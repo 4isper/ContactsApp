@@ -3,10 +3,10 @@ package com.m4isper.contactsapp.presentation.contacts
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.NameParts
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.ImportContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
 import dev.zacsweers.metro.AppScope
@@ -20,7 +20,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 data class ContactsUiState(
     val searchQuery: String = "",
@@ -47,6 +46,29 @@ sealed interface ContactsEvent {
 
     /** Не удалось удалить выделенные контакты. */
     data object DeleteFailed : ContactsEvent
+
+    /** Импорт: в файле не нашлось ни одной vCard. */
+    data object ImportEmpty : ContactsEvent
+
+    /** Импорт: создано [count] контактов. */
+    data class ImportFinished(
+        val count: Int,
+    ) : ContactsEvent
+
+    /** Импорт: ни один контакт не создан из-за ошибок. */
+    data object ImportFailed : ContactsEvent
+
+    /** Экспорт: [content] — готовый .vcf на [count] контактов. */
+    data class ExportReady(
+        val content: String,
+        val count: Int,
+    ) : ContactsEvent
+
+    /** Экспорт: экспортировать нечего. */
+    data object ExportEmpty : ContactsEvent
+
+    /** Экспорт: не удалось собрать контакты. */
+    data object ExportFailed : ContactsEvent
 }
 
 internal const val SUBSCRIBE_TIMEOUT_MILLIS = 5_000L
@@ -66,6 +88,7 @@ class ContactsViewModel(
     observeFavoritesUseCase: ObserveFavoritesUseCase,
     private val getContactDetailsUseCase: GetContactDetailsUseCase,
     private val deleteContactsUseCase: DeleteContactsUseCase,
+    importContactsUseCase: ImportContactsUseCase,
 ) : ViewModel() {
     private val allContacts = MutableStateFlow<List<ContactDetails>>(emptyList())
     private val isLoading = MutableStateFlow(false)
@@ -91,23 +114,7 @@ class ContactsViewModel(
             selectionFlow,
             eventFlow,
         ) { load, favorites, favoritesOnly, selection, event ->
-            val trimmed = load.query.trim()
-            val visible =
-                load.all
-                    .filter { !favoritesOnly || it.contactId in favorites }
-                    .let { list ->
-                        if (trimmed.isBlank()) {
-                            list
-                        } else {
-                            val q = trimmed.lowercase(Locale.ROOT)
-                            list.filter { contact ->
-                                contact.name.lowercase(Locale.ROOT).contains(q) ||
-                                    contact.phones.any { it.number.contains(trimmed) } ||
-                                    contact.emails.any { it.address.lowercase(Locale.ROOT).contains(q) } ||
-                                    contact.nameParts?.matches(q) == true
-                            }
-                        }
-                    }
+            val visible = filterContacts(load.all, load.query, favoritesOnly, favorites)
             val content =
                 when {
                     load.failure != null -> Loadable.Error(load.failure.message)
@@ -128,6 +135,17 @@ class ContactsViewModel(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(SUBSCRIBE_TIMEOUT_MILLIS),
             initialValue = ContactsUiState(),
+        )
+
+    /** Импорт и экспорт .vcf: сценарии вынесены в [ContactsFileActions]. */
+    internal val files =
+        ContactsFileActions(
+            scope = viewModelScope,
+            events = eventFlow,
+            getContacts = { getContactsUseCase() },
+            getContactDetails = { getContactDetailsUseCase(it) },
+            importContacts = importContactsUseCase,
+            refresh = ::refresh,
         )
 
     fun onSearchQueryChange(query: String) {
@@ -222,8 +240,3 @@ class ContactsViewModel(
         selectionFlow.value = emptySet()
     }
 }
-
-/** Совпадение поискового запроса с любым компонентом структурированного имени. */
-private fun NameParts.matches(query: String): Boolean =
-    listOf(given, family, middle, prefix, suffix, phoneticGiven, phoneticMiddle, phoneticFamily)
-        .any { it.lowercase(Locale.ROOT).contains(query) }

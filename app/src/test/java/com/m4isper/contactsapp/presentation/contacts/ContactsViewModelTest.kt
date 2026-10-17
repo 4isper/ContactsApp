@@ -12,6 +12,7 @@ import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.ImportContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
 import kotlinx.coroutines.Dispatchers
@@ -48,6 +49,7 @@ private class FakeContactsRepository(
     FavoritesRepository {
     private val favoritesFlow = MutableStateFlow(initialFavorites)
     val deleted = mutableListOf<Long>()
+    val created = mutableListOf<ContactForm>()
 
     override suspend fun getContacts(): List<ContactDetails> {
         failure?.let { throw it }
@@ -77,7 +79,13 @@ private class FakeContactsRepository(
         favoritesFlow.value = favoritesFlow.value - contactId
     }
 
-    override suspend fun createContact(form: ContactForm) = Unit
+    override suspend fun createContact(form: ContactForm) {
+        failure?.let { throw it }
+        created += form
+        val newId = (contacts.maxOfOrNull { it.contactId } ?: 0L) + 1
+        val name = form.name.display.ifBlank { form.name.composed }
+        contacts = contacts + ContactDetails(contactId = newId, name = name)
+    }
 
     override suspend fun updateContact(
         contactId: Long,
@@ -106,6 +114,7 @@ class ContactsViewModelTest {
             ObserveFavoritesUseCase(repository),
             GetContactDetailsUseCase(repository),
             DeleteContactsUseCase(repository, repository),
+            ImportContactsUseCase(repository),
         )
 
     @Test
@@ -595,5 +604,127 @@ class ContactsViewModelTest {
             viewModel.onEventHandled()
             advanceUntilIdle()
             assertEquals(null, viewModel.uiState.value.event)
+        }
+
+    @Test
+    fun `import creates contacts and emits finished event`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeContactsRepository()
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            viewModel.files.onImportText(
+                """
+                BEGIN:VCARD
+                VERSION:3.0
+                FN:Anna
+                TEL;TYPE=CELL:+71112223344
+                END:VCARD
+                """.trimIndent(),
+            )
+            advanceUntilIdle()
+
+            assertEquals(1, repository.created.size)
+            val state = viewModel.uiState.value
+            assertEquals(ContactsEvent.ImportFinished(1), state.event)
+            assertTrue(state.content is Loadable.Content)
+        }
+
+    @Test
+    fun `import without vcards emits empty event`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeContactsRepository()
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+
+            viewModel.files.onImportText("plain text without vcards")
+            advanceUntilIdle()
+
+            assertEquals(ContactsEvent.ImportEmpty, viewModel.uiState.value.event)
+            assertTrue(repository.created.isEmpty())
+        }
+
+    @Test
+    fun `import failure emits failed event`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeContactsRepository(failure = RuntimeException("boom"))
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+
+            viewModel.files.onImportText(
+                """
+                BEGIN:VCARD
+                FN:Anna
+                END:VCARD
+                """.trimIndent(),
+            )
+            advanceUntilIdle()
+
+            assertEquals(ContactsEvent.ImportFailed, viewModel.uiState.value.event)
+        }
+
+    @Test
+    fun `export emits vcard content for all contacts`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(
+                    listOf(
+                        details(1, "Anna", "111"),
+                        details(2, "Bob", "222"),
+                    ),
+                )
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            viewModel.files.onExportRequested()
+            advanceUntilIdle()
+
+            val event = viewModel.uiState.value.event
+            assertTrue(event is ContactsEvent.ExportReady)
+            val ready = event as ContactsEvent.ExportReady
+            assertEquals(2, ready.count)
+            assertTrue(ready.content.contains("FN:Anna"))
+            assertTrue(ready.content.contains("FN:Bob"))
+        }
+
+    @Test
+    fun `export without contacts emits empty event`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeContactsRepository()
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            viewModel.files.onExportRequested()
+            advanceUntilIdle()
+
+            assertEquals(ContactsEvent.ExportEmpty, viewModel.uiState.value.event)
+        }
+
+    @Test
+    fun `export failure emits failed event`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+            repository.failure = RuntimeException("boom")
+
+            viewModel.files.onExportRequested()
+            advanceUntilIdle()
+
+            assertEquals(ContactsEvent.ExportFailed, viewModel.uiState.value.event)
         }
 }

@@ -94,6 +94,14 @@
     <string name="action_select_all">Select all</string>
     <string name="action_deselect_all">Deselect all</string>
     <string name="batch_delete_failed">Couldn\'t delete contacts</string>
+    <string name="action_more">More actions</string>
+    <string name="action_import">Import from file</string>
+    <string name="action_export">Export to file</string>
+    <string name="import_empty">No contacts found in the file</string>
+    <string name="import_failed">Couldn\'t import contacts</string>
+    <string name="import_no_permission">No permission to import contacts</string>
+    <string name="export_empty">Nothing to export</string>
+    <string name="export_failed">Couldn\'t export contacts</string>
 
     <string name="editor_add_photo">Add photo</string>
     <string name="editor_change_photo">Change photo</string>
@@ -141,5 +149,13 @@
     <plurals name="batch_delete_title">
         <item quantity="one">Delete %d contact?</item>
         <item quantity="other">Delete %d contacts?</item>
+    </plurals>
+    <plurals name="import_success">
+        <item quantity="one">Imported %d contact</item>
+        <item quantity="other">Imported %d contacts</item>
+    </plurals>
+    <plurals name="export_success">
+        <item quantity="one">Exported %d contact</item>
+        <item quantity="other">Exported %d contacts</item>
     </plurals>
 </resources>

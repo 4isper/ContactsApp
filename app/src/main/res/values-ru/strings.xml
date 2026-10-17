@@ -94,6 +94,14 @@
     <string name="action_select_all">Выбрать все</string>
     <string name="action_deselect_all">Снять выделение</string>
     <string name="batch_delete_failed">Не удалось удалить контакты</string>
+    <string name="action_more">Дополнительные действия</string>
+    <string name="action_import">Импорт из файла</string>
+    <string name="action_export">Экспорт в файл</string>
+    <string name="import_empty">В файле не найдены контакты</string>
+    <string name="import_failed">Не удалось импортировать контакты</string>
+    <string name="import_no_permission">Нет разрешения на импорт контактов</string>
+    <string name="export_empty">Нет контактов для экспорта</string>
+    <string name="export_failed">Не удалось экспортировать контакты</string>
 
     <string name="editor_add_photo">Добавить фото</string>
     <string name="editor_change_photo">Изменить фото</string>
@@ -151,5 +159,17 @@
         <item quantity="few">Удалить %d контакта?</item>
         <item quantity="many">Удалить %d контактов?</item>
         <item quantity="other">Удалить %d контакта?</item>
+    </plurals>
+    <plurals name="import_success">
+        <item quantity="one">Импортирован %d контакт</item>
+        <item quantity="few">Импортировано %d контакта</item>
+        <item quantity="many">Импортировано %d контактов</item>
+        <item quantity="other">Импортировано %d контакта</item>
+    </plurals>
+    <plurals name="export_success">
+        <item quantity="one">Экспортирован %d контакт</item>
+        <item quantity="few">Экспортировано %d контакта</item>
+        <item quantity="many">Экспортировано %d контактов</item>
+        <item quantity="other">Экспортировано %d контакта</item>
     </plurals>
 </resources>
