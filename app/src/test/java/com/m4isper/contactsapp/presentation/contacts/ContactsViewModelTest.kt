@@ -24,8 +24,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -103,7 +105,7 @@ private class FakeContactsRepository(
 
 @OptIn(ExperimentalCoroutinesApi::class)
 // Подавление осознанное: тест-аггрегатор поведения списка, декомпозиция по файлам не нужна.
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "LargeClass")
 class ContactsViewModelTest {
     @After
     fun tearDown() {
@@ -611,8 +613,100 @@ class ContactsViewModelTest {
             val state = viewModel.uiState.value
             assertEquals(ContactsEvent.DeleteFailed, state.event)
             assertEquals(emptySet<Long>(), state.selection)
+            assertEquals(emptySet<Long>(), state.pendingDeleteIds)
             assertEquals(emptyList<Long>(), repository.deleted)
             assertTrue(state.content is Loadable.Content)
+        }
+
+    @Test
+    fun `delete selected stages contacts and hides them until timeout`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(
+                    listOf(
+                        details(1, "Anna", "111"),
+                        details(2, "Bob", "222"),
+                    ),
+                )
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+            viewModel.onContactSelected(1)
+            runCurrent()
+
+            viewModel.onDeleteSelected()
+            runCurrent()
+
+            val state = viewModel.uiState.value
+            assertEquals(setOf(1L), state.pendingDeleteIds)
+            assertEquals(emptyList<Long>(), repository.deleted)
+            val content = state.content
+            assertTrue(content is Loadable.Content)
+            assertEquals(listOf("Bob"), (content as Loadable.Content).data.map { it.name })
+        }
+
+    @Test
+    fun `undo delete restores contacts and skips repository`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(
+                    listOf(
+                        details(1, "Anna", "111"),
+                        details(2, "Bob", "222"),
+                    ),
+                )
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+            viewModel.onContactSelected(1)
+            viewModel.onDeleteSelected()
+            runCurrent()
+            assertEquals(setOf(1L), viewModel.uiState.value.pendingDeleteIds)
+
+            viewModel.onUndoDelete()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(emptySet<Long>(), state.pendingDeleteIds)
+            assertEquals(null, state.event)
+            assertEquals(emptyList<Long>(), repository.deleted)
+            val content = state.content
+            assertTrue(content is Loadable.Content)
+            assertEquals(listOf("Anna", "Bob"), (content as Loadable.Content).data.map { it.name })
+        }
+
+    @Test
+    fun `staged delete commits after undo timeout`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(
+                    listOf(
+                        details(1, "Anna", "111"),
+                        details(2, "Bob", "222"),
+                    ),
+                )
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+            viewModel.onContactSelected(1)
+            viewModel.onContactSelected(2)
+            viewModel.onDeleteSelected()
+            runCurrent()
+            assertEquals(setOf(1L, 2L), viewModel.uiState.value.pendingDeleteIds)
+
+            advanceTimeBy(DELETE_UNDO_TIMEOUT_MILLIS + 1)
+            runCurrent()
+
+            val state = viewModel.uiState.value
+            assertEquals(emptySet<Long>(), state.pendingDeleteIds)
+            assertEquals(listOf(1L, 2L), repository.deleted)
+            assertTrue(state.content is Loadable.Empty)
         }
 
     @Test

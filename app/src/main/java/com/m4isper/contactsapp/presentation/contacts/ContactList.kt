@@ -42,6 +42,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -125,6 +127,7 @@ internal fun ContactList(
     onClearSelection: () -> Unit,
     onSelectAll: (List<Long>) -> Unit,
     onDeleteSelected: () -> Unit,
+    onUndoDelete: () -> Unit,
     onShareSelected: () -> Unit,
     onImportText: (String) -> Unit,
     onExportRequested: () -> Unit,
@@ -135,6 +138,7 @@ internal fun ContactList(
     val scope = rememberCoroutineScope()
     var showDeleteDialog by remember { mutableStateOf(false) }
     var pendingExportUri by remember { mutableStateOf<Uri?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val importLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -184,11 +188,23 @@ internal fun ContactList(
         }
     }
 
+    DeleteUndoEffect(
+        snackbarHostState = snackbarHostState,
+        pendingDeleteIds = uiState.pendingDeleteIds,
+        onUndoDelete = onUndoDelete,
+    )
+
     val visibleIds = (uiState.content as? Loadable.Content)?.data?.map { it.contactId }.orEmpty()
     val allSelected = visibleIds.isNotEmpty() && uiState.selection.containsAll(visibleIds)
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.testTag("undo_snackbar"),
+            )
+        },
         topBar = {
             if (uiState.isSelectionMode) {
                 SelectionTopBar(

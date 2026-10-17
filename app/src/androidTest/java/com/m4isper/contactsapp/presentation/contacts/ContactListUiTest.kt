@@ -11,7 +11,9 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.m4isper.contactsapp.FakeAndroidRepository
+import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
@@ -58,6 +60,7 @@ class ContactListUiTest {
                 onClearSelection = {},
                 onSelectAll = {},
                 onDeleteSelected = {},
+                onUndoDelete = {},
                 onShareSelected = {},
                 onImportText = {},
                 onExportRequested = {},
@@ -85,6 +88,7 @@ class ContactListUiTest {
                 onClearSelection = {},
                 onSelectAll = {},
                 onDeleteSelected = {},
+                onUndoDelete = {},
                 onShareSelected = {},
                 onImportText = {},
                 onExportRequested = {},
@@ -113,6 +117,7 @@ class ContactListUiTest {
                 onClearSelection = {},
                 onSelectAll = {},
                 onDeleteSelected = {},
+                onUndoDelete = {},
                 onShareSelected = {},
                 onImportText = {},
                 onExportRequested = {},
@@ -143,6 +148,7 @@ class ContactListUiTest {
                 onClearSelection = viewModel::onClearSelection,
                 onSelectAll = viewModel::onSelectAll,
                 onDeleteSelected = viewModel::onDeleteSelected,
+                onUndoDelete = viewModel::onUndoDelete,
                 onShareSelected = viewModel::onShareSelected,
                 onImportText = viewModel.files::onImportText,
                 onExportRequested = viewModel.files::onExportRequested,
@@ -181,6 +187,7 @@ class ContactListUiTest {
                 onClearSelection = {},
                 onSelectAll = {},
                 onDeleteSelected = {},
+                onUndoDelete = {},
                 onShareSelected = {},
                 onImportText = {},
                 onExportRequested = {},
@@ -211,6 +218,7 @@ class ContactListUiTest {
                 onClearSelection = viewModel::onClearSelection,
                 onSelectAll = viewModel::onSelectAll,
                 onDeleteSelected = viewModel::onDeleteSelected,
+                onUndoDelete = viewModel::onUndoDelete,
                 onShareSelected = viewModel::onShareSelected,
                 onImportText = viewModel.files::onImportText,
                 onExportRequested = viewModel.files::onExportRequested,
@@ -230,7 +238,7 @@ class ContactListUiTest {
 
         compose.onNodeWithTag("delete_selected_button").performClick()
         compose.onNodeWithTag("confirm_batch_delete").performClick()
-        compose.waitUntil(timeoutMillis = 5_000) {
+        compose.waitUntil(timeoutMillis = 10_000) {
             repository.deleted.isNotEmpty()
         }
         compose.waitUntil(timeoutMillis = 5_000) {
@@ -239,6 +247,64 @@ class ContactListUiTest {
 
         assertEquals(listOf(1L), repository.deleted)
         compose.onNodeWithTag("selection_top_bar").assertDoesNotExist()
+    }
+
+    @Test
+    fun deleteShowsUndoSnackbarAndUndoRestoresContact() {
+        val repository = FakeAndroidRepository(listOf(anna, bob))
+        val viewModel = viewModel(repository)
+        compose.setContent {
+            val uiState by viewModel.uiState.collectAsState()
+            ContactList(
+                uiState = uiState,
+                onSearchQueryChange = viewModel::onSearchQueryChange,
+                onFavoritesOnlyChange = viewModel::onToggleFavoritesOnly,
+                onContactClick = {},
+                onAddClick = {},
+                onRetry = viewModel::refresh,
+                onRefresh = viewModel::refresh,
+                onContactSelected = viewModel::onContactSelected,
+                onClearSelection = viewModel::onClearSelection,
+                onSelectAll = viewModel::onSelectAll,
+                onDeleteSelected = viewModel::onDeleteSelected,
+                onUndoDelete = viewModel::onUndoDelete,
+                onShareSelected = viewModel::onShareSelected,
+                onImportText = viewModel.files::onImportText,
+                onExportRequested = viewModel.files::onExportRequested,
+                onEventHandled = viewModel::onEventHandled,
+            )
+        }
+        viewModel.refresh()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.content is Loadable.Content
+        }
+
+        compose.onNodeWithTag("contact_row_1").performTouchInput { longClick() }
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.selection == setOf(1L)
+        }
+        compose.onNodeWithTag("delete_selected_button").performClick()
+        compose.onNodeWithTag("confirm_batch_delete").performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.pendingDeleteIds == setOf(1L)
+        }
+        compose.onNodeWithTag("contact_row_1").assertDoesNotExist()
+        compose.onNodeWithTag("undo_snackbar").assertIsDisplayed()
+
+        val undoLabel =
+            InstrumentationRegistry
+                .getInstrumentation()
+                .targetContext
+                .getString(R.string.action_undo)
+        compose.onNodeWithText(undoLabel).performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.pendingDeleteIds
+                .isEmpty()
+        }
+        assertEquals(emptyList<Long>(), repository.deleted)
+        compose.onNodeWithTag("contact_row_1").assertIsDisplayed()
     }
 
     @Test
@@ -259,6 +325,7 @@ class ContactListUiTest {
                 onClearSelection = viewModel::onClearSelection,
                 onSelectAll = viewModel::onSelectAll,
                 onDeleteSelected = viewModel::onDeleteSelected,
+                onUndoDelete = viewModel::onUndoDelete,
                 onShareSelected = viewModel::onShareSelected,
                 onImportText = viewModel.files::onImportText,
                 onExportRequested = viewModel.files::onExportRequested,
@@ -303,6 +370,7 @@ class ContactListUiTest {
                 onClearSelection = {},
                 onSelectAll = {},
                 onDeleteSelected = {},
+                onUndoDelete = {},
                 onShareSelected = {},
                 onImportText = {},
                 onExportRequested = {},

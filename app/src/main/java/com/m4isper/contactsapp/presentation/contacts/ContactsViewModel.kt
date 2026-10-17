@@ -14,6 +14,8 @@ import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -28,6 +30,7 @@ data class ContactsUiState(
     val isRefreshing: Boolean = false,
     val content: Loadable<List<ContactDetails>> = Loadable.Loading,
     val selection: Set<Long> = emptySet(),
+    val pendingDeleteIds: Set<Long> = emptySet(),
     val event: ContactsEvent? = null,
 ) {
     val isSearching: Boolean
@@ -73,11 +76,15 @@ sealed interface ContactsEvent {
 
 internal const val SUBSCRIBE_TIMEOUT_MILLIS = 5_000L
 
+/** Окно отмены: всё это время snackbar после удаления предлагает вернуть контакты. */
+internal const val DELETE_UNDO_TIMEOUT_MILLIS = 4_000L
+
 private data class ContactsLoad(
     val all: List<ContactDetails>,
     val loading: Boolean,
     val query: String,
     val failure: Throwable?,
+    val pending: Set<Long>,
 )
 
 @Inject
@@ -96,7 +103,10 @@ class ContactsViewModel(
     private val loadFailure = MutableStateFlow<Throwable?>(null)
     private val favoritesOnlyFlow = MutableStateFlow(false)
     private val selectionFlow = MutableStateFlow<Set<Long>>(emptySet())
+    private val pendingDeleteFlow = MutableStateFlow<Set<Long>>(emptySet())
     private val eventFlow = MutableStateFlow<ContactsEvent?>(null)
+
+    private var pendingDeleteJob: Job? = null
 
     private val favoritesFlow: StateFlow<Set<Long>> =
         observeFavoritesUseCase()
@@ -108,13 +118,23 @@ class ContactsViewModel(
 
     val uiState: StateFlow<ContactsUiState> =
         combine(
-            combine(allContacts, isLoading, searchQueryFlow, loadFailure, ::ContactsLoad),
+            combine(
+                allContacts,
+                isLoading,
+                searchQueryFlow,
+                loadFailure,
+                pendingDeleteFlow,
+            ) { all, loading, query, failure, pending ->
+                ContactsLoad(all, loading, query, failure, pending)
+            },
             favoritesFlow,
             favoritesOnlyFlow,
             selectionFlow,
             eventFlow,
         ) { load, favorites, favoritesOnly, selection, event ->
-            val visible = filterContacts(load.all, load.query, favoritesOnly, favorites)
+            val visible =
+                filterContacts(load.all, load.query, favoritesOnly, favorites)
+                    .filterNot { it.contactId in load.pending }
             val content =
                 when {
                     load.failure != null -> Loadable.Error(load.failure.message)
@@ -129,6 +149,7 @@ class ContactsViewModel(
                 isRefreshing = load.loading,
                 content = content,
                 selection = selection,
+                pendingDeleteIds = load.pending,
                 event = event,
             )
         }.stateIn(
@@ -174,23 +195,41 @@ class ContactsViewModel(
         selectionFlow.value = if (selectionFlow.value.containsAll(all)) emptySet() else all
     }
 
-    // Catch-all осознанный: ошибку удаления показываем одноразовым событием, список не меняем.
+    /**
+     * Отложенное удаление: контакты сразу прячутся из списка, а из контактов удаляются только
+     * по истечении окна отмены — до этого момента snackbar позволяет вернуть их.
+     * Catch-all осознанный: ошибку удаления показываем одноразовым событием, список возвращаем.
+     */
     @Suppress("TooGenericExceptionCaught")
     fun onDeleteSelected() {
         val ids = selectionFlow.value
         if (ids.isEmpty()) return
-        viewModelScope.launch {
-            try {
-                deleteContactsUseCase(ids)
-                allContacts.value = allContacts.value.filterNot { it.contactId in ids }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (_: Exception) {
-                eventFlow.value = ContactsEvent.DeleteFailed
-            } finally {
-                selectionFlow.value = emptySet()
+        selectionFlow.value = emptySet()
+        pendingDeleteFlow.value = pendingDeleteFlow.value + ids
+        pendingDeleteJob?.cancel()
+        pendingDeleteJob =
+            viewModelScope.launch {
+                delay(DELETE_UNDO_TIMEOUT_MILLIS)
+                val pending = pendingDeleteFlow.value
+                try {
+                    deleteContactsUseCase(pending)
+                    allContacts.value = allContacts.value.filterNot { it.contactId in pending }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    eventFlow.value = ContactsEvent.DeleteFailed
+                } finally {
+                    pendingDeleteFlow.value = emptySet()
+                    pendingDeleteJob = null
+                }
             }
-        }
+    }
+
+    /** Отмена отложенного удаления: контакты возвращаются в список. */
+    fun onUndoDelete() {
+        pendingDeleteJob?.cancel()
+        pendingDeleteJob = null
+        pendingDeleteFlow.value = emptySet()
     }
 
     /** Догружает полные детали выделенных контактов: в списке они облегчённые, для vCard этого мало. */

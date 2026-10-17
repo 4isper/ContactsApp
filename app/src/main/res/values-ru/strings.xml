@@ -95,6 +95,7 @@
     <string name="editor_delete_title">Удалить контакт?</string>
     <string name="editor_delete_message">Это действие нельзя отменить</string>
     <string name="action_delete">Удалить</string>
+    <string name="action_undo">Отменить</string>
     <string name="editor_discard_title">Отменить изменения?</string>
     <string name="editor_discard_message">Несохранённые изменения будут потеряны</string>
     <string name="action_discard">Не сохранять</string>
@@ -185,6 +186,12 @@
         <item quantity="few">Удалить %d контакта?</item>
         <item quantity="many">Удалить %d контактов?</item>
         <item quantity="other">Удалить %d контакта?</item>
+    </plurals>
+    <plurals name="batch_delete_undo">
+        <item quantity="one">%d контакт удалён</item>
+        <item quantity="few">%d контакта удалено</item>
+        <item quantity="many">%d контактов удалено</item>
+        <item quantity="other">%d контакта удалено</item>
     </plurals>
     <plurals name="import_success">
         <item quantity="one">Импортирован %d контакт</item>

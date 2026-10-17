@@ -72,6 +72,7 @@ fun ContactsScreen(
             onClearSelection = viewModel::onClearSelection,
             onSelectAll = viewModel::onSelectAll,
             onDeleteSelected = viewModel::onDeleteSelected,
+            onUndoDelete = viewModel::onUndoDelete,
             onShareSelected = viewModel::onShareSelected,
             onImportText = viewModel.files::onImportText,
             onExportRequested = viewModel.files::onExportRequested,

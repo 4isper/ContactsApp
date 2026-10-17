@@ -95,6 +95,7 @@
     <string name="editor_delete_title">Delete this contact?</string>
     <string name="editor_delete_message">This cannot be undone</string>
     <string name="action_delete">Delete</string>
+    <string name="action_undo">Undo</string>
     <string name="editor_discard_title">Discard changes?</string>
     <string name="editor_discard_message">Unsaved changes will be lost</string>
     <string name="action_discard">Discard</string>
@@ -175,6 +176,10 @@
     <plurals name="batch_delete_title">
         <item quantity="one">Delete %d contact?</item>
         <item quantity="other">Delete %d contacts?</item>
+    </plurals>
+    <plurals name="batch_delete_undo">
+        <item quantity="one">%d contact deleted</item>
+        <item quantity="other">%d contacts deleted</item>
     </plurals>
     <plurals name="import_success">
         <item quantity="one">Imported %d contact</item>
