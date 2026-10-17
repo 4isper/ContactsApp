@@ -9,6 +9,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.m4isper.contactsapp.FakeAndroidRepository
+import com.m4isper.contactsapp.domain.model.ImProtocol
+import com.m4isper.contactsapp.domain.model.InstantMessage
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
@@ -50,6 +52,24 @@ class ContactDetailsUiTest {
         compose.onAllNodesWithText("Anna").assertCountEquals(2)
         compose.onNodeWithText("111").assertIsDisplayed()
         compose.onNodeWithText("112").assertIsDisplayed()
+    }
+
+    @Test
+    fun showsInstantMessageWithServiceLabel() {
+        val details =
+            testDetails(
+                7,
+                "Anna",
+                instantMessages = listOf(InstantMessage("skype_anna", ImProtocol.SKYPE)),
+            )
+        val viewModel = viewModel(FakeAndroidRepository(listOf(details)))
+        compose.setContent {
+            ContactDetailsScreen(contactId = 7, onBack = {}, onEdit = {}, viewModel = viewModel)
+        }
+        awaitContent(viewModel)
+
+        compose.onNodeWithText("skype_anna").assertIsDisplayed()
+        compose.onNodeWithText("Skype").assertIsDisplayed()
     }
 
     @Test

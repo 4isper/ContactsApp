@@ -4,9 +4,11 @@ import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.EditableBirthday
 import com.m4isper.contactsapp.domain.model.EditableEmail
+import com.m4isper.contactsapp.domain.model.EditableInstantMessage
 import com.m4isper.contactsapp.domain.model.EditableName
 import com.m4isper.contactsapp.domain.model.EditableNote
 import com.m4isper.contactsapp.domain.model.EditableOrganization
+import com.m4isper.contactsapp.domain.model.ImProtocol
 import com.m4isper.contactsapp.domain.model.NameMode
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
@@ -133,6 +135,68 @@ class ContactEditorViewModelTest {
         }
 
     @Test
+    fun `load existing contact fills instant messages`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeEditorRepository().apply {
+                    formToLoad =
+                        ContactForm(
+                            name = EditableName(display = "Anna"),
+                            instantMessages =
+                                listOf(
+                                    EditableInstantMessage(
+                                        dataId = 3,
+                                        address = "skype_anna",
+                                        protocol = ImProtocol.SKYPE,
+                                    ),
+                                ),
+                        )
+                }
+            val viewModel = viewModel(repository)
+
+            viewModel.load(7)
+            advanceUntilIdle()
+
+            val row =
+                viewModel.uiState.value.instantMessages
+                    .single()
+            assertEquals(3L, row.dataId)
+            assertEquals("skype_anna", row.address)
+            assertEquals(ImProtocol.SKYPE, row.protocol)
+        }
+
+    @Test
+    fun `save sends custom instant message`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeEditorRepository()
+            val viewModel = viewModel(repository)
+            viewModel.load(null)
+            advanceUntilIdle()
+
+            viewModel.onAddIm()
+            advanceUntilIdle()
+            val rowId =
+                viewModel.uiState.value.instantMessages
+                    .single()
+                    .rowId
+            viewModel.onImChange(rowId, "tg_anna")
+            viewModel.onImCustomProtocolChange(rowId, "Telegram")
+            viewModel.onSave()
+            advanceUntilIdle()
+
+            val im =
+                repository.created
+                    .single()
+                    .instantMessages
+                    .single()
+            assertEquals("tg_anna", im.address)
+            assertEquals(ImProtocol.CUSTOM, im.protocol)
+            assertEquals("Telegram", im.customProtocol)
+        }
+
+    @Test
     fun `isDirty ignores blank rows and detects edits`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
@@ -144,6 +208,10 @@ class ContactEditorViewModelTest {
             assertEquals(false, viewModel.isDirty())
 
             viewModel.onAddEmail()
+            advanceUntilIdle()
+            assertEquals(false, viewModel.isDirty())
+
+            viewModel.onAddIm()
             advanceUntilIdle()
             assertEquals(false, viewModel.isDirty())
 

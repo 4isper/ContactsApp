@@ -182,6 +182,38 @@ class ContactEditorUiTest {
     }
 
     @Test
+    fun addImButton_addsRowAndSavesAccount() {
+        val repository = FakeAndroidRepository()
+        val viewModel = viewModel(repository)
+        compose.setContent {
+            ContactEditorScreen(
+                contactId = null,
+                onDone = {},
+                onBack = {},
+                viewModel = viewModel,
+            )
+        }
+
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_add_im_button"))
+        compose.onNodeWithTag("editor_add_im_button").performClick()
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_im_field"))
+        compose.onNodeWithTag("editor_im_field").performTextInput("tg_anna")
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_im_service_field"))
+        compose.onNodeWithTag("editor_im_service_field").performTextInput("Telegram")
+        compose.onNodeWithTag("editor_save_button").performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
+        compose.waitForIdle()
+        val im =
+            repository.created
+                .single()
+                .instantMessages
+                .single()
+        assertEquals("tg_anna", im.address)
+        assertEquals("Telegram", im.customProtocol)
+    }
+
+    @Test
     fun structuredMode_savesNameParts() {
         val repository = FakeAndroidRepository()
         val viewModel = viewModel(repository)

@@ -2,6 +2,7 @@ package com.m4isper.contactsapp.data.datasource
 
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Event
+import android.provider.ContactsContract.CommonDataKinds.Im
 import android.provider.ContactsContract.CommonDataKinds.Note
 import android.provider.ContactsContract.CommonDataKinds.Organization
 import android.provider.ContactsContract.CommonDataKinds.Phone
@@ -59,6 +60,20 @@ internal fun websiteRow(
     contactId = contactId,
     mimetype = Website.CONTENT_ITEM_TYPE,
     data1 = url,
+)
+
+internal fun imRow(
+    contactId: Long,
+    address: String,
+    protocol: Int = Im.PROTOCOL_SKYPE,
+    customProtocol: String? = null,
+) = DataRow(
+    contactId = contactId,
+    mimetype = Im.CONTENT_ITEM_TYPE,
+    data1 = address,
+    data2 = Im.TYPE_OTHER.toString(),
+    data5 = protocol.toString(),
+    data6 = customProtocol,
 )
 
 internal fun organizationRow(

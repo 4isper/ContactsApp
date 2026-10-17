@@ -5,7 +5,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,15 +19,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -316,6 +312,26 @@ private fun EditorForm(
                 onKindChange = viewModel::onEmailKindChange,
                 onCustomLabelChange = viewModel::onEmailCustomLabelChange,
                 onRemove = viewModel::onRemoveEmail,
+            )
+        }
+        item(key = "instant-messages-header") {
+            SectionHeader(
+                titleRes = R.string.editor_section_instant_messages,
+                onAdd = viewModel::onAddIm,
+                addLabelRes = R.string.editor_add_im,
+                addTestTag = "editor_add_im_button",
+            )
+        }
+        items(
+            items = uiState.instantMessages,
+            key = { it.rowId },
+        ) { row ->
+            ImEditorRow(
+                row = row,
+                onImChange = viewModel::onImChange,
+                onProtocolChange = viewModel::onImProtocolChange,
+                onCustomProtocolChange = viewModel::onImCustomProtocolChange,
+                onRemove = viewModel::onRemoveIm,
             )
         }
         item(key = "addresses-header") {
@@ -811,36 +827,6 @@ private fun WebsiteEditorRow(
                 Icon(
                     Icons.Filled.Delete,
                     contentDescription = stringResource(R.string.action_delete),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun <T> KindMenu(
-    current: T,
-    options: List<T>,
-    label: @Composable (T) -> String,
-    onSelect: (T) -> Unit,
-) {
-    var expanded by remember { mutableStateOf(false) }
-    Box {
-        TextButton(onClick = { expanded = true }) {
-            Text(label(current))
-            Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
-        }
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-        ) {
-            options.forEach { option ->
-                DropdownMenuItem(
-                    text = { Text(label(option)) },
-                    onClick = {
-                        onSelect(option)
-                        expanded = false
-                    },
                 )
             }
         }

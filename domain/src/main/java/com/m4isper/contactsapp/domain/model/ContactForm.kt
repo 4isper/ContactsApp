@@ -26,6 +26,13 @@ data class EditableWebsite(
     val url: String,
 )
 
+data class EditableInstantMessage(
+    val dataId: Long? = null,
+    val address: String,
+    val protocol: ImProtocol = ImProtocol.CUSTOM,
+    val customProtocol: String? = null,
+)
+
 data class EditableOrganization(
     val dataId: Long? = null,
     val company: String = "",
@@ -101,6 +108,7 @@ data class ContactForm(
     val emails: List<EditableEmail> = emptyList(),
     val addresses: List<EditableAddress> = emptyList(),
     val websites: List<EditableWebsite> = emptyList(),
+    val instantMessages: List<EditableInstantMessage> = emptyList(),
     val organization: EditableOrganization = EditableOrganization(),
     val note: EditableNote = EditableNote(),
     val birthday: EditableBirthday = EditableBirthday(),
@@ -128,6 +136,7 @@ private fun ContactForm.isEffectivelyEmpty(): Boolean =
         emails.none { it.address.isNotBlank() } &&
         addresses.none { it.address.isNotBlank() } &&
         websites.none { it.url.isNotBlank() } &&
+        instantMessages.none { it.address.isNotBlank() } &&
         organization.isEmpty &&
         note.note.isBlank() &&
         birthday.value == null

@@ -32,6 +32,16 @@ data class ExistingWebsite(
     val url: String,
 )
 
+/** Существующая строка мессенджера: протокол в data5, произвольный сервис в data6. */
+data class ExistingInstantMessage(
+    val dataId: Long,
+    val rawContactId: Long,
+    val address: String,
+    val type: Int,
+    val protocol: Int?,
+    val customProtocol: String?,
+)
+
 data class ExistingOrganization(
     val dataId: Long,
     val rawContactId: Long,
@@ -85,6 +95,7 @@ data class ContactRows(
     val emails: List<ExistingEmail> = emptyList(),
     val addresses: List<ExistingAddress> = emptyList(),
     val websites: List<ExistingWebsite> = emptyList(),
+    val instantMessages: List<ExistingInstantMessage> = emptyList(),
     val organization: ExistingOrganization? = null,
     val note: ExistingNote? = null,
     val birthday: ExistingBirthday? = null,

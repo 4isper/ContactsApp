@@ -14,6 +14,7 @@ internal fun buildContactDetails(
         emails = emailAddressesOf(rows),
         addresses = postalAddressesOf(rows),
         websites = websitesOf(rows),
+        instantMessages = instantMessagesOf(rows),
         organization = organizationOf(rows),
         note = noteOf(rows),
         birthday = birthdayOf(rows),

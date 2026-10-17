@@ -9,6 +9,7 @@ import android.net.Uri
 import android.provider.ContactsContract
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Event
+import android.provider.ContactsContract.CommonDataKinds.Im
 import android.provider.ContactsContract.CommonDataKinds.Note
 import android.provider.ContactsContract.CommonDataKinds.Organization
 import android.provider.ContactsContract.CommonDataKinds.Phone
@@ -185,6 +186,7 @@ private fun parseContactRows(cursor: Cursor): ContactRows {
     val addresses = mutableListOf<ExistingAddress>()
     val websites = mutableListOf<ExistingWebsite>()
     val names = mutableListOf<ExistingName>()
+    val instantMessages = mutableListOf<ExistingInstantMessage>()
     var organization: ExistingOrganization? = null
     var note: ExistingNote? = null
     var birthday: ExistingBirthday? = null
@@ -206,6 +208,16 @@ private fun parseContactRows(cursor: Cursor): ContactRows {
                     ExistingAddress(dataId, rawId, data1, cursor.getInt(columns.data2), cursor.getString(columns.data3))
             Website.CONTENT_ITEM_TYPE ->
                 websites += ExistingWebsite(dataId, rawId, data1)
+            Im.CONTENT_ITEM_TYPE ->
+                instantMessages +=
+                    ExistingInstantMessage(
+                        dataId = dataId,
+                        rawContactId = rawId,
+                        address = data1,
+                        type = cursor.getInt(columns.data2),
+                        protocol = cursor.getString(columns.data5)?.toIntOrNull(),
+                        customProtocol = cursor.getString(columns.data6),
+                    )
             Organization.CONTENT_ITEM_TYPE ->
                 if (organization == null) organization = existingOrganization(cursor, columns, dataId, rawId)
             Note.CONTENT_ITEM_TYPE ->
@@ -220,6 +232,7 @@ private fun parseContactRows(cursor: Cursor): ContactRows {
         emails = emails,
         addresses = addresses,
         websites = websites,
+        instantMessages = instantMessages,
         organization = organization,
         note = note,
         birthday = birthday,

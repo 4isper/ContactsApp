@@ -60,6 +60,7 @@ import com.m4isper.contactsapp.presentation.common.addressKindLabel
 import com.m4isper.contactsapp.presentation.common.birthdayText
 import com.m4isper.contactsapp.presentation.common.copyToClipboard
 import com.m4isper.contactsapp.presentation.common.emailKindLabel
+import com.m4isper.contactsapp.presentation.common.instantMessageLabel
 import com.m4isper.contactsapp.presentation.common.openEmail
 import com.m4isper.contactsapp.presentation.common.openMap
 import com.m4isper.contactsapp.presentation.common.openSms
@@ -291,6 +292,23 @@ private fun DetailsContent(
                         ) { onCopyClick(email.address) },
                     ),
                 modifier = Modifier.testTag("email_row_${email.address}"),
+            )
+        }
+        items(
+            items = details.instantMessages,
+            key = { "im_${it.address}" },
+        ) { im ->
+            DataRow(
+                primary = im.address,
+                secondary = instantMessageLabel(im),
+                actions =
+                    listOf(
+                        RowAction(
+                            Icons.Filled.ContentCopy,
+                            stringResource(R.string.action_copy),
+                        ) { onCopyClick(im.address) },
+                    ),
+                modifier = Modifier.testTag("im_row_${im.address}"),
             )
         }
         items(

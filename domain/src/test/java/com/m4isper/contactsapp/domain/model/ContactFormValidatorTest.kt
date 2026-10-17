@@ -55,6 +55,17 @@ class ContactFormValidatorTest {
     }
 
     @Test
+    fun `instant message only is valid`() {
+        assertNull(
+            validateContactForm(
+                ContactForm(
+                    instantMessages = listOf(EditableInstantMessage(address = "anna_tg")),
+                ),
+            ),
+        )
+    }
+
+    @Test
     fun `blank phone row is blank phone error`() {
         assertEquals(
             FormError.BLANK_PHONE,

@@ -5,11 +5,13 @@ import com.m4isper.contactsapp.data.datasource.ContactsDataSource
 import com.m4isper.contactsapp.data.datasource.ContactsWriterDataSource
 import com.m4isper.contactsapp.data.datasource.ExistingAddress
 import com.m4isper.contactsapp.data.datasource.ExistingEmail
+import com.m4isper.contactsapp.data.datasource.ExistingInstantMessage
 import com.m4isper.contactsapp.data.datasource.ExistingName
 import com.m4isper.contactsapp.data.datasource.ExistingPhone
 import com.m4isper.contactsapp.data.datasource.customLabelOf
 import com.m4isper.contactsapp.data.datasource.mapAddressKind
 import com.m4isper.contactsapp.data.datasource.mapEmailKind
+import com.m4isper.contactsapp.data.datasource.mapImProtocol
 import com.m4isper.contactsapp.data.datasource.mapPhoneKind
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactDetails
@@ -17,11 +19,13 @@ import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.EditableAddress
 import com.m4isper.contactsapp.domain.model.EditableBirthday
 import com.m4isper.contactsapp.domain.model.EditableEmail
+import com.m4isper.contactsapp.domain.model.EditableInstantMessage
 import com.m4isper.contactsapp.domain.model.EditableName
 import com.m4isper.contactsapp.domain.model.EditableNote
 import com.m4isper.contactsapp.domain.model.EditableOrganization
 import com.m4isper.contactsapp.domain.model.EditablePhone
 import com.m4isper.contactsapp.domain.model.EditableWebsite
+import com.m4isper.contactsapp.domain.model.ImProtocol
 import com.m4isper.contactsapp.domain.model.NameMode
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
 import dev.zacsweers.metro.AppScope
@@ -50,6 +54,7 @@ class ContactsRepositoryImpl(
             emails = rows.emails.map { it.toEditable() },
             addresses = rows.addresses.map { it.toEditable() },
             websites = rows.websites.map { EditableWebsite(dataId = it.dataId, url = it.url) },
+            instantMessages = rows.instantMessages.map { it.toEditable() },
             organization =
                 rows.organization
                     ?.let { EditableOrganization(dataId = it.dataId, company = it.company, title = it.title) }
@@ -140,3 +145,13 @@ private fun ExistingAddress.toEditable(): EditableAddress =
                 ContactsContract.CommonDataKinds.StructuredPostal.TYPE_CUSTOM,
             ),
     )
+
+private fun ExistingInstantMessage.toEditable(): EditableInstantMessage {
+    val imProtocol = mapImProtocol(protocol)
+    return EditableInstantMessage(
+        dataId = dataId,
+        address = address,
+        protocol = imProtocol,
+        customProtocol = customProtocol?.takeIf { imProtocol == ImProtocol.CUSTOM && it.isNotBlank() },
+    )
+}

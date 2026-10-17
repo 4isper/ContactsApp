@@ -4,6 +4,7 @@ import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.EditableName
 import com.m4isper.contactsapp.domain.model.EditablePhone
+import com.m4isper.contactsapp.domain.model.InstantMessage
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
@@ -16,10 +17,12 @@ internal fun testDetails(
     id: Long,
     name: String,
     vararg phones: String,
+    instantMessages: List<InstantMessage> = emptyList(),
 ) = ContactDetails(
     contactId = id,
     name = name,
     phones = phones.map { PhoneNumber(it, PhoneKind.MOBILE) },
+    instantMessages = instantMessages,
 )
 
 internal class FakeAndroidRepository(

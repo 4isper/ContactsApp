@@ -4,6 +4,7 @@ import android.content.ContentProviderOperation
 import android.provider.ContactsContract
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Event
+import android.provider.ContactsContract.CommonDataKinds.Im
 import android.provider.ContactsContract.CommonDataKinds.Note
 import android.provider.ContactsContract.CommonDataKinds.Organization
 import android.provider.ContactsContract.CommonDataKinds.Phone
@@ -14,7 +15,7 @@ import android.provider.ContactsContract.CommonDataKinds.Website
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.EditableName
 
-private fun dataInsert(
+internal fun dataInsert(
     mimetype: String,
     rawContactId: Long? = null,
     rawContactBackRef: Int? = null,
@@ -31,7 +32,7 @@ private fun dataInsert(
     return builder
 }
 
-private fun dataUpdate(dataId: Long): ContentProviderOperation.Builder =
+internal fun dataUpdate(dataId: Long): ContentProviderOperation.Builder =
     ContentProviderOperation
         .newUpdate(ContactsContract.Data.CONTENT_URI)
         .withSelection(
@@ -73,6 +74,9 @@ internal fun buildCreateOperations(
             form.emails
                 .filter { it.address.isNotBlank() }
                 .forEach { add(Email.CONTENT_ITEM_TYPE to emailValues(it)) }
+            form.instantMessages
+                .filter { it.address.isNotBlank() }
+                .forEach { add(Im.CONTENT_ITEM_TYPE to instantMessageValues(it)) }
             form.addresses
                 .filter { it.address.isNotBlank() }
                 .forEach { add(StructuredPostal.CONTENT_ITEM_TYPE to addressValues(it)) }
@@ -107,6 +111,7 @@ internal fun buildUpdateOperations(
     val ops = ArrayList<ContentProviderOperation>()
     ops += nameOperations(rawContactId, rows.names, form.name)
     ops += listOperations(rawContactId, rows, form)
+    ops += imOperations(rawContactId, rows, form)
     ops += singleOperations(rawContactId, rows, form)
     ops += photoOperations(rawContactId, form.photoChanged, photo)
     return ops
@@ -266,7 +271,7 @@ private fun photoOperations(
  * Операции списка: удаляем пропавшие строки, обновляем совпавшие по dataId,
  * вставляем новые.
  */
-private fun <T> diffListOperations(
+internal fun <T> diffListOperations(
     newItems: List<T>,
     existingIds: Set<Long>,
     dataIdOf: (T) -> Long?,

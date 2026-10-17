@@ -43,6 +43,25 @@ data class Website(
     val url: String,
 )
 
+/** Протокол мессенджера: набор из ContactsContract.CommonDataKinds.Im + произвольный. */
+enum class ImProtocol {
+    AIM,
+    MSN,
+    YAHOO,
+    SKYPE,
+    QQ,
+    GOOGLE_TALK,
+    ICQ,
+    JABBER,
+    CUSTOM,
+}
+
+data class InstantMessage(
+    val address: String,
+    val protocol: ImProtocol,
+    val customProtocol: String? = null,
+)
+
 data class Organization(
     val company: String,
     val title: String,
@@ -124,6 +143,7 @@ data class ContactDetails(
     val emails: List<EmailAddress> = emptyList(),
     val addresses: List<PostalAddress> = emptyList(),
     val websites: List<Website> = emptyList(),
+    val instantMessages: List<InstantMessage> = emptyList(),
     val organization: Organization? = null,
     val note: String? = null,
     val birthday: Birthday? = null,

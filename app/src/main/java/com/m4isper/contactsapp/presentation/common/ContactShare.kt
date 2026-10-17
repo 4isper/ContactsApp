@@ -8,6 +8,8 @@ import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.AddressKind
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.EmailKind
+import com.m4isper.contactsapp.domain.model.ImProtocol
+import com.m4isper.contactsapp.domain.model.InstantMessage
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import java.io.File
 
@@ -35,6 +37,20 @@ internal fun vcardAddressType(kind: AddressKind): String =
         AddressKind.OTHER -> "OTHER"
     }
 
+/** Имена сервисов, которые понимает vCard-импортёр Android (VCardUtils). */
+internal fun vcardImService(im: InstantMessage): String =
+    when (im.protocol) {
+        ImProtocol.AIM -> "AIM"
+        ImProtocol.MSN -> "MSN"
+        ImProtocol.YAHOO -> "Yahoo"
+        ImProtocol.SKYPE -> "Skype"
+        ImProtocol.QQ -> "QQ"
+        ImProtocol.GOOGLE_TALK -> "Google Talk"
+        ImProtocol.ICQ -> "ICQ"
+        ImProtocol.JABBER -> "Jabber"
+        ImProtocol.CUSTOM -> im.customProtocol?.takeIf { it.isNotBlank() } ?: "Custom"
+    }
+
 private fun escapeVCard(value: String): String =
     value
         .replace("\\", "\\\\")
@@ -58,6 +74,9 @@ internal fun buildVCard(details: ContactDetails): String =
         }
         details.emails.forEach { email ->
             appendLine("EMAIL;TYPE=${vcardEmailType(email.kind)}:${email.address}")
+        }
+        details.instantMessages.forEach { im ->
+            appendLine("IMPP;X-SERVICE-TYPE=${vcardImService(im)}:${escapeVCard(im.address)}")
         }
         details.addresses.forEach { address ->
             appendLine("ADR;TYPE=${vcardAddressType(address.kind)}:;;${escapeVCard(address.address)};;;;")

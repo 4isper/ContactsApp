@@ -32,6 +32,16 @@
     <string name="address_type_work">Work</string>
     <string name="address_type_other">Other</string>
 
+    <string name="im_protocol_aim">AIM</string>
+    <string name="im_protocol_msn">MSN</string>
+    <string name="im_protocol_yahoo">Yahoo</string>
+    <string name="im_protocol_skype">Skype</string>
+    <string name="im_protocol_qq">QQ</string>
+    <string name="im_protocol_google_talk">Google Talk</string>
+    <string name="im_protocol_icq">ICQ</string>
+    <string name="im_protocol_jabber">Jabber</string>
+    <string name="im_protocol_other">Other</string>
+
     <string name="contact_not_found">Contact not found</string>
     <string name="copied_to_clipboard">Copied</string>
     <string name="sms_failed">Couldn\'t open messaging</string>
@@ -85,15 +95,19 @@
     <string name="editor_remove_photo">Remove photo</string>
     <string name="editor_photo_desc">Contact photo</string>
     <string name="editor_section_emails">Email</string>
+    <string name="editor_section_instant_messages">Instant messaging</string>
     <string name="editor_section_addresses">Addresses</string>
     <string name="editor_section_websites">Websites</string>
     <string name="editor_section_organization">Organization</string>
     <string name="editor_section_birthday">Birthday</string>
     <string name="editor_section_note">Note</string>
     <string name="editor_add_email">Add email</string>
+    <string name="editor_add_im">Add messenger</string>
     <string name="editor_add_address">Add address</string>
     <string name="editor_add_website">Add website</string>
     <string name="editor_email_label">Email</string>
+    <string name="editor_im_label">Account</string>
+    <string name="editor_im_service">Service</string>
     <string name="editor_address_label">Address</string>
     <string name="editor_website_label">Website</string>
     <string name="editor_organization_company">Company</string>

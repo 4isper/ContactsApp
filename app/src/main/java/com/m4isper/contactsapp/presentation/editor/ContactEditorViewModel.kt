@@ -8,6 +8,7 @@ import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.EditableAddress
 import com.m4isper.contactsapp.domain.model.EditableBirthday
 import com.m4isper.contactsapp.domain.model.EditableEmail
+import com.m4isper.contactsapp.domain.model.EditableInstantMessage
 import com.m4isper.contactsapp.domain.model.EditableName
 import com.m4isper.contactsapp.domain.model.EditableNote
 import com.m4isper.contactsapp.domain.model.EditableOrganization
@@ -15,6 +16,7 @@ import com.m4isper.contactsapp.domain.model.EditablePhone
 import com.m4isper.contactsapp.domain.model.EditableWebsite
 import com.m4isper.contactsapp.domain.model.EmailKind
 import com.m4isper.contactsapp.domain.model.FormError
+import com.m4isper.contactsapp.domain.model.ImProtocol
 import com.m4isper.contactsapp.domain.model.NameMode
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.composeDisplayName
@@ -68,6 +70,14 @@ data class EditorWebsiteRow(
     val url: String = "",
 )
 
+data class EditorImRow(
+    val rowId: Long,
+    val dataId: Long? = null,
+    val address: String = "",
+    val protocol: ImProtocol = ImProtocol.CUSTOM,
+    val customProtocol: String = "",
+)
+
 data class EditorUiState(
     val nameMode: NameMode = NameMode.DISPLAY,
     val displayName: String = "",
@@ -83,6 +93,7 @@ data class EditorUiState(
     val emails: List<EditorEmailRow> = emptyList(),
     val addresses: List<EditorAddressRow> = emptyList(),
     val websites: List<EditorWebsiteRow> = emptyList(),
+    val instantMessages: List<EditorImRow> = emptyList(),
     val organization: EditableOrganization = EditableOrganization(),
     val note: EditableNote = EditableNote(),
     val birthday: EditableBirthday = EditableBirthday(),
@@ -153,6 +164,19 @@ private fun newWebsiteRow(
     url = url,
 )
 
+private fun newImRow(
+    dataId: Long? = null,
+    address: String = "",
+    protocol: ImProtocol = ImProtocol.CUSTOM,
+    customProtocol: String = "",
+) = EditorImRow(
+    rowId = rowIds.incrementAndGet(),
+    dataId = dataId,
+    address = address,
+    protocol = protocol,
+    customProtocol = customProtocol,
+)
+
 private data class EditorData(
     val contactId: Long? = null,
     val nameMode: NameMode = NameMode.DISPLAY,
@@ -169,6 +193,7 @@ private data class EditorData(
     val emails: List<EditorEmailRow> = emptyList(),
     val addresses: List<EditorAddressRow> = emptyList(),
     val websites: List<EditorWebsiteRow> = emptyList(),
+    val instantMessages: List<EditorImRow> = emptyList(),
     val organization: EditableOrganization = EditableOrganization(),
     val note: EditableNote = EditableNote(),
     val birthday: EditableBirthday = EditableBirthday(),
@@ -234,6 +259,15 @@ private data class EditorData(
                     )
                 },
             websites = websites.map { EditableWebsite(dataId = it.dataId, url = it.url) },
+            instantMessages =
+                instantMessages.map {
+                    EditableInstantMessage(
+                        dataId = it.dataId,
+                        address = it.address,
+                        protocol = it.protocol,
+                        customProtocol = it.customProtocol.takeIf { label -> label.isNotBlank() },
+                    )
+                },
             organization = organization,
             note = note,
             birthday = birthday,
@@ -249,6 +283,7 @@ private fun ContactForm.withoutBlankRows(): ContactForm =
         emails = emails.filter { it.address.isNotBlank() },
         addresses = addresses.filter { it.address.isNotBlank() },
         websites = websites.filter { it.url.isNotBlank() },
+        instantMessages = instantMessages.filter { it.address.isNotBlank() },
     )
 
 @Inject
@@ -284,6 +319,7 @@ class ContactEditorViewModel(
                 emails = editor.emails,
                 addresses = editor.addresses,
                 websites = editor.websites,
+                instantMessages = editor.instantMessages,
                 organization = editor.organization,
                 note = editor.note,
                 birthday = editor.birthday,
@@ -442,6 +478,28 @@ class ContactEditorViewModel(
             editor.copy(websites = editor.websites.filterNot { row -> row.rowId == rowId })
         }
 
+    fun onImChange(
+        rowId: Long,
+        value: String,
+    ) = updateInstantMessages(rowId) { it.copy(address = value) }
+
+    fun onImProtocolChange(
+        rowId: Long,
+        protocol: ImProtocol,
+    ) = updateInstantMessages(rowId) { it.copy(protocol = protocol) }
+
+    fun onImCustomProtocolChange(
+        rowId: Long,
+        value: String,
+    ) = updateInstantMessages(rowId) { it.copy(customProtocol = value) }
+
+    fun onAddIm() = updateData { it.copy(instantMessages = it.instantMessages + newImRow()) }
+
+    fun onRemoveIm(rowId: Long) =
+        updateData { editor ->
+            editor.copy(instantMessages = editor.instantMessages.filterNot { row -> row.rowId == rowId })
+        }
+
     fun onOrganizationCompanyChange(value: String) =
         updateData { it.copy(organization = it.organization.copy(company = value)) }
 
@@ -559,6 +617,18 @@ class ContactEditorViewModel(
         )
     }
 
+    private fun updateInstantMessages(
+        rowId: Long,
+        transform: (EditorImRow) -> EditorImRow,
+    ) = updateData { editor ->
+        editor.copy(
+            instantMessages =
+                editor.instantMessages.map { row ->
+                    if (row.rowId == rowId) transform(row) else row
+                },
+        )
+    }
+
     private fun editorDataFromForm(
         contactId: Long,
         form: ContactForm,
@@ -604,6 +674,15 @@ class ContactEditorViewModel(
                     )
                 },
             websites = form.websites.map { newWebsiteRow(dataId = it.dataId, url = it.url) },
+            instantMessages =
+                form.instantMessages.map {
+                    newImRow(
+                        dataId = it.dataId,
+                        address = it.address,
+                        protocol = it.protocol,
+                        customProtocol = it.customProtocol.orEmpty(),
+                    )
+                },
             organization = form.organization,
             note = form.note,
             birthday = form.birthday,

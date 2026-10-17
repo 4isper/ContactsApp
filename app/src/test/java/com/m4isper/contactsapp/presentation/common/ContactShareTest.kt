@@ -5,6 +5,8 @@ import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.EmailAddress
 import com.m4isper.contactsapp.domain.model.EmailKind
+import com.m4isper.contactsapp.domain.model.ImProtocol
+import com.m4isper.contactsapp.domain.model.InstantMessage
 import com.m4isper.contactsapp.domain.model.NameParts
 import com.m4isper.contactsapp.domain.model.Organization
 import com.m4isper.contactsapp.domain.model.PhoneKind
@@ -128,6 +130,29 @@ class ContactShareTest {
                 .drop(3)
                 .dropLast(1),
         )
+    }
+
+    @Test
+    fun `writes instant messages as IMPP with service type`() {
+        val details =
+            ContactDetails(
+                contactId = 7,
+                name = "Anna",
+                instantMessages =
+                    listOf(
+                        InstantMessage("skype_anna", ImProtocol.SKYPE),
+                        InstantMessage("tg_anna", ImProtocol.CUSTOM, "Telegram"),
+                        InstantMessage("aim_anna", ImProtocol.AIM),
+                    ),
+            )
+
+        val vcard = buildVCard(details)
+
+        val lines = vcard.trim().lines()
+        assertEquals("IMPP;X-SERVICE-TYPE=Skype:skype_anna", lines[3])
+        assertEquals("IMPP;X-SERVICE-TYPE=Telegram:tg_anna", lines[4])
+        assertEquals("IMPP;X-SERVICE-TYPE=AIM:aim_anna", lines[5])
+        assertEquals("Custom", vcardImService(InstantMessage("x", ImProtocol.CUSTOM)))
     }
 
     @Test

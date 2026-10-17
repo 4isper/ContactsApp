@@ -32,6 +32,16 @@
     <string name="address_type_work">Рабочий</string>
     <string name="address_type_other">Другой</string>
 
+    <string name="im_protocol_aim">AIM</string>
+    <string name="im_protocol_msn">MSN</string>
+    <string name="im_protocol_yahoo">Yahoo</string>
+    <string name="im_protocol_skype">Skype</string>
+    <string name="im_protocol_qq">QQ</string>
+    <string name="im_protocol_google_talk">Google Talk</string>
+    <string name="im_protocol_icq">ICQ</string>
+    <string name="im_protocol_jabber">Jabber</string>
+    <string name="im_protocol_other">Другое</string>
+
     <string name="contact_not_found">Контакт не найден</string>
     <string name="copied_to_clipboard">Скопировано</string>
     <string name="sms_failed">Не удалось открыть сообщения</string>
@@ -85,15 +95,19 @@
     <string name="editor_remove_photo">Удалить фото</string>
     <string name="editor_photo_desc">Фото контакта</string>
     <string name="editor_section_emails">Email</string>
+    <string name="editor_section_instant_messages">Мессенджеры</string>
     <string name="editor_section_addresses">Адреса</string>
     <string name="editor_section_websites">Сайты</string>
     <string name="editor_section_organization">Организация</string>
     <string name="editor_section_birthday">День рождения</string>
     <string name="editor_section_note">Заметка</string>
     <string name="editor_add_email">Добавить email</string>
+    <string name="editor_add_im">Добавить мессенджер</string>
     <string name="editor_add_address">Добавить адрес</string>
     <string name="editor_add_website">Добавить сайт</string>
     <string name="editor_email_label">Email</string>
+    <string name="editor_im_label">Аккаунт</string>
+    <string name="editor_im_service">Сервис</string>
     <string name="editor_address_label">Адрес</string>
     <string name="editor_website_label">Сайт</string>
     <string name="editor_organization_company">Компания</string>

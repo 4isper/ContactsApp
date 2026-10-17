@@ -1,10 +1,12 @@
 package com.m4isper.contactsapp.data.datasource
 
 import android.provider.ContactsContract.CommonDataKinds.Event
+import android.provider.ContactsContract.CommonDataKinds.Im
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import com.m4isper.contactsapp.domain.model.AddressKind
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.EmailKind
+import com.m4isper.contactsapp.domain.model.ImProtocol
 import com.m4isper.contactsapp.domain.model.NameParts
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -79,6 +81,33 @@ class BuildContactDetailsTest {
 
         assertNull(details.note)
         assertNull(details.organization)
+    }
+
+    @Test
+    fun `extracts instant messages with known and custom protocols`() {
+        val rows =
+            listOf(
+                imRow(1, "skype_anna", protocol = Im.PROTOCOL_SKYPE),
+                imRow(1, "tg_anna", protocol = Im.PROTOCOL_CUSTOM, customProtocol = "Telegram"),
+            )
+
+        val messages = buildContactDetails(header(1, "Anna"), rows).instantMessages
+
+        assertEquals(listOf("skype_anna", "tg_anna"), messages.map { it.address })
+        assertEquals(ImProtocol.SKYPE, messages[0].protocol)
+        assertEquals(null, messages[0].customProtocol)
+        assertEquals(ImProtocol.CUSTOM, messages[1].protocol)
+        assertEquals("Telegram", messages[1].customProtocol)
+    }
+
+    @Test
+    fun `unknown im protocol falls back to custom`() {
+        val rows = listOf(imRow(1, "mystery_anna", protocol = 99))
+
+        assertEquals(
+            ImProtocol.CUSTOM,
+            buildContactDetails(header(1, "Anna"), rows).instantMessages.single().protocol,
+        )
     }
 
     @Test
