@@ -5,6 +5,7 @@ import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import com.m4isper.contactsapp.domain.model.AddressKind
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.EmailKind
+import com.m4isper.contactsapp.domain.model.NameParts
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -45,7 +46,7 @@ class BuildContactDetailsTest {
                     contactId = 1,
                     mimetype = StructuredPostal.CONTENT_ITEM_TYPE,
                     data1 = "Berlin, Hauptstrasse 5",
-                    data2 = StructuredPostal.TYPE_WORK,
+                    data2 = StructuredPostal.TYPE_WORK.toString(),
                     data4 = "Hauptstrasse 5",
                 ),
             )
@@ -78,5 +79,27 @@ class BuildContactDetailsTest {
 
         assertNull(details.note)
         assertNull(details.organization)
+    }
+
+    @Test
+    fun `extracts structured name parts`() {
+        val rows =
+            listOf(
+                nameRow(1, display = "Иван Петров", given = "Иван", family = "Петров", middle = "Петрович"),
+            )
+
+        val details = buildContactDetails(header(1, "Иван Петров"), rows)
+
+        assertEquals(
+            NameParts(given = "Иван", family = "Петров", middle = "Петрович"),
+            details.nameParts,
+        )
+    }
+
+    @Test
+    fun `ignores structured name row without components`() {
+        val rows = listOf(nameRow(1, display = "Anna"))
+
+        assertNull(buildContactDetails(header(1, "Anna"), rows).nameParts)
     }
 }

@@ -8,7 +8,7 @@ class ContactFormValidatorTest {
     @Test
     fun `name only is valid`() {
         assertNull(
-            validateContactForm(ContactForm(name = "Anna")),
+            validateContactForm(ContactForm(name = EditableName(display = "Anna"))),
         )
     }
 
@@ -17,7 +17,6 @@ class ContactFormValidatorTest {
         assertNull(
             validateContactForm(
                 ContactForm(
-                    name = "",
                     phones = listOf(EditablePhone(number = "111")),
                 ),
             ),
@@ -28,7 +27,30 @@ class ContactFormValidatorTest {
     fun `blank name and no phones is empty form`() {
         assertEquals(
             FormError.EMPTY_FORM,
-            validateContactForm(ContactForm(name = "   ")),
+            validateContactForm(ContactForm(name = EditableName(display = "   "))),
+        )
+    }
+
+    @Test
+    fun `structured given name only is valid`() {
+        assertNull(
+            validateContactForm(
+                ContactForm(
+                    name = EditableName(mode = NameMode.STRUCTURED, given = "Anna"),
+                ),
+            ),
+        )
+    }
+
+    @Test
+    fun `structured blank components is empty form`() {
+        assertEquals(
+            FormError.EMPTY_FORM,
+            validateContactForm(
+                ContactForm(
+                    name = EditableName(mode = NameMode.STRUCTURED, given = "  ", family = ""),
+                ),
+            ),
         )
     }
 
@@ -38,7 +60,7 @@ class ContactFormValidatorTest {
             FormError.BLANK_PHONE,
             validateContactForm(
                 ContactForm(
-                    name = "Anna",
+                    name = EditableName(display = "Anna"),
                     phones =
                         listOf(
                             EditablePhone(number = "111"),

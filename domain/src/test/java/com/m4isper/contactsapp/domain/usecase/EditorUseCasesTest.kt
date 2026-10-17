@@ -2,6 +2,7 @@ package com.m4isper.contactsapp.domain.usecase
 
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
+import com.m4isper.contactsapp.domain.model.EditableName
 import com.m4isper.contactsapp.domain.model.EditablePhone
 import com.m4isper.contactsapp.domain.model.FormError
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
@@ -56,7 +57,11 @@ class EditorUseCasesTest {
     fun `create saves valid form`() =
         runTest {
             val repository = RecordingRepository()
-            val form = ContactForm(name = "Anna", phones = listOf(EditablePhone(number = "111")))
+            val form =
+                ContactForm(
+                    name = EditableName(display = "Anna"),
+                    phones = listOf(EditablePhone(number = "111")),
+                )
 
             val result = CreateContactUseCase(repository)(form)
 
@@ -69,7 +74,7 @@ class EditorUseCasesTest {
         runTest {
             val repository = RecordingRepository()
 
-            val result = CreateContactUseCase(repository)(ContactForm(name = "  "))
+            val result = CreateContactUseCase(repository)(ContactForm(name = EditableName(display = "  ")))
 
             assertEquals(SaveResult.Invalid(FormError.EMPTY_FORM), result)
             assertTrue(repository.created.isEmpty())
@@ -79,7 +84,7 @@ class EditorUseCasesTest {
     fun `update saves valid form`() =
         runTest {
             val repository = RecordingRepository()
-            val form = ContactForm(name = "Bob")
+            val form = ContactForm(name = EditableName(display = "Bob"))
 
             val result = UpdateContactUseCase(repository)(7, form)
 
@@ -95,7 +100,10 @@ class EditorUseCasesTest {
             val result =
                 UpdateContactUseCase(repository)(
                     7,
-                    ContactForm(name = "Bob", phones = listOf(EditablePhone(number = ""))),
+                    ContactForm(
+                        name = EditableName(display = "Bob"),
+                        phones = listOf(EditablePhone(number = "")),
+                    ),
                 )
 
             assertEquals(SaveResult.Invalid(FormError.BLANK_PHONE), result)

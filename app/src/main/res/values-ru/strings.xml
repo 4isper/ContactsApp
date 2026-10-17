@@ -48,6 +48,14 @@
     <string name="permission_write_rationale">Приложению нужно разрешение на изменение контактов</string>
     <string name="editor_title_new">Новый контакт</string>
     <string name="editor_name_label">Имя</string>
+    <string name="editor_name_switch_structured">Редактировать по частям</string>
+    <string name="editor_name_switch_display">Редактировать одним полем</string>
+    <string name="editor_name_given">Имя</string>
+    <string name="editor_name_family">Фамилия</string>
+    <string name="editor_name_middle">Отчество</string>
+    <string name="editor_name_prefix">Приставка</string>
+    <string name="editor_name_suffix">Суффикс</string>
+    <string name="editor_name_details">Дополнительно</string>
     <string name="editor_phone_label">Номер телефона</string>
     <string name="editor_kind_label">Подпись</string>
     <string name="editor_add_phone">Добавить номер</string>

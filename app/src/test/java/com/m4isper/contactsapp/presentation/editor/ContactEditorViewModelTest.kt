@@ -4,8 +4,10 @@ import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.EditableBirthday
 import com.m4isper.contactsapp.domain.model.EditableEmail
+import com.m4isper.contactsapp.domain.model.EditableName
 import com.m4isper.contactsapp.domain.model.EditableNote
 import com.m4isper.contactsapp.domain.model.EditableOrganization
+import com.m4isper.contactsapp.domain.model.NameMode
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
@@ -90,7 +92,7 @@ class ContactEditorViewModelTest {
             viewModel.load(null)
             advanceUntilIdle()
 
-            viewModel.onNameChange("Anna")
+            viewModel.onDisplayNameChange("Anna")
             viewModel.onSave()
             advanceUntilIdle()
 
@@ -106,7 +108,7 @@ class ContactEditorViewModelTest {
                 FakeEditorRepository().apply {
                     formToLoad =
                         ContactForm(
-                            name = "Anna",
+                            name = EditableName(display = "Anna"),
                             emails = listOf(EditableEmail(dataId = 9, address = "anna@example.com")),
                             organization = EditableOrganization(company = "ACME", title = "CTO"),
                             note = EditableNote(note = "Note"),
@@ -120,7 +122,8 @@ class ContactEditorViewModelTest {
             advanceUntilIdle()
 
             val state = viewModel.uiState.value
-            assertEquals("Anna", state.name)
+            assertEquals(NameMode.DISPLAY, state.nameMode)
+            assertEquals("Anna", state.displayName)
             assertEquals("anna@example.com", state.emails.single().address)
             assertEquals("ACME", state.organization.company)
             assertEquals("Note", state.note.note)
@@ -166,7 +169,7 @@ class ContactEditorViewModelTest {
             viewModel.load(null)
             advanceUntilIdle()
 
-            viewModel.onNameChange("Anna")
+            viewModel.onDisplayNameChange("Anna")
             viewModel.onAddEmail()
             advanceUntilIdle()
             viewModel.onEmailChange(
@@ -199,7 +202,7 @@ class ContactEditorViewModelTest {
             advanceUntilIdle()
 
             val form = repository.created.single()
-            assertEquals("Anna", form.name)
+            assertEquals("Anna", form.name.display)
             assertEquals("anna@example.com", form.emails.single().address)
             assertEquals("Moscow", form.addresses.single().address)
             assertEquals("https://example.com", form.websites.single().url)
@@ -216,7 +219,7 @@ class ContactEditorViewModelTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val repository =
                 FakeEditorRepository().apply {
-                    formToLoad = ContactForm(name = "Anna", photoUri = "content://photo/1")
+                    formToLoad = ContactForm(name = EditableName(display = "Anna"), photoUri = "content://photo/1")
                 }
             val viewModel = viewModel(repository)
             viewModel.load(7)
@@ -235,5 +238,116 @@ class ContactEditorViewModelTest {
             assertEquals(7L, contactId)
             assertEquals(null, form.photoUri)
             assertEquals(true, form.photoChanged)
+        }
+
+    @Test
+    fun `load structured name opens structured mode`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeEditorRepository().apply {
+                    formToLoad =
+                        ContactForm(
+                            name =
+                                EditableName(
+                                    mode = NameMode.STRUCTURED,
+                                    display = "Иван Петрович Петров",
+                                    given = "Иван",
+                                    family = "Петров",
+                                    middle = "Петрович",
+                                ),
+                        )
+                }
+            val viewModel = viewModel(repository)
+
+            viewModel.load(7)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(NameMode.STRUCTURED, state.nameMode)
+            assertEquals("Иван", state.givenName)
+            assertEquals("Петров", state.familyName)
+            assertEquals("Петрович", state.middleName)
+            assertEquals("Иван Петрович Петров", state.effectiveName)
+        }
+
+    @Test
+    fun `toggle to structured prefills given with display name`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeEditorRepository()
+            val viewModel = viewModel(repository)
+            viewModel.load(null)
+            advanceUntilIdle()
+
+            viewModel.onDisplayNameChange("Иван Петров")
+            viewModel.onToggleNameMode()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(NameMode.STRUCTURED, state.nameMode)
+            assertEquals("Иван Петров", state.givenName)
+        }
+
+    @Test
+    fun `toggle to display composes name from components`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeEditorRepository()
+            val viewModel = viewModel(repository)
+            viewModel.load(null)
+            advanceUntilIdle()
+
+            viewModel.onToggleNameMode()
+            viewModel.onGivenNameChange("Иван")
+            viewModel.onMiddleNameChange("Петрович")
+            viewModel.onFamilyNameChange("Петров")
+            viewModel.onToggleNameMode()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(NameMode.DISPLAY, state.nameMode)
+            assertEquals("Иван Петрович Петров", state.displayName)
+        }
+
+    @Test
+    fun `save structured name sends components`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeEditorRepository()
+            val viewModel = viewModel(repository)
+            viewModel.load(null)
+            advanceUntilIdle()
+
+            viewModel.onToggleNameMode()
+            viewModel.onGivenNameChange("Иван")
+            viewModel.onFamilyNameChange("Петров")
+            viewModel.onSave()
+            advanceUntilIdle()
+
+            val name = repository.created.single().name
+            assertEquals(NameMode.STRUCTURED, name.mode)
+            assertEquals("Иван", name.given)
+            assertEquals("Петров", name.family)
+        }
+
+    @Test
+    fun `mode toggle marks form dirty and back`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeEditorRepository()
+            val viewModel = viewModel(repository)
+            viewModel.load(null)
+            advanceUntilIdle()
+
+            assertEquals(false, viewModel.isDirty())
+
+            viewModel.onToggleNameMode()
+            advanceUntilIdle()
+            assertEquals(true, viewModel.isDirty())
+
+            viewModel.onToggleNameMode()
+            advanceUntilIdle()
+            assertEquals(false, viewModel.isDirty())
         }
 }

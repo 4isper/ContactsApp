@@ -12,6 +12,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import com.m4isper.contactsapp.FakeAndroidRepository
+import com.m4isper.contactsapp.domain.model.NameMode
 import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactFormUseCase
@@ -62,7 +63,13 @@ class ContactEditorUiTest {
         compose.waitForIdle()
         assertEquals(true, done.get())
         assertEquals(1, repository.created.size)
-        assertEquals("Anna", repository.created.single().name)
+        assertEquals(
+            "Anna",
+            repository.created
+                .single()
+                .name
+                .display,
+        )
         assertEquals(
             listOf("111"),
             repository.created
@@ -126,7 +133,7 @@ class ContactEditorUiTest {
             )
         }
         compose.waitUntil(timeoutMillis = 5_000) {
-            viewModel.uiState.value.name == "Anna"
+            viewModel.uiState.value.displayName == "Anna"
         }
 
         compose.onNodeWithTag("editor_save_button").performClick()
@@ -140,7 +147,7 @@ class ContactEditorUiTest {
             "Anna",
             repository.updated
                 .single()
-                .second.name,
+                .second.name.display,
         )
     }
 
@@ -175,6 +182,32 @@ class ContactEditorUiTest {
     }
 
     @Test
+    fun structuredMode_savesNameParts() {
+        val repository = FakeAndroidRepository()
+        val viewModel = viewModel(repository)
+        compose.setContent {
+            ContactEditorScreen(
+                contactId = null,
+                onDone = {},
+                onBack = {},
+                viewModel = viewModel,
+            )
+        }
+
+        compose.onNodeWithTag("editor_toggle_name_mode").performClick()
+        compose.onNodeWithTag("editor_name_given").performTextInput("Иван")
+        compose.onNodeWithTag("editor_name_family").performTextInput("Петров")
+        compose.onNodeWithTag("editor_save_button").performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
+        compose.waitForIdle()
+        val name = repository.created.single().name
+        assertEquals(NameMode.STRUCTURED, name.mode)
+        assertEquals("Иван", name.given)
+        assertEquals("Петров", name.family)
+    }
+
+    @Test
     fun editMode_deleteRemovesContact() {
         val repository = FakeAndroidRepository(listOf(testDetails(7, "Anna", "111")))
         val viewModel = viewModel(repository)
@@ -188,7 +221,7 @@ class ContactEditorUiTest {
             )
         }
         compose.waitUntil(timeoutMillis = 5_000) {
-            viewModel.uiState.value.name == "Anna"
+            viewModel.uiState.value.displayName == "Anna"
         }
 
         compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_delete_button"))

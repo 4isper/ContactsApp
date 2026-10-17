@@ -45,8 +45,52 @@ data class EditableBirthday(
     val value: Birthday? = null,
 )
 
+enum class NameMode {
+    /** Одно поле «Полное имя»: пишется в DISPLAY_NAME. */
+    DISPLAY,
+
+    /** Компоненты Имя/Фамилия/Отчество/... : провайдер сам собирает DISPLAY_NAME. */
+    STRUCTURED,
+}
+
+/**
+ * Имя в редакторе: единое поле или компоненты. Собранное имя —
+ * «приставка имя отчество фамилия суффикс», пустые части пропускаются.
+ */
+data class EditableName(
+    val mode: NameMode = NameMode.DISPLAY,
+    val display: String = "",
+    val given: String = "",
+    val family: String = "",
+    val middle: String = "",
+    val prefix: String = "",
+    val suffix: String = "",
+) {
+    val hasComponents: Boolean
+        get() =
+            given.isNotBlank() ||
+                family.isNotBlank() ||
+                middle.isNotBlank() ||
+                prefix.isNotBlank() ||
+                suffix.isNotBlank()
+
+    /** Пусто ли имя в текущем режиме. */
+    val isEmpty: Boolean
+        get() = if (mode == NameMode.DISPLAY) display.isBlank() else !hasComponents
+
+    val composed: String
+        get() = composeDisplayName(prefix, given, middle, family, suffix)
+}
+
+/** Склейка частей имени через пробел; пустые и пробельные части пропускаются. */
+fun composeDisplayName(vararg parts: String): String =
+    parts
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .joinToString(" ")
+
 data class ContactForm(
-    val name: String,
+    val name: EditableName = EditableName(),
     val phones: List<EditablePhone> = emptyList(),
     val emails: List<EditableEmail> = emptyList(),
     val addresses: List<EditableAddress> = emptyList(),
@@ -73,7 +117,7 @@ fun validateContactForm(form: ContactForm): FormError? =
     }
 
 private fun ContactForm.isEffectivelyEmpty(): Boolean =
-    name.isBlank() &&
+    name.isEmpty &&
         phones.none { it.number.isNotBlank() } &&
         emails.none { it.address.isNotBlank() } &&
         addresses.none { it.address.isNotBlank() } &&

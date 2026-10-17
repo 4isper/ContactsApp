@@ -47,6 +47,12 @@ internal fun buildVCard(details: ContactDetails): String =
         appendLine("BEGIN:VCARD")
         appendLine("VERSION:3.0")
         appendLine("FN:${escapeVCard(details.name)}")
+        details.nameParts?.let { parts ->
+            appendLine(
+                "N:${escapeVCard(parts.family)};${escapeVCard(parts.given)};" +
+                    "${escapeVCard(parts.middle)};${escapeVCard(parts.prefix)};${escapeVCard(parts.suffix)}",
+            )
+        }
         details.phones.forEach { phone ->
             appendLine("TEL;TYPE=${vcardType(phone.kind)}:${phone.number}")
         }

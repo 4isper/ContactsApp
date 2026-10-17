@@ -94,6 +94,23 @@ data class Birthday(
     }
 }
 
+/** Компоненты структурированного имени контакта (StructuredName). */
+data class NameParts(
+    val given: String = "",
+    val family: String = "",
+    val middle: String = "",
+    val prefix: String = "",
+    val suffix: String = "",
+) {
+    val isEmpty: Boolean
+        get() =
+            given.isBlank() &&
+                family.isBlank() &&
+                middle.isBlank() &&
+                prefix.isBlank() &&
+                suffix.isBlank()
+}
+
 data class ContactDetails(
     val contactId: Long,
     val name: String,
@@ -105,6 +122,7 @@ data class ContactDetails(
     val note: String? = null,
     val birthday: Birthday? = null,
     val photoUri: String? = null,
+    val nameParts: NameParts? = null,
 ) {
     val primaryPhone: String
         get() = phones.firstOrNull()?.number.orEmpty()

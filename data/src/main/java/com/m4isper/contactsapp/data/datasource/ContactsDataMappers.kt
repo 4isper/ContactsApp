@@ -54,8 +54,8 @@ internal fun phoneNumbersOf(rows: List<DataRow>): List<PhoneNumber> =
             row.data1?.trim()?.takeIf { it.isNotEmpty() }?.let { number ->
                 PhoneNumber(
                     number = number,
-                    kind = mapPhoneKind(row.data2),
-                    customLabel = customLabelOf(row.data2, row.data3, Phone.TYPE_CUSTOM),
+                    kind = mapPhoneKind(row.data2Int),
+                    customLabel = customLabelOf(row.data2Int, row.data3, Phone.TYPE_CUSTOM),
                 )
             }
         }.distinctBy { it.number }
@@ -67,8 +67,8 @@ internal fun emailAddressesOf(rows: List<DataRow>): List<EmailAddress> =
             row.data1?.trim()?.takeIf { it.isNotEmpty() }?.let { address ->
                 EmailAddress(
                     address = address,
-                    kind = mapEmailKind(row.data2),
-                    customLabel = customLabelOf(row.data2, row.data3, Email.TYPE_CUSTOM),
+                    kind = mapEmailKind(row.data2Int),
+                    customLabel = customLabelOf(row.data2Int, row.data3, Email.TYPE_CUSTOM),
                 )
             }
         }.distinctBy { it.address }
@@ -80,8 +80,8 @@ internal fun postalAddressesOf(rows: List<DataRow>): List<PostalAddress> =
             row.data1?.trim()?.takeIf { it.isNotEmpty() }?.let { address ->
                 PostalAddress(
                     address = address,
-                    kind = mapAddressKind(row.data2),
-                    customLabel = customLabelOf(row.data2, row.data3, StructuredPostal.TYPE_CUSTOM),
+                    kind = mapAddressKind(row.data2Int),
+                    customLabel = customLabelOf(row.data2Int, row.data3, StructuredPostal.TYPE_CUSTOM),
                 )
             }
         }.distinctBy { it.address }
@@ -113,5 +113,5 @@ internal fun noteOf(rows: List<DataRow>): String? =
 
 internal fun birthdayOf(rows: List<DataRow>): Birthday? =
     rows
-        .firstOrNull { it.mimetype == Event.CONTENT_ITEM_TYPE && it.data2 == Event.TYPE_BIRTHDAY }
+        .firstOrNull { it.mimetype == Event.CONTENT_ITEM_TYPE && it.data2Int == Event.TYPE_BIRTHDAY }
         ?.let { Birthday.parse(it.data1) }

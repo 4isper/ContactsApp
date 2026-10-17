@@ -8,13 +8,16 @@ import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.EditableAddress
 import com.m4isper.contactsapp.domain.model.EditableBirthday
 import com.m4isper.contactsapp.domain.model.EditableEmail
+import com.m4isper.contactsapp.domain.model.EditableName
 import com.m4isper.contactsapp.domain.model.EditableNote
 import com.m4isper.contactsapp.domain.model.EditableOrganization
 import com.m4isper.contactsapp.domain.model.EditablePhone
 import com.m4isper.contactsapp.domain.model.EditableWebsite
 import com.m4isper.contactsapp.domain.model.EmailKind
 import com.m4isper.contactsapp.domain.model.FormError
+import com.m4isper.contactsapp.domain.model.NameMode
 import com.m4isper.contactsapp.domain.model.PhoneKind
+import com.m4isper.contactsapp.domain.model.composeDisplayName
 import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactFormUseCase
@@ -66,7 +69,13 @@ data class EditorWebsiteRow(
 )
 
 data class EditorUiState(
-    val name: String = "",
+    val nameMode: NameMode = NameMode.DISPLAY,
+    val displayName: String = "",
+    val givenName: String = "",
+    val familyName: String = "",
+    val middleName: String = "",
+    val namePrefix: String = "",
+    val nameSuffix: String = "",
     val phones: List<EditorPhoneRow> = emptyList(),
     val emails: List<EditorEmailRow> = emptyList(),
     val addresses: List<EditorAddressRow> = emptyList(),
@@ -80,7 +89,16 @@ data class EditorUiState(
     val formError: FormError? = null,
     val errorMessage: String? = null,
     val closeScreen: Boolean = false,
-)
+) {
+    /** Имя для превью аватара и заголовка: поле или собранные компоненты. */
+    val effectiveName: String
+        get() =
+            if (nameMode == NameMode.DISPLAY) {
+                displayName
+            } else {
+                composeDisplayName(namePrefix, givenName, middleName, familyName, nameSuffix)
+            }
+}
 
 private val rowIds = AtomicLong(0)
 
@@ -134,7 +152,13 @@ private fun newWebsiteRow(
 
 private data class EditorData(
     val contactId: Long? = null,
-    val name: String = "",
+    val nameMode: NameMode = NameMode.DISPLAY,
+    val displayName: String = "",
+    val givenName: String = "",
+    val familyName: String = "",
+    val middleName: String = "",
+    val namePrefix: String = "",
+    val nameSuffix: String = "",
     val phones: List<EditorPhoneRow> = emptyList(),
     val emails: List<EditorEmailRow> = emptyList(),
     val addresses: List<EditorAddressRow> = emptyList(),
@@ -145,11 +169,31 @@ private data class EditorData(
     val photoUri: String? = null,
     val photoChanged: Boolean = false,
     val isBusy: Boolean = false,
-    val initialForm: ContactForm = ContactForm(name = ""),
+    val initialForm: ContactForm = ContactForm(),
 ) {
+    val hasNameComponents: Boolean
+        get() =
+            givenName.isNotBlank() ||
+                familyName.isNotBlank() ||
+                middleName.isNotBlank() ||
+                namePrefix.isNotBlank() ||
+                nameSuffix.isNotBlank()
+
+    val composedName: String
+        get() = composeDisplayName(namePrefix, givenName, middleName, familyName, nameSuffix)
+
     fun toForm(): ContactForm =
         ContactForm(
-            name = name,
+            name =
+                EditableName(
+                    mode = nameMode,
+                    display = displayName,
+                    given = givenName,
+                    family = familyName,
+                    middle = middleName,
+                    prefix = namePrefix,
+                    suffix = nameSuffix,
+                ),
             phones =
                 phones.map {
                     EditablePhone(
@@ -214,7 +258,13 @@ class ContactEditorViewModel(
     val uiState: StateFlow<EditorUiState> =
         combine(data, formError, errorMessage, closeScreen) { editor, error, message, close ->
             EditorUiState(
-                name = editor.name,
+                nameMode = editor.nameMode,
+                displayName = editor.displayName,
+                givenName = editor.givenName,
+                familyName = editor.familyName,
+                middleName = editor.middleName,
+                namePrefix = editor.namePrefix,
+                nameSuffix = editor.nameSuffix,
                 phones = editor.phones,
                 emails = editor.emails,
                 addresses = editor.addresses,
@@ -263,7 +313,34 @@ class ContactEditorViewModel(
         }
     }
 
-    fun onNameChange(value: String) = updateData { it.copy(name = value) }
+    fun onDisplayNameChange(value: String) = updateData { it.copy(displayName = value) }
+
+    fun onGivenNameChange(value: String) = updateData { it.copy(givenName = value) }
+
+    fun onFamilyNameChange(value: String) = updateData { it.copy(familyName = value) }
+
+    fun onMiddleNameChange(value: String) = updateData { it.copy(middleName = value) }
+
+    fun onNamePrefixChange(value: String) = updateData { it.copy(namePrefix = value) }
+
+    fun onNameSuffixChange(value: String) = updateData { it.copy(nameSuffix = value) }
+
+    /**
+     * DISPLAY → STRUCTURED: если компоненты пустые, переносим полное имя в «Имя»,
+     * чтобы данные не потерялись. STRUCTURED → DISPLAY: собираем имя из компонентов.
+     */
+    fun onToggleNameMode() =
+        updateData { editor ->
+            if (editor.nameMode == NameMode.DISPLAY) {
+                val given = if (editor.hasNameComponents) editor.givenName else editor.displayName.trim()
+                editor.copy(nameMode = NameMode.STRUCTURED, givenName = given)
+            } else {
+                editor.copy(
+                    nameMode = NameMode.DISPLAY,
+                    displayName = editor.composedName,
+                )
+            }
+        }
 
     fun onPhoneChange(
         rowId: Long,
@@ -467,7 +544,13 @@ class ContactEditorViewModel(
     ): EditorData =
         EditorData(
             contactId = contactId,
-            name = form.name,
+            nameMode = form.name.mode,
+            displayName = form.name.display,
+            givenName = form.name.given,
+            familyName = form.name.family,
+            middleName = form.name.middle,
+            namePrefix = form.name.prefix,
+            nameSuffix = form.name.suffix,
             phones =
                 form.phones
                     .map {

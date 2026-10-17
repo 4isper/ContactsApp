@@ -5,6 +5,7 @@ import android.provider.ContactsContract.CommonDataKinds.Event
 import android.provider.ContactsContract.CommonDataKinds.Note
 import android.provider.ContactsContract.CommonDataKinds.Organization
 import android.provider.ContactsContract.CommonDataKinds.Phone
+import android.provider.ContactsContract.CommonDataKinds.StructuredName
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import android.provider.ContactsContract.CommonDataKinds.Website
 
@@ -23,7 +24,7 @@ internal fun phoneRow(
     contactId = contactId,
     mimetype = Phone.CONTENT_ITEM_TYPE,
     data1 = phone,
-    data2 = type,
+    data2 = type.toString(),
     data3 = label,
 )
 
@@ -36,7 +37,7 @@ internal fun emailRow(
     contactId = contactId,
     mimetype = Email.CONTENT_ITEM_TYPE,
     data1 = address,
-    data2 = type,
+    data2 = type.toString(),
     data3 = label,
 )
 
@@ -48,7 +49,7 @@ internal fun addressRow(
     contactId = contactId,
     mimetype = StructuredPostal.CONTENT_ITEM_TYPE,
     data1 = address,
-    data2 = type,
+    data2 = type.toString(),
 )
 
 internal fun websiteRow(
@@ -88,5 +89,24 @@ internal fun birthdayRow(
     contactId = contactId,
     mimetype = Event.CONTENT_ITEM_TYPE,
     data1 = raw,
-    data2 = type,
+    data2 = type.toString(),
+)
+
+internal fun nameRow(
+    contactId: Long,
+    display: String? = null,
+    given: String? = null,
+    family: String? = null,
+    prefix: String? = null,
+    middle: String? = null,
+    suffix: String? = null,
+) = DataRow(
+    contactId = contactId,
+    mimetype = StructuredName.CONTENT_ITEM_TYPE,
+    data1 = display,
+    data2 = given,
+    data3 = family,
+    data4 = prefix,
+    data5 = middle,
+    data6 = suffix,
 )

@@ -19,9 +19,11 @@ private val CONTACT_PROJECTION =
     )
 
 /**
- * Общая проекция для строк таблицы Data: data1..data4 — физические колонки,
+ * Общая проекция для строк таблицы Data: data1..data6 — физические колонки,
  * в которых лежат все нужные типы (телефон/email — значение в data1,
- * тип в data2, метка в data3; организация — company в data1, title в data4).
+ * тип в data2, метка в data3; организация — company в data1, title в data4;
+ * StructuredName — display в data1, given в data2, family в data3,
+ * prefix в data4, middle в data5, suffix в data6).
  */
 private val DATA_PROJECTION =
     arrayOf(
@@ -31,6 +33,8 @@ private val DATA_PROJECTION =
         ContactsContract.Data.DATA2,
         ContactsContract.Data.DATA3,
         ContactsContract.Data.DATA4,
+        ContactsContract.Data.DATA5,
+        ContactsContract.Data.DATA6,
     )
 
 private const val CONTACT_SORT_ORDER =
@@ -122,15 +126,19 @@ class ContactsDataSource(
             val data2Index = it.getColumnIndexOrThrow(ContactsContract.Data.DATA2)
             val data3Index = it.getColumnIndexOrThrow(ContactsContract.Data.DATA3)
             val data4Index = it.getColumnIndexOrThrow(ContactsContract.Data.DATA4)
+            val data5Index = it.getColumnIndexOrThrow(ContactsContract.Data.DATA5)
+            val data6Index = it.getColumnIndexOrThrow(ContactsContract.Data.DATA6)
             while (it.moveToNext()) {
                 rows +=
                     DataRow(
                         contactId = it.getLong(contactIndex),
                         mimetype = it.getString(mimeIndex).orEmpty(),
                         data1 = it.getString(data1Index),
-                        data2 = it.getInt(data2Index),
+                        data2 = it.getString(data2Index),
                         data3 = it.getString(data3Index),
                         data4 = it.getString(data4Index),
+                        data5 = it.getString(data5Index),
+                        data6 = it.getString(data6Index),
                     )
             }
         }

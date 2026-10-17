@@ -5,6 +5,7 @@ import com.m4isper.contactsapp.data.datasource.ContactsDataSource
 import com.m4isper.contactsapp.data.datasource.ContactsWriterDataSource
 import com.m4isper.contactsapp.data.datasource.ExistingAddress
 import com.m4isper.contactsapp.data.datasource.ExistingEmail
+import com.m4isper.contactsapp.data.datasource.ExistingName
 import com.m4isper.contactsapp.data.datasource.ExistingPhone
 import com.m4isper.contactsapp.data.datasource.customLabelOf
 import com.m4isper.contactsapp.data.datasource.mapAddressKind
@@ -16,10 +17,12 @@ import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.EditableAddress
 import com.m4isper.contactsapp.domain.model.EditableBirthday
 import com.m4isper.contactsapp.domain.model.EditableEmail
+import com.m4isper.contactsapp.domain.model.EditableName
 import com.m4isper.contactsapp.domain.model.EditableNote
 import com.m4isper.contactsapp.domain.model.EditableOrganization
 import com.m4isper.contactsapp.domain.model.EditablePhone
 import com.m4isper.contactsapp.domain.model.EditableWebsite
+import com.m4isper.contactsapp.domain.model.NameMode
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
@@ -41,7 +44,7 @@ class ContactsRepositoryImpl(
         val details = dataSource.loadContact(contactId) ?: return null
         val rows = writer.loadContactRows(contactId)
         return ContactForm(
-            name = details.name,
+            name = editableNameOf(rows.name, details),
             phones = rows.phones.map { it.toEditable() },
             emails = rows.emails.map { it.toEditable() },
             addresses = rows.addresses.map { it.toEditable() },
@@ -75,6 +78,30 @@ class ContactsRepositoryImpl(
     }
 
     override suspend fun deleteContact(contactId: Long) = writer.deleteContact(contactId)
+}
+
+/**
+ * Имя для редактора: структурированный режим — если в строке есть компоненты,
+ * иначе одно поле с display name (с запасным значением из агрегированного имени).
+ */
+private fun editableNameOf(
+    existing: ExistingName?,
+    details: ContactDetails,
+): EditableName {
+    val display = existing?.display?.takeIf { it.isNotBlank() } ?: details.name
+    return if (existing?.hasComponents == true) {
+        EditableName(
+            mode = NameMode.STRUCTURED,
+            display = display,
+            given = existing.given,
+            family = existing.family,
+            middle = existing.middle,
+            prefix = existing.prefix,
+            suffix = existing.suffix,
+        )
+    } else {
+        EditableName(mode = NameMode.DISPLAY, display = display)
+    }
 }
 
 private fun ExistingPhone.toEditable(): EditablePhone =

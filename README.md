@@ -9,8 +9,8 @@ A native Android contacts manager built with modern Jetpack libraries and Clean 
 ## Features
 
 - Contact list: search by name, phone and email; favorites filter; alphabetical grouping with fast scroller; pull-to-refresh; phoneless contacts stay visible
-- Contact details: phones, emails, addresses, websites, organization, note and birthday; call (with confirmation), SMS, email, map, open link and copy actions; vCard sharing; favorites toggle
-- Contact editor: create, update and delete contacts; photo pick with preview and removal; dynamic typed rows for phones, emails, addresses and websites with custom labels; birthday picker with optional year; validation and unsaved-changes guard
+- Contact details: phones, emails, addresses, websites, organization, note and birthday; call (with confirmation), SMS, email, map, open link and copy actions; vCard sharing (with structured `N` property); favorites toggle
+- Contact editor: create, update and delete contacts; structured name — a single full-name field or given/family/middle/prefix/suffix components toggled with an animated chevron; photo pick with preview and removal; dynamic typed rows for phones, emails, addresses and websites with custom labels; birthday picker with optional year; validation and unsaved-changes guard
 - Favorites persisted with DataStore; Material You dynamic color; adaptive two-pane layout on wide screens
 
 ## Architecture
@@ -49,7 +49,7 @@ Android permissions used: `READ_CONTACTS` (list), `WRITE_CONTACTS` (editor), `CA
 
 ```bash
 ./gradlew :app:assembleDebug          # debug APK
-./gradlew :domain:test :data:testDebugUnitTest :app:testDebugUnitTest  # 65 unit tests
-./gradlew :app:connectedDebugAndroidTest  # 17 Compose UI tests (needs a running emulator)
+./gradlew :domain:test :data:testDebugUnitTest :app:testDebugUnitTest  # 82 unit tests
+./gradlew :app:connectedDebugAndroidTest  # 18 Compose UI tests (needs a running emulator)
 ./gradlew detekt ktlintCheck          # static analysis, all modules
 ```

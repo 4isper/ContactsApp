@@ -35,6 +35,8 @@ private val WRITER_DATA_PROJECTION =
         ContactsContract.Data.DATA2,
         ContactsContract.Data.DATA3,
         ContactsContract.Data.DATA4,
+        ContactsContract.Data.DATA5,
+        ContactsContract.Data.DATA6,
     )
 
 @Inject
@@ -72,7 +74,7 @@ class ContactsWriterDataSource(
                     arrayOf(contactId.toString()),
                     null,
                 )
-            cursor?.use { parseContactRows(it) } ?: ContactRows(hasNameRow = false)
+            cursor?.use { parseContactRows(it) } ?: ContactRows()
         }
 
     suspend fun loadRawContactId(contactId: Long): Long? =
@@ -155,7 +157,23 @@ class ContactsWriterDataSource(
     }
 }
 
+/** Индексы колонок проекции WRITER_DATA_PROJECTION. */
+private class DataColumns(
+    cursor: Cursor,
+) {
+    val id: Int = cursor.getColumnIndexOrThrow(ContactsContract.Data._ID)
+    val raw: Int = cursor.getColumnIndexOrThrow(ContactsContract.Data.RAW_CONTACT_ID)
+    val mime: Int = cursor.getColumnIndexOrThrow(ContactsContract.Data.MIMETYPE)
+    val data1: Int = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA1)
+    val data2: Int = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA2)
+    val data3: Int = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA3)
+    val data4: Int = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA4)
+    val data5: Int = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA5)
+    val data6: Int = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA6)
+}
+
 private fun parseContactRows(cursor: Cursor): ContactRows {
+    val columns = DataColumns(cursor)
     val phones = mutableListOf<ExistingPhone>()
     val emails = mutableListOf<ExistingEmail>()
     val addresses = mutableListOf<ExistingAddress>()
@@ -163,48 +181,35 @@ private fun parseContactRows(cursor: Cursor): ContactRows {
     var organization: ExistingOrganization? = null
     var note: ExistingNote? = null
     var birthday: ExistingBirthday? = null
-    var hasNameRow = false
-    val idIndex = cursor.getColumnIndexOrThrow(ContactsContract.Data._ID)
-    val rawIndex = cursor.getColumnIndexOrThrow(ContactsContract.Data.RAW_CONTACT_ID)
-    val mimeIndex = cursor.getColumnIndexOrThrow(ContactsContract.Data.MIMETYPE)
-    val data1Index = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA1)
-    val data2Index = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA2)
-    val data3Index = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA3)
-    val data4Index = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA4)
+    var name: ExistingName? = null
     while (cursor.moveToNext()) {
-        val dataId = cursor.getLong(idIndex)
-        val rawId = cursor.getLong(rawIndex)
-        val data1 = cursor.getString(data1Index).orEmpty()
-        when (cursor.getString(mimeIndex)) {
-            StructuredName.CONTENT_ITEM_TYPE -> hasNameRow = true
+        val dataId = cursor.getLong(columns.id)
+        val rawId = cursor.getLong(columns.raw)
+        val data1 = cursor.getString(columns.data1).orEmpty()
+        when (cursor.getString(columns.mime)) {
+            StructuredName.CONTENT_ITEM_TYPE ->
+                if (name == null) name = existingName(cursor, columns, dataId, rawId)
             Phone.CONTENT_ITEM_TYPE ->
                 phones +=
-                    ExistingPhone(dataId, rawId, data1, cursor.getInt(data2Index), cursor.getString(data3Index))
+                    ExistingPhone(dataId, rawId, data1, cursor.getInt(columns.data2), cursor.getString(columns.data3))
             Email.CONTENT_ITEM_TYPE ->
                 emails +=
-                    ExistingEmail(dataId, rawId, data1, cursor.getInt(data2Index), cursor.getString(data3Index))
+                    ExistingEmail(dataId, rawId, data1, cursor.getInt(columns.data2), cursor.getString(columns.data3))
             StructuredPostal.CONTENT_ITEM_TYPE ->
                 addresses +=
-                    ExistingAddress(dataId, rawId, data1, cursor.getInt(data2Index), cursor.getString(data3Index))
+                    ExistingAddress(dataId, rawId, data1, cursor.getInt(columns.data2), cursor.getString(columns.data3))
             Website.CONTENT_ITEM_TYPE ->
                 websites += ExistingWebsite(dataId, rawId, data1)
             Organization.CONTENT_ITEM_TYPE ->
-                if (organization == null) {
-                    organization =
-                        ExistingOrganization(dataId, rawId, data1, cursor.getString(data4Index).orEmpty())
-                }
+                if (organization == null) organization = existingOrganization(cursor, columns, dataId, rawId)
             Note.CONTENT_ITEM_TYPE ->
-                if (note == null) {
-                    note = ExistingNote(dataId, rawId, data1)
-                }
+                if (note == null) note = ExistingNote(dataId, rawId, data1)
             Event.CONTENT_ITEM_TYPE ->
-                if (cursor.getInt(data2Index) == Event.TYPE_BIRTHDAY && birthday == null) {
-                    birthday = ExistingBirthday(dataId, rawId, data1)
-                }
+                if (birthday == null) birthday = existingBirthday(cursor, columns, dataId, rawId, data1)
         }
     }
     return ContactRows(
-        hasNameRow = hasNameRow,
+        name = name,
         phones = phones,
         emails = emails,
         addresses = addresses,
@@ -214,6 +219,49 @@ private fun parseContactRows(cursor: Cursor): ContactRows {
         birthday = birthday,
     )
 }
+
+private fun existingName(
+    cursor: Cursor,
+    columns: DataColumns,
+    dataId: Long,
+    rawContactId: Long,
+): ExistingName =
+    ExistingName(
+        dataId = dataId,
+        rawContactId = rawContactId,
+        display = cursor.getString(columns.data1).orEmpty(),
+        given = cursor.getString(columns.data2).orEmpty(),
+        family = cursor.getString(columns.data3).orEmpty(),
+        prefix = cursor.getString(columns.data4).orEmpty(),
+        middle = cursor.getString(columns.data5).orEmpty(),
+        suffix = cursor.getString(columns.data6).orEmpty(),
+    )
+
+private fun existingOrganization(
+    cursor: Cursor,
+    columns: DataColumns,
+    dataId: Long,
+    rawContactId: Long,
+): ExistingOrganization =
+    ExistingOrganization(
+        dataId = dataId,
+        rawContactId = rawContactId,
+        company = cursor.getString(columns.data1).orEmpty(),
+        title = cursor.getString(columns.data4).orEmpty(),
+    )
+
+private fun existingBirthday(
+    cursor: Cursor,
+    columns: DataColumns,
+    dataId: Long,
+    rawContactId: Long,
+    data1: String,
+): ExistingBirthday? =
+    if (cursor.getInt(columns.data2) == Event.TYPE_BIRTHDAY) {
+        ExistingBirthday(dataId, rawContactId, data1)
+    } else {
+        null
+    }
 
 /** Степень двойки, после которой декодированная картинка станет меньше max. */
 internal fun sampleSize(

@@ -12,6 +12,7 @@ import android.provider.ContactsContract.CommonDataKinds.StructuredName
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import android.provider.ContactsContract.CommonDataKinds.Website
 import com.m4isper.contactsapp.domain.model.ContactForm
+import com.m4isper.contactsapp.domain.model.EditableName
 
 private fun dataInsert(
     mimetype: String,
@@ -58,10 +59,12 @@ internal fun buildCreateOperations(
             .withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, null)
             .withValue(ContactsContract.RawContacts.ACCOUNT_NAME, null)
             .build()
-    ops +=
-        dataInsert(StructuredName.CONTENT_ITEM_TYPE, rawContactBackRef = 0)
-            .withValue(StructuredName.DISPLAY_NAME, form.name)
-            .build()
+    if (!form.name.isEmpty) {
+        ops +=
+            dataInsert(StructuredName.CONTENT_ITEM_TYPE, rawContactBackRef = 0)
+                .withValues(structuredNameValues(form.name))
+                .build()
+    }
     val values =
         buildList {
             form.phones
@@ -102,31 +105,39 @@ internal fun buildUpdateOperations(
     photo: ByteArray?,
 ): ArrayList<ContentProviderOperation> {
     val ops = ArrayList<ContentProviderOperation>()
-    ops += nameOperation(rawContactId, rows.hasNameRow, form.name)
+    ops += nameOperations(rawContactId, rows.name, form.name)
     ops += listOperations(rawContactId, rows, form)
     ops += singleOperations(rawContactId, rows, form)
     ops += photoOperations(rawContactId, form.photoChanged, photo)
     return ops
 }
 
-private fun nameOperation(
+/**
+ * Операции имени: обновляем строку целевого raw contact, иначе вставляем новую;
+ * если имя очищено — удаляем только свою строку и не трогаем чужие raw contacts.
+ */
+private fun nameOperations(
     rawContactId: Long,
-    hasNameRow: Boolean,
-    name: String,
-): ContentProviderOperation =
-    if (hasNameRow) {
-        ContentProviderOperation
-            .newUpdate(ContactsContract.Data.CONTENT_URI)
-            .withSelection(
-                "${ContactsContract.Data.RAW_CONTACT_ID}=? AND ${ContactsContract.Data.MIMETYPE}=?",
-                arrayOf(rawContactId.toString(), StructuredName.CONTENT_ITEM_TYPE),
-            ).withValue(StructuredName.DISPLAY_NAME, name)
-            .build()
-    } else {
-        dataInsert(StructuredName.CONTENT_ITEM_TYPE, rawContactId = rawContactId)
-            .withValue(StructuredName.DISPLAY_NAME, name)
-            .build()
+    existing: ExistingName?,
+    name: EditableName,
+): List<ContentProviderOperation> {
+    val own = existing?.takeIf { it.rawContactId == rawContactId }
+    return when {
+        name.isEmpty -> own?.let { listOf(deleteDataOperation(it.dataId)) }.orEmpty()
+        own != null ->
+            listOf(
+                dataUpdate(own.dataId)
+                    .withValues(structuredNameValues(name))
+                    .build(),
+            )
+        else ->
+            listOf(
+                dataInsert(StructuredName.CONTENT_ITEM_TYPE, rawContactId = rawContactId)
+                    .withValues(structuredNameValues(name))
+                    .build(),
+            )
     }
+}
 
 private fun listOperations(
     rawContactId: Long,

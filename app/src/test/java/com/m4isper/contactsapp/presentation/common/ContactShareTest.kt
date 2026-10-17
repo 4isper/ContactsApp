@@ -5,6 +5,7 @@ import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.EmailAddress
 import com.m4isper.contactsapp.domain.model.EmailKind
+import com.m4isper.contactsapp.domain.model.NameParts
 import com.m4isper.contactsapp.domain.model.Organization
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
@@ -137,5 +138,55 @@ class ContactShareTest {
         assertEquals("HOME", vcardAddressType(AddressKind.HOME))
         assertEquals("WORK", vcardAddressType(AddressKind.WORK))
         assertEquals("OTHER", vcardAddressType(AddressKind.OTHER))
+    }
+
+    @Test
+    fun `writes N line from structured name parts`() {
+        val details =
+            ContactDetails(
+                contactId = 7,
+                name = "Иван Петрович Петров",
+                nameParts =
+                    NameParts(
+                        given = "Иван",
+                        family = "Петров",
+                        middle = "Петрович",
+                        prefix = "г-н",
+                        suffix = "Jr.",
+                    ),
+            )
+
+        val vcard = buildVCard(details)
+
+        assertEquals(
+            "N:Петров;Иван;Петрович;г-н;Jr.",
+            vcard.lines().first { it.startsWith("N:") },
+        )
+    }
+
+    @Test
+    fun `escapes special chars in N line parts`() {
+        val details =
+            ContactDetails(
+                contactId = 7,
+                name = "Doe, John",
+                nameParts = NameParts(given = "John;Jr", family = "Doe, Sr"),
+            )
+
+        val vcard = buildVCard(details)
+
+        assertEquals(
+            "N:Doe\\, Sr;John\\;Jr;;;",
+            vcard.lines().first { it.startsWith("N:") },
+        )
+    }
+
+    @Test
+    fun `omits N line without structured name parts`() {
+        val details = ContactDetails(contactId = 7, name = "Anna")
+
+        val vcard = buildVCard(details)
+
+        assertEquals(false, vcard.lines().any { it.startsWith("N:") })
     }
 }

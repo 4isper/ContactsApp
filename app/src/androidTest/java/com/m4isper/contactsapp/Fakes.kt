@@ -2,6 +2,7 @@ package com.m4isper.contactsapp
 
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
+import com.m4isper.contactsapp.domain.model.EditableName
 import com.m4isper.contactsapp.domain.model.EditablePhone
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
@@ -41,7 +42,7 @@ internal class FakeAndroidRepository(
         failure?.let { throw it }
         val details = contacts.firstOrNull { it.contactId == contactId } ?: return null
         return ContactForm(
-            name = details.name,
+            name = EditableName(display = details.name),
             phones = details.phones.map { EditablePhone(number = it.number, kind = it.kind) },
         )
     }

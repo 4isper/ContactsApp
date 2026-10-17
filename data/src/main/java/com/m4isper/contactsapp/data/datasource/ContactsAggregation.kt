@@ -18,6 +18,7 @@ internal fun buildContactDetails(
         note = noteOf(rows),
         birthday = birthdayOf(rows),
         photoUri = header.photoUri,
+        nameParts = namePartsOf(rows),
     )
 
 /**

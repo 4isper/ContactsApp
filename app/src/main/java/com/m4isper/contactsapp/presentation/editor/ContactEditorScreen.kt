@@ -148,7 +148,7 @@ fun ContactEditorScreen(
                         if (uiState.isNew) {
                             stringResource(R.string.editor_title_new)
                         } else {
-                            uiState.name.ifBlank { stringResource(R.string.editor_title_new) }
+                            uiState.effectiveName.ifBlank { stringResource(R.string.editor_title_new) }
                         },
                     )
                 },
@@ -237,7 +237,7 @@ private fun EditorForm(
     ) {
         item(key = "photo") {
             PhotoEditor(
-                name = uiState.name,
+                name = uiState.effectiveName,
                 photoUri = uiState.photoUri,
                 onPick = {
                     photoPicker.launch(
@@ -248,22 +248,21 @@ private fun EditorForm(
             )
         }
         item(key = "name") {
-            OutlinedTextField(
-                value = uiState.name,
-                onValueChange = viewModel::onNameChange,
-                label = { Text(stringResource(R.string.editor_name_label)) },
-                singleLine = true,
-                shape = MaterialTheme.shapes.medium,
-                keyboardOptions =
-                    KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Next,
-                    ),
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = spacing.m)
-                        .testTag("editor_name_field"),
+            NameEditor(
+                mode = uiState.nameMode,
+                displayName = uiState.displayName,
+                given = uiState.givenName,
+                family = uiState.familyName,
+                middle = uiState.middleName,
+                prefix = uiState.namePrefix,
+                suffix = uiState.nameSuffix,
+                onDisplayNameChange = viewModel::onDisplayNameChange,
+                onGivenNameChange = viewModel::onGivenNameChange,
+                onFamilyNameChange = viewModel::onFamilyNameChange,
+                onMiddleNameChange = viewModel::onMiddleNameChange,
+                onPrefixChange = viewModel::onNamePrefixChange,
+                onSuffixChange = viewModel::onNameSuffixChange,
+                onToggleMode = viewModel::onToggleNameMode,
             )
         }
         items(

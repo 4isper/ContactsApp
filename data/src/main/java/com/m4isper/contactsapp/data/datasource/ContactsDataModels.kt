@@ -12,7 +12,13 @@ internal data class DataRow(
     val contactId: Long,
     val mimetype: String,
     val data1: String?,
-    val data2: Int = 0,
+    val data2: String? = null,
     val data3: String? = null,
     val data4: String? = null,
-)
+    val data5: String? = null,
+    val data6: String? = null,
+) {
+    /** Числовое значение data2: тип телефона/email/адреса или тип события. */
+    val data2Int: Int
+        get() = data2?.toIntOrNull() ?: 0
+}

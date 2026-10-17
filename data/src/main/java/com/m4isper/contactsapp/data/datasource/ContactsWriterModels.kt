@@ -52,9 +52,29 @@ data class ExistingBirthday(
     val raw: String,
 )
 
+/** Существующая строка структурированного имени: нужна для diff при обновлении. */
+data class ExistingName(
+    val dataId: Long,
+    val rawContactId: Long,
+    val display: String,
+    val given: String,
+    val family: String,
+    val middle: String,
+    val prefix: String,
+    val suffix: String,
+) {
+    val hasComponents: Boolean
+        get() =
+            given.isNotBlank() ||
+                family.isNotBlank() ||
+                middle.isNotBlank() ||
+                prefix.isNotBlank() ||
+                suffix.isNotBlank()
+}
+
 /** Сырые строки контакта: всё, что нужно для diff при обновлении. */
 data class ContactRows(
-    val hasNameRow: Boolean,
+    val name: ExistingName? = null,
     val phones: List<ExistingPhone> = emptyList(),
     val emails: List<ExistingEmail> = emptyList(),
     val addresses: List<ExistingAddress> = emptyList(),
