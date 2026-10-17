@@ -3,8 +3,11 @@ package com.m4isper.contactsapp.presentation.common
 import com.m4isper.contactsapp.domain.model.AddressKind
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.ContactEvent
+import com.m4isper.contactsapp.domain.model.ContactRelation
 import com.m4isper.contactsapp.domain.model.EmailAddress
 import com.m4isper.contactsapp.domain.model.EmailKind
+import com.m4isper.contactsapp.domain.model.EventKind
 import com.m4isper.contactsapp.domain.model.ImProtocol
 import com.m4isper.contactsapp.domain.model.InstantMessage
 import com.m4isper.contactsapp.domain.model.NameParts
@@ -12,6 +15,7 @@ import com.m4isper.contactsapp.domain.model.Organization
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.model.PostalAddress
+import com.m4isper.contactsapp.domain.model.RelationKind
 import com.m4isper.contactsapp.domain.model.Website
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -230,5 +234,49 @@ class ContactShareTest {
         val vcard = buildVCard(details)
 
         assertEquals(false, vcard.lines().any { it.startsWith("N:") })
+    }
+
+    @Test
+    fun `writes nickname relations and events`() {
+        val details =
+            ContactDetails(
+                contactId = 7,
+                name = "Anna",
+                nickname = "Нюша",
+                relations =
+                    listOf(
+                        ContactRelation(name = "Bob", kind = RelationKind.FRIEND),
+                        ContactRelation(name = "Михалыч", kind = RelationKind.OTHER, customLabel = "Кум"),
+                    ),
+                events =
+                    listOf(
+                        ContactEvent(
+                            date = Birthday(day = 1, month = 6, year = 2015),
+                            kind = EventKind.ANNIVERSARY,
+                        ),
+                        ContactEvent(
+                            date = Birthday(day = 10, month = 9, year = null),
+                            kind = EventKind.OTHER,
+                            customLabel = "Свадьба",
+                        ),
+                    ),
+            )
+
+        val vcard = buildVCard(details)
+
+        assertEquals(
+            listOf(
+                "NICKNAME:Нюша",
+                "RELATED;TYPE=FRIEND:Bob",
+                "RELATED;TYPE=OTHER;X-ABLabel=Кум:Михалыч",
+                "ANNIVERSARY:2015-06-01",
+                "X-ABDATE;X-ABLabel=Свадьба:--09-10",
+            ),
+            vcard
+                .trim()
+                .lines()
+                .drop(3)
+                .dropLast(1),
+        )
     }
 }

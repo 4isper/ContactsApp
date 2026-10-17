@@ -5,25 +5,32 @@ import com.m4isper.contactsapp.data.datasource.ContactsDataSource
 import com.m4isper.contactsapp.data.datasource.ContactsWriterDataSource
 import com.m4isper.contactsapp.data.datasource.ExistingAddress
 import com.m4isper.contactsapp.data.datasource.ExistingEmail
+import com.m4isper.contactsapp.data.datasource.ExistingEvent
 import com.m4isper.contactsapp.data.datasource.ExistingInstantMessage
 import com.m4isper.contactsapp.data.datasource.ExistingName
 import com.m4isper.contactsapp.data.datasource.ExistingPhone
+import com.m4isper.contactsapp.data.datasource.ExistingRelation
 import com.m4isper.contactsapp.data.datasource.customLabelOf
 import com.m4isper.contactsapp.data.datasource.mapAddressKind
 import com.m4isper.contactsapp.data.datasource.mapEmailKind
+import com.m4isper.contactsapp.data.datasource.mapEventKind
 import com.m4isper.contactsapp.data.datasource.mapImProtocol
 import com.m4isper.contactsapp.data.datasource.mapPhoneKind
+import com.m4isper.contactsapp.data.datasource.mapRelationKind
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.EditableAddress
 import com.m4isper.contactsapp.domain.model.EditableBirthday
 import com.m4isper.contactsapp.domain.model.EditableEmail
+import com.m4isper.contactsapp.domain.model.EditableEvent
 import com.m4isper.contactsapp.domain.model.EditableInstantMessage
 import com.m4isper.contactsapp.domain.model.EditableName
+import com.m4isper.contactsapp.domain.model.EditableNickname
 import com.m4isper.contactsapp.domain.model.EditableNote
 import com.m4isper.contactsapp.domain.model.EditableOrganization
 import com.m4isper.contactsapp.domain.model.EditablePhone
+import com.m4isper.contactsapp.domain.model.EditableRelation
 import com.m4isper.contactsapp.domain.model.EditableWebsite
 import com.m4isper.contactsapp.domain.model.ImProtocol
 import com.m4isper.contactsapp.domain.model.NameMode
@@ -64,6 +71,12 @@ class ContactsRepositoryImpl(
                 rows.birthday
                     ?.let { EditableBirthday(dataId = it.dataId, value = Birthday.parse(it.raw)) }
                     ?: EditableBirthday(),
+            nickname =
+                rows.nickname
+                    ?.let { EditableNickname(dataId = it.dataId, nickname = it.nickname) }
+                    ?: EditableNickname(),
+            relations = rows.relations.map { it.toEditable() },
+            events = rows.events.mapNotNull { it.toEditable() },
             photoUri = details.photoUri,
             photoChanged = false,
         )
@@ -155,3 +168,32 @@ private fun ExistingInstantMessage.toEditable(): EditableInstantMessage {
         customProtocol = customProtocol?.takeIf { imProtocol == ImProtocol.CUSTOM && it.isNotBlank() },
     )
 }
+
+private fun ExistingRelation.toEditable(): EditableRelation =
+    EditableRelation(
+        dataId = dataId,
+        name = name,
+        kind = mapRelationKind(type),
+        customLabel =
+            customLabelOf(
+                type,
+                label,
+                ContactsContract.CommonDataKinds.Relation.TYPE_CUSTOM,
+            ),
+    )
+
+/** Событие без разобранной даты пропускаем: показывать и редактировать нечего. */
+private fun ExistingEvent.toEditable(): EditableEvent? =
+    Birthday.parse(raw)?.let { date ->
+        EditableEvent(
+            dataId = dataId,
+            date = date,
+            kind = mapEventKind(type),
+            customLabel =
+                customLabelOf(
+                    type,
+                    label,
+                    ContactsContract.CommonDataKinds.Event.TYPE_CUSTOM,
+                ),
+        )
+    }

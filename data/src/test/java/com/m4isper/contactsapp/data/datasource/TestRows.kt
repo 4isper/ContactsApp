@@ -3,9 +3,11 @@ package com.m4isper.contactsapp.data.datasource
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Event
 import android.provider.ContactsContract.CommonDataKinds.Im
+import android.provider.ContactsContract.CommonDataKinds.Nickname
 import android.provider.ContactsContract.CommonDataKinds.Note
 import android.provider.ContactsContract.CommonDataKinds.Organization
 import android.provider.ContactsContract.CommonDataKinds.Phone
+import android.provider.ContactsContract.CommonDataKinds.Relation
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import android.provider.ContactsContract.CommonDataKinds.Website
@@ -100,11 +102,35 @@ internal fun birthdayRow(
     contactId: Long,
     raw: String,
     type: Int = Event.TYPE_BIRTHDAY,
+    label: String? = null,
 ) = DataRow(
     contactId = contactId,
     mimetype = Event.CONTENT_ITEM_TYPE,
     data1 = raw,
     data2 = type.toString(),
+    data3 = label,
+)
+
+internal fun relationRow(
+    contactId: Long,
+    name: String,
+    type: Int = Relation.TYPE_FRIEND,
+    label: String? = null,
+) = DataRow(
+    contactId = contactId,
+    mimetype = Relation.CONTENT_ITEM_TYPE,
+    data1 = name,
+    data2 = type.toString(),
+    data3 = label,
+)
+
+internal fun nicknameRow(
+    contactId: Long,
+    nickname: String,
+) = DataRow(
+    contactId = contactId,
+    mimetype = Nickname.CONTENT_ITEM_TYPE,
+    data1 = nickname,
 )
 
 internal fun nameRow(

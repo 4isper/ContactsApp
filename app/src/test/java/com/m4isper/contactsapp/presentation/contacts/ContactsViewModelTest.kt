@@ -2,11 +2,13 @@ package com.m4isper.contactsapp.presentation.contacts
 
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
+import com.m4isper.contactsapp.domain.model.ContactRelation
 import com.m4isper.contactsapp.domain.model.EmailAddress
 import com.m4isper.contactsapp.domain.model.EmailKind
 import com.m4isper.contactsapp.domain.model.NameParts
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
+import com.m4isper.contactsapp.domain.model.RelationKind
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
@@ -288,6 +290,46 @@ class ContactsViewModelTest {
             assertEquals(
                 listOf("Иван Петров"),
                 (content as Loadable.Content).data.map { it.name },
+            )
+        }
+
+    @Test
+    fun `search filters by nickname and relation names`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(
+                    listOf(
+                        ContactDetails(contactId = 1, name = "Anna", nickname = "Нюша"),
+                        ContactDetails(
+                            contactId = 2,
+                            name = "Bob",
+                            relations = listOf(ContactRelation(name = "Михаил", kind = RelationKind.FRIEND)),
+                        ),
+                        details(3, "Cara", "333"),
+                    ),
+                )
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            viewModel.onSearchQueryChange("нюша")
+            advanceUntilIdle()
+            val byNickname = viewModel.uiState.value.content
+            assertTrue(byNickname is Loadable.Content)
+            assertEquals(
+                listOf("Anna"),
+                (byNickname as Loadable.Content).data.map { it.name },
+            )
+
+            viewModel.onSearchQueryChange("михаил")
+            advanceUntilIdle()
+            val byRelation = viewModel.uiState.value.content
+            assertTrue(byRelation is Loadable.Content)
+            assertEquals(
+                listOf("Bob"),
+                (byRelation as Loadable.Content).data.map { it.name },
             )
         }
 

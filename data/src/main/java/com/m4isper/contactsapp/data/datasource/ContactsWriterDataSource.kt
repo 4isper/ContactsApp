@@ -10,9 +10,11 @@ import android.provider.ContactsContract
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Event
 import android.provider.ContactsContract.CommonDataKinds.Im
+import android.provider.ContactsContract.CommonDataKinds.Nickname
 import android.provider.ContactsContract.CommonDataKinds.Note
 import android.provider.ContactsContract.CommonDataKinds.Organization
 import android.provider.ContactsContract.CommonDataKinds.Phone
+import android.provider.ContactsContract.CommonDataKinds.Relation
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import android.provider.ContactsContract.CommonDataKinds.Website
@@ -179,18 +181,25 @@ private class DataColumns(
     val data9: Int = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA9)
 }
 
-private fun parseContactRows(cursor: Cursor): ContactRows {
-    val columns = DataColumns(cursor)
-    val phones = mutableListOf<ExistingPhone>()
-    val emails = mutableListOf<ExistingEmail>()
-    val addresses = mutableListOf<ExistingAddress>()
-    val websites = mutableListOf<ExistingWebsite>()
-    val names = mutableListOf<ExistingName>()
-    val instantMessages = mutableListOf<ExistingInstantMessage>()
-    var organization: ExistingOrganization? = null
-    var note: ExistingNote? = null
-    var birthday: ExistingBirthday? = null
-    while (cursor.moveToNext()) {
+/** Накопитель data-строк: одна строка на элемент контакта. */
+private class ContactRowsAccumulator {
+    private val names = mutableListOf<ExistingName>()
+    private val phones = mutableListOf<ExistingPhone>()
+    private val emails = mutableListOf<ExistingEmail>()
+    private val addresses = mutableListOf<ExistingAddress>()
+    private val websites = mutableListOf<ExistingWebsite>()
+    private val instantMessages = mutableListOf<ExistingInstantMessage>()
+    private val relations = mutableListOf<ExistingRelation>()
+    private val events = mutableListOf<ExistingEvent>()
+    private var organization: ExistingOrganization? = null
+    private var note: ExistingNote? = null
+    private var birthday: ExistingBirthday? = null
+    private var nickname: ExistingNickname? = null
+
+    fun addRow(
+        cursor: Cursor,
+        columns: DataColumns,
+    ) {
         val dataId = cursor.getLong(columns.id)
         val rawId = cursor.getLong(columns.raw)
         val data1 = cursor.getString(columns.data1).orEmpty()
@@ -218,25 +227,78 @@ private fun parseContactRows(cursor: Cursor): ContactRows {
                         protocol = cursor.getString(columns.data5)?.toIntOrNull(),
                         customProtocol = cursor.getString(columns.data6),
                     )
-            Organization.CONTENT_ITEM_TYPE ->
-                if (organization == null) organization = existingOrganization(cursor, columns, dataId, rawId)
-            Note.CONTENT_ITEM_TYPE ->
-                if (note == null) note = ExistingNote(dataId, rawId, data1)
-            Event.CONTENT_ITEM_TYPE ->
-                if (birthday == null) birthday = existingBirthday(cursor, columns, dataId, rawId, data1)
+            Relation.CONTENT_ITEM_TYPE ->
+                relations +=
+                    ExistingRelation(
+                        dataId = dataId,
+                        rawContactId = rawId,
+                        name = data1,
+                        type = cursor.getInt(columns.data2),
+                        label = cursor.getString(columns.data3),
+                    )
+            Event.CONTENT_ITEM_TYPE -> addEventRow(cursor, columns, dataId, rawId, data1)
+            else -> addSingleRow(cursor, columns, dataId, rawId, data1)
         }
     }
-    return ContactRows(
-        names = names,
-        phones = phones,
-        emails = emails,
-        addresses = addresses,
-        websites = websites,
-        instantMessages = instantMessages,
-        organization = organization,
-        note = note,
-        birthday = birthday,
-    )
+
+    /** Одиночные поля: организация, заметка и никнейм — храним первую строку. */
+    private fun addSingleRow(
+        cursor: Cursor,
+        columns: DataColumns,
+        dataId: Long,
+        rawContactId: Long,
+        data1: String,
+    ) {
+        when (cursor.getString(columns.mime)) {
+            Organization.CONTENT_ITEM_TYPE ->
+                if (organization == null) organization = existingOrganization(cursor, columns, dataId, rawContactId)
+            Note.CONTENT_ITEM_TYPE ->
+                if (note == null) note = ExistingNote(dataId, rawContactId, data1)
+            Nickname.CONTENT_ITEM_TYPE ->
+                if (nickname == null) nickname = ExistingNickname(dataId, rawContactId, data1)
+        }
+    }
+
+    fun toRows(): ContactRows =
+        ContactRows(
+            names = names,
+            phones = phones,
+            emails = emails,
+            addresses = addresses,
+            websites = websites,
+            instantMessages = instantMessages,
+            relations = relations,
+            events = events,
+            organization = organization,
+            note = note,
+            birthday = birthday,
+            nickname = nickname,
+        )
+
+    /** День рождения хранится тем же mimetype Event, что и прочие даты. */
+    private fun addEventRow(
+        cursor: Cursor,
+        columns: DataColumns,
+        dataId: Long,
+        rawContactId: Long,
+        data1: String,
+    ) {
+        val type = cursor.getInt(columns.data2)
+        if (type == Event.TYPE_BIRTHDAY) {
+            if (birthday == null) birthday = ExistingBirthday(dataId, rawContactId, data1)
+        } else {
+            events += ExistingEvent(dataId, rawContactId, data1, type, cursor.getString(columns.data3))
+        }
+    }
+}
+
+private fun parseContactRows(cursor: Cursor): ContactRows {
+    val columns = DataColumns(cursor)
+    val accumulator = ContactRowsAccumulator()
+    while (cursor.moveToNext()) {
+        accumulator.addRow(cursor, columns)
+    }
+    return accumulator.toRows()
 }
 
 private fun existingName(
@@ -271,19 +333,6 @@ private fun existingOrganization(
         company = cursor.getString(columns.data1).orEmpty(),
         title = cursor.getString(columns.data4).orEmpty(),
     )
-
-private fun existingBirthday(
-    cursor: Cursor,
-    columns: DataColumns,
-    dataId: Long,
-    rawContactId: Long,
-    data1: String,
-): ExistingBirthday? =
-    if (cursor.getInt(columns.data2) == Event.TYPE_BIRTHDAY) {
-        ExistingBirthday(dataId, rawContactId, data1)
-    } else {
-        null
-    }
 
 /** Степень двойки, после которой декодированная картинка станет меньше max. */
 internal fun sampleSize(

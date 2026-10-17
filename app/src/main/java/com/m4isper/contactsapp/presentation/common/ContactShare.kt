@@ -51,7 +51,7 @@ internal fun vcardImService(im: InstantMessage): String =
         ImProtocol.CUSTOM -> im.customProtocol?.takeIf { it.isNotBlank() } ?: "Custom"
     }
 
-private fun escapeVCard(value: String): String =
+internal fun escapeVCard(value: String): String =
     value
         .replace("\\", "\\\\")
         .replace(";", "\\;")
@@ -94,6 +94,7 @@ internal fun buildVCard(details: ContactDetails): String =
         }
         details.note?.let { note -> appendLine("NOTE:${escapeVCard(note)}") }
         details.birthday?.let { birthday -> appendLine("BDAY:${birthday.toStorageString()}") }
+        vcardExtraLines(details).forEach { appendLine(it) }
         appendLine("END:VCARD")
     }
 

@@ -1,9 +1,14 @@
 package com.m4isper.contactsapp
 
 import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.ContactEvent
 import com.m4isper.contactsapp.domain.model.ContactForm
+import com.m4isper.contactsapp.domain.model.ContactRelation
+import com.m4isper.contactsapp.domain.model.EditableEvent
 import com.m4isper.contactsapp.domain.model.EditableName
+import com.m4isper.contactsapp.domain.model.EditableNickname
 import com.m4isper.contactsapp.domain.model.EditablePhone
+import com.m4isper.contactsapp.domain.model.EditableRelation
 import com.m4isper.contactsapp.domain.model.InstantMessage
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
@@ -18,11 +23,17 @@ internal fun testDetails(
     name: String,
     vararg phones: String,
     instantMessages: List<InstantMessage> = emptyList(),
+    nickname: String? = null,
+    relations: List<ContactRelation> = emptyList(),
+    events: List<ContactEvent> = emptyList(),
 ) = ContactDetails(
     contactId = id,
     name = name,
     phones = phones.map { PhoneNumber(it, PhoneKind.MOBILE) },
     instantMessages = instantMessages,
+    nickname = nickname,
+    relations = relations,
+    events = events,
 )
 
 internal class FakeAndroidRepository(
@@ -47,6 +58,19 @@ internal class FakeAndroidRepository(
         return ContactForm(
             name = EditableName(display = details.name),
             phones = details.phones.map { EditablePhone(number = it.number, kind = it.kind) },
+            nickname = EditableNickname(nickname = details.nickname.orEmpty()),
+            relations =
+                details.relations.map { relation ->
+                    EditableRelation(
+                        name = relation.name,
+                        kind = relation.kind,
+                        customLabel = relation.customLabel,
+                    )
+                },
+            events =
+                details.events.map { event ->
+                    EditableEvent(date = event.date, kind = event.kind, customLabel = event.customLabel)
+                },
         )
     }
 

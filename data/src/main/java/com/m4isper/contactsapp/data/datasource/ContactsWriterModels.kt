@@ -49,6 +49,30 @@ data class ExistingOrganization(
     val title: String,
 )
 
+/** Существующая строка связи: имя в data1, тип в data2, подпись в data3. */
+data class ExistingRelation(
+    val dataId: Long,
+    val rawContactId: Long,
+    val name: String,
+    val type: Int,
+    val label: String?,
+)
+
+/** Существующая строка события (кроме дня рождения): дата в data1, тип в data2. */
+data class ExistingEvent(
+    val dataId: Long,
+    val rawContactId: Long,
+    val raw: String,
+    val type: Int,
+    val label: String?,
+)
+
+data class ExistingNickname(
+    val dataId: Long,
+    val rawContactId: Long,
+    val nickname: String,
+)
+
 data class ExistingNote(
     val dataId: Long,
     val rawContactId: Long,
@@ -96,7 +120,10 @@ data class ContactRows(
     val addresses: List<ExistingAddress> = emptyList(),
     val websites: List<ExistingWebsite> = emptyList(),
     val instantMessages: List<ExistingInstantMessage> = emptyList(),
+    val relations: List<ExistingRelation> = emptyList(),
+    val events: List<ExistingEvent> = emptyList(),
     val organization: ExistingOrganization? = null,
     val note: ExistingNote? = null,
     val birthday: ExistingBirthday? = null,
+    val nickname: ExistingNickname? = null,
 )

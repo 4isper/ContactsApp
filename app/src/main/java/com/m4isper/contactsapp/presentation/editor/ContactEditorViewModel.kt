@@ -8,17 +8,22 @@ import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.EditableAddress
 import com.m4isper.contactsapp.domain.model.EditableBirthday
 import com.m4isper.contactsapp.domain.model.EditableEmail
+import com.m4isper.contactsapp.domain.model.EditableEvent
 import com.m4isper.contactsapp.domain.model.EditableInstantMessage
 import com.m4isper.contactsapp.domain.model.EditableName
+import com.m4isper.contactsapp.domain.model.EditableNickname
 import com.m4isper.contactsapp.domain.model.EditableNote
 import com.m4isper.contactsapp.domain.model.EditableOrganization
 import com.m4isper.contactsapp.domain.model.EditablePhone
+import com.m4isper.contactsapp.domain.model.EditableRelation
 import com.m4isper.contactsapp.domain.model.EditableWebsite
 import com.m4isper.contactsapp.domain.model.EmailKind
+import com.m4isper.contactsapp.domain.model.EventKind
 import com.m4isper.contactsapp.domain.model.FormError
 import com.m4isper.contactsapp.domain.model.ImProtocol
 import com.m4isper.contactsapp.domain.model.NameMode
 import com.m4isper.contactsapp.domain.model.PhoneKind
+import com.m4isper.contactsapp.domain.model.RelationKind
 import com.m4isper.contactsapp.domain.model.composeDisplayName
 import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactUseCase
@@ -78,6 +83,22 @@ data class EditorImRow(
     val customProtocol: String = "",
 )
 
+data class EditorRelationRow(
+    val rowId: Long,
+    val dataId: Long? = null,
+    val name: String = "",
+    val kind: RelationKind = RelationKind.OTHER,
+    val customLabel: String = "",
+)
+
+data class EditorEventRow(
+    val rowId: Long,
+    val dataId: Long? = null,
+    val date: Birthday? = null,
+    val kind: EventKind = EventKind.ANNIVERSARY,
+    val customLabel: String = "",
+)
+
 data class EditorUiState(
     val nameMode: NameMode = NameMode.DISPLAY,
     val displayName: String = "",
@@ -97,6 +118,9 @@ data class EditorUiState(
     val organization: EditableOrganization = EditableOrganization(),
     val note: EditableNote = EditableNote(),
     val birthday: EditableBirthday = EditableBirthday(),
+    val nickname: EditableNickname = EditableNickname(),
+    val relations: List<EditorRelationRow> = emptyList(),
+    val events: List<EditorEventRow> = emptyList(),
     val photoUri: String? = null,
     val isNew: Boolean = true,
     val isBusy: Boolean = false,
@@ -177,6 +201,32 @@ private fun newImRow(
     customProtocol = customProtocol,
 )
 
+private fun newRelationRow(
+    dataId: Long? = null,
+    name: String = "",
+    kind: RelationKind = RelationKind.OTHER,
+    customLabel: String = "",
+) = EditorRelationRow(
+    rowId = rowIds.incrementAndGet(),
+    dataId = dataId,
+    name = name,
+    kind = kind,
+    customLabel = customLabel,
+)
+
+private fun newEventRow(
+    dataId: Long? = null,
+    date: Birthday? = null,
+    kind: EventKind = EventKind.ANNIVERSARY,
+    customLabel: String = "",
+) = EditorEventRow(
+    rowId = rowIds.incrementAndGet(),
+    dataId = dataId,
+    date = date,
+    kind = kind,
+    customLabel = customLabel,
+)
+
 private data class EditorData(
     val contactId: Long? = null,
     val nameMode: NameMode = NameMode.DISPLAY,
@@ -197,6 +247,9 @@ private data class EditorData(
     val organization: EditableOrganization = EditableOrganization(),
     val note: EditableNote = EditableNote(),
     val birthday: EditableBirthday = EditableBirthday(),
+    val nickname: EditableNickname = EditableNickname(),
+    val relations: List<EditorRelationRow> = emptyList(),
+    val events: List<EditorEventRow> = emptyList(),
     val photoUri: String? = null,
     val photoChanged: Boolean = false,
     val isBusy: Boolean = false,
@@ -218,61 +271,84 @@ private data class EditorData(
 
     fun toForm(): ContactForm =
         ContactForm(
-            name =
-                EditableName(
-                    mode = nameMode,
-                    display = displayName,
-                    given = givenName,
-                    family = familyName,
-                    middle = middleName,
-                    prefix = namePrefix,
-                    suffix = nameSuffix,
-                    phoneticGiven = phoneticGivenName,
-                    phoneticMiddle = phoneticMiddleName,
-                    phoneticFamily = phoneticFamilyName,
-                ),
-            phones =
-                phones.map {
-                    EditablePhone(
-                        dataId = it.dataId,
-                        number = it.number,
-                        kind = it.kind,
-                        customLabel = it.customLabel.takeIf { label -> label.isNotBlank() },
-                    )
-                },
-            emails =
-                emails.map {
-                    EditableEmail(
-                        dataId = it.dataId,
-                        address = it.address,
-                        kind = it.kind,
-                        customLabel = it.customLabel.takeIf { label -> label.isNotBlank() },
-                    )
-                },
-            addresses =
-                addresses.map {
-                    EditableAddress(
-                        dataId = it.dataId,
-                        address = it.address,
-                        kind = it.kind,
-                        customLabel = it.customLabel.takeIf { label -> label.isNotBlank() },
-                    )
-                },
-            websites = websites.map { EditableWebsite(dataId = it.dataId, url = it.url) },
-            instantMessages =
-                instantMessages.map {
-                    EditableInstantMessage(
-                        dataId = it.dataId,
-                        address = it.address,
-                        protocol = it.protocol,
-                        customProtocol = it.customProtocol.takeIf { label -> label.isNotBlank() },
-                    )
-                },
+            name = editableName(),
+            phones = phones.map { it.toEditable() },
+            emails = emails.map { it.toEditable() },
+            addresses = addresses.map { it.toEditable() },
+            websites = websites.map { it.toEditable() },
+            instantMessages = instantMessages.map { it.toEditable() },
+            relations = relations.map { it.toEditable() },
+            events = events.map { it.toEditable() },
+            nickname = nickname,
             organization = organization,
             note = note,
             birthday = birthday,
             photoUri = photoUri,
             photoChanged = photoChanged,
+        )
+
+    private fun editableName(): EditableName =
+        EditableName(
+            mode = nameMode,
+            display = displayName,
+            given = givenName,
+            family = familyName,
+            middle = middleName,
+            prefix = namePrefix,
+            suffix = nameSuffix,
+            phoneticGiven = phoneticGivenName,
+            phoneticMiddle = phoneticMiddleName,
+            phoneticFamily = phoneticFamilyName,
+        )
+
+    private fun EditorPhoneRow.toEditable(): EditablePhone =
+        EditablePhone(
+            dataId = dataId,
+            number = number,
+            kind = kind,
+            customLabel = customLabel.takeIf { it.isNotBlank() },
+        )
+
+    private fun EditorEmailRow.toEditable(): EditableEmail =
+        EditableEmail(
+            dataId = dataId,
+            address = address,
+            kind = kind,
+            customLabel = customLabel.takeIf { it.isNotBlank() },
+        )
+
+    private fun EditorAddressRow.toEditable(): EditableAddress =
+        EditableAddress(
+            dataId = dataId,
+            address = address,
+            kind = kind,
+            customLabel = customLabel.takeIf { it.isNotBlank() },
+        )
+
+    private fun EditorWebsiteRow.toEditable(): EditableWebsite = EditableWebsite(dataId = dataId, url = url)
+
+    private fun EditorImRow.toEditable(): EditableInstantMessage =
+        EditableInstantMessage(
+            dataId = dataId,
+            address = address,
+            protocol = protocol,
+            customProtocol = customProtocol.takeIf { it.isNotBlank() },
+        )
+
+    private fun EditorRelationRow.toEditable(): EditableRelation =
+        EditableRelation(
+            dataId = dataId,
+            name = name,
+            kind = kind,
+            customLabel = customLabel.takeIf { it.isNotBlank() },
+        )
+
+    private fun EditorEventRow.toEditable(): EditableEvent =
+        EditableEvent(
+            dataId = dataId,
+            date = date,
+            kind = kind,
+            customLabel = customLabel.takeIf { it.isNotBlank() },
         )
 }
 
@@ -284,6 +360,8 @@ private fun ContactForm.withoutBlankRows(): ContactForm =
         addresses = addresses.filter { it.address.isNotBlank() },
         websites = websites.filter { it.url.isNotBlank() },
         instantMessages = instantMessages.filter { it.address.isNotBlank() },
+        relations = relations.filter { it.name.isNotBlank() },
+        events = events.filter { it.date != null },
     )
 
 @Inject
@@ -323,6 +401,9 @@ class ContactEditorViewModel(
                 organization = editor.organization,
                 note = editor.note,
                 birthday = editor.birthday,
+                nickname = editor.nickname,
+                relations = editor.relations,
+                events = editor.events,
                 photoUri = editor.photoUri,
                 isNew = editor.contactId == null,
                 isBusy = editor.isBusy,
@@ -500,6 +581,52 @@ class ContactEditorViewModel(
             editor.copy(instantMessages = editor.instantMessages.filterNot { row -> row.rowId == rowId })
         }
 
+    fun onNicknameChange(value: String) = updateData { it.copy(nickname = it.nickname.copy(nickname = value)) }
+
+    fun onRelationNameChange(
+        rowId: Long,
+        value: String,
+    ) = updateRelations(rowId) { it.copy(name = value) }
+
+    fun onRelationKindChange(
+        rowId: Long,
+        kind: RelationKind,
+    ) = updateRelations(rowId) { it.copy(kind = kind) }
+
+    fun onRelationCustomLabelChange(
+        rowId: Long,
+        value: String,
+    ) = updateRelations(rowId) { it.copy(customLabel = value) }
+
+    fun onAddRelation() = updateData { it.copy(relations = it.relations + newRelationRow()) }
+
+    fun onRemoveRelation(rowId: Long) =
+        updateData { editor ->
+            editor.copy(relations = editor.relations.filterNot { row -> row.rowId == rowId })
+        }
+
+    fun onEventDateChange(
+        rowId: Long,
+        date: Birthday?,
+    ) = updateEvents(rowId) { it.copy(date = date) }
+
+    fun onEventKindChange(
+        rowId: Long,
+        kind: EventKind,
+    ) = updateEvents(rowId) { it.copy(kind = kind) }
+
+    fun onEventCustomLabelChange(
+        rowId: Long,
+        value: String,
+    ) = updateEvents(rowId) { it.copy(customLabel = value) }
+
+    fun onAddEvent() = updateData { it.copy(events = it.events + newEventRow()) }
+
+    fun onRemoveEvent(rowId: Long) =
+        updateData { editor ->
+            editor.copy(events = editor.events.filterNot { row -> row.rowId == rowId })
+        }
+
     fun onOrganizationCompanyChange(value: String) =
         updateData { it.copy(organization = it.organization.copy(company = value)) }
 
@@ -629,6 +756,30 @@ class ContactEditorViewModel(
         )
     }
 
+    private fun updateRelations(
+        rowId: Long,
+        transform: (EditorRelationRow) -> EditorRelationRow,
+    ) = updateData { editor ->
+        editor.copy(
+            relations =
+                editor.relations.map { row ->
+                    if (row.rowId == rowId) transform(row) else row
+                },
+        )
+    }
+
+    private fun updateEvents(
+        rowId: Long,
+        transform: (EditorEventRow) -> EditorEventRow,
+    ) = updateData { editor ->
+        editor.copy(
+            events =
+                editor.events.map { row ->
+                    if (row.rowId == rowId) transform(row) else row
+                },
+        )
+    }
+
     private fun editorDataFromForm(
         contactId: Long,
         form: ContactForm,
@@ -645,44 +796,14 @@ class ContactEditorViewModel(
             phoneticGivenName = form.name.phoneticGiven,
             phoneticMiddleName = form.name.phoneticMiddle,
             phoneticFamilyName = form.name.phoneticFamily,
-            phones =
-                form.phones
-                    .map {
-                        newPhoneRow(
-                            dataId = it.dataId,
-                            number = it.number,
-                            kind = it.kind,
-                            customLabel = it.customLabel.orEmpty(),
-                        )
-                    }.ifEmpty { listOf(newPhoneRow()) },
-            emails =
-                form.emails.map {
-                    newEmailRow(
-                        dataId = it.dataId,
-                        address = it.address,
-                        kind = it.kind,
-                        customLabel = it.customLabel.orEmpty(),
-                    )
-                },
-            addresses =
-                form.addresses.map {
-                    newAddressRow(
-                        dataId = it.dataId,
-                        address = it.address,
-                        kind = it.kind,
-                        customLabel = it.customLabel.orEmpty(),
-                    )
-                },
-            websites = form.websites.map { newWebsiteRow(dataId = it.dataId, url = it.url) },
-            instantMessages =
-                form.instantMessages.map {
-                    newImRow(
-                        dataId = it.dataId,
-                        address = it.address,
-                        protocol = it.protocol,
-                        customProtocol = it.customProtocol.orEmpty(),
-                    )
-                },
+            phones = form.phones.map(::phoneRowOf).ifEmpty { listOf(newPhoneRow()) },
+            emails = form.emails.map(::emailRowOf),
+            addresses = form.addresses.map(::addressRowOf),
+            websites = form.websites.map(::websiteRowOf),
+            instantMessages = form.instantMessages.map(::imRowOf),
+            relations = form.relations.map(::relationRowOf),
+            events = form.events.map(::eventRowOf),
+            nickname = form.nickname,
             organization = form.organization,
             note = form.note,
             birthday = form.birthday,
@@ -690,5 +811,55 @@ class ContactEditorViewModel(
             photoChanged = false,
             isBusy = false,
             initialForm = form,
+        )
+
+    private fun phoneRowOf(phone: EditablePhone) =
+        newPhoneRow(
+            dataId = phone.dataId,
+            number = phone.number,
+            kind = phone.kind,
+            customLabel = phone.customLabel.orEmpty(),
+        )
+
+    private fun emailRowOf(email: EditableEmail) =
+        newEmailRow(
+            dataId = email.dataId,
+            address = email.address,
+            kind = email.kind,
+            customLabel = email.customLabel.orEmpty(),
+        )
+
+    private fun addressRowOf(address: EditableAddress) =
+        newAddressRow(
+            dataId = address.dataId,
+            address = address.address,
+            kind = address.kind,
+            customLabel = address.customLabel.orEmpty(),
+        )
+
+    private fun websiteRowOf(website: EditableWebsite) = newWebsiteRow(dataId = website.dataId, url = website.url)
+
+    private fun imRowOf(message: EditableInstantMessage) =
+        newImRow(
+            dataId = message.dataId,
+            address = message.address,
+            protocol = message.protocol,
+            customProtocol = message.customProtocol.orEmpty(),
+        )
+
+    private fun relationRowOf(relation: EditableRelation) =
+        newRelationRow(
+            dataId = relation.dataId,
+            name = relation.name,
+            kind = relation.kind,
+            customLabel = relation.customLabel.orEmpty(),
+        )
+
+    private fun eventRowOf(event: EditableEvent) =
+        newEventRow(
+            dataId = event.dataId,
+            date = event.date,
+            kind = event.kind,
+            customLabel = event.customLabel.orEmpty(),
         )
 }

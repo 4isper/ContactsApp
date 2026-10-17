@@ -58,6 +58,7 @@ import com.m4isper.contactsapp.presentation.common.ConfirmCallDialog
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.addressKindLabel
 import com.m4isper.contactsapp.presentation.common.birthdayText
+import com.m4isper.contactsapp.presentation.common.contactEventLabel
 import com.m4isper.contactsapp.presentation.common.copyToClipboard
 import com.m4isper.contactsapp.presentation.common.emailKindLabel
 import com.m4isper.contactsapp.presentation.common.instantMessageLabel
@@ -66,6 +67,7 @@ import com.m4isper.contactsapp.presentation.common.openMap
 import com.m4isper.contactsapp.presentation.common.openSms
 import com.m4isper.contactsapp.presentation.common.openWebsite
 import com.m4isper.contactsapp.presentation.common.phoneKindLabel
+import com.m4isper.contactsapp.presentation.common.relationLabel
 import com.m4isper.contactsapp.presentation.common.rememberCallHandler
 import com.m4isper.contactsapp.presentation.common.shareContact
 import com.m4isper.contactsapp.ui.components.DetailsAvatar
@@ -250,7 +252,12 @@ private fun DetailsContent(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    LazyColumn(modifier = modifier.fillMaxSize()) {
+    LazyColumn(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .testTag("details_list"),
+    ) {
         item(key = "header") {
             DetailsHeader(
                 details = details,
@@ -261,6 +268,22 @@ private fun DetailsContent(
                     details.phones.firstOrNull()?.let(onSmsClick)
                 },
             )
+        }
+        details.nickname?.let { nickname ->
+            item(key = "nickname") {
+                DataRow(
+                    primary = nickname,
+                    secondary = null,
+                    actions =
+                        listOf(
+                            RowAction(
+                                Icons.Filled.ContentCopy,
+                                stringResource(R.string.action_copy),
+                            ) { onCopyClick(nickname) },
+                        ),
+                    modifier = Modifier.testTag("nickname_row"),
+                )
+            }
         }
         items(
             items = details.phones,
@@ -372,6 +395,34 @@ private fun DetailsContent(
                     modifier = Modifier.testTag("birthday_row"),
                 )
             }
+        }
+        items(
+            items = details.events,
+            key = { "event_${it.date.toStorageString()}_${it.kind.name}" },
+        ) { event ->
+            DataRow(
+                primary = birthdayText(event.date),
+                secondary = contactEventLabel(event),
+                actions = emptyList(),
+                modifier = Modifier.testTag("event_row_${event.date.toStorageString()}"),
+            )
+        }
+        items(
+            items = details.relations,
+            key = { "relation_${it.name}" },
+        ) { relation ->
+            DataRow(
+                primary = relation.name,
+                secondary = relationLabel(relation),
+                actions =
+                    listOf(
+                        RowAction(
+                            Icons.Filled.ContentCopy,
+                            stringResource(R.string.action_copy),
+                        ) { onCopyClick(relation.name) },
+                    ),
+                modifier = Modifier.testTag("relation_row_${relation.name}"),
+            )
         }
         details.note?.let { note ->
             item(key = "note") {

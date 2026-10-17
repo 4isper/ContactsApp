@@ -4,10 +4,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.AddressKind
+import com.m4isper.contactsapp.domain.model.ContactEvent
+import com.m4isper.contactsapp.domain.model.ContactRelation
 import com.m4isper.contactsapp.domain.model.EmailKind
+import com.m4isper.contactsapp.domain.model.EventKind
 import com.m4isper.contactsapp.domain.model.ImProtocol
 import com.m4isper.contactsapp.domain.model.InstantMessage
 import com.m4isper.contactsapp.domain.model.PhoneKind
+import com.m4isper.contactsapp.domain.model.RelationKind
 
 @Composable
 internal fun phoneKindLabel(kind: PhoneKind): String =
@@ -62,3 +66,52 @@ internal fun instantMessageLabel(im: InstantMessage): String =
     im.customProtocol
         ?.takeIf { im.protocol == ImProtocol.CUSTOM && it.isNotBlank() }
         ?: imProtocolLabel(im.protocol)
+
+/**
+ * Метки связей лежат в карте, а не в when: ветвей больше лимита
+ * CyclomaticComplexMethod.
+ */
+private val RELATION_KIND_LABELS =
+    mapOf(
+        RelationKind.ASSISTANT to R.string.relation_type_assistant,
+        RelationKind.BROTHER to R.string.relation_type_brother,
+        RelationKind.CHILD to R.string.relation_type_child,
+        RelationKind.DOMESTIC_PARTNER to R.string.relation_type_domestic_partner,
+        RelationKind.FATHER to R.string.relation_type_father,
+        RelationKind.FRIEND to R.string.relation_type_friend,
+        RelationKind.MANAGER to R.string.relation_type_manager,
+        RelationKind.MOTHER to R.string.relation_type_mother,
+        RelationKind.PARENT to R.string.relation_type_parent,
+        RelationKind.PARTNER to R.string.relation_type_partner,
+        RelationKind.REFERRED_BY to R.string.relation_type_referred_by,
+        RelationKind.RELATIVE to R.string.relation_type_relative,
+        RelationKind.SISTER to R.string.relation_type_sister,
+        RelationKind.SPOUSE to R.string.relation_type_spouse,
+        RelationKind.OTHER to R.string.relation_type_other,
+    )
+
+@Composable
+internal fun relationKindLabel(kind: RelationKind): String = stringResource(RELATION_KIND_LABELS.getValue(kind))
+
+/** Подпись связи: произвольная метка, если она задана, иначе имя вида. */
+@Composable
+internal fun relationLabel(relation: ContactRelation): String =
+    relation.customLabel
+        ?.takeIf { relation.kind == RelationKind.OTHER && it.isNotBlank() }
+        ?: relationKindLabel(relation.kind)
+
+@Composable
+internal fun eventKindLabel(kind: EventKind): String =
+    stringResource(
+        when (kind) {
+            EventKind.ANNIVERSARY -> R.string.event_type_anniversary
+            EventKind.OTHER -> R.string.event_type_other
+        },
+    )
+
+/** Подпись события: произвольная метка, если она задана, иначе имя вида. */
+@Composable
+internal fun contactEventLabel(event: ContactEvent): String =
+    event.customLabel
+        ?.takeIf { event.kind == EventKind.OTHER && it.isNotBlank() }
+        ?: eventKindLabel(event.kind)

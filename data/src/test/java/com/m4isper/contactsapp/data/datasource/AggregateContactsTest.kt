@@ -2,7 +2,9 @@ package com.m4isper.contactsapp.data.datasource
 
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Phone
+import android.provider.ContactsContract.CommonDataKinds.Relation
 import com.m4isper.contactsapp.domain.model.PhoneKind
+import com.m4isper.contactsapp.domain.model.RelationKind
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -145,5 +147,23 @@ class AggregateContactsTest {
     @Test
     fun `empty input returns empty list`() {
         assertTrue(aggregateContacts(emptyList(), emptyList()).isEmpty())
+    }
+
+    @Test
+    fun `includes nickname and relations for search`() {
+        val headers = listOf(header(1, "Anna"))
+        val rows =
+            listOf(
+                nicknameRow(1, "Нюша"),
+                relationRow(1, "Михалыч", Relation.TYPE_CUSTOM, "Кум"),
+                relationRow(1, "Bob", Relation.TYPE_FRIEND),
+            )
+
+        val details = aggregateContacts(headers, rows).single()
+
+        assertEquals("Нюша", details.nickname)
+        assertEquals(listOf("Михалыч", "Bob"), details.relations.map { it.name })
+        assertEquals(RelationKind.OTHER, details.relations[0].kind)
+        assertEquals("Кум", details.relations[0].customLabel)
     }
 }

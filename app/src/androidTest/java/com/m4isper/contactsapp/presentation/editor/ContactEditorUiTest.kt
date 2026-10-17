@@ -2,6 +2,8 @@ package com.m4isper.contactsapp.presentation.editor
 
 import android.Manifest
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -9,9 +11,13 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
+import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import com.m4isper.contactsapp.FakeAndroidRepository
+import com.m4isper.contactsapp.domain.model.Birthday
+import com.m4isper.contactsapp.domain.model.ContactEvent
+import com.m4isper.contactsapp.domain.model.EventKind
 import com.m4isper.contactsapp.domain.model.NameMode
 import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactUseCase
@@ -263,6 +269,81 @@ class ContactEditorUiTest {
         compose.waitForIdle()
         val name = repository.created.single().name
         assertEquals("Ivan", name.phoneticGiven)
+    }
+
+    @Test
+    fun addRelationAndNickname_savesThem() {
+        val repository = FakeAndroidRepository()
+        val viewModel = viewModel(repository)
+        compose.setContent {
+            ContactEditorScreen(
+                contactId = null,
+                onDone = {},
+                onBack = {},
+                viewModel = viewModel,
+            )
+        }
+
+        compose.onNodeWithTag("editor_name_field").performTextInput("Anna")
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_nickname_field"))
+        compose.onNodeWithTag("editor_nickname_field").performTextInput("Нюша")
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_add_relation_button"))
+        compose.onNodeWithTag("editor_add_relation_button").performClick()
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_relation_field"))
+        compose.onNodeWithTag("editor_relation_field").performTextInput("Bob")
+        compose.onNodeWithTag("editor_save_button").performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
+        compose.waitForIdle()
+        val form = repository.created.single()
+        assertEquals("Нюша", form.nickname.nickname)
+        assertEquals("Bob", form.relations.single().name)
+    }
+
+    @Test
+    fun editMode_eventPickerOpensAndKeepsPrefilledData() {
+        val details =
+            testDetails(
+                7,
+                "Anna",
+                "111",
+                nickname = "Нюша",
+                events =
+                    listOf(
+                        ContactEvent(
+                            date = Birthday(day = 1, month = 6, year = 2015),
+                            kind = EventKind.ANNIVERSARY,
+                        ),
+                    ),
+            )
+        val repository = FakeAndroidRepository(listOf(details))
+        val viewModel = viewModel(repository)
+        compose.setContent {
+            ContactEditorScreen(
+                contactId = 7,
+                onDone = {},
+                onBack = {},
+                viewModel = viewModel,
+            )
+        }
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.displayName == "Anna"
+        }
+
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_nickname_field"))
+        compose.onNodeWithTag("editor_nickname_field").assertTextContains("Нюша")
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_event_date_button"))
+        compose.onNodeWithTag("editor_event_date_button").performClick()
+        compose.onNodeWithTag("editor_event_date_confirm").assertIsDisplayed()
+        Espresso.pressBack()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("editor_save_button").performClick()
+        compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
+        compose.waitForIdle()
+        val form = repository.updated.single().second
+        assertEquals("Нюша", form.nickname.nickname)
+        assertEquals(Birthday(day = 1, month = 6, year = 2015), form.events.single().date)
     }
 
     @Test

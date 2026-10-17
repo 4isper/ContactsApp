@@ -42,6 +42,24 @@
     <string name="im_protocol_jabber">Jabber</string>
     <string name="im_protocol_other">Other</string>
 
+    <string name="relation_type_assistant">Assistant</string>
+    <string name="relation_type_brother">Brother</string>
+    <string name="relation_type_child">Child</string>
+    <string name="relation_type_domestic_partner">Domestic partner</string>
+    <string name="relation_type_father">Father</string>
+    <string name="relation_type_friend">Friend</string>
+    <string name="relation_type_manager">Manager</string>
+    <string name="relation_type_mother">Mother</string>
+    <string name="relation_type_parent">Parent</string>
+    <string name="relation_type_partner">Partner</string>
+    <string name="relation_type_referred_by">Referred by</string>
+    <string name="relation_type_relative">Relative</string>
+    <string name="relation_type_sister">Sister</string>
+    <string name="relation_type_spouse">Spouse</string>
+    <string name="relation_type_other">Other</string>
+    <string name="event_type_anniversary">Anniversary</string>
+    <string name="event_type_other">Other</string>
+
     <string name="contact_not_found">Contact not found</string>
     <string name="copied_to_clipboard">Copied</string>
     <string name="sms_failed">Couldn\'t open messaging</string>
@@ -112,12 +130,17 @@
     <string name="editor_section_addresses">Addresses</string>
     <string name="editor_section_websites">Websites</string>
     <string name="editor_section_organization">Organization</string>
+    <string name="editor_section_nickname">Nickname</string>
     <string name="editor_section_birthday">Birthday</string>
+    <string name="editor_section_events">Events</string>
+    <string name="editor_section_relations">Relations</string>
     <string name="editor_section_note">Note</string>
     <string name="editor_add_email">Add email</string>
     <string name="editor_add_im">Add messenger</string>
     <string name="editor_add_address">Add address</string>
     <string name="editor_add_website">Add website</string>
+    <string name="editor_add_event">Add event</string>
+    <string name="editor_add_relation">Add relation</string>
     <string name="editor_email_label">Email</string>
     <string name="editor_im_label">Account</string>
     <string name="editor_im_service">Service</string>
@@ -126,7 +149,10 @@
     <string name="editor_organization_company">Company</string>
     <string name="editor_organization_title">Job title</string>
     <string name="editor_note_label">Note</string>
+    <string name="editor_nickname_label">Nickname</string>
+    <string name="editor_relation_label">Name</string>
     <string name="editor_birthday_add">Add birthday</string>
+    <string name="editor_event_date_add">Set date</string>
     <string name="editor_birthday_no_year">Without year</string>
     <string name="editor_birthday_remove">Remove birthday</string>
 

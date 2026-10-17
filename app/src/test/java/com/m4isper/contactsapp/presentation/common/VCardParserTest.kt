@@ -3,8 +3,11 @@ package com.m4isper.contactsapp.presentation.common
 import com.m4isper.contactsapp.domain.model.AddressKind
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.ContactEvent
+import com.m4isper.contactsapp.domain.model.ContactRelation
 import com.m4isper.contactsapp.domain.model.EmailAddress
 import com.m4isper.contactsapp.domain.model.EmailKind
+import com.m4isper.contactsapp.domain.model.EventKind
 import com.m4isper.contactsapp.domain.model.ImProtocol
 import com.m4isper.contactsapp.domain.model.InstantMessage
 import com.m4isper.contactsapp.domain.model.NameMode
@@ -13,6 +16,7 @@ import com.m4isper.contactsapp.domain.model.Organization
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.model.PostalAddress
+import com.m4isper.contactsapp.domain.model.RelationKind
 import com.m4isper.contactsapp.domain.model.Website
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -59,6 +63,50 @@ class VCardParserTest {
         assertEquals("QA", form.organization.title)
         assertEquals("hi", form.note.note)
         assertEquals(Birthday(day = 5, month = 4, year = 1990), form.birthday.value)
+    }
+
+    @Test
+    fun `round-trips nickname relations and events`() {
+        val details =
+            ContactDetails(
+                contactId = 1,
+                name = "Anna",
+                nickname = "Нюша",
+                relations =
+                    listOf(
+                        ContactRelation(name = "Bob", kind = RelationKind.FRIEND),
+                        ContactRelation(name = "Михалыч", kind = RelationKind.OTHER, customLabel = "Кум"),
+                    ),
+                events =
+                    listOf(
+                        ContactEvent(
+                            date = Birthday(day = 1, month = 6, year = 2015),
+                            kind = EventKind.ANNIVERSARY,
+                        ),
+                        ContactEvent(
+                            date = Birthday(day = 10, month = 9, year = 2020),
+                            kind = EventKind.OTHER,
+                            customLabel = "Свадьба",
+                        ),
+                    ),
+            )
+
+        val form = parseVCards(buildVCards(listOf(details))).single()
+
+        assertEquals("Нюша", form.nickname.nickname)
+        assertEquals(listOf("Bob", "Михалыч"), form.relations.map { it.name })
+        assertEquals(RelationKind.FRIEND, form.relations[0].kind)
+        assertEquals(RelationKind.OTHER, form.relations[1].kind)
+        assertEquals("Кум", form.relations[1].customLabel)
+        assertEquals(
+            listOf(
+                Birthday(day = 1, month = 6, year = 2015),
+                Birthday(day = 10, month = 9, year = 2020),
+            ),
+            form.events.map { it.date },
+        )
+        assertEquals(EventKind.ANNIVERSARY, form.events[0].kind)
+        assertEquals("Свадьба", form.events[1].customLabel)
     }
 
     @Test
@@ -178,5 +226,33 @@ class VCardParserTest {
         assertEquals(AddressKind.WORK, form.addresses.single().kind)
         assertEquals("Acme", form.organization.company)
         assertEquals("Lead", form.organization.title)
+    }
+
+    @Test
+    fun `parses relations events and nickname`() {
+        val form =
+            parseVCards(
+                """
+                BEGIN:VCARD
+                FN:Gina
+                NICKNAME:Джи
+                X-ABRELATEDNAMES;TYPE=SISTER:Anna
+                RELATED;TYPE=CUSTOM;X-ABLabel=Кум:Михалыч
+                ANNIVERSARY:--06-01
+                X-ABDATE;X-ABLabel=Свадьба:2020-09-10
+                END:VCARD
+                """.trimIndent(),
+            ).single()
+
+        assertEquals("Джи", form.nickname.nickname)
+        assertEquals("Anna", form.relations[0].name)
+        assertEquals(RelationKind.SISTER, form.relations[0].kind)
+        assertEquals(RelationKind.OTHER, form.relations[1].kind)
+        assertEquals("Кум", form.relations[1].customLabel)
+        assertEquals(EventKind.ANNIVERSARY, form.events[0].kind)
+        assertEquals(Birthday(day = 1, month = 6, year = null), form.events[0].date)
+        assertEquals(EventKind.OTHER, form.events[1].kind)
+        assertEquals(Birthday(day = 10, month = 9, year = 2020), form.events[1].date)
+        assertEquals("Свадьба", form.events[1].customLabel)
     }
 }

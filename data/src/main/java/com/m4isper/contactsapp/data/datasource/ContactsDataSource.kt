@@ -3,7 +3,9 @@ package com.m4isper.contactsapp.data.datasource
 import android.content.Context
 import android.provider.ContactsContract
 import android.provider.ContactsContract.CommonDataKinds.Email
+import android.provider.ContactsContract.CommonDataKinds.Nickname
 import android.provider.ContactsContract.CommonDataKinds.Phone
+import android.provider.ContactsContract.CommonDataKinds.Relation
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import dev.zacsweers.metro.AppScope
@@ -61,12 +63,14 @@ class ContactsDataSource(
             val visibleIds = headers.mapTo(mutableSetOf()) { it.contactId }
             val rows =
                 queryData(
-                    selection = "${ContactsContract.Data.MIMETYPE} IN (?, ?, ?)",
+                    selection = "${ContactsContract.Data.MIMETYPE} IN (?, ?, ?, ?, ?)",
                     args =
                         arrayOf(
                             Phone.CONTENT_ITEM_TYPE,
                             Email.CONTENT_ITEM_TYPE,
                             StructuredName.CONTENT_ITEM_TYPE,
+                            Nickname.CONTENT_ITEM_TYPE,
+                            Relation.CONTENT_ITEM_TYPE,
                         ),
                 ).filter { it.contactId in visibleIds }
             aggregateContacts(headers, rows)

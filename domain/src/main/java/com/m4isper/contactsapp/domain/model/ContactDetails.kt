@@ -62,6 +62,31 @@ data class InstantMessage(
     val customProtocol: String? = null,
 )
 
+/** Родственная связь: набор из ContactsContract.CommonDataKinds.Relation + произвольная. */
+enum class RelationKind {
+    ASSISTANT,
+    BROTHER,
+    CHILD,
+    DOMESTIC_PARTNER,
+    FATHER,
+    FRIEND,
+    MANAGER,
+    MOTHER,
+    PARENT,
+    PARTNER,
+    REFERRED_BY,
+    RELATIVE,
+    SISTER,
+    SPOUSE,
+    OTHER,
+}
+
+data class ContactRelation(
+    val name: String,
+    val kind: RelationKind,
+    val customLabel: String? = null,
+)
+
 data class Organization(
     val company: String,
     val title: String,
@@ -113,6 +138,19 @@ data class Birthday(
     }
 }
 
+/** Тип события с датой: годовщина или произвольная дата. */
+enum class EventKind {
+    ANNIVERSARY,
+    OTHER,
+}
+
+/** Событие с датой: день/месяц/год — та же модель, что у дня рождения. */
+data class ContactEvent(
+    val date: Birthday,
+    val kind: EventKind = EventKind.ANNIVERSARY,
+    val customLabel: String? = null,
+)
+
 /** Компоненты структурированного имени контакта (StructuredName). */
 data class NameParts(
     val given: String = "",
@@ -147,6 +185,9 @@ data class ContactDetails(
     val organization: Organization? = null,
     val note: String? = null,
     val birthday: Birthday? = null,
+    val relations: List<ContactRelation> = emptyList(),
+    val events: List<ContactEvent> = emptyList(),
+    val nickname: String? = null,
     val photoUri: String? = null,
     val nameParts: NameParts? = null,
 ) {

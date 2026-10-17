@@ -4,7 +4,6 @@ import android.content.ContentProviderOperation
 import android.provider.ContactsContract
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Event
-import android.provider.ContactsContract.CommonDataKinds.Im
 import android.provider.ContactsContract.CommonDataKinds.Note
 import android.provider.ContactsContract.CommonDataKinds.Organization
 import android.provider.ContactsContract.CommonDataKinds.Phone
@@ -40,7 +39,7 @@ internal fun dataUpdate(dataId: Long): ContentProviderOperation.Builder =
             arrayOf(dataId.toString()),
         )
 
-private fun deleteDataOperation(dataId: Long): ContentProviderOperation =
+internal fun deleteDataOperation(dataId: Long): ContentProviderOperation =
     ContentProviderOperation
         .newDelete(ContactsContract.Data.CONTENT_URI)
         .withSelection(
@@ -66,33 +65,7 @@ internal fun buildCreateOperations(
                 .withValues(structuredNameValues(form.name))
                 .build()
     }
-    val values =
-        buildList {
-            form.phones
-                .filter { it.number.isNotBlank() }
-                .forEach { add(Phone.CONTENT_ITEM_TYPE to phoneValues(it)) }
-            form.emails
-                .filter { it.address.isNotBlank() }
-                .forEach { add(Email.CONTENT_ITEM_TYPE to emailValues(it)) }
-            form.instantMessages
-                .filter { it.address.isNotBlank() }
-                .forEach { add(Im.CONTENT_ITEM_TYPE to instantMessageValues(it)) }
-            form.addresses
-                .filter { it.address.isNotBlank() }
-                .forEach { add(StructuredPostal.CONTENT_ITEM_TYPE to addressValues(it)) }
-            form.websites
-                .filter { it.url.isNotBlank() }
-                .forEach { add(Website.CONTENT_ITEM_TYPE to websiteValues(it)) }
-            if (!form.organization.isEmpty) {
-                add(Organization.CONTENT_ITEM_TYPE to organizationValues(form.organization))
-            }
-            if (form.note.note.isNotBlank()) {
-                add(Note.CONTENT_ITEM_TYPE to noteValues(form.note.note))
-            }
-            form.birthday.value?.let { add(Event.CONTENT_ITEM_TYPE to eventValues(it)) }
-            if (photo != null) add(Photo.CONTENT_ITEM_TYPE to photoValues(photo))
-        }
-    values.forEach { (mimetype, contentValues) ->
+    contactDataValues(form, photo).forEach { (mimetype, contentValues) ->
         ops += dataInsert(mimetype, rawContactBackRef = 0).withValues(contentValues).build()
     }
     return ops
@@ -112,6 +85,9 @@ internal fun buildUpdateOperations(
     ops += nameOperations(rawContactId, rows.names, form.name)
     ops += listOperations(rawContactId, rows, form)
     ops += imOperations(rawContactId, rows, form)
+    ops += relationOperations(rawContactId, rows, form)
+    ops += eventOperations(rawContactId, rows, form)
+    ops += nicknameOperations(rawContactId, rows.nickname, form.nickname.nickname)
     ops += singleOperations(rawContactId, rows, form)
     ops += photoOperations(rawContactId, form.photoChanged, photo)
     return ops

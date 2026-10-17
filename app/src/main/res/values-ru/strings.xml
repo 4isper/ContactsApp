@@ -42,6 +42,24 @@
     <string name="im_protocol_jabber">Jabber</string>
     <string name="im_protocol_other">Другое</string>
 
+    <string name="relation_type_assistant">Ассистент</string>
+    <string name="relation_type_brother">Брат</string>
+    <string name="relation_type_child">Ребёнок</string>
+    <string name="relation_type_domestic_partner">Гражданский партнёр</string>
+    <string name="relation_type_father">Отец</string>
+    <string name="relation_type_friend">Друг</string>
+    <string name="relation_type_manager">Руководитель</string>
+    <string name="relation_type_mother">Мать</string>
+    <string name="relation_type_parent">Родитель</string>
+    <string name="relation_type_partner">Партнёр</string>
+    <string name="relation_type_referred_by">Кто рекомендовал</string>
+    <string name="relation_type_relative">Родственник</string>
+    <string name="relation_type_sister">Сестра</string>
+    <string name="relation_type_spouse">Супруг(а)</string>
+    <string name="relation_type_other">Другое</string>
+    <string name="event_type_anniversary">Годовщина</string>
+    <string name="event_type_other">Другое</string>
+
     <string name="contact_not_found">Контакт не найден</string>
     <string name="copied_to_clipboard">Скопировано</string>
     <string name="sms_failed">Не удалось открыть сообщения</string>
@@ -112,12 +130,17 @@
     <string name="editor_section_addresses">Адреса</string>
     <string name="editor_section_websites">Сайты</string>
     <string name="editor_section_organization">Организация</string>
+    <string name="editor_section_nickname">Никнейм</string>
     <string name="editor_section_birthday">День рождения</string>
+    <string name="editor_section_events">События</string>
+    <string name="editor_section_relations">Связи</string>
     <string name="editor_section_note">Заметка</string>
     <string name="editor_add_email">Добавить email</string>
     <string name="editor_add_im">Добавить мессенджер</string>
     <string name="editor_add_address">Добавить адрес</string>
     <string name="editor_add_website">Добавить сайт</string>
+    <string name="editor_add_event">Добавить событие</string>
+    <string name="editor_add_relation">Добавить связь</string>
     <string name="editor_email_label">Email</string>
     <string name="editor_im_label">Аккаунт</string>
     <string name="editor_im_service">Сервис</string>
@@ -126,7 +149,10 @@
     <string name="editor_organization_company">Компания</string>
     <string name="editor_organization_title">Должность</string>
     <string name="editor_note_label">Заметка</string>
+    <string name="editor_nickname_label">Никнейм</string>
+    <string name="editor_relation_label">Имя</string>
     <string name="editor_birthday_add">Добавить день рождения</string>
+    <string name="editor_event_date_add">Указать дату</string>
     <string name="editor_birthday_no_year">Без года</string>
     <string name="editor_birthday_remove">Удалить день рождения</string>
 

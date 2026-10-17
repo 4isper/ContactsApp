@@ -220,6 +220,7 @@ private fun EditorForm(
     val spacing = LocalSpacing.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showDatePicker by remember { mutableStateOf(false) }
+    var eventPickerRowId by remember { mutableStateOf<Long?>(null) }
     val photoPicker =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.PickVisualMedia()) { uri ->
             uri?.let { viewModel.onPhotoPicked(it.toString()) }
@@ -265,6 +266,23 @@ private fun EditorForm(
                 onPhoneticMiddleChange = viewModel::onPhoneticMiddleNameChange,
                 onPhoneticFamilyChange = viewModel::onPhoneticFamilyNameChange,
                 onToggleMode = viewModel::onToggleNameMode,
+            )
+        }
+        item(key = "nickname-header") {
+            SectionHeader(titleRes = R.string.editor_section_nickname)
+        }
+        item(key = "nickname") {
+            OutlinedTextField(
+                value = uiState.nickname.nickname,
+                onValueChange = viewModel::onNicknameChange,
+                label = { Text(stringResource(R.string.editor_nickname_label)) },
+                singleLine = true,
+                shape = MaterialTheme.shapes.medium,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = spacing.m)
+                        .testTag("editor_nickname_field"),
             )
         }
         items(
@@ -417,6 +435,47 @@ private fun EditorForm(
                 onBirthdayChange = viewModel::onBirthdayChange,
             )
         }
+        item(key = "events-header") {
+            SectionHeader(
+                titleRes = R.string.editor_section_events,
+                onAdd = viewModel::onAddEvent,
+                addLabelRes = R.string.editor_add_event,
+                addTestTag = "editor_add_event_button",
+            )
+        }
+        items(
+            items = uiState.events,
+            key = { it.rowId },
+        ) { row ->
+            EventEditorRow(
+                row = row,
+                onKindChange = viewModel::onEventKindChange,
+                onDatePickClick = { eventPickerRowId = it },
+                onDateChange = viewModel::onEventDateChange,
+                onCustomLabelChange = viewModel::onEventCustomLabelChange,
+                onRemove = viewModel::onRemoveEvent,
+            )
+        }
+        item(key = "relations-header") {
+            SectionHeader(
+                titleRes = R.string.editor_section_relations,
+                onAdd = viewModel::onAddRelation,
+                addLabelRes = R.string.editor_add_relation,
+                addTestTag = "editor_add_relation_button",
+            )
+        }
+        items(
+            items = uiState.relations,
+            key = { it.rowId },
+        ) { row ->
+            RelationEditorRow(
+                row = row,
+                onNameChange = viewModel::onRelationNameChange,
+                onKindChange = viewModel::onRelationKindChange,
+                onCustomLabelChange = viewModel::onRelationCustomLabelChange,
+                onRemove = viewModel::onRemoveRelation,
+            )
+        }
         item(key = "note-header") {
             SectionHeader(titleRes = R.string.editor_section_note)
         }
@@ -489,6 +548,19 @@ private fun EditorForm(
                 showDatePicker = false
             },
             onDismiss = { showDatePicker = false },
+        )
+    }
+
+    val eventPickerRow = uiState.events.firstOrNull { it.rowId == eventPickerRowId }
+    if (eventPickerRow != null) {
+        BirthdayPickerDialog(
+            birthday = eventPickerRow.date,
+            confirmTestTag = "editor_event_date_confirm",
+            onConfirmed = { birthday ->
+                viewModel.onEventDateChange(eventPickerRow.rowId, birthday)
+                eventPickerRowId = null
+            },
+            onDismiss = { eventPickerRowId = null },
         )
     }
 }
@@ -899,6 +971,7 @@ private fun BirthdayPickerDialog(
     birthday: Birthday?,
     onConfirmed: (Birthday) -> Unit,
     onDismiss: () -> Unit,
+    confirmTestTag: String = "editor_birthday_confirm",
 ) {
     val pickerState =
         rememberDatePickerState(
@@ -931,7 +1004,7 @@ private fun BirthdayPickerDialog(
                         )
                     }
                 },
-                modifier = Modifier.testTag("editor_birthday_confirm"),
+                modifier = Modifier.testTag(confirmTestTag),
             ) {
                 Text(stringResource(R.string.editor_save))
             }

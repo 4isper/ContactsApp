@@ -52,6 +52,25 @@ data class EditableBirthday(
     val value: Birthday? = null,
 )
 
+data class EditableNickname(
+    val dataId: Long? = null,
+    val nickname: String = "",
+)
+
+data class EditableRelation(
+    val dataId: Long? = null,
+    val name: String,
+    val kind: RelationKind = RelationKind.OTHER,
+    val customLabel: String? = null,
+)
+
+data class EditableEvent(
+    val dataId: Long? = null,
+    val date: Birthday? = null,
+    val kind: EventKind = EventKind.ANNIVERSARY,
+    val customLabel: String? = null,
+)
+
 enum class NameMode {
     /** Одно поле «Полное имя»: пишется в DISPLAY_NAME. */
     DISPLAY,
@@ -112,6 +131,9 @@ data class ContactForm(
     val organization: EditableOrganization = EditableOrganization(),
     val note: EditableNote = EditableNote(),
     val birthday: EditableBirthday = EditableBirthday(),
+    val nickname: EditableNickname = EditableNickname(),
+    val relations: List<EditableRelation> = emptyList(),
+    val events: List<EditableEvent> = emptyList(),
     /** Текущее фото (thumbnail существующего контакта или выбранный пользователем URI). */
     val photoUri: String? = null,
     /** true, если пользователь сменил или удалил фото — только тогда фото трогаем. */
@@ -139,4 +161,7 @@ private fun ContactForm.isEffectivelyEmpty(): Boolean =
         instantMessages.none { it.address.isNotBlank() } &&
         organization.isEmpty &&
         note.note.isBlank() &&
-        birthday.value == null
+        birthday.value == null &&
+        nickname.nickname.isBlank() &&
+        relations.none { it.name.isNotBlank() } &&
+        events.none { it.date != null }

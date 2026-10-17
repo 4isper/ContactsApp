@@ -4,12 +4,17 @@ import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.EditableBirthday
 import com.m4isper.contactsapp.domain.model.EditableEmail
+import com.m4isper.contactsapp.domain.model.EditableEvent
 import com.m4isper.contactsapp.domain.model.EditableInstantMessage
 import com.m4isper.contactsapp.domain.model.EditableName
+import com.m4isper.contactsapp.domain.model.EditableNickname
 import com.m4isper.contactsapp.domain.model.EditableNote
 import com.m4isper.contactsapp.domain.model.EditableOrganization
+import com.m4isper.contactsapp.domain.model.EditableRelation
+import com.m4isper.contactsapp.domain.model.EventKind
 import com.m4isper.contactsapp.domain.model.ImProtocol
 import com.m4isper.contactsapp.domain.model.NameMode
+import com.m4isper.contactsapp.domain.model.RelationKind
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
@@ -465,6 +470,128 @@ class ContactEditorViewModelTest {
             assertEquals(true, viewModel.isDirty())
 
             viewModel.onToggleNameMode()
+            advanceUntilIdle()
+            assertEquals(false, viewModel.isDirty())
+        }
+
+    @Test
+    fun `load existing contact fills nickname relations and events`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeEditorRepository().apply {
+                    formToLoad =
+                        ContactForm(
+                            name = EditableName(display = "Anna"),
+                            nickname = EditableNickname(nickname = "Нюша"),
+                            relations =
+                                listOf(
+                                    EditableRelation(dataId = 5, name = "Bob", kind = RelationKind.FRIEND),
+                                    EditableRelation(
+                                        name = "Михалыч",
+                                        kind = RelationKind.OTHER,
+                                        customLabel = "Кум",
+                                    ),
+                                ),
+                            events =
+                                listOf(
+                                    EditableEvent(
+                                        dataId = 6,
+                                        date = Birthday(day = 1, month = 6, year = 2015),
+                                        kind = EventKind.ANNIVERSARY,
+                                    ),
+                                ),
+                        )
+                }
+            val viewModel = viewModel(repository)
+
+            viewModel.load(7)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals("Нюша", state.nickname.nickname)
+            assertEquals(listOf("Bob", "Михалыч"), state.relations.map { it.name })
+            assertEquals(5L, state.relations[0].dataId)
+            assertEquals(RelationKind.FRIEND, state.relations[0].kind)
+            assertEquals("Кум", state.relations[1].customLabel)
+            assertEquals(6L, state.events.single().dataId)
+            assertEquals(Birthday(day = 1, month = 6, year = 2015), state.events.single().date)
+            assertEquals(EventKind.ANNIVERSARY, state.events.single().kind)
+        }
+
+    @Test
+    fun `save sends nickname relations and events`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeEditorRepository()
+            val viewModel = viewModel(repository)
+            viewModel.load(null)
+            advanceUntilIdle()
+
+            viewModel.onDisplayNameChange("Anna")
+            viewModel.onNicknameChange("Нюша")
+            viewModel.onAddRelation()
+            advanceUntilIdle()
+            val relationRowId =
+                viewModel.uiState.value.relations
+                    .single()
+                    .rowId
+            viewModel.onRelationNameChange(relationRowId, "Bob")
+            viewModel.onRelationKindChange(relationRowId, RelationKind.SISTER)
+            viewModel.onAddEvent()
+            advanceUntilIdle()
+            val eventRowId =
+                viewModel.uiState.value.events
+                    .single()
+                    .rowId
+            viewModel.onEventDateChange(eventRowId, Birthday(day = 10, month = 9, year = null))
+            viewModel.onEventKindChange(eventRowId, EventKind.ANNIVERSARY)
+            viewModel.onSave()
+            advanceUntilIdle()
+
+            val form = repository.created.single()
+            assertEquals("Нюша", form.nickname.nickname)
+            assertEquals("Bob", form.relations.single().name)
+            assertEquals(RelationKind.SISTER, form.relations.single().kind)
+            assertEquals(Birthday(day = 10, month = 9, year = null), form.events.single().date)
+            assertEquals(EventKind.ANNIVERSARY, form.events.single().kind)
+        }
+
+    @Test
+    fun `dirty ignores blank relations and events without date`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeEditorRepository()
+            val viewModel = viewModel(repository)
+            viewModel.load(null)
+            advanceUntilIdle()
+
+            viewModel.onAddRelation()
+            viewModel.onAddEvent()
+            advanceUntilIdle()
+            assertEquals(false, viewModel.isDirty())
+
+            val relationRowId =
+                viewModel.uiState.value.relations
+                    .single()
+                    .rowId
+            viewModel.onRelationNameChange(relationRowId, "Bob")
+            advanceUntilIdle()
+            assertEquals(true, viewModel.isDirty())
+
+            viewModel.onRemoveRelation(relationRowId)
+            advanceUntilIdle()
+            assertEquals(false, viewModel.isDirty())
+
+            val eventRowId =
+                viewModel.uiState.value.events
+                    .single()
+                    .rowId
+            viewModel.onEventDateChange(eventRowId, Birthday(day = 10, month = 9, year = null))
+            advanceUntilIdle()
+            assertEquals(true, viewModel.isDirty())
+
+            viewModel.onRemoveEvent(eventRowId)
             advanceUntilIdle()
             assertEquals(false, viewModel.isDirty())
         }

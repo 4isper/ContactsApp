@@ -4,7 +4,7 @@ import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.NameParts
 import java.util.Locale
 
-/** Фильтр списка: избранное и поиск по имени (включая фонетику), телефону и email. */
+/** Фильтр списка: избранное и поиск по имени (включая фонетику), телефону, email, никнейму и связям. */
 internal fun filterContacts(
     contacts: List<ContactDetails>,
     query: String,
@@ -19,6 +19,8 @@ internal fun filterContacts(
         contact.name.lowercase(Locale.ROOT).contains(q) ||
             contact.phones.any { it.number.contains(trimmed) } ||
             contact.emails.any { it.address.lowercase(Locale.ROOT).contains(q) } ||
+            contact.nickname?.lowercase(Locale.ROOT)?.contains(q) == true ||
+            contact.relations.any { it.name.lowercase(Locale.ROOT).contains(q) } ||
             contact.nameParts?.matches(q) == true
     }
 }

@@ -5,14 +5,19 @@ import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.EditableAddress
 import com.m4isper.contactsapp.domain.model.EditableBirthday
 import com.m4isper.contactsapp.domain.model.EditableEmail
+import com.m4isper.contactsapp.domain.model.EditableEvent
 import com.m4isper.contactsapp.domain.model.EditableInstantMessage
 import com.m4isper.contactsapp.domain.model.EditableName
+import com.m4isper.contactsapp.domain.model.EditableNickname
 import com.m4isper.contactsapp.domain.model.EditableNote
 import com.m4isper.contactsapp.domain.model.EditableOrganization
 import com.m4isper.contactsapp.domain.model.EditablePhone
+import com.m4isper.contactsapp.domain.model.EditableRelation
 import com.m4isper.contactsapp.domain.model.EditableWebsite
+import com.m4isper.contactsapp.domain.model.EventKind
 import com.m4isper.contactsapp.domain.model.NameMode
 import com.m4isper.contactsapp.domain.model.NameParts
+import com.m4isper.contactsapp.domain.model.RelationKind
 import java.util.Locale
 
 private const val TEL_URI_PREFIX = "tel:"
@@ -115,17 +120,21 @@ private class VCardBuilder {
     private val addresses = mutableListOf<EditableAddress>()
     private val websites = mutableListOf<EditableWebsite>()
     private val instantMessages = mutableListOf<EditableInstantMessage>()
+    private val relations = mutableListOf<EditableRelation>()
+    private val events = mutableListOf<EditableEvent>()
     private var company = ""
     private var title = ""
     private var note = ""
+    private var nickname = ""
     private var birthday: Birthday? = null
 
     fun apply(line: String) {
         val property = parseVCardProperty(line) ?: return
         val value = unescapeVCard(property.value)
         when (property.name) {
-            "FN", "N", "ORG", "TITLE", "NOTE", "BDAY" -> applyIdentityProperty(property, value)
+            "FN", "N", "ORG", "TITLE", "NOTE", "BDAY", "NICKNAME" -> applyIdentityProperty(property, value)
             "TEL", "EMAIL", "ADR", "URL", "IMPP" -> applyCommunicationProperty(property, value)
+            "ANNIVERSARY", "X-ABDATE", "RELATED", "X-ABRELATEDNAMES" -> applyExtraProperty(property, value)
         }
     }
 
@@ -140,6 +149,7 @@ private class VCardBuilder {
             "TITLE" -> title = value.trim()
             "NOTE" -> note = value
             "BDAY" -> birthday = birthdayFromVCard(value)
+            "NICKNAME" -> nickname = value.trim()
         }
     }
 
@@ -186,6 +196,37 @@ private class VCardBuilder {
         }
     }
 
+    private fun applyExtraProperty(
+        property: VCardProperty,
+        value: String,
+    ) {
+        when (property.name) {
+            "ANNIVERSARY" ->
+                birthdayFromVCard(value)?.let { date ->
+                    events += EditableEvent(date = date, kind = EventKind.ANNIVERSARY)
+                }
+            "X-ABDATE" ->
+                birthdayFromVCard(value)?.let { date ->
+                    events +=
+                        EditableEvent(
+                            date = date,
+                            kind = EventKind.OTHER,
+                            customLabel = vcardLabelOf(property.params),
+                        )
+                }
+            "RELATED", "X-ABRELATEDNAMES" ->
+                if (value.isNotBlank()) {
+                    val kind = relationKindOfVCard(property.types)
+                    relations +=
+                        EditableRelation(
+                            name = value,
+                            kind = kind,
+                            customLabel = vcardLabelOf(property.params).takeIf { kind == RelationKind.OTHER },
+                        )
+                }
+        }
+    }
+
     fun build(): ContactForm? {
         val nameParts = parts
         val name =
@@ -210,8 +251,11 @@ private class VCardBuilder {
                 addresses = addresses,
                 websites = websites,
                 instantMessages = instantMessages,
+                relations = relations,
+                events = events,
                 organization = EditableOrganization(company = company, title = title),
                 note = EditableNote(note = note),
+                nickname = EditableNickname(nickname = nickname),
                 birthday = EditableBirthday(value = birthday),
             )
         return form.takeUnless(::isEmptyForImport)
@@ -234,6 +278,9 @@ private fun isEmptyForImport(form: ContactForm): Boolean =
         form.addresses.isEmpty() &&
         form.websites.isEmpty() &&
         form.instantMessages.isEmpty() &&
+        form.relations.isEmpty() &&
+        form.events.isEmpty() &&
         form.organization.isEmpty &&
         form.note.note.isBlank() &&
+        form.nickname.nickname.isBlank() &&
         form.birthday.value == null

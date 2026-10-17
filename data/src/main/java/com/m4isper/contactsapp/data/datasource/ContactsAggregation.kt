@@ -18,13 +18,17 @@ internal fun buildContactDetails(
         organization = organizationOf(rows),
         note = noteOf(rows),
         birthday = birthdayOf(rows),
+        relations = relationsOf(rows),
+        events = eventsOf(rows),
+        nickname = nicknameOf(rows),
         photoUri = header.photoUri,
         nameParts = namePartsOf(rows),
     )
 
 /**
  * Лёгкая агрегация для списка: контакты без телефона и email тоже попадают
- * в список (имена и фото берутся из таблицы Contacts).
+ * в список (имена и фото берутся из таблицы Contacts). Никнейм и связи
+ * нужны поиску, остальные поля деталей не читаются.
  */
 internal fun aggregateContacts(
     headers: List<ContactHeaderRow>,
@@ -41,6 +45,8 @@ internal fun aggregateContacts(
             emails = emailAddressesOf(contactRows),
             photoUri = header.photoUri,
             nameParts = namePartsOf(contactRows),
+            relations = relationsOf(contactRows),
+            nickname = nicknameOf(contactRows),
         )
     }
 }
