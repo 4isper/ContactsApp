@@ -55,6 +55,9 @@
     <string name="editor_name_middle">Middle name</string>
     <string name="editor_name_prefix">Prefix</string>
     <string name="editor_name_suffix">Suffix</string>
+    <string name="editor_name_phonetic_given">Phonetic first name</string>
+    <string name="editor_name_phonetic_middle">Phonetic middle name</string>
+    <string name="editor_name_phonetic_family">Phonetic last name</string>
     <string name="editor_name_details">More fields</string>
     <string name="editor_phone_label">Phone number</string>
     <string name="editor_kind_label">Label</string>

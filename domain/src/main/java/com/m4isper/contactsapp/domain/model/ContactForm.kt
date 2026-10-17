@@ -65,6 +65,9 @@ data class EditableName(
     val middle: String = "",
     val prefix: String = "",
     val suffix: String = "",
+    val phoneticGiven: String = "",
+    val phoneticMiddle: String = "",
+    val phoneticFamily: String = "",
 ) {
     val hasComponents: Boolean
         get() =
@@ -72,7 +75,10 @@ data class EditableName(
                 family.isNotBlank() ||
                 middle.isNotBlank() ||
                 prefix.isNotBlank() ||
-                suffix.isNotBlank()
+                suffix.isNotBlank() ||
+                phoneticGiven.isNotBlank() ||
+                phoneticMiddle.isNotBlank() ||
+                phoneticFamily.isNotBlank()
 
     /** Пусто ли имя в текущем режиме. */
     val isEmpty: Boolean

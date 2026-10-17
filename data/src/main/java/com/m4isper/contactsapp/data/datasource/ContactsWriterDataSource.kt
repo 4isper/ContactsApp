@@ -37,6 +37,9 @@ private val WRITER_DATA_PROJECTION =
         ContactsContract.Data.DATA4,
         ContactsContract.Data.DATA5,
         ContactsContract.Data.DATA6,
+        ContactsContract.Data.DATA7,
+        ContactsContract.Data.DATA8,
+        ContactsContract.Data.DATA9,
     )
 
 @Inject
@@ -85,7 +88,7 @@ class ContactsWriterDataSource(
                     arrayOf(ContactsContract.RawContacts._ID),
                     "${ContactsContract.RawContacts.CONTACT_ID}=?",
                     arrayOf(contactId.toString()),
-                    null,
+                    "${ContactsContract.RawContacts._ID} ASC",
                 )
             cursor?.use {
                 if (it.moveToFirst()) {
@@ -170,6 +173,9 @@ private class DataColumns(
     val data4: Int = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA4)
     val data5: Int = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA5)
     val data6: Int = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA6)
+    val data7: Int = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA7)
+    val data8: Int = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA8)
+    val data9: Int = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA9)
 }
 
 private fun parseContactRows(cursor: Cursor): ContactRows {
@@ -178,17 +184,17 @@ private fun parseContactRows(cursor: Cursor): ContactRows {
     val emails = mutableListOf<ExistingEmail>()
     val addresses = mutableListOf<ExistingAddress>()
     val websites = mutableListOf<ExistingWebsite>()
+    val names = mutableListOf<ExistingName>()
     var organization: ExistingOrganization? = null
     var note: ExistingNote? = null
     var birthday: ExistingBirthday? = null
-    var name: ExistingName? = null
     while (cursor.moveToNext()) {
         val dataId = cursor.getLong(columns.id)
         val rawId = cursor.getLong(columns.raw)
         val data1 = cursor.getString(columns.data1).orEmpty()
         when (cursor.getString(columns.mime)) {
             StructuredName.CONTENT_ITEM_TYPE ->
-                if (name == null) name = existingName(cursor, columns, dataId, rawId)
+                names += existingName(cursor, columns, dataId, rawId)
             Phone.CONTENT_ITEM_TYPE ->
                 phones +=
                     ExistingPhone(dataId, rawId, data1, cursor.getInt(columns.data2), cursor.getString(columns.data3))
@@ -209,7 +215,7 @@ private fun parseContactRows(cursor: Cursor): ContactRows {
         }
     }
     return ContactRows(
-        name = name,
+        names = names,
         phones = phones,
         emails = emails,
         addresses = addresses,
@@ -235,6 +241,9 @@ private fun existingName(
         prefix = cursor.getString(columns.data4).orEmpty(),
         middle = cursor.getString(columns.data5).orEmpty(),
         suffix = cursor.getString(columns.data6).orEmpty(),
+        phoneticGiven = cursor.getString(columns.data7).orEmpty(),
+        phoneticMiddle = cursor.getString(columns.data8).orEmpty(),
+        phoneticFamily = cursor.getString(columns.data9).orEmpty(),
     )
 
 private fun existingOrganization(

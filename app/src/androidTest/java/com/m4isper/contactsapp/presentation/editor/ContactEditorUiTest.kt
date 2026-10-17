@@ -208,6 +208,32 @@ class ContactEditorUiTest {
     }
 
     @Test
+    fun detailsSection_savesPhoneticName() {
+        val repository = FakeAndroidRepository()
+        val viewModel = viewModel(repository)
+        compose.setContent {
+            ContactEditorScreen(
+                contactId = null,
+                onDone = {},
+                onBack = {},
+                viewModel = viewModel,
+            )
+        }
+
+        compose.onNodeWithTag("editor_toggle_name_mode").performClick()
+        compose.onNodeWithTag("editor_name_given").performTextInput("Иван")
+        compose.onNodeWithTag("editor_toggle_name_details").performClick()
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_name_phonetic_given"))
+        compose.onNodeWithTag("editor_name_phonetic_given").performTextInput("Ivan")
+        compose.onNodeWithTag("editor_save_button").performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
+        compose.waitForIdle()
+        val name = repository.created.single().name
+        assertEquals("Ivan", name.phoneticGiven)
+    }
+
+    @Test
     fun editMode_deleteRemovesContact() {
         val repository = FakeAndroidRepository(listOf(testDetails(7, "Anna", "111")))
         val viewModel = viewModel(repository)

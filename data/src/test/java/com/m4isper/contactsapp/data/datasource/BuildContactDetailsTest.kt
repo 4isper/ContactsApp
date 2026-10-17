@@ -97,6 +97,41 @@ class BuildContactDetailsTest {
     }
 
     @Test
+    fun `extracts phonetic name parts`() {
+        val rows =
+            listOf(
+                nameRow(
+                    1,
+                    given = "Иван",
+                    family = "Петров",
+                    phoneticGiven = "Ivan",
+                    phoneticMiddle = "Petrovich",
+                    phoneticFamily = "Petrov",
+                ),
+            )
+
+        val details = buildContactDetails(header(1, "Иван Петров"), rows)
+
+        assertEquals(
+            NameParts(
+                given = "Иван",
+                family = "Петров",
+                phoneticGiven = "Ivan",
+                phoneticMiddle = "Petrovich",
+                phoneticFamily = "Petrov",
+            ),
+            details.nameParts,
+        )
+    }
+
+    @Test
+    fun `keeps name parts with only phonetics filled`() {
+        val rows = listOf(nameRow(1, phoneticGiven = "Ivan"))
+
+        assertEquals("Ivan", buildContactDetails(header(1, "Иван"), rows).nameParts?.phoneticGiven)
+    }
+
+    @Test
     fun `ignores structured name row without components`() {
         val rows = listOf(nameRow(1, display = "Anna"))
 

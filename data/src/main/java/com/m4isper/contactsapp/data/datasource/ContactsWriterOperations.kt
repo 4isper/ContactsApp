@@ -105,7 +105,7 @@ internal fun buildUpdateOperations(
     photo: ByteArray?,
 ): ArrayList<ContentProviderOperation> {
     val ops = ArrayList<ContentProviderOperation>()
-    ops += nameOperations(rawContactId, rows.name, form.name)
+    ops += nameOperations(rawContactId, rows.names, form.name)
     ops += listOperations(rawContactId, rows, form)
     ops += singleOperations(rawContactId, rows, form)
     ops += photoOperations(rawContactId, form.photoChanged, photo)
@@ -113,30 +113,27 @@ internal fun buildUpdateOperations(
 }
 
 /**
- * Операции имени: обновляем строку целевого raw contact, иначе вставляем новую;
- * если имя очищено — удаляем только свою строку и не трогаем чужие raw contacts.
+ * Операции имени по решению [decideNameActions]: строки всех raw contacts
+ * обновляются или удаляются, новая вставляется только в целевой raw.
  */
 private fun nameOperations(
     rawContactId: Long,
-    existing: ExistingName?,
+    existing: List<ExistingName>,
     name: EditableName,
 ): List<ContentProviderOperation> {
-    val own = existing?.takeIf { it.rawContactId == rawContactId }
-    return when {
-        name.isEmpty -> own?.let { listOf(deleteDataOperation(it.dataId)) }.orEmpty()
-        own != null ->
-            listOf(
-                dataUpdate(own.dataId)
-                    .withValues(structuredNameValues(name))
-                    .build(),
-            )
-        else ->
-            listOf(
-                dataInsert(StructuredName.CONTENT_ITEM_TYPE, rawContactId = rawContactId)
-                    .withValues(structuredNameValues(name))
-                    .build(),
-            )
+    val actions = decideNameActions(existing.map { it.dataId }, name.isEmpty)
+    val ops = mutableListOf<ContentProviderOperation>()
+    actions.deleteIds.forEach { ops += deleteDataOperation(it) }
+    actions.updateIds.forEach { dataId ->
+        ops += dataUpdate(dataId).withValues(structuredNameValues(name)).build()
     }
+    if (actions.insertNew) {
+        ops +=
+            dataInsert(StructuredName.CONTENT_ITEM_TYPE, rawContactId = rawContactId)
+                .withValues(structuredNameValues(name))
+                .build()
+    }
+    return ops
 }
 
 private fun listOperations(

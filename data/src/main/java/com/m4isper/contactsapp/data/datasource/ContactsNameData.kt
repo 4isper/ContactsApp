@@ -7,7 +7,8 @@ import com.m4isper.contactsapp.domain.model.NameMode
 import com.m4isper.contactsapp.domain.model.NameParts
 
 // Чтение и запись компонентов StructuredName. Раскладка колонок: data1 — display name,
-// data2 — given, data3 — family, data4 — prefix, data5 — middle, data6 — suffix.
+// data2 — given, data3 — family, data4 — prefix, data5 — middle, data6 — suffix,
+// data7 — phonetic given, data8 — phonetic middle, data9 — phonetic family.
 
 /** Компоненты структурированного имени; null, если все они пустые. */
 internal fun namePartsOf(rows: List<DataRow>): NameParts? =
@@ -20,6 +21,9 @@ internal fun namePartsOf(rows: List<DataRow>): NameParts? =
                 prefix = row.data4.orEmpty().trim(),
                 middle = row.data5.orEmpty().trim(),
                 suffix = row.data6.orEmpty().trim(),
+                phoneticGiven = row.data7.orEmpty().trim(),
+                phoneticMiddle = row.data8.orEmpty().trim(),
+                phoneticFamily = row.data9.orEmpty().trim(),
             )
         }?.takeIf { !it.isEmpty }
 
@@ -36,6 +40,9 @@ internal fun structuredNameValues(name: EditableName): ContentValues =
                 StructuredName.MIDDLE_NAME to name.middle,
                 StructuredName.PREFIX to name.prefix,
                 StructuredName.SUFFIX to name.suffix,
+                StructuredName.PHONETIC_GIVEN_NAME to name.phoneticGiven,
+                StructuredName.PHONETIC_MIDDLE_NAME to name.phoneticMiddle,
+                StructuredName.PHONETIC_FAMILY_NAME to name.phoneticFamily,
             )
         if (name.mode == NameMode.DISPLAY) {
             put(StructuredName.DISPLAY_NAME, name.display.trim())

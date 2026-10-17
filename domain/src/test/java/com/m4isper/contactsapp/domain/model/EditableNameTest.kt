@@ -47,4 +47,19 @@ class EditableNameTest {
         assertFalse(filled.isEmpty)
         assertTrue(filled.hasComponents)
     }
+
+    @Test
+    fun `structured mode with only phonetics is not empty`() {
+        val name = EditableName(mode = NameMode.STRUCTURED, phoneticGiven = "Ivan")
+
+        assertFalse(name.isEmpty)
+        assertTrue(name.hasComponents)
+    }
+
+    @Test
+    fun `display mode empty ignores phonetics`() {
+        val name = EditableName(mode = NameMode.DISPLAY, display = "", phoneticGiven = "Ivan")
+
+        assertTrue(name.isEmpty)
+    }
 }

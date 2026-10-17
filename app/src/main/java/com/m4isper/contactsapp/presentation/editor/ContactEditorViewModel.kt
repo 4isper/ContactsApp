@@ -76,6 +76,9 @@ data class EditorUiState(
     val middleName: String = "",
     val namePrefix: String = "",
     val nameSuffix: String = "",
+    val phoneticGivenName: String = "",
+    val phoneticMiddleName: String = "",
+    val phoneticFamilyName: String = "",
     val phones: List<EditorPhoneRow> = emptyList(),
     val emails: List<EditorEmailRow> = emptyList(),
     val addresses: List<EditorAddressRow> = emptyList(),
@@ -159,6 +162,9 @@ private data class EditorData(
     val middleName: String = "",
     val namePrefix: String = "",
     val nameSuffix: String = "",
+    val phoneticGivenName: String = "",
+    val phoneticMiddleName: String = "",
+    val phoneticFamilyName: String = "",
     val phones: List<EditorPhoneRow> = emptyList(),
     val emails: List<EditorEmailRow> = emptyList(),
     val addresses: List<EditorAddressRow> = emptyList(),
@@ -177,7 +183,10 @@ private data class EditorData(
                 familyName.isNotBlank() ||
                 middleName.isNotBlank() ||
                 namePrefix.isNotBlank() ||
-                nameSuffix.isNotBlank()
+                nameSuffix.isNotBlank() ||
+                phoneticGivenName.isNotBlank() ||
+                phoneticMiddleName.isNotBlank() ||
+                phoneticFamilyName.isNotBlank()
 
     val composedName: String
         get() = composeDisplayName(namePrefix, givenName, middleName, familyName, nameSuffix)
@@ -193,6 +202,9 @@ private data class EditorData(
                     middle = middleName,
                     prefix = namePrefix,
                     suffix = nameSuffix,
+                    phoneticGiven = phoneticGivenName,
+                    phoneticMiddle = phoneticMiddleName,
+                    phoneticFamily = phoneticFamilyName,
                 ),
             phones =
                 phones.map {
@@ -265,6 +277,9 @@ class ContactEditorViewModel(
                 middleName = editor.middleName,
                 namePrefix = editor.namePrefix,
                 nameSuffix = editor.nameSuffix,
+                phoneticGivenName = editor.phoneticGivenName,
+                phoneticMiddleName = editor.phoneticMiddleName,
+                phoneticFamilyName = editor.phoneticFamilyName,
                 phones = editor.phones,
                 emails = editor.emails,
                 addresses = editor.addresses,
@@ -324,6 +339,12 @@ class ContactEditorViewModel(
     fun onNamePrefixChange(value: String) = updateData { it.copy(namePrefix = value) }
 
     fun onNameSuffixChange(value: String) = updateData { it.copy(nameSuffix = value) }
+
+    fun onPhoneticGivenNameChange(value: String) = updateData { it.copy(phoneticGivenName = value) }
+
+    fun onPhoneticMiddleNameChange(value: String) = updateData { it.copy(phoneticMiddleName = value) }
+
+    fun onPhoneticFamilyNameChange(value: String) = updateData { it.copy(phoneticFamilyName = value) }
 
     /**
      * DISPLAY → STRUCTURED: если компоненты пустые, переносим полное имя в «Имя»,
@@ -551,6 +572,9 @@ class ContactEditorViewModel(
             middleName = form.name.middle,
             namePrefix = form.name.prefix,
             nameSuffix = form.name.suffix,
+            phoneticGivenName = form.name.phoneticGiven,
+            phoneticMiddleName = form.name.phoneticMiddle,
+            phoneticFamilyName = form.name.phoneticFamily,
             phones =
                 form.phones
                     .map {

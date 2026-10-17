@@ -43,8 +43,9 @@ class ContactsRepositoryImpl(
     override suspend fun getContactForm(contactId: Long): ContactForm? {
         val details = dataSource.loadContact(contactId) ?: return null
         val rows = writer.loadContactRows(contactId)
+        val rawContactId = writer.loadRawContactId(contactId)
         return ContactForm(
-            name = editableNameOf(rows.name, details),
+            name = editableNameOf(rows.names.preferredFor(rawContactId), details),
             phones = rows.phones.map { it.toEditable() },
             emails = rows.emails.map { it.toEditable() },
             addresses = rows.addresses.map { it.toEditable() },
@@ -80,6 +81,10 @@ class ContactsRepositoryImpl(
     override suspend fun deleteContact(contactId: Long) = writer.deleteContact(contactId)
 }
 
+/** Имя для редактора: строка целевого raw contact, иначе самая младшая по raw id. */
+private fun List<ExistingName>.preferredFor(rawContactId: Long?): ExistingName? =
+    firstOrNull { it.rawContactId == rawContactId } ?: minByOrNull { it.rawContactId }
+
 /**
  * Имя для редактора: структурированный режим — если в строке есть компоненты,
  * иначе одно поле с display name (с запасным значением из агрегированного имени).
@@ -98,6 +103,9 @@ private fun editableNameOf(
             middle = existing.middle,
             prefix = existing.prefix,
             suffix = existing.suffix,
+            phoneticGiven = existing.phoneticGiven,
+            phoneticMiddle = existing.phoneticMiddle,
+            phoneticFamily = existing.phoneticFamily,
         )
     } else {
         EditableName(mode = NameMode.DISPLAY, display = display)

@@ -39,6 +39,7 @@ internal fun aggregateContacts(
             phones = phoneNumbersOf(contactRows),
             emails = emailAddressesOf(contactRows),
             photoUri = header.photoUri,
+            nameParts = namePartsOf(contactRows),
         )
     }
 }

@@ -256,12 +256,18 @@ private fun EditorForm(
                 middle = uiState.middleName,
                 prefix = uiState.namePrefix,
                 suffix = uiState.nameSuffix,
+                phoneticGiven = uiState.phoneticGivenName,
+                phoneticMiddle = uiState.phoneticMiddleName,
+                phoneticFamily = uiState.phoneticFamilyName,
                 onDisplayNameChange = viewModel::onDisplayNameChange,
                 onGivenNameChange = viewModel::onGivenNameChange,
                 onFamilyNameChange = viewModel::onFamilyNameChange,
                 onMiddleNameChange = viewModel::onMiddleNameChange,
                 onPrefixChange = viewModel::onNamePrefixChange,
                 onSuffixChange = viewModel::onNameSuffixChange,
+                onPhoneticGivenChange = viewModel::onPhoneticGivenNameChange,
+                onPhoneticMiddleChange = viewModel::onPhoneticMiddleNameChange,
+                onPhoneticFamilyChange = viewModel::onPhoneticFamilyNameChange,
                 onToggleMode = viewModel::onToggleNameMode,
             )
         }

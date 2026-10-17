@@ -100,6 +100,9 @@ internal fun nameRow(
     prefix: String? = null,
     middle: String? = null,
     suffix: String? = null,
+    phoneticGiven: String? = null,
+    phoneticMiddle: String? = null,
+    phoneticFamily: String? = null,
 ) = DataRow(
     contactId = contactId,
     mimetype = StructuredName.CONTENT_ITEM_TYPE,
@@ -109,4 +112,7 @@ internal fun nameRow(
     data4 = prefix,
     data5 = middle,
     data6 = suffix,
+    data7 = phoneticGiven,
+    data8 = phoneticMiddle,
+    data9 = phoneticFamily,
 )

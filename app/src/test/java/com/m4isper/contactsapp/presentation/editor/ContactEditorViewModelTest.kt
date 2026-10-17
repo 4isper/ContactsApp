@@ -332,6 +332,56 @@ class ContactEditorViewModelTest {
         }
 
     @Test
+    fun `load phonetic name fields`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeEditorRepository().apply {
+                    formToLoad =
+                        ContactForm(
+                            name =
+                                EditableName(
+                                    mode = NameMode.STRUCTURED,
+                                    given = "Иван",
+                                    phoneticGiven = "Ivan",
+                                    phoneticMiddle = "Petrovich",
+                                    phoneticFamily = "Petrov",
+                                ),
+                        )
+                }
+            val viewModel = viewModel(repository)
+
+            viewModel.load(7)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals("Ivan", state.phoneticGivenName)
+            assertEquals("Petrovich", state.phoneticMiddleName)
+            assertEquals("Petrov", state.phoneticFamilyName)
+        }
+
+    @Test
+    fun `save phonetic fields sends them`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeEditorRepository()
+            val viewModel = viewModel(repository)
+            viewModel.load(null)
+            advanceUntilIdle()
+
+            viewModel.onToggleNameMode()
+            viewModel.onGivenNameChange("Иван")
+            viewModel.onPhoneticGivenNameChange("Ivan")
+            viewModel.onPhoneticFamilyNameChange("Petrov")
+            viewModel.onSave()
+            advanceUntilIdle()
+
+            val name = repository.created.single().name
+            assertEquals("Ivan", name.phoneticGiven)
+            assertEquals("Petrov", name.phoneticFamily)
+        }
+
+    @Test
     fun `mode toggle marks form dirty and back`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))

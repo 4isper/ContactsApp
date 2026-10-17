@@ -45,12 +45,18 @@ internal fun NameEditor(
     middle: String,
     prefix: String,
     suffix: String,
+    phoneticGiven: String,
+    phoneticMiddle: String,
+    phoneticFamily: String,
     onDisplayNameChange: (String) -> Unit,
     onGivenNameChange: (String) -> Unit,
     onFamilyNameChange: (String) -> Unit,
     onMiddleNameChange: (String) -> Unit,
     onPrefixChange: (String) -> Unit,
     onSuffixChange: (String) -> Unit,
+    onPhoneticGivenChange: (String) -> Unit,
+    onPhoneticMiddleChange: (String) -> Unit,
+    onPhoneticFamilyChange: (String) -> Unit,
     onToggleMode: () -> Unit,
 ) {
     val expanded = mode == NameMode.STRUCTURED
@@ -68,11 +74,17 @@ internal fun NameEditor(
             middle = middle,
             prefix = prefix,
             suffix = suffix,
+            phoneticGiven = phoneticGiven,
+            phoneticMiddle = phoneticMiddle,
+            phoneticFamily = phoneticFamily,
             onGivenNameChange = onGivenNameChange,
             onFamilyNameChange = onFamilyNameChange,
             onMiddleNameChange = onMiddleNameChange,
             onPrefixChange = onPrefixChange,
             onSuffixChange = onSuffixChange,
+            onPhoneticGivenChange = onPhoneticGivenChange,
+            onPhoneticMiddleChange = onPhoneticMiddleChange,
+            onPhoneticFamilyChange = onPhoneticFamilyChange,
             toggle = toggle,
         )
     } else {
@@ -117,16 +129,28 @@ private fun StructuredNameFields(
     middle: String,
     prefix: String,
     suffix: String,
+    phoneticGiven: String,
+    phoneticMiddle: String,
+    phoneticFamily: String,
     onGivenNameChange: (String) -> Unit,
     onFamilyNameChange: (String) -> Unit,
     onMiddleNameChange: (String) -> Unit,
     onPrefixChange: (String) -> Unit,
     onSuffixChange: (String) -> Unit,
+    onPhoneticGivenChange: (String) -> Unit,
+    onPhoneticMiddleChange: (String) -> Unit,
+    onPhoneticFamilyChange: (String) -> Unit,
     toggle: @Composable () -> Unit,
 ) {
     val spacing = LocalSpacing.current
     var detailsExpanded by rememberSaveable { mutableStateOf(false) }
-    val showDetails = detailsExpanded || prefix.isNotBlank() || suffix.isNotBlank()
+    val showDetails =
+        detailsExpanded ||
+            prefix.isNotBlank() ||
+            suffix.isNotBlank() ||
+            phoneticGiven.isNotBlank() ||
+            phoneticMiddle.isNotBlank() ||
+            phoneticFamily.isNotBlank()
     val detailsRotation by animateFloatAsState(
         targetValue = if (showDetails) 180f else 0f,
         label = "nameDetailsRotation",
@@ -172,6 +196,27 @@ private fun StructuredNameFields(
                 onValueChange = onSuffixChange,
                 labelRes = R.string.editor_name_suffix,
                 testTag = "editor_name_suffix",
+            )
+            Spacer(modifier = Modifier.height(spacing.s))
+            NameField(
+                value = phoneticGiven,
+                onValueChange = onPhoneticGivenChange,
+                labelRes = R.string.editor_name_phonetic_given,
+                testTag = "editor_name_phonetic_given",
+            )
+            Spacer(modifier = Modifier.height(spacing.s))
+            NameField(
+                value = phoneticMiddle,
+                onValueChange = onPhoneticMiddleChange,
+                labelRes = R.string.editor_name_phonetic_middle,
+                testTag = "editor_name_phonetic_middle",
+            )
+            Spacer(modifier = Modifier.height(spacing.s))
+            NameField(
+                value = phoneticFamily,
+                onValueChange = onPhoneticFamilyChange,
+                labelRes = R.string.editor_name_phonetic_family,
+                testTag = "editor_name_phonetic_family",
                 imeAction = ImeAction.Done,
             )
         }

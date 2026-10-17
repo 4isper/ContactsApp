@@ -62,6 +62,9 @@ data class ExistingName(
     val middle: String,
     val prefix: String,
     val suffix: String,
+    val phoneticGiven: String = "",
+    val phoneticMiddle: String = "",
+    val phoneticFamily: String = "",
 ) {
     val hasComponents: Boolean
         get() =
@@ -69,12 +72,15 @@ data class ExistingName(
                 family.isNotBlank() ||
                 middle.isNotBlank() ||
                 prefix.isNotBlank() ||
-                suffix.isNotBlank()
+                suffix.isNotBlank() ||
+                phoneticGiven.isNotBlank() ||
+                phoneticMiddle.isNotBlank() ||
+                phoneticFamily.isNotBlank()
 }
 
 /** Сырые строки контакта: всё, что нужно для diff при обновлении. */
 data class ContactRows(
-    val name: ExistingName? = null,
+    val names: List<ExistingName> = emptyList(),
     val phones: List<ExistingPhone> = emptyList(),
     val emails: List<ExistingEmail> = emptyList(),
     val addresses: List<ExistingAddress> = emptyList(),

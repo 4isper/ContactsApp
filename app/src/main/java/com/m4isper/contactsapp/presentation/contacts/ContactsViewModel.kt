@@ -3,6 +3,7 @@ package com.m4isper.contactsapp.presentation.contacts
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.NameParts
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
@@ -78,7 +79,8 @@ class ContactsViewModel(
                             list.filter { contact ->
                                 contact.name.lowercase(Locale.ROOT).contains(q) ||
                                     contact.phones.any { it.number.contains(trimmed) } ||
-                                    contact.emails.any { it.address.lowercase(Locale.ROOT).contains(q) }
+                                    contact.emails.any { it.address.lowercase(Locale.ROOT).contains(q) } ||
+                                    contact.nameParts?.matches(q) == true
                             }
                         }
                     }
@@ -133,3 +135,8 @@ class ContactsViewModel(
         allContacts.value = emptyList()
     }
 }
+
+/** Совпадение поискового запроса с любым компонентом структурированного имени. */
+private fun NameParts.matches(query: String): Boolean =
+    listOf(given, family, middle, prefix, suffix, phoneticGiven, phoneticMiddle, phoneticFamily)
+        .any { it.lowercase(Locale.ROOT).contains(query) }

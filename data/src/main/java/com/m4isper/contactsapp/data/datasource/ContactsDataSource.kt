@@ -4,6 +4,7 @@ import android.content.Context
 import android.provider.ContactsContract
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Phone
+import android.provider.ContactsContract.CommonDataKinds.StructuredName
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
@@ -19,11 +20,12 @@ private val CONTACT_PROJECTION =
     )
 
 /**
- * Общая проекция для строк таблицы Data: data1..data6 — физические колонки,
+ * Общая проекция для строк таблицы Data: data1..data9 — физические колонки,
  * в которых лежат все нужные типы (телефон/email — значение в data1,
  * тип в data2, метка в data3; организация — company в data1, title в data4;
  * StructuredName — display в data1, given в data2, family в data3,
- * prefix в data4, middle в data5, suffix в data6).
+ * prefix в data4, middle в data5, suffix в data6,
+ * фонетика — given в data7, middle в data8, family в data9).
  */
 private val DATA_PROJECTION =
     arrayOf(
@@ -35,6 +37,9 @@ private val DATA_PROJECTION =
         ContactsContract.Data.DATA4,
         ContactsContract.Data.DATA5,
         ContactsContract.Data.DATA6,
+        ContactsContract.Data.DATA7,
+        ContactsContract.Data.DATA8,
+        ContactsContract.Data.DATA9,
     )
 
 private const val CONTACT_SORT_ORDER =
@@ -56,8 +61,13 @@ class ContactsDataSource(
             val visibleIds = headers.mapTo(mutableSetOf()) { it.contactId }
             val rows =
                 queryData(
-                    selection = "${ContactsContract.Data.MIMETYPE} IN (?, ?)",
-                    args = arrayOf(Phone.CONTENT_ITEM_TYPE, Email.CONTENT_ITEM_TYPE),
+                    selection = "${ContactsContract.Data.MIMETYPE} IN (?, ?, ?)",
+                    args =
+                        arrayOf(
+                            Phone.CONTENT_ITEM_TYPE,
+                            Email.CONTENT_ITEM_TYPE,
+                            StructuredName.CONTENT_ITEM_TYPE,
+                        ),
                 ).filter { it.contactId in visibleIds }
             aggregateContacts(headers, rows)
         }
@@ -128,6 +138,9 @@ class ContactsDataSource(
             val data4Index = it.getColumnIndexOrThrow(ContactsContract.Data.DATA4)
             val data5Index = it.getColumnIndexOrThrow(ContactsContract.Data.DATA5)
             val data6Index = it.getColumnIndexOrThrow(ContactsContract.Data.DATA6)
+            val data7Index = it.getColumnIndexOrThrow(ContactsContract.Data.DATA7)
+            val data8Index = it.getColumnIndexOrThrow(ContactsContract.Data.DATA8)
+            val data9Index = it.getColumnIndexOrThrow(ContactsContract.Data.DATA9)
             while (it.moveToNext()) {
                 rows +=
                     DataRow(
@@ -139,6 +152,9 @@ class ContactsDataSource(
                         data4 = it.getString(data4Index),
                         data5 = it.getString(data5Index),
                         data6 = it.getString(data6Index),
+                        data7 = it.getString(data7Index),
+                        data8 = it.getString(data8Index),
+                        data9 = it.getString(data9Index),
                     )
             }
         }

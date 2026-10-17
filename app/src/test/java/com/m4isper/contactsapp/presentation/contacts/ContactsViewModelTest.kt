@@ -4,6 +4,7 @@ import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.EmailAddress
 import com.m4isper.contactsapp.domain.model.EmailKind
+import com.m4isper.contactsapp.domain.model.NameParts
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
@@ -201,6 +202,73 @@ class ContactsViewModelTest {
             assertTrue(content is Loadable.Content)
             assertEquals(
                 listOf("Bob"),
+                (content as Loadable.Content).data.map { it.name },
+            )
+        }
+
+    @Test
+    fun `search filters by structured name components`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(
+                    listOf(
+                        ContactDetails(
+                            contactId = 1,
+                            name = "Петров Иван",
+                            nameParts = NameParts(given = "Иван", family = "Петров", middle = "Петрович"),
+                        ),
+                        details(2, "Bob", "222"),
+                    ),
+                )
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            viewModel.onSearchQueryChange("петрович")
+            advanceUntilIdle()
+
+            val content = viewModel.uiState.value.content
+            assertTrue(content is Loadable.Content)
+            assertEquals(
+                listOf("Петров Иван"),
+                (content as Loadable.Content).data.map { it.name },
+            )
+        }
+
+    @Test
+    fun `search filters by phonetic name`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(
+                    listOf(
+                        ContactDetails(
+                            contactId = 1,
+                            name = "Иван Петров",
+                            nameParts =
+                                NameParts(
+                                    given = "Иван",
+                                    family = "Петров",
+                                    phoneticGiven = "Ivan",
+                                ),
+                        ),
+                        details(2, "Bob", "222"),
+                    ),
+                )
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            viewModel.onSearchQueryChange("ivan")
+            advanceUntilIdle()
+
+            val content = viewModel.uiState.value.content
+            assertTrue(content is Loadable.Content)
+            assertEquals(
+                listOf("Иван Петров"),
                 (content as Loadable.Content).data.map { it.name },
             )
         }

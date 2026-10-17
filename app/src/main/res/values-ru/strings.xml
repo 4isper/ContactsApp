@@ -55,6 +55,9 @@
     <string name="editor_name_middle">Отчество</string>
     <string name="editor_name_prefix">Приставка</string>
     <string name="editor_name_suffix">Суффикс</string>
+    <string name="editor_name_phonetic_given">Фонетическое имя</string>
+    <string name="editor_name_phonetic_middle">Фонетическое отчество</string>
+    <string name="editor_name_phonetic_family">Фонетическая фамилия</string>
     <string name="editor_name_details">Дополнительно</string>
     <string name="editor_phone_label">Номер телефона</string>
     <string name="editor_kind_label">Подпись</string>

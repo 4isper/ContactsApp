@@ -39,6 +39,22 @@ class AggregateContactsTest {
 
         assertEquals(listOf(1L, 2L), result.map { it.contactId })
         assertTrue(result.first { it.contactId == 2L }.phones.isEmpty())
+        assertEquals(null, result.first { it.contactId == 2L }.nameParts)
+    }
+
+    @Test
+    fun `reads name parts from structured name rows`() {
+        val headers = listOf(header(1, "Петров Иван"))
+        val rows =
+            listOf(
+                nameRow(1, display = "Петров Иван", given = "Иван", family = "Петров", middle = "Петрович"),
+            )
+
+        val nameParts = aggregateContacts(headers, rows).single().nameParts
+
+        assertEquals("Иван", nameParts?.given)
+        assertEquals("Петров", nameParts?.family)
+        assertEquals("Петрович", nameParts?.middle)
     }
 
     @Test

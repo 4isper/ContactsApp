@@ -101,6 +101,9 @@ data class NameParts(
     val middle: String = "",
     val prefix: String = "",
     val suffix: String = "",
+    val phoneticGiven: String = "",
+    val phoneticMiddle: String = "",
+    val phoneticFamily: String = "",
 ) {
     val isEmpty: Boolean
         get() =
@@ -108,7 +111,10 @@ data class NameParts(
                 family.isBlank() &&
                 middle.isBlank() &&
                 prefix.isBlank() &&
-                suffix.isBlank()
+                suffix.isBlank() &&
+                phoneticGiven.isBlank() &&
+                phoneticMiddle.isBlank() &&
+                phoneticFamily.isBlank()
 }
 
 data class ContactDetails(

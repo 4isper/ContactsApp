@@ -17,6 +17,9 @@ internal data class DataRow(
     val data4: String? = null,
     val data5: String? = null,
     val data6: String? = null,
+    val data7: String? = null,
+    val data8: String? = null,
+    val data9: String? = null,
 ) {
     /** Числовое значение data2: тип телефона/email/адреса или тип события. */
     val data2Int: Int
