@@ -2,8 +2,7 @@ package com.m4isper.contactsapp.presentation.contacts
 
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.usecase.ImportContactsUseCase
-import com.m4isper.contactsapp.presentation.common.buildVCards
-import com.m4isper.contactsapp.presentation.common.parseVCards
+import com.m4isper.contactsapp.domain.vcard.VCardCodec
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,12 +18,13 @@ internal class ContactsFileActions(
     private val getContacts: suspend () -> List<ContactDetails>,
     private val getContactDetails: suspend (Long) -> ContactDetails?,
     private val importContacts: ImportContactsUseCase,
+    private val vCardCodec: VCardCodec,
     private val refresh: () -> Unit,
 ) {
     /** Разбирает текст .vcf, создаёт контакты и сообщает результат одноразовым событием. */
     fun onImportText(text: String) {
         scope.launch {
-            val forms = parseVCards(text)
+            val forms = vCardCodec.parse(text)
             val imported = importContacts(forms)
             events.value =
                 when {
@@ -70,7 +70,7 @@ internal class ContactsFileActions(
         return if (details.isEmpty()) {
             ContactsEvent.ExportFailed
         } else {
-            ContactsEvent.ExportReady(content = buildVCards(details), count = details.size)
+            ContactsEvent.ExportReady(content = vCardCodec.encode(details), count = details.size)
         }
     }
 }

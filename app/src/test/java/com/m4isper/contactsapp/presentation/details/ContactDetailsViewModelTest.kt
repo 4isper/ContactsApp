@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp.presentation.details
 
+import com.m4isper.contactsapp.data.vcard.VCardCodecImpl
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.PhoneKind
@@ -84,6 +85,7 @@ class ContactDetailsViewModelTest {
             GetContactDetailsUseCase(repository),
             ToggleFavoriteUseCase(repository),
             ObserveFavoritesUseCase(repository),
+            VCardCodecImpl(),
         )
 
     @Test
@@ -176,6 +178,7 @@ class ContactDetailsViewModelTest {
                     GetContactDetailsUseCase(repository),
                     ToggleFavoriteUseCase(repository),
                     ObserveFavoritesUseCase(repository),
+                    VCardCodecImpl(),
                 )
             backgroundScope.launch { viewModel.uiState.collect { } }
 
@@ -214,5 +217,32 @@ class ContactDetailsViewModelTest {
             viewModel.toggleFavorite()
             advanceUntilIdle()
             assertEquals(false, viewModel.uiState.value.isFavorite)
+        }
+
+    @Test
+    fun `vCardText returns vcard of loaded contact and null otherwise`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeDetailsRepository(
+                    listOf(
+                        ContactDetails(
+                            contactId = 7,
+                            name = "Anna",
+                            phones = listOf(PhoneNumber("111", PhoneKind.MOBILE)),
+                        ),
+                    ),
+                )
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+
+            assertEquals(null, viewModel.vCardText())
+
+            viewModel.load(7)
+            advanceUntilIdle()
+
+            val text = viewModel.vCardText().orEmpty()
+            assertTrue(text.contains("FN:Anna"))
+            assertTrue(text.contains("TEL;TYPE=CELL:111"))
         }
 }

@@ -1,4 +1,4 @@
-package com.m4isper.contactsapp.presentation.common
+package com.m4isper.contactsapp.data.vcard
 
 import com.m4isper.contactsapp.domain.model.AddressKind
 import com.m4isper.contactsapp.domain.model.Birthday
@@ -21,7 +21,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class ContactShareTest {
+class VCardBuilderTest {
     @Test
     fun `builds vcard with name and typed numbers`() {
         val details =

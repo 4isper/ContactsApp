@@ -1,4 +1,4 @@
-package com.m4isper.contactsapp.presentation.common
+package com.m4isper.contactsapp.data.vcard
 
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactEvent

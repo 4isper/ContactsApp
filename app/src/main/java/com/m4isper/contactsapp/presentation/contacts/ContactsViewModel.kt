@@ -8,6 +8,7 @@ import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.ImportContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
+import com.m4isper.contactsapp.domain.vcard.VCardCodec
 import com.m4isper.contactsapp.presentation.common.Loadable
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
@@ -41,9 +42,9 @@ data class ContactsUiState(
 
 /** Одноразовое событие экрана: UI обрабатывает его и сбрасывает через [ContactsViewModel.onEventHandled]. */
 sealed interface ContactsEvent {
-    /** Подготовленные к vCard-шарингу контакты из выделения. */
+    /** Готовый vCard-текст выделенных контактов для шаринга. */
     data class Share(
-        val contacts: List<ContactDetails>,
+        val content: String,
     ) : ContactsEvent
 
     /** Не удалось удалить выделенные контакты. */
@@ -103,6 +104,7 @@ class ContactsViewModel(
     private val getContactDetailsUseCase: GetContactDetailsUseCase,
     deleteContactsUseCase: DeleteContactsUseCase,
     importContactsUseCase: ImportContactsUseCase,
+    private val vCardCodec: VCardCodec,
 ) : ViewModel() {
     private val allContacts = MutableStateFlow<List<ContactDetails>>(emptyList())
     private val isLoading = MutableStateFlow(false)
@@ -186,6 +188,7 @@ class ContactsViewModel(
             getContacts = { getContactsUseCase() },
             getContactDetails = { getContactDetailsUseCase(it) },
             importContacts = importContactsUseCase,
+            vCardCodec = vCardCodec,
             refresh = ::refresh,
         )
 
@@ -277,7 +280,7 @@ class ContactsViewModel(
                 } catch (_: Exception) {
                     emptyList()
                 }
-            eventFlow.value = ContactsEvent.Share(contacts)
+            eventFlow.value = ContactsEvent.Share(vCardCodec.encode(contacts))
         }
     }
 

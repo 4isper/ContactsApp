@@ -17,7 +17,7 @@ internal suspend fun handleContactsEvent(
 ) {
     val toast = { resId: Int -> Toast.makeText(context, resId, Toast.LENGTH_SHORT).show() }
     when (event) {
-        is ContactsEvent.Share -> shareContacts(context, event.contacts)
+        is ContactsEvent.Share -> shareContacts(context, event.content)
         ContactsEvent.DeleteFailed -> toast(R.string.batch_delete_failed)
         ContactsEvent.ImportEmpty -> toast(R.string.import_empty)
         is ContactsEvent.ImportFinished -> showPluralToast(context, R.plurals.import_success, event.count)

@@ -6,6 +6,7 @@ import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
+import com.m4isper.contactsapp.domain.vcard.VCardCodec
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.contacts.SUBSCRIBE_TIMEOUT_MILLIS
 import dev.zacsweers.metro.AppScope
@@ -32,6 +33,7 @@ class ContactDetailsViewModel(
     private val getContactDetailsUseCase: GetContactDetailsUseCase,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
     observeFavoritesUseCase: ObserveFavoritesUseCase,
+    private val vCardCodec: VCardCodec,
 ) : ViewModel() {
     private val selectedContactId = MutableStateFlow<Long?>(null)
     private val loadedDetails = MutableStateFlow<ContactDetails?>(null)
@@ -78,6 +80,9 @@ class ContactDetailsViewModel(
             toggleFavoriteUseCase(contactId)
         }
     }
+
+    /** Готовый vCard-текст загруженного контакта для share-интента; null, пока контакт не загружен. */
+    fun vCardText(): String? = loadedDetails.value?.let { vCardCodec.encode(listOf(it)) }
 
     // Catch-all осознанный: любая ошибка загрузки превращается в Error-стейт.
     @Suppress("TooGenericExceptionCaught")

@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp.presentation.contacts
 
+import com.m4isper.contactsapp.data.vcard.VCardCodecImpl
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.ContactRelation
@@ -126,6 +127,7 @@ class ContactsViewModelTest {
             GetContactDetailsUseCase(repository),
             DeleteContactsUseCase(repository, repository),
             ImportContactsUseCase(repository),
+            VCardCodecImpl(),
         )
 
     @Test
@@ -817,10 +819,9 @@ class ContactsViewModelTest {
 
             val event = viewModel.uiState.value.event
             assertTrue(event is ContactsEvent.Share)
-            assertEquals(
-                listOf(2L),
-                (event as ContactsEvent.Share).contacts.map { it.contactId },
-            )
+            val content = (event as ContactsEvent.Share).content
+            assertTrue(content.contains("FN:Bob"))
+            assertEquals(false, content.contains("FN:Anna"))
 
             viewModel.onEventHandled()
             advanceUntilIdle()

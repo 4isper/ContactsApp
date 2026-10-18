@@ -122,7 +122,7 @@ fun ContactDetailsScreen(
                 isFavorite = uiState.isFavorite,
                 onBack = onBack,
                 onEdit = onEdit,
-                onShare = { shareContact(context, it) },
+                onShare = { viewModel.vCardText()?.let { content -> shareContact(context, content) } },
                 onToggleFavorite = viewModel::toggleFavorite,
             )
         },
@@ -186,7 +186,7 @@ private fun DetailsTopBar(
     isFavorite: Boolean,
     onBack: () -> Unit,
     onEdit: () -> Unit,
-    onShare: (ContactDetails) -> Unit,
+    onShare: () -> Unit,
     onToggleFavorite: () -> Unit,
 ) {
     TopAppBar(
@@ -232,7 +232,7 @@ private fun DetailsTopBar(
                             },
                     )
                 }
-                IconButton(onClick = { onShare(shareable) }) {
+                IconButton(onClick = onShare) {
                     Icon(
                         Icons.Filled.Share,
                         contentDescription = stringResource(R.string.share_contact),

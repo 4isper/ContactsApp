@@ -11,6 +11,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.m4isper.contactsapp.FakeAndroidRepository
+import com.m4isper.contactsapp.data.vcard.VCardCodecImpl
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactEvent
 import com.m4isper.contactsapp.domain.model.ContactRelation
@@ -39,6 +40,7 @@ class ContactDetailsUiTest {
             GetContactDetailsUseCase(repository),
             ToggleFavoriteUseCase(repository),
             ObserveFavoritesUseCase(repository),
+            VCardCodecImpl(),
         )
 
     private fun awaitContent(viewModel: ContactDetailsViewModel) {
