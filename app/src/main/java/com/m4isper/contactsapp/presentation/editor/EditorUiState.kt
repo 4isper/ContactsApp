@@ -1,6 +1,7 @@
 package com.m4isper.contactsapp.presentation.editor
 
 import com.m4isper.contactsapp.domain.model.ContactForm
+import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.EditableAddress
 import com.m4isper.contactsapp.domain.model.EditableBirthday
 import com.m4isper.contactsapp.domain.model.EditableEmail
@@ -49,6 +50,8 @@ internal data class EditorUiState(
     val nickname: EditableNickname = EditableNickname(),
     val relations: List<EditorRow<EditableRelation>> = emptyList(),
     val events: List<EditorRow<EditableEvent>> = emptyList(),
+    val allGroups: List<ContactGroup> = emptyList(),
+    val selectedGroupIds: Set<Long> = emptySet(),
     val photoUri: String? = null,
     val photoChanged: Boolean = false,
     val isBusy: Boolean = false,
@@ -84,6 +87,10 @@ internal data class EditorUiState(
     val composedName: String
         get() = composeDisplayName(namePrefix, givenName, middleName, familyName, nameSuffix)
 
+    /** Выбранные группы в порядке списка доступных групп. */
+    val selectedGroups: List<ContactGroup>
+        get() = allGroups.filter { it.id in selectedGroupIds }
+
     /** Текущее состояние формы; пустые строки-плейсхолдеры убирает [withoutBlankRows]. */
     fun toForm(): ContactForm =
         ContactForm(
@@ -99,6 +106,7 @@ internal data class EditorUiState(
             organization = organization,
             note = note,
             birthday = birthday,
+            groups = selectedGroupIds.toList(),
             photoUri = photoUri,
             photoChanged = photoChanged,
         )
@@ -150,6 +158,7 @@ internal fun editorStateFromForm(
         note = form.note,
         birthday = form.birthday,
         nickname = form.nickname,
+        selectedGroupIds = form.groups.toSet(),
         photoUri = form.photoUri,
         photoChanged = false,
         isBusy = false,
@@ -206,6 +215,7 @@ internal fun ContactForm.withoutBlankRows(): ContactForm =
             events
                 .filter { it.date != null || it.unparsedDate != null }
                 .map { it.copy(customLabel = it.customLabel.stripped()) },
+        groups = groups.sorted(),
     )
 
 private fun String?.stripped(): String? = this?.takeIf { it.isNotBlank() }

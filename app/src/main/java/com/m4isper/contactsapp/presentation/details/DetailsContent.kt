@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.presentation.common.format.addressKindLabel
 import com.m4isper.contactsapp.presentation.common.format.birthdayText
@@ -33,6 +34,7 @@ internal fun DetailsContent(
     onSmsClick: (PhoneNumber) -> Unit,
     onCopyClick: (String) -> Unit,
     modifier: Modifier = Modifier,
+    groups: List<ContactGroup> = emptyList(),
 ) {
     val context = LocalContext.current
     LazyColumn(
@@ -67,6 +69,17 @@ internal fun DetailsContent(
                     modifier = Modifier.testTag("nickname_row"),
                 )
             }
+        }
+        items(
+            items = groups,
+            key = { "group_${it.id}" },
+        ) { group ->
+            DataRow(
+                primary = group.title,
+                secondary = null,
+                actions = emptyList(),
+                modifier = Modifier.testTag("group_row_${group.title}"),
+            )
         }
         items(
             items = details.phones,

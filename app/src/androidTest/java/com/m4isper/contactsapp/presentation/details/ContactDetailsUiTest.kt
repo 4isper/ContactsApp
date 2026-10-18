@@ -11,15 +11,18 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.m4isper.contactsapp.FakeAndroidRepository
+import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.FakeVCardCodec
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactEvent
+import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.ContactRelation
 import com.m4isper.contactsapp.domain.model.EventKind
 import com.m4isper.contactsapp.domain.model.ImProtocol
 import com.m4isper.contactsapp.domain.model.InstantMessage
 import com.m4isper.contactsapp.domain.model.RelationKind
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetContactGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
@@ -35,13 +38,16 @@ class ContactDetailsUiTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private fun viewModel(repository: FakeAndroidRepository) =
-        ContactDetailsViewModel(
-            GetContactDetailsUseCase(repository),
-            ToggleFavoriteUseCase(repository),
-            ObserveFavoritesUseCase(repository),
-            FakeVCardCodec(),
-        )
+    private fun viewModel(
+        repository: FakeAndroidRepository,
+        groups: FakeGroupsRepository = FakeGroupsRepository(),
+    ) = ContactDetailsViewModel(
+        GetContactDetailsUseCase(repository),
+        GetContactGroupsUseCase(groups),
+        ToggleFavoriteUseCase(repository),
+        ObserveFavoritesUseCase(repository),
+        FakeVCardCodec(),
+    )
 
     private fun awaitContent(viewModel: ContactDetailsViewModel) {
         compose.waitUntil(timeoutMillis = 5_000) {
@@ -61,6 +67,23 @@ class ContactDetailsUiTest {
         compose.onAllNodesWithText("Anna").assertCountEquals(2)
         compose.onNodeWithText("111").assertIsDisplayed()
         compose.onNodeWithText("112").assertIsDisplayed()
+    }
+
+    @Test
+    fun showsContactGroups() {
+        val repository = FakeAndroidRepository(listOf(testDetails(7, "Anna", "111")))
+        val groups =
+            FakeGroupsRepository(
+                groups = listOf(ContactGroup(id = 100, title = "Семья")),
+                membership = mapOf(7L to setOf(100L)),
+            )
+        val viewModel = viewModel(repository, groups)
+        compose.setContent {
+            ContactDetailsScreen(contactId = 7, onBack = {}, onEdit = {}, viewModel = viewModel)
+        }
+        awaitContent(viewModel)
+
+        compose.onNodeWithTag("group_row_Семья").assertIsDisplayed()
     }
 
     @Test

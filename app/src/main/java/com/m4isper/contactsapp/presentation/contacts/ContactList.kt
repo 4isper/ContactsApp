@@ -23,7 +23,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.presentation.common.Loadable
+import com.m4isper.contactsapp.presentation.common.groups.GroupPickerDialog
 import com.m4isper.contactsapp.ui.components.ConfirmDialog
 
 @Composable
@@ -46,9 +48,16 @@ internal fun ContactList(
     onExportRequested: () -> Unit,
     onEventHandled: () -> Unit,
     modifier: Modifier = Modifier,
+    groups: List<ContactGroup> = emptyList(),
+    onGroupSelected: (Long?) -> Unit = {},
+    onCreateGroup: (String) -> Unit = {},
+    onManageGroupsClick: () -> Unit = {},
+    onAddSelectedToGroup: (Set<Long>) -> Unit = {},
 ) {
     val context = LocalContext.current
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showGroupPicker by remember { mutableStateOf(false) }
+    var pendingGroupIds by remember { mutableStateOf(emptySet<Long>()) }
     var pendingExportUri by remember { mutableStateOf<Uri?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -68,6 +77,11 @@ internal fun ContactList(
             pendingExportUri = null
             handleContactsEvent(context, event, exportUri, onEventHandled)
         }
+    }
+
+    // Выход из режима выделения закрывает пикер групп: контекст действия пропал.
+    LaunchedEffect(uiState.isSelectionMode) {
+        if (!uiState.isSelectionMode) showGroupPicker = false
     }
 
     DeleteUndoEffect(
@@ -96,6 +110,10 @@ internal fun ContactList(
                     allSelected = allSelected,
                     onClose = onClearSelection,
                     onSelectAll = { onSelectAll(visibleIds) },
+                    onAddToGroup = {
+                        pendingGroupIds = emptySet()
+                        showGroupPicker = true
+                    },
                     onShare = onShareSelected,
                     onDelete = { showDeleteDialog = true },
                 )
@@ -129,6 +147,11 @@ internal fun ContactList(
                     onFavoritesOnlyChange = onFavoritesOnlyChange,
                     onImportClick = { vCardLaunchers.startImport(context) },
                     onExportClick = { vCardLaunchers.startExport() },
+                    groups = groups,
+                    selectedGroupId = uiState.selectedGroupId,
+                    onGroupSelected = onGroupSelected,
+                    onCreateGroup = onCreateGroup,
+                    onManageGroupsClick = onManageGroupsClick,
                 )
             }
             ContactListBody(
@@ -164,6 +187,25 @@ internal fun ContactList(
             onDismiss = { showDeleteDialog = false },
             danger = true,
             confirmTestTag = "confirm_batch_delete",
+        )
+    }
+
+    if (showGroupPicker) {
+        GroupPickerDialog(
+            title = stringResource(R.string.action_add_to_group),
+            groups = groups,
+            selectedIds = pendingGroupIds,
+            confirmLabel = stringResource(R.string.action_add),
+            onToggle = { groupId ->
+                pendingGroupIds =
+                    if (groupId in pendingGroupIds) pendingGroupIds - groupId else pendingGroupIds + groupId
+            },
+            onCreateGroup = onCreateGroup,
+            onConfirm = {
+                showGroupPicker = false
+                onAddSelectedToGroup(pendingGroupIds)
+            },
+            onDismiss = { showGroupPicker = false },
         )
     }
 }

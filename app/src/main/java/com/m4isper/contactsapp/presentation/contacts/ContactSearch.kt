@@ -4,14 +4,22 @@ import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.NameParts
 import java.util.Locale
 
-/** Фильтр списка: избранное и поиск по имени (включая фонетику), телефону, email, никнейму и связям. */
+/** Фильтр списка: группа, избранное и поиск по имени (включая фонетику), телефону, email, никнейму и связям. */
 internal fun filterContacts(
     contacts: List<ContactDetails>,
     query: String,
     favoritesOnly: Boolean,
     favorites: Set<Long>,
+    selectedGroupId: Long? = null,
+    membership: Map<Long, Set<Long>> = emptyMap(),
 ): List<ContactDetails> {
-    val base = if (favoritesOnly) contacts.filter { it.contactId in favorites } else contacts
+    val byGroup =
+        if (selectedGroupId == null) {
+            contacts
+        } else {
+            contacts.filter { selectedGroupId in membership[it.contactId].orEmpty() }
+        }
+    val base = if (favoritesOnly) byGroup.filter { it.contactId in favorites } else byGroup
     val trimmed = query.trim()
     if (trimmed.isBlank()) return base
     val q = trimmed.lowercase(Locale.ROOT)

@@ -6,7 +6,7 @@ import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
 import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
 import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
@@ -24,11 +24,15 @@ import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.presentation.contacts.ContactsScreen
 import com.m4isper.contactsapp.presentation.details.ContactDetailsScreen
 import com.m4isper.contactsapp.presentation.editor.ContactEditorScreen
+import com.m4isper.contactsapp.presentation.groups.GroupsScreen
 import com.m4isper.contactsapp.ui.components.EmptyState
 import kotlinx.serialization.Serializable
 
 @Serializable
 data object ContactsListKey : NavKey
+
+@Serializable
+data object GroupsKey : NavKey
 
 @Serializable
 data class ContactDetailsKey(
@@ -62,7 +66,7 @@ internal fun navigateToDetails(
 fun ContactsNavHost(modifier: Modifier = Modifier) {
     val backStack = rememberNavBackStack(ContactsListKey)
 
-    val windowAdaptiveInfo = currentWindowAdaptiveInfo()
+    val windowAdaptiveInfo = currentWindowAdaptiveInfoV2()
     val directive =
         remember(windowAdaptiveInfo) {
             calculatePaneScaffoldDirective(windowAdaptiveInfo)
@@ -102,6 +106,14 @@ fun ContactsNavHost(modifier: Modifier = Modifier) {
                             onAddClick = {
                                 backStack.add(ContactEditorKey(null))
                             },
+                            onGroupsClick = {
+                                backStack.add(GroupsKey)
+                            },
+                        )
+                    }
+                    entry<GroupsKey> {
+                        GroupsScreen(
+                            onBack = dropUnlessResumed { backStack.removeLastOrNull() },
                         )
                     }
                     entry<ContactDetailsKey>(

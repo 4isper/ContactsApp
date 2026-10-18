@@ -122,6 +122,22 @@
     <string name="export_empty">Nothing to export</string>
     <string name="export_failed">Couldn\'t export contacts</string>
 
+    <string name="filter_groups">Groups</string>
+    <string name="groups_all">All contacts</string>
+    <string name="groups_manage">Manage groups</string>
+    <string name="groups_new">New group</string>
+    <string name="groups_title">Groups</string>
+    <string name="groups_empty">No groups yet</string>
+    <string name="group_name_label">Group name</string>
+    <string name="group_rename">Rename group</string>
+    <string name="group_delete_title">Delete group?</string>
+    <string name="group_delete_message">Contacts will be kept, only the group will be deleted</string>
+    <string name="action_add_to_group">Add to group</string>
+    <string name="action_add">Add</string>
+    <string name="action_create">Create</string>
+    <string name="action_done">Done</string>
+    <string name="groups_action_failed">Couldn\'t update groups</string>
+
     <string name="editor_add_photo">Add photo</string>
     <string name="editor_change_photo">Change photo</string>
     <string name="editor_remove_photo">Remove photo</string>
@@ -135,6 +151,7 @@
     <string name="editor_section_birthday">Birthday</string>
     <string name="editor_section_events">Events</string>
     <string name="editor_section_relations">Relations</string>
+    <string name="editor_section_groups">Groups</string>
     <string name="editor_section_note">Note</string>
     <string name="editor_add_email">Add email</string>
     <string name="editor_add_im">Add messenger</string>
@@ -156,6 +173,8 @@
     <string name="editor_event_date_add">Set date</string>
     <string name="editor_birthday_no_year">Without year</string>
     <string name="editor_birthday_remove">Remove birthday</string>
+    <string name="editor_groups_empty">Not in any group</string>
+    <string name="editor_groups_edit">Choose groups</string>
 
     <plurals name="phone_count_extra">
         <item quantity="one">%d more number</item>
@@ -192,5 +211,13 @@
     <plurals name="export_success">
         <item quantity="one">Exported %d contact</item>
         <item quantity="other">Exported %d contacts</item>
+    </plurals>
+    <plurals name="group_members_count">
+        <item quantity="one">%d contact</item>
+        <item quantity="other">%d contacts</item>
+    </plurals>
+    <plurals name="group_add_success">
+        <item quantity="one">%d contact added to the group</item>
+        <item quantity="other">%d contacts added to the group</item>
     </plurals>
 </resources>

@@ -86,6 +86,13 @@ data class ExistingBirthday(
     val raw: String,
 )
 
+/** Существующая строка членства в группе: id группы в data1. */
+data class ExistingGroupMembership(
+    val dataId: Long,
+    val rawContactId: Long,
+    val groupId: Long,
+)
+
 /** Существующая строка структурированного имени: нужна для diff при обновлении. */
 data class ExistingName(
     val dataId: Long,
@@ -126,4 +133,5 @@ data class ContactRows(
     val note: ExistingNote? = null,
     val birthday: ExistingBirthday? = null,
     val nickname: ExistingNickname? = null,
+    val groupMemberships: List<ExistingGroupMembership> = emptyList(),
 )

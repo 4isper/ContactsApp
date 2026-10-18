@@ -1,8 +1,10 @@
 package com.m4isper.contactsapp.presentation.contacts
 
+import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.FakeVCardCodec
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
+import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.ContactRelation
 import com.m4isper.contactsapp.domain.model.EmailAddress
 import com.m4isper.contactsapp.domain.model.EmailKind
@@ -12,9 +14,13 @@ import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.model.RelationKind
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
+import com.m4isper.contactsapp.domain.usecase.AddContactsToGroupUseCase
+import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
+import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.ImportContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
@@ -122,6 +128,7 @@ class ContactsViewModelTest {
 
     private fun viewModel(
         repository: FakeContactsRepository,
+        groups: FakeGroupsRepository = FakeGroupsRepository(),
         codec: FakeVCardCodec = FakeVCardCodec(),
     ) = ContactsViewModel(
         GetContactsUseCase(repository),
@@ -129,6 +136,10 @@ class ContactsViewModelTest {
         GetContactDetailsUseCase(repository),
         DeleteContactsUseCase(repository, repository),
         ImportContactsUseCase(repository),
+        GetGroupsUseCase(groups),
+        GetGroupMembershipUseCase(groups),
+        CreateGroupUseCase(groups),
+        AddContactsToGroupUseCase(groups),
         codec,
     )
 
@@ -810,7 +821,7 @@ class ContactsViewModelTest {
                     ),
                 )
             val codec = FakeVCardCodec(encoded = "shared-vcard")
-            val viewModel = viewModel(repository, codec)
+            val viewModel = viewModel(repository, codec = codec)
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
             advanceUntilIdle()
@@ -837,7 +848,7 @@ class ContactsViewModelTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val repository = FakeContactsRepository()
             val codec = FakeVCardCodec(forms = listOf(ContactForm()))
-            val viewModel = viewModel(repository, codec)
+            val viewModel = viewModel(repository, codec = codec)
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
             advanceUntilIdle()
@@ -881,7 +892,7 @@ class ContactsViewModelTest {
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val repository = FakeContactsRepository(failure = RuntimeException("boom"))
-            val viewModel = viewModel(repository, FakeVCardCodec(forms = listOf(ContactForm())))
+            val viewModel = viewModel(repository, codec = FakeVCardCodec(forms = listOf(ContactForm())))
             backgroundScope.launch { viewModel.uiState.collect { } }
 
             viewModel.files.onImportText(
@@ -908,7 +919,7 @@ class ContactsViewModelTest {
                     ),
                 )
             val codec = FakeVCardCodec(encoded = "exported-vcard")
-            val viewModel = viewModel(repository, codec)
+            val viewModel = viewModel(repository, codec = codec)
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
             advanceUntilIdle()
@@ -982,5 +993,135 @@ class ContactsViewModelTest {
             assertEquals(false, state.showFavoritesOnly)
             assertEquals(emptySet<Long>(), state.selection)
             assertTrue(state.content is Loadable.Empty)
+        }
+
+    @Test
+    fun `refresh loads groups and group filter shows only member contacts`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(
+                    listOf(
+                        details(1, "Anna", "111"),
+                        details(2, "Bob", "222"),
+                    ),
+                )
+            val groups =
+                FakeGroupsRepository(
+                    groups = listOf(ContactGroup(id = 100, title = "Семья")),
+                    membership = mapOf(1L to setOf(100L)),
+                )
+            val viewModel = viewModel(repository, groups)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            viewModel.onGroupSelected(100)
+            advanceUntilIdle()
+
+            val filtered = viewModel.uiState.value
+            assertEquals(listOf(ContactGroup(id = 100, title = "Семья")), filtered.groups)
+            assertEquals(100L, filtered.selectedGroupId)
+            assertEquals(listOf("Anna"), (filtered.content as Loadable.Content).data.map { it.name })
+
+            viewModel.onGroupSelected(null)
+            advanceUntilIdle()
+
+            assertEquals(2, (viewModel.uiState.value.content as Loadable.Content).data.size)
+        }
+
+    @Test
+    fun `deleted group is dropped from active filter`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val groups = FakeGroupsRepository(groups = listOf(ContactGroup(id = 100, title = "Семья")))
+            val viewModel = viewModel(repository, groups)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+            viewModel.onGroupSelected(100)
+            advanceUntilIdle()
+
+            groups.groups = emptyList()
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            assertEquals(null, viewModel.uiState.value.selectedGroupId)
+        }
+
+    @Test
+    fun `add selected to group records ids emits event and clears selection`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(
+                    listOf(
+                        details(1, "Anna", "111"),
+                        details(2, "Bob", "222"),
+                    ),
+                )
+            val groups = FakeGroupsRepository(groups = listOf(ContactGroup(id = 100, title = "Семья")))
+            val viewModel = viewModel(repository, groups)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            viewModel.onContactSelected(1)
+            viewModel.onContactSelected(2)
+            viewModel.onAddSelectedToGroup(setOf(100))
+            advanceUntilIdle()
+
+            assertEquals(listOf(100L to listOf(1L, 2L)), groups.addedToGroup)
+            val state = viewModel.uiState.value
+            assertEquals(ContactsEvent.GroupAddFinished(2), state.event)
+            assertEquals(emptySet<Long>(), state.selection)
+        }
+
+    @Test
+    fun `add to group failure emits failed event`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val groups = FakeGroupsRepository(groups = listOf(ContactGroup(id = 100, title = "Семья")))
+            val viewModel = viewModel(repository, groups)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+            viewModel.onContactSelected(1)
+            groups.failure = RuntimeException("boom")
+
+            viewModel.onAddSelectedToGroup(setOf(100))
+            advanceUntilIdle()
+
+            assertEquals(ContactsEvent.GroupActionFailed, viewModel.uiState.value.event)
+        }
+
+    @Test
+    fun `create group refreshes the groups list`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val groups = FakeGroupsRepository()
+            val viewModel = viewModel(FakeContactsRepository(), groups)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+
+            viewModel.onCreateGroup("Семья")
+            advanceUntilIdle()
+
+            assertEquals(listOf(ContactGroup(id = 1, title = "Семья")), viewModel.uiState.value.groups)
+        }
+
+    @Test
+    fun `create group failure emits failed event`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val groups = FakeGroupsRepository(failure = RuntimeException("boom"))
+            val viewModel = viewModel(FakeContactsRepository(), groups)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+
+            viewModel.onCreateGroup("Семья")
+            advanceUntilIdle()
+
+            assertEquals(ContactsEvent.GroupActionFailed, viewModel.uiState.value.event)
         }
 }

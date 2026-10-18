@@ -113,6 +113,7 @@ fun ContactDetailsScreen(
                     onSmsClick = { openSms(context, it.number) },
                     onCopyClick = { copyToClipboard(context, it) },
                     modifier = screenModifier,
+                    groups = uiState.groups,
                 )
         }
     }

@@ -75,6 +75,7 @@ class ContactsRepositoryImpl(
                     ?: EditableNickname(),
             relations = rows.relations.map { it.toEditable() },
             events = rows.events.map(::editableEventOf),
+            groups = rows.groupMemberships.map { it.groupId },
             photoUri = details.photoUri,
             photoChanged = false,
         )

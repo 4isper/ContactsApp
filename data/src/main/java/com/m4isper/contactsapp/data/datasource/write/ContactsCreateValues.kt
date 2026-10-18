@@ -3,6 +3,7 @@ package com.m4isper.contactsapp.data.datasource.write
 import android.content.ContentValues
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Event
+import android.provider.ContactsContract.CommonDataKinds.GroupMembership
 import android.provider.ContactsContract.CommonDataKinds.Im
 import android.provider.ContactsContract.CommonDataKinds.Nickname
 import android.provider.ContactsContract.CommonDataKinds.Note
@@ -43,6 +44,9 @@ private fun contactListValues(form: ContactForm): List<Pair<String, ContentValue
         form.events
             .mapNotNull { event -> event.date?.let { date -> event to date } }
             .forEach { (event, date) -> add(Event.CONTENT_ITEM_TYPE to contactEventValues(event, date)) }
+        form.groups.forEach { groupId ->
+            add(GroupMembership.CONTENT_ITEM_TYPE to groupMembershipValues(groupId))
+        }
     }
 
 private fun contactSingleValues(

@@ -3,6 +3,7 @@ package com.m4isper.contactsapp.data.datasource.read
 import android.database.Cursor
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Event
+import android.provider.ContactsContract.CommonDataKinds.GroupMembership
 import android.provider.ContactsContract.CommonDataKinds.Im
 import android.provider.ContactsContract.CommonDataKinds.Nickname
 import android.provider.ContactsContract.CommonDataKinds.Note
@@ -33,6 +34,7 @@ private class ContactRowsAccumulator {
     private val instantMessages = mutableListOf<ExistingInstantMessage>()
     private val relations = mutableListOf<ExistingRelation>()
     private val events = mutableListOf<ExistingEvent>()
+    private val groupMemberships = mutableListOf<ExistingGroupMembership>()
     private var organization: ExistingOrganization? = null
     private var note: ExistingNote? = null
     private var birthday: ExistingBirthday? = null
@@ -71,6 +73,10 @@ private class ContactRowsAccumulator {
                     )
             Relation.CONTENT_ITEM_TYPE -> relations += existingRelation(cursor, columns, dataId, rawId)
             Event.CONTENT_ITEM_TYPE -> addEventRow(cursor, columns, dataId, rawId, data1)
+            GroupMembership.CONTENT_ITEM_TYPE ->
+                data1.toLongOrNull()?.let { groupId ->
+                    groupMemberships += ExistingGroupMembership(dataId, rawId, groupId)
+                }
             else -> addSingleRow(cursor, columns, dataId, rawId, data1)
         }
     }
@@ -107,6 +113,7 @@ private class ContactRowsAccumulator {
             note = note,
             birthday = birthday,
             nickname = nickname,
+            groupMemberships = groupMemberships,
         )
 
     /** День рождения хранится тем же mimetype Event, что и прочие даты. */

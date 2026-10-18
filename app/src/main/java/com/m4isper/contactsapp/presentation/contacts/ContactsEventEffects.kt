@@ -22,6 +22,9 @@ internal suspend fun handleContactsEvent(
         ContactsEvent.ImportEmpty -> toast(R.string.import_empty)
         is ContactsEvent.ImportFinished -> showPluralToast(context, R.plurals.import_success, event.count)
         ContactsEvent.ImportFailed -> toast(R.string.import_failed)
+        is ContactsEvent.GroupAddFinished,
+        ContactsEvent.GroupActionFailed,
+        -> handleGroupEvent(context, event, toast)
         is ContactsEvent.ExportReady -> {
             if (exportUri != null && writeVCardFile(context, exportUri, event.content)) {
                 showPluralToast(context, R.plurals.export_success, event.count)
@@ -33,6 +36,19 @@ internal suspend fun handleContactsEvent(
         ContactsEvent.ExportFailed -> toast(R.string.export_failed)
     }
     onEventHandled()
+}
+
+/** События добавления в группу: тост об успехе или ошибке. */
+private fun handleGroupEvent(
+    context: Context,
+    event: ContactsEvent,
+    toast: (Int) -> Unit,
+) {
+    when (event) {
+        is ContactsEvent.GroupAddFinished -> showPluralToast(context, R.plurals.group_add_success, event.count)
+        // Вызывается только для событий групп, здесь остаётся GroupActionFailed.
+        else -> toast(R.string.groups_action_failed)
+    }
 }
 
 private fun showPluralToast(

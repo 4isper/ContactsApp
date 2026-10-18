@@ -22,6 +22,7 @@ import dev.zacsweers.metrox.viewmodel.metroViewModel
 fun ContactsScreen(
     onContactClick: (Long) -> Unit,
     onAddClick: () -> Unit,
+    onGroupsClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ContactsViewModel = metroViewModel(),
 ) {
@@ -78,6 +79,11 @@ fun ContactsScreen(
             onImportText = viewModel::onImportText,
             onExportRequested = viewModel::onExportRequested,
             onEventHandled = viewModel::onEventHandled,
+            groups = uiState.groups,
+            onGroupSelected = viewModel::onGroupSelected,
+            onCreateGroup = viewModel::onCreateGroup,
+            onManageGroupsClick = onGroupsClick,
+            onAddSelectedToGroup = viewModel::onAddSelectedToGroup,
             modifier = modifier,
         )
     }

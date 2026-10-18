@@ -3,9 +3,14 @@ package com.m4isper.contactsapp.presentation.contacts
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.ContactGroup
+import com.m4isper.contactsapp.domain.usecase.AddContactsToGroupUseCase
+import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
+import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.ImportContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.domain.vcard.VCardCodec
@@ -32,6 +37,8 @@ data class ContactsUiState(
     val selection: Set<Long> = emptySet(),
     val pendingDeleteIds: Set<Long> = emptySet(),
     val deleteClosing: Boolean = false,
+    val groups: List<ContactGroup> = emptyList(),
+    val selectedGroupId: Long? = null,
     val event: ContactsEvent? = null,
 ) {
     val isSearching: Boolean
@@ -39,6 +46,9 @@ data class ContactsUiState(
 
     val isSelectionMode: Boolean
         get() = selection.isNotEmpty()
+
+    val selectedGroup: ContactGroup?
+        get() = groups.firstOrNull { it.id == selectedGroupId }
 }
 
 /** Одноразовое событие экрана: UI обрабатывает его и сбрасывает через [ContactsViewModel.onEventHandled]. */
@@ -61,6 +71,14 @@ sealed interface ContactsEvent {
 
     /** Импорт: ни один контакт не создан из-за ошибок. */
     data object ImportFailed : ContactsEvent
+
+    /** В группу добавлены выделенные контакты. */
+    data class GroupAddFinished(
+        val count: Int,
+    ) : ContactsEvent
+
+    /** Не удалось создать группу или добавить в неё контакты. */
+    data object GroupActionFailed : ContactsEvent
 
     /** Экспорт: [content] — готовый .vcf на [count] контактов. */
     data class ExportReady(
@@ -86,12 +104,29 @@ private data class ContactsLoad(
     val failure: Throwable?,
 )
 
+private data class ContactsMiddleBase(
+    val favorites: Set<Long>,
+    val favoritesOnly: Boolean,
+    val selection: Set<Long>,
+    val window: DeleteWindow?,
+    val event: ContactsEvent?,
+)
+
+private data class ContactsGroupsMiddle(
+    val groups: List<ContactGroup>,
+    val selectedGroupId: Long?,
+    val membership: Map<Long, Set<Long>>,
+)
+
 private data class ContactsMiddle(
     val favorites: Set<Long>,
     val favoritesOnly: Boolean,
     val selection: Set<Long>,
     val window: DeleteWindow?,
     val event: ContactsEvent?,
+    val groups: List<ContactGroup>,
+    val selectedGroupId: Long?,
+    val membership: Map<Long, Set<Long>>,
 )
 
 @Inject
@@ -107,6 +142,10 @@ class ContactsViewModel(
     private val getContactDetailsUseCase: GetContactDetailsUseCase,
     deleteContactsUseCase: DeleteContactsUseCase,
     importContactsUseCase: ImportContactsUseCase,
+    private val getGroupsUseCase: GetGroupsUseCase,
+    private val getGroupMembershipUseCase: GetGroupMembershipUseCase,
+    private val createGroupUseCase: CreateGroupUseCase,
+    private val addContactsToGroupUseCase: AddContactsToGroupUseCase,
     private val vCardCodec: VCardCodec,
 ) : ViewModel() {
     private val allContacts = MutableStateFlow<List<ContactDetails>>(emptyList())
@@ -116,6 +155,9 @@ class ContactsViewModel(
     private val favoritesOnlyFlow = MutableStateFlow(false)
     private val selectionFlow = MutableStateFlow<Set<Long>>(emptySet())
     private val eventFlow = MutableStateFlow<ContactsEvent?>(null)
+    private val groupsFlow = MutableStateFlow<List<ContactGroup>>(emptyList())
+    private val selectedGroupFlow = MutableStateFlow<Long?>(null)
+    private val membershipFlow = MutableStateFlow<Map<Long, Set<Long>>>(emptyMap())
 
     /** Отложенное удаление: окно отмены живёт в [PendingDeleteCoordinator]. */
     internal val deletes =
@@ -136,13 +178,26 @@ class ContactsViewModel(
         combine(
             combine(allContacts, isLoading, searchQueryFlow, loadFailure, ::ContactsLoad),
             combine(
-                favoritesFlow,
-                favoritesOnlyFlow,
-                selectionFlow,
-                deletes.window,
-                eventFlow,
-            ) { favorites, favoritesOnly, selection, deleteWindow, event ->
-                ContactsMiddle(favorites, favoritesOnly, selection, deleteWindow, event)
+                combine(
+                    favoritesFlow,
+                    favoritesOnlyFlow,
+                    selectionFlow,
+                    deletes.window,
+                    eventFlow,
+                    ::ContactsMiddleBase,
+                ),
+                combine(groupsFlow, selectedGroupFlow, membershipFlow, ::ContactsGroupsMiddle),
+            ) { base, groups ->
+                ContactsMiddle(
+                    favorites = base.favorites,
+                    favoritesOnly = base.favoritesOnly,
+                    selection = base.selection,
+                    window = base.window,
+                    event = base.event,
+                    groups = groups.groups,
+                    selectedGroupId = groups.selectedGroupId,
+                    membership = groups.membership,
+                )
             },
         ) { load, middle -> contactsUiState(load, middle) }
             .stateIn(
@@ -157,8 +212,14 @@ class ContactsViewModel(
     ): ContactsUiState {
         val pending = middle.window?.contactIds.orEmpty()
         val visible =
-            filterContacts(load.all, load.query, middle.favoritesOnly, middle.favorites)
-                .filterNot { it.contactId in pending }
+            filterContacts(
+                contacts = load.all,
+                query = load.query,
+                favoritesOnly = middle.favoritesOnly,
+                favorites = middle.favorites,
+                selectedGroupId = middle.selectedGroupId,
+                membership = middle.membership,
+            ).filterNot { it.contactId in pending }
         val content =
             when {
                 load.failure != null -> Loadable.Error(load.failure.message)
@@ -175,6 +236,8 @@ class ContactsViewModel(
             selection = middle.selection,
             pendingDeleteIds = pending,
             deleteClosing = middle.window?.closing == true,
+            groups = middle.groups,
+            selectedGroupId = middle.selectedGroupId,
             event = middle.event,
         )
     }
@@ -230,6 +293,12 @@ class ContactsViewModel(
     fun onToggleFavoritesOnly() {
         selectionFlow.value = emptySet()
         favoritesOnlyFlow.value = !favoritesOnlyFlow.value
+    }
+
+    /** Фильтр по группе; null — показать все контакты. */
+    fun onGroupSelected(groupId: Long?) {
+        selectionFlow.value = emptySet()
+        selectedGroupFlow.value = groupId
     }
 
     /** Тап по карточке в режиме выделения и long-press в любом режиме переключают выделение. */
@@ -292,6 +361,63 @@ class ContactsViewModel(
         eventFlow.value = null
     }
 
+    /** Создаёт группу из фильтра: список групп и членство перечитываются. */
+    @Suppress("TooGenericExceptionCaught")
+    fun onCreateGroup(title: String) {
+        if (title.isBlank()) return
+        viewModelScope.launch {
+            try {
+                createGroupUseCase(title)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logw(LIST_TAG, "create group failed", e)
+                eventFlow.value = ContactsEvent.GroupActionFailed
+            }
+            refreshGroups()
+        }
+    }
+
+    /** Добавляет выделенные контакты в выбранные группы. */
+    @Suppress("TooGenericExceptionCaught")
+    fun onAddSelectedToGroup(groupIds: Set<Long>) {
+        val contactIds = selectionFlow.value.toList()
+        if (contactIds.isEmpty() || groupIds.isEmpty()) return
+        viewModelScope.launch {
+            try {
+                groupIds.forEach { groupId -> addContactsToGroupUseCase(groupId, contactIds) }
+                eventFlow.value = ContactsEvent.GroupAddFinished(contactIds.size)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logw(LIST_TAG, "add contacts to group failed", e)
+                eventFlow.value = ContactsEvent.GroupActionFailed
+            }
+            selectionFlow.value = emptySet()
+            refresh()
+        }
+    }
+
+    /** Перечитывает группы и членство: фильтр и пикер живут на свежих данных. */
+    @Suppress("TooGenericExceptionCaught")
+    private fun refreshGroups() {
+        viewModelScope.launch {
+            try {
+                val groups = getGroupsUseCase()
+                groupsFlow.value = groups
+                membershipFlow.value = getGroupMembershipUseCase()
+                // Удалённая группа не должна оставаться активным фильтром.
+                if (selectedGroupFlow.value?.let { selected -> groups.none { it.id == selected } } == true) {
+                    selectedGroupFlow.value = null
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logw(LIST_TAG, "refresh groups failed", e)
+            }
+        }
+    }
+
     // Catch-all осознанный: любая ошибка загрузки превращается в Error-стейт.
     @Suppress("TooGenericExceptionCaught")
     fun refresh() {
@@ -310,6 +436,7 @@ class ContactsViewModel(
             } finally {
                 isLoading.value = false
             }
+            refreshGroups()
         }
     }
 
@@ -319,5 +446,8 @@ class ContactsViewModel(
         favoritesOnlyFlow.value = false
         loadFailure.value = null
         selectionFlow.value = emptySet()
+        groupsFlow.value = emptyList()
+        membershipFlow.value = emptyMap()
+        selectedGroupFlow.value = null
     }
 }

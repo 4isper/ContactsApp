@@ -13,11 +13,17 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.m4isper.contactsapp.FakeAndroidRepository
+import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.FakeVCardCodec
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.domain.model.ContactGroup
+import com.m4isper.contactsapp.domain.usecase.AddContactsToGroupUseCase
+import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
+import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.ImportContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
@@ -37,15 +43,21 @@ class ContactListUiTest {
     private val anna = testDetails(1, "Anna", "111")
     private val bob = testDetails(2, "Bob", "222")
 
-    private fun viewModel(repository: FakeAndroidRepository) =
-        ContactsViewModel(
-            GetContactsUseCase(repository),
-            ObserveFavoritesUseCase(repository),
-            GetContactDetailsUseCase(repository),
-            DeleteContactsUseCase(repository, repository),
-            ImportContactsUseCase(repository),
-            FakeVCardCodec(),
-        )
+    private fun viewModel(
+        repository: FakeAndroidRepository,
+        groups: FakeGroupsRepository = FakeGroupsRepository(),
+    ) = ContactsViewModel(
+        GetContactsUseCase(repository),
+        ObserveFavoritesUseCase(repository),
+        GetContactDetailsUseCase(repository),
+        DeleteContactsUseCase(repository, repository),
+        ImportContactsUseCase(repository),
+        GetGroupsUseCase(groups),
+        GetGroupMembershipUseCase(groups),
+        CreateGroupUseCase(groups),
+        AddContactsToGroupUseCase(groups),
+        FakeVCardCodec(),
+    )
 
     @Test
     fun showsContactNames() {
@@ -256,6 +268,59 @@ class ContactListUiTest {
 
         assertEquals(listOf(1L), repository.deleted)
         compose.onNodeWithTag("selection_top_bar").assertDoesNotExist()
+    }
+
+    @Test
+    fun addSelectedToGroupThroughPicker() {
+        val repository = FakeAndroidRepository(listOf(anna, bob))
+        val groups = FakeGroupsRepository(groups = listOf(ContactGroup(id = 100, title = "Семья")))
+        val viewModel = viewModel(repository, groups)
+        compose.setContent {
+            val uiState by viewModel.uiState.collectAsState()
+            ContactList(
+                uiState = uiState,
+                onSearchQueryChange = viewModel::onSearchQueryChange,
+                onFavoritesOnlyChange = viewModel::onToggleFavoritesOnly,
+                onContactClick = {},
+                onAddClick = {},
+                onRetry = viewModel::refresh,
+                onRefresh = viewModel::refresh,
+                onContactSelected = viewModel::onContactSelected,
+                onClearSelection = viewModel::onClearSelection,
+                onSelectAll = viewModel::onSelectAll,
+                onDeleteSelected = viewModel::onDeleteSelected,
+                onUndoDelete = viewModel::onUndoDelete,
+                onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
+                onShareSelected = viewModel::onShareSelected,
+                onImportText = viewModel.files::onImportText,
+                onExportRequested = viewModel.files::onExportRequested,
+                onEventHandled = viewModel::onEventHandled,
+                groups = uiState.groups,
+                onGroupSelected = viewModel::onGroupSelected,
+                onCreateGroup = viewModel::onCreateGroup,
+                onManageGroupsClick = {},
+                onAddSelectedToGroup = viewModel::onAddSelectedToGroup,
+            )
+        }
+        viewModel.refresh()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.content is Loadable.Content
+        }
+
+        compose.onNodeWithTag("contact_row_1").performTouchInput { longClick() }
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.selection == setOf(1L)
+        }
+
+        compose.onNodeWithTag("add_to_group_button").performClick()
+        compose.onNodeWithTag("group_check_row_Семья").performClick()
+        compose.onNodeWithTag("group_picker_confirm").performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            groups.addedToGroup.isNotEmpty()
+        }
+
+        assertEquals(100L to listOf(1L), groups.addedToGroup.single())
     }
 
     @Test

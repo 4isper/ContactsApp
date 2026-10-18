@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.FormError
+import com.m4isper.contactsapp.presentation.common.groups.GroupPickerDialog
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 
 @Composable
@@ -41,6 +42,7 @@ internal fun EditorForm(
     val spacing = LocalSpacing.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showDatePicker by remember { mutableStateOf(false) }
+    var showGroupPicker by remember { mutableStateOf(false) }
     var eventPickerRowId by remember { mutableStateOf<Long?>(null) }
     val photoPicker =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -104,6 +106,15 @@ internal fun EditorForm(
                         .fillMaxWidth()
                         .padding(horizontal = spacing.m)
                         .testTag("editor_nickname_field"),
+            )
+        }
+        item(key = "groups-header") {
+            SectionHeader(titleRes = R.string.editor_section_groups)
+        }
+        item(key = "groups") {
+            GroupMembershipRow(
+                selected = uiState.selectedGroups,
+                onClick = { showGroupPicker = true },
             )
         }
         editorContactItems(uiState = uiState, viewModel = viewModel)
@@ -181,6 +192,19 @@ internal fun EditorForm(
                 eventPickerRowId = null
             },
             onDismiss = { eventPickerRowId = null },
+        )
+    }
+
+    if (showGroupPicker) {
+        GroupPickerDialog(
+            title = stringResource(R.string.editor_section_groups),
+            groups = uiState.allGroups,
+            selectedIds = uiState.selectedGroupIds,
+            confirmLabel = stringResource(R.string.action_done),
+            onToggle = viewModel::onGroupToggled,
+            onCreateGroup = viewModel::onCreateGroup,
+            onConfirm = { showGroupPicker = false },
+            onDismiss = { showGroupPicker = false },
         )
     }
 }

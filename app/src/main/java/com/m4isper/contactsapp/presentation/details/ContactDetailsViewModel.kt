@@ -3,7 +3,9 @@ package com.m4isper.contactsapp.presentation.details
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetContactGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
 import com.m4isper.contactsapp.domain.vcard.VCardCodec
@@ -27,6 +29,7 @@ private const val DETAILS_TAG = "ContactDetails"
 data class DetailsUiState(
     val content: Loadable<ContactDetails> = Loadable.Loading,
     val isFavorite: Boolean = false,
+    val groups: List<ContactGroup> = emptyList(),
 )
 
 @Inject
@@ -34,12 +37,14 @@ data class DetailsUiState(
 @ContributesIntoMap(AppScope::class)
 class ContactDetailsViewModel(
     private val getContactDetailsUseCase: GetContactDetailsUseCase,
+    private val getContactGroupsUseCase: GetContactGroupsUseCase,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
     observeFavoritesUseCase: ObserveFavoritesUseCase,
     private val vCardCodec: VCardCodec,
 ) : ViewModel() {
     private val selectedContactId = MutableStateFlow<Long?>(null)
     private val loadedDetails = MutableStateFlow<ContactDetails?>(null)
+    private val groupsFlow = MutableStateFlow<List<ContactGroup>>(emptyList())
     private val isLoading = MutableStateFlow(false)
     private val loadFailure = MutableStateFlow<Throwable?>(null)
 
@@ -52,7 +57,13 @@ class ContactDetailsViewModel(
             )
 
     val uiState: StateFlow<DetailsUiState> =
-        combine(loadedDetails, isLoading, loadFailure, favoritesFlow) { details, loading, failure, favorites ->
+        combine(
+            loadedDetails,
+            isLoading,
+            loadFailure,
+            favoritesFlow,
+            groupsFlow,
+        ) { details, loading, failure, favorites, groups ->
             val content =
                 when {
                     failure != null -> Loadable.Error(failure.message)
@@ -63,6 +74,7 @@ class ContactDetailsViewModel(
             DetailsUiState(
                 content = content,
                 isFavorite = details?.contactId in favorites,
+                groups = groups,
             )
         }.stateIn(
             scope = viewModelScope,
@@ -74,6 +86,7 @@ class ContactDetailsViewModel(
         if (selectedContactId.value == contactId && (loadedDetails.value != null || isLoading.value)) return
         selectedContactId.value = contactId
         loadedDetails.value = null
+        groupsFlow.value = emptyList()
         refresh()
     }
 
@@ -107,7 +120,9 @@ class ContactDetailsViewModel(
             isLoading.value = true
             loadFailure.value = null
             try {
-                loadedDetails.value = getContactDetailsUseCase(contactId)
+                val details = getContactDetailsUseCase(contactId)
+                loadedDetails.value = details
+                groupsFlow.value = if (details != null) loadGroups(contactId) else emptyList()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -117,4 +132,16 @@ class ContactDetailsViewModel(
             }
         }
     }
+
+    /** Сбой чтения групп не отменяет показ контакта: детали важнее состава групп. */
+    @Suppress("TooGenericExceptionCaught")
+    private suspend fun loadGroups(contactId: Long): List<ContactGroup> =
+        try {
+            getContactGroupsUseCase(contactId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logw(DETAILS_TAG, "load groups failed", e)
+            emptyList()
+        }
 }

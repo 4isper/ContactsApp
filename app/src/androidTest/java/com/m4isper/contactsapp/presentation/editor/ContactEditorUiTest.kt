@@ -15,14 +15,18 @@ import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import com.m4isper.contactsapp.FakeAndroidRepository
+import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactEvent
+import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.EventKind
 import com.m4isper.contactsapp.domain.model.NameMode
 import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
+import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactFormUseCase
+import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.UpdateContactUseCase
 import com.m4isper.contactsapp.testDetails
 import org.junit.Assert.assertEquals
@@ -40,13 +44,17 @@ class ContactEditorUiTest {
     val permission: GrantPermissionRule =
         GrantPermissionRule.grant(Manifest.permission.WRITE_CONTACTS)
 
-    private fun viewModel(repository: FakeAndroidRepository) =
-        ContactEditorViewModel(
-            GetContactFormUseCase(repository),
-            CreateContactUseCase(repository),
-            UpdateContactUseCase(repository),
-            DeleteContactUseCase(DeleteContactsUseCase(repository, repository)),
-        )
+    private fun viewModel(
+        repository: FakeAndroidRepository,
+        groups: FakeGroupsRepository = FakeGroupsRepository(),
+    ) = ContactEditorViewModel(
+        GetContactFormUseCase(repository),
+        CreateContactUseCase(repository),
+        UpdateContactUseCase(repository),
+        DeleteContactUseCase(DeleteContactsUseCase(repository, repository)),
+        GetGroupsUseCase(groups),
+        CreateGroupUseCase(groups),
+    )
 
     @Test
     fun createMode_savesValidForm() {
@@ -372,5 +380,34 @@ class ContactEditorUiTest {
         compose.waitForIdle()
         assertEquals(true, done.get())
         assertEquals(listOf(7L), repository.deleted)
+    }
+
+    @Test
+    fun createMode_selectsGroupFromPickerAndSaves() {
+        val repository = FakeAndroidRepository()
+        val groups = FakeGroupsRepository(groups = listOf(ContactGroup(id = 100, title = "Семья")))
+        val viewModel = viewModel(repository, groups)
+        compose.setContent {
+            ContactEditorScreen(
+                contactId = null,
+                onDone = {},
+                onBack = {},
+                viewModel = viewModel,
+            )
+        }
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.allGroups
+                .isNotEmpty()
+        }
+
+        compose.onNodeWithTag("editor_name_field").performTextInput("Anna")
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_groups_row"))
+        compose.onNodeWithTag("editor_groups_row").performClick()
+        compose.onNodeWithTag("group_check_row_Семья").performClick()
+        compose.onNodeWithTag("group_picker_confirm").performClick()
+        compose.onNodeWithTag("editor_save_button").performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
+        assertEquals(listOf(100L), repository.created.single().groups)
     }
 }

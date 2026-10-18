@@ -122,6 +122,22 @@
     <string name="export_empty">Нет контактов для экспорта</string>
     <string name="export_failed">Не удалось экспортировать контакты</string>
 
+    <string name="filter_groups">Группы</string>
+    <string name="groups_all">Все контакты</string>
+    <string name="groups_manage">Управление группами</string>
+    <string name="groups_new">Новая группа</string>
+    <string name="groups_title">Группы</string>
+    <string name="groups_empty">Групп пока нет</string>
+    <string name="group_name_label">Название группы</string>
+    <string name="group_rename">Переименовать группу</string>
+    <string name="group_delete_title">Удалить группу?</string>
+    <string name="group_delete_message">Контакты останутся, удалится только группа</string>
+    <string name="action_add_to_group">Добавить в группу</string>
+    <string name="action_add">Добавить</string>
+    <string name="action_create">Создать</string>
+    <string name="action_done">Готово</string>
+    <string name="groups_action_failed">Не удалось обновить группы</string>
+
     <string name="editor_add_photo">Добавить фото</string>
     <string name="editor_change_photo">Изменить фото</string>
     <string name="editor_remove_photo">Удалить фото</string>
@@ -135,6 +151,7 @@
     <string name="editor_section_birthday">День рождения</string>
     <string name="editor_section_events">События</string>
     <string name="editor_section_relations">Связи</string>
+    <string name="editor_section_groups">Группы</string>
     <string name="editor_section_note">Заметка</string>
     <string name="editor_add_email">Добавить email</string>
     <string name="editor_add_im">Добавить мессенджер</string>
@@ -156,6 +173,8 @@
     <string name="editor_event_date_add">Указать дату</string>
     <string name="editor_birthday_no_year">Без года</string>
     <string name="editor_birthday_remove">Удалить день рождения</string>
+    <string name="editor_groups_empty">Не входит в группы</string>
+    <string name="editor_groups_edit">Выбрать группы</string>
 
     <plurals name="phone_count_extra">
         <item quantity="one">ещё %d номер</item>
@@ -210,5 +229,17 @@
         <item quantity="few">Экспортировано %d контакта</item>
         <item quantity="many">Экспортировано %d контактов</item>
         <item quantity="other">Экспортировано %d контакта</item>
+    </plurals>
+    <plurals name="group_members_count">
+        <item quantity="one">%d контакт</item>
+        <item quantity="few">%d контакта</item>
+        <item quantity="many">%d контактов</item>
+        <item quantity="other">%d контактов</item>
+    </plurals>
+    <plurals name="group_add_success">
+        <item quantity="one">%d контакт добавлен в группу</item>
+        <item quantity="few">%d контакта добавлено в группу</item>
+        <item quantity="many">%d контактов добавлено в группу</item>
+        <item quantity="other">%d контактов добавлено в группу</item>
     </plurals>
 </resources>

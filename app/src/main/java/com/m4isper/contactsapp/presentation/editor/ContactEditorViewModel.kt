@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.m4isper.contactsapp.domain.model.AddressKind
 import com.m4isper.contactsapp.domain.model.Birthday
+import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.EditableAddress
 import com.m4isper.contactsapp.domain.model.EditableEmail
 import com.m4isper.contactsapp.domain.model.EditableEvent
@@ -17,8 +18,10 @@ import com.m4isper.contactsapp.domain.model.ImProtocol
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.RelationKind
 import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
+import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactFormUseCase
+import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.SaveResult
 import com.m4isper.contactsapp.domain.usecase.UpdateContactUseCase
 import com.m4isper.contactsapp.presentation.common.logw
@@ -45,6 +48,8 @@ class ContactEditorViewModel(
     private val createContactUseCase: CreateContactUseCase,
     private val updateContactUseCase: UpdateContactUseCase,
     private val deleteContactUseCase: DeleteContactUseCase,
+    private val getGroupsUseCase: GetGroupsUseCase,
+    private val createGroupUseCase: CreateGroupUseCase,
 ) : ViewModel() {
     private val state = MutableStateFlow(EditorUiState())
     private var nextRowId = 0L
@@ -63,6 +68,7 @@ class ContactEditorViewModel(
         loadStartedFor = id
         if (id == null) {
             state.value = EditorUiState(phones = listOf(newRow(EditablePhone(number = ""))))
+            viewModelScope.launch { state.update { it.copy(allGroups = loadGroups()) } }
             return
         }
         state.value =
@@ -77,7 +83,7 @@ class ContactEditorViewModel(
                 if (form == null) {
                     state.update { it.copy(closeScreen = true) }
                 } else {
-                    state.value = editorStateFromForm(id, form) { ++nextRowId }
+                    state.value = editorStateFromForm(id, form) { ++nextRowId }.copy(allGroups = loadGroups())
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -224,6 +230,40 @@ class ContactEditorViewModel(
 
     fun onNicknameChange(value: String) = updateData { it.copy(nickname = it.nickname.copy(nickname = value)) }
 
+    fun onGroupToggled(groupId: Long) =
+        updateData {
+            it.copy(
+                selectedGroupIds =
+                    if (groupId in it.selectedGroupIds) {
+                        it.selectedGroupIds - groupId
+                    } else {
+                        it.selectedGroupIds + groupId
+                    },
+            )
+        }
+
+    /** Создаёт группу прямо из пикера и сразу отмечает её: метку создают, чтобы назначить контакту. */
+    @Suppress("TooGenericExceptionCaught")
+    fun onCreateGroup(title: String) {
+        if (title.isBlank()) return
+        viewModelScope.launch {
+            try {
+                val group = createGroupUseCase(title)
+                state.update {
+                    it.copy(
+                        allGroups = (it.allGroups + group).distinctBy(ContactGroup::id),
+                        selectedGroupIds = it.selectedGroupIds + group.id,
+                    )
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logw(EDITOR_TAG, "create group failed", e)
+                state.update { it.copy(errorMessage = e.message) }
+            }
+        }
+    }
+
     fun onRelationNameChange(
         rowId: Long,
         value: String,
@@ -338,6 +378,18 @@ class ContactEditorViewModel(
     private fun updateData(transform: (EditorUiState) -> EditorUiState) {
         state.update { transform(it).copy(formError = null, errorMessage = null) }
     }
+
+    /** Список групп для пикера: сбой чтения не должен ломать редактирование контакта. */
+    @Suppress("TooGenericExceptionCaught")
+    private suspend fun loadGroups(): List<ContactGroup> =
+        try {
+            getGroupsUseCase()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logw(EDITOR_TAG, "load groups failed", e)
+            emptyList()
+        }
 
     /** Новая строка со стабильным ключом: счётчик живёт в пределах экрана. */
     private fun <T> newRow(value: T) = EditorRow(rowId = ++nextRowId, value = value)

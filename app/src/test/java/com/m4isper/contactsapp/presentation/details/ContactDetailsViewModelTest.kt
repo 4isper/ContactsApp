@@ -1,13 +1,16 @@
 package com.m4isper.contactsapp.presentation.details
 
+import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.FakeVCardCodec
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
+import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetContactGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
 import com.m4isper.contactsapp.domain.vcard.VCardCodec
@@ -83,9 +86,11 @@ class ContactDetailsViewModelTest {
 
     private fun viewModel(
         repository: FakeDetailsRepository,
+        groups: FakeGroupsRepository = FakeGroupsRepository(),
         codec: VCardCodec = FakeVCardCodec(),
     ) = ContactDetailsViewModel(
         GetContactDetailsUseCase(repository),
+        GetContactGroupsUseCase(groups),
         ToggleFavoriteUseCase(repository),
         ObserveFavoritesUseCase(repository),
         codec,
@@ -179,6 +184,7 @@ class ContactDetailsViewModelTest {
             val viewModel =
                 ContactDetailsViewModel(
                     GetContactDetailsUseCase(repository),
+                    GetContactGroupsUseCase(FakeGroupsRepository()),
                     ToggleFavoriteUseCase(repository),
                     ObserveFavoritesUseCase(repository),
                     FakeVCardCodec(),
@@ -237,7 +243,7 @@ class ContactDetailsViewModelTest {
                     ),
                 )
             val codec = FakeVCardCodec(encoded = "CARD")
-            val viewModel = viewModel(repository, codec)
+            val viewModel = viewModel(repository, codec = codec)
             backgroundScope.launch { viewModel.uiState.collect { } }
 
             // Пока контакт не загружен, в порт не обращаемся.
@@ -249,5 +255,61 @@ class ContactDetailsViewModelTest {
 
             assertEquals("CARD", viewModel.vCardText())
             assertEquals(listOf(7L), codec.encodedContacts.single().map { it.contactId })
+        }
+
+    @Test
+    fun `load emits contact groups`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeDetailsRepository(
+                    listOf(
+                        ContactDetails(
+                            contactId = 7,
+                            name = "Anna",
+                            phones = listOf(PhoneNumber("111", PhoneKind.MOBILE)),
+                        ),
+                    ),
+                )
+            val groups =
+                FakeGroupsRepository(
+                    groups =
+                        listOf(
+                            ContactGroup(id = 100, title = "Семья"),
+                            ContactGroup(id = 200, title = "Работа"),
+                        ),
+                    membership = mapOf(7L to setOf(100L)),
+                )
+            val viewModel = viewModel(repository, groups)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+
+            viewModel.load(7)
+            advanceUntilIdle()
+
+            assertEquals(listOf(ContactGroup(id = 100, title = "Семья")), viewModel.uiState.value.groups)
+        }
+
+    @Test
+    fun `group read failure keeps contact visible`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeDetailsRepository(
+                    listOf(
+                        ContactDetails(
+                            contactId = 7,
+                            name = "Anna",
+                            phones = listOf(PhoneNumber("111", PhoneKind.MOBILE)),
+                        ),
+                    ),
+                )
+            val viewModel = viewModel(repository, groups = FakeGroupsRepository(failure = RuntimeException("boom")))
+            backgroundScope.launch { viewModel.uiState.collect { } }
+
+            viewModel.load(7)
+            advanceUntilIdle()
+
+            assertTrue(viewModel.uiState.value.content is Loadable.Content)
+            assertEquals(emptyList<ContactGroup>(), viewModel.uiState.value.groups)
         }
 }

@@ -11,6 +11,7 @@ import com.m4isper.contactsapp.data.datasource.read.ContactRows
 import com.m4isper.contactsapp.data.datasource.read.ExistingBirthday
 import com.m4isper.contactsapp.data.datasource.read.ExistingEmail
 import com.m4isper.contactsapp.data.datasource.read.ExistingEvent
+import com.m4isper.contactsapp.data.datasource.read.ExistingGroupMembership
 import com.m4isper.contactsapp.data.datasource.read.ExistingInstantMessage
 import com.m4isper.contactsapp.data.datasource.read.ExistingName
 import com.m4isper.contactsapp.data.datasource.read.ExistingNickname
@@ -79,6 +80,11 @@ class ContactsRepositoryImplTest {
                 note = ExistingNote(9, 10, "заметка"),
                 organization = ExistingOrganization(10, 10, "ACME", "CTO"),
                 relations = listOf(ExistingRelation(11, 10, "Bob", Relation.TYPE_FRIEND, null)),
+                groupMemberships =
+                    listOf(
+                        ExistingGroupMembership(dataId = 12, rawContactId = 10, groupId = 100),
+                        ExistingGroupMembership(dataId = 13, rawContactId = 10, groupId = 200),
+                    ),
             )
         val repository = ContactsRepositoryImpl(FakeReader(details), FakeWriter(rows = rows))
 
@@ -102,6 +108,7 @@ class ContactsRepositoryImplTest {
         assertEquals("ACME", form.organization.company)
         assertEquals("CTO", form.organization.title)
         assertEquals(RelationKind.FRIEND, form.relations.single().kind)
+        assertEquals(listOf(100L, 200L), form.groups)
         assertEquals(false, form.photoChanged)
     }
 

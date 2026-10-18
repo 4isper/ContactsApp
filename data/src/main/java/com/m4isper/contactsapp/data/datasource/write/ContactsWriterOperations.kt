@@ -85,6 +85,7 @@ internal fun buildUpdateOperations(
     ops += relationOperations(rawContactId, rows, form)
     ops += eventOperations(rawContactId, rows, form)
     ops += nicknameOperations(rawContactId, rows.nickname, form.nickname.nickname)
+    ops += membershipOperations(rawContactId, rows.groupMemberships, form.groups.toSet())
     ops += singleOperations(rawContactId, rows, form)
     ops += photoOperations(rawContactId, form.photoChanged, photo)
     return ops

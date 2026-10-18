@@ -1,7 +1,9 @@
 package com.m4isper.contactsapp.presentation.editor
 
+import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactForm
+import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.EditableBirthday
 import com.m4isper.contactsapp.domain.model.EditableEmail
 import com.m4isper.contactsapp.domain.model.EditableEvent
@@ -18,9 +20,11 @@ import com.m4isper.contactsapp.domain.model.RelationKind
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
+import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactFormUseCase
+import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.UpdateContactUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -79,13 +83,18 @@ class ContactEditorViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun TestScope.viewModel(repository: FakeEditorRepository): ContactEditorViewModel {
+    private fun TestScope.viewModel(
+        repository: FakeEditorRepository,
+        groups: FakeGroupsRepository = FakeGroupsRepository(),
+    ): ContactEditorViewModel {
         val viewModel =
             ContactEditorViewModel(
                 GetContactFormUseCase(repository),
                 CreateContactUseCase(repository),
                 UpdateContactUseCase(repository),
                 DeleteContactUseCase(DeleteContactsUseCase(repository, repository)),
+                GetGroupsUseCase(groups),
+                CreateGroupUseCase(groups),
             )
         backgroundScope.launch { viewModel.uiState.collect { } }
         return viewModel
@@ -690,5 +699,144 @@ class ContactEditorViewModelTest {
             advanceUntilIdle()
 
             assertEquals("Edited", viewModel.uiState.value.displayName)
+        }
+
+    @Test
+    fun `load new contact loads groups for picker`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val groups = FakeGroupsRepository(groups = listOf(ContactGroup(id = 100, title = "Семья")))
+            val viewModel = viewModel(FakeEditorRepository(), groups)
+
+            viewModel.load(null)
+            advanceUntilIdle()
+
+            assertEquals(listOf(ContactGroup(id = 100, title = "Семья")), viewModel.uiState.value.allGroups)
+        }
+
+    @Test
+    fun `load existing contact preselects its groups`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeEditorRepository().apply {
+                    formToLoad =
+                        ContactForm(
+                            name = EditableName(display = "Anna"),
+                            groups = listOf(200L, 100L),
+                        )
+                }
+            val groups =
+                FakeGroupsRepository(
+                    groups =
+                        listOf(
+                            ContactGroup(id = 100, title = "Семья"),
+                            ContactGroup(id = 200, title = "Работа"),
+                        ),
+                )
+            val viewModel = viewModel(repository, groups)
+
+            viewModel.load(7)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(setOf(100L, 200L), state.selectedGroupIds)
+            // selectedGroups отдаёт метки в порядке списка всех групп.
+            assertEquals(listOf("Семья", "Работа"), state.selectedGroups.map { it.title })
+        }
+
+    @Test
+    fun `save sends selected group ids`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeEditorRepository()
+            val groups = FakeGroupsRepository(groups = listOf(ContactGroup(id = 100, title = "Семья")))
+            val viewModel = viewModel(repository, groups)
+            viewModel.load(null)
+            advanceUntilIdle()
+
+            viewModel.onDisplayNameChange("Anna")
+            viewModel.onGroupToggled(100)
+            viewModel.onSave()
+            advanceUntilIdle()
+
+            assertEquals(listOf(100L), repository.created.single().groups)
+        }
+
+    @Test
+    fun `toggling group off removes it from saved form`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeEditorRepository().apply {
+                    formToLoad =
+                        ContactForm(
+                            name = EditableName(display = "Anna"),
+                            groups = listOf(100L),
+                        )
+                }
+            val groups = FakeGroupsRepository(groups = listOf(ContactGroup(id = 100, title = "Семья")))
+            val viewModel = viewModel(repository, groups)
+            viewModel.load(7)
+            advanceUntilIdle()
+
+            viewModel.onGroupToggled(100)
+            viewModel.onSave()
+            advanceUntilIdle()
+
+            assertEquals(
+                emptyList<Long>(),
+                repository.updated
+                    .single()
+                    .second.groups,
+            )
+        }
+
+    @Test
+    fun `toggle on and off keeps form clean`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeEditorRepository().apply {
+                    formToLoad =
+                        ContactForm(
+                            name = EditableName(display = "Anna"),
+                            groups = listOf(200L, 100L),
+                        )
+                }
+            val groups =
+                FakeGroupsRepository(
+                    groups =
+                        listOf(
+                            ContactGroup(id = 100, title = "Семья"),
+                            ContactGroup(id = 200, title = "Работа"),
+                        ),
+                )
+            val viewModel = viewModel(repository, groups)
+            viewModel.load(7)
+            advanceUntilIdle()
+            assertEquals(false, viewModel.isDirty())
+
+            viewModel.onGroupToggled(300)
+            viewModel.onGroupToggled(300)
+
+            assertEquals(false, viewModel.isDirty())
+        }
+
+    @Test
+    fun `create group from picker adds and selects it`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val groups = FakeGroupsRepository()
+            val viewModel = viewModel(FakeEditorRepository(), groups)
+            viewModel.load(null)
+            advanceUntilIdle()
+
+            viewModel.onCreateGroup("Друзья")
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(listOf(ContactGroup(id = 1, title = "Друзья")), state.allGroups)
+            assertEquals(setOf(1L), state.selectedGroupIds)
         }
 }

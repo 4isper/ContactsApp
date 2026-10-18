@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Deselect
+import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -19,7 +20,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.m4isper.contactsapp.R
 
-/** Контекстная панель режима выделения: счётчик, «выбрать все», шаринг и удаление. */
+/** Контекстная панель режима выделения: счётчик, «выбрать все», добавление в группу, шаринг и удаление. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun SelectionTopBar(
@@ -27,6 +28,7 @@ internal fun SelectionTopBar(
     allSelected: Boolean,
     onClose: () -> Unit,
     onSelectAll: () -> Unit,
+    onAddToGroup: () -> Unit,
     onShare: () -> Unit,
     onDelete: () -> Unit,
 ) {
@@ -56,6 +58,15 @@ internal fun SelectionTopBar(
                         stringResource(
                             if (allSelected) R.string.action_deselect_all else R.string.action_select_all,
                         ),
+                )
+            }
+            IconButton(
+                onClick = onAddToGroup,
+                modifier = Modifier.testTag("add_to_group_button"),
+            ) {
+                Icon(
+                    Icons.Filled.Label,
+                    contentDescription = stringResource(R.string.action_add_to_group),
                 )
             }
             IconButton(
