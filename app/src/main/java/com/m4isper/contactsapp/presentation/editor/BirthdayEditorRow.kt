@@ -22,7 +22,7 @@ import androidx.compose.ui.res.stringResource
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.EditableBirthday
-import com.m4isper.contactsapp.presentation.common.birthdayText
+import com.m4isper.contactsapp.presentation.common.format.birthdayText
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 import java.time.LocalDate
 

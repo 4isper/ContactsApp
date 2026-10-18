@@ -2,7 +2,7 @@ package com.m4isper.contactsapp.presentation.contacts
 
 import android.Manifest
 import android.content.Context
-import com.m4isper.contactsapp.presentation.common.hasPermission
+import com.m4isper.contactsapp.presentation.common.permissions.hasPermission
 
 internal fun syncContactsPermission(
     context: Context,

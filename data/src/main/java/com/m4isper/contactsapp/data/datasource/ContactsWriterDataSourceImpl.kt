@@ -4,6 +4,12 @@ import android.content.ContentUris
 import android.content.Context
 import android.net.Uri
 import android.provider.ContactsContract
+import com.m4isper.contactsapp.data.datasource.read.CONTACT_DATA_PROJECTION
+import com.m4isper.contactsapp.data.datasource.read.ContactRows
+import com.m4isper.contactsapp.data.datasource.read.parseContactRows
+import com.m4isper.contactsapp.data.datasource.write.buildCreateOperations
+import com.m4isper.contactsapp.data.datasource.write.buildUpdateOperations
+import com.m4isper.contactsapp.data.datasource.write.readDownscaledPhoto
 import com.m4isper.contactsapp.domain.model.ContactForm
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding

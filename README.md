@@ -20,9 +20,10 @@ Multi-module Clean Architecture with a build-enforced dependency rule — `:doma
 ```
 ContactsApp/
 ├── domain/   # pure models, repository interfaces, use cases, ports (+ fast JVM tests)
-├── data/     # ContentResolver sources, repositories, vCard codec
+├── data/     # ContactsContract sources (datasource/read/, datasource/write/), repositories, vCard codec
 └── app/      # presentation/, di/, ui/
-    ├── presentation/   # screens, ViewModels, UiState (contacts/, details/, editor/, common/, navigation/)
+    ├── presentation/   # screens, ViewModels, UiState (contacts/, details/, editor/, navigation/;
+    │                   # shared helpers in common/: permissions/, call/, share/, format/)
     ├── di/             # Metro dependency graph (needs :data on classpath for codegen)
     └── ui/             # design system: theme tokens + components
 ```

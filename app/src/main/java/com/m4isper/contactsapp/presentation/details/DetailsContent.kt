@@ -16,15 +16,15 @@ import androidx.compose.ui.res.stringResource
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.PhoneNumber
-import com.m4isper.contactsapp.presentation.common.addressKindLabel
-import com.m4isper.contactsapp.presentation.common.birthdayText
-import com.m4isper.contactsapp.presentation.common.contactEventLabel
-import com.m4isper.contactsapp.presentation.common.emailKindLabel
-import com.m4isper.contactsapp.presentation.common.instantMessageLabel
-import com.m4isper.contactsapp.presentation.common.openEmail
-import com.m4isper.contactsapp.presentation.common.openMap
-import com.m4isper.contactsapp.presentation.common.openWebsite
-import com.m4isper.contactsapp.presentation.common.relationLabel
+import com.m4isper.contactsapp.presentation.common.format.addressKindLabel
+import com.m4isper.contactsapp.presentation.common.format.birthdayText
+import com.m4isper.contactsapp.presentation.common.format.contactEventLabel
+import com.m4isper.contactsapp.presentation.common.format.emailKindLabel
+import com.m4isper.contactsapp.presentation.common.format.instantMessageLabel
+import com.m4isper.contactsapp.presentation.common.format.relationLabel
+import com.m4isper.contactsapp.presentation.common.share.openEmail
+import com.m4isper.contactsapp.presentation.common.share.openMap
+import com.m4isper.contactsapp.presentation.common.share.openWebsite
 
 @Composable
 internal fun DetailsContent(

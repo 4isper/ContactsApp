@@ -13,9 +13,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.m4isper.contactsapp.presentation.common.PermissionRequest
-import com.m4isper.contactsapp.presentation.common.hasPermission
-import com.m4isper.contactsapp.presentation.common.openAppSettings
+import com.m4isper.contactsapp.presentation.common.permissions.PermissionRequest
+import com.m4isper.contactsapp.presentation.common.permissions.hasPermission
+import com.m4isper.contactsapp.presentation.common.permissions.openAppSettings
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
 @Composable

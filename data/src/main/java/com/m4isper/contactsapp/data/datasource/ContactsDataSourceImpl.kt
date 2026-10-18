@@ -7,6 +7,12 @@ import android.provider.ContactsContract.CommonDataKinds.Nickname
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.Relation
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
+import com.m4isper.contactsapp.data.datasource.read.CONTACT_DATA_PROJECTION
+import com.m4isper.contactsapp.data.datasource.read.ContactHeaderRow
+import com.m4isper.contactsapp.data.datasource.read.DataColumns
+import com.m4isper.contactsapp.data.datasource.read.DataRow
+import com.m4isper.contactsapp.data.datasource.read.aggregateContacts
+import com.m4isper.contactsapp.data.datasource.read.buildContactDetails
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding

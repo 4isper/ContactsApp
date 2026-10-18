@@ -26,7 +26,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.EditableEmail
 import com.m4isper.contactsapp.domain.model.EmailKind
-import com.m4isper.contactsapp.presentation.common.emailKindLabel
+import com.m4isper.contactsapp.presentation.common.format.emailKindLabel
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 
 @Composable

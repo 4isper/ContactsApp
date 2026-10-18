@@ -4,7 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.widget.Toast
 import com.m4isper.contactsapp.R
-import com.m4isper.contactsapp.presentation.common.shareContacts
+import com.m4isper.contactsapp.presentation.common.share.shareContacts
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

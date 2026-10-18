@@ -21,7 +21,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.PhoneNumber
-import com.m4isper.contactsapp.presentation.common.phoneKindLabel
+import com.m4isper.contactsapp.presentation.common.format.phoneKindLabel
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 
 @Composable

@@ -11,8 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import com.m4isper.contactsapp.R
-import com.m4isper.contactsapp.presentation.common.hasPermission
 import com.m4isper.contactsapp.presentation.common.logw
+import com.m4isper.contactsapp.presentation.common.permissions.hasPermission
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

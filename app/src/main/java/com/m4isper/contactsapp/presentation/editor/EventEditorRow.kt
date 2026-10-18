@@ -30,8 +30,8 @@ import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.EditableEvent
 import com.m4isper.contactsapp.domain.model.EventKind
-import com.m4isper.contactsapp.presentation.common.birthdayText
-import com.m4isper.contactsapp.presentation.common.eventKindLabel
+import com.m4isper.contactsapp.presentation.common.format.birthdayText
+import com.m4isper.contactsapp.presentation.common.format.eventKindLabel
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 import java.time.LocalDate
 
