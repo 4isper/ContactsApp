@@ -600,4 +600,95 @@ class ContactEditorViewModelTest {
             advanceUntilIdle()
             assertEquals(false, viewModel.isDirty())
         }
+
+    @Test
+    fun `untouched unparsed event keeps form not dirty and survives save`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeEditorRepository().apply {
+                    formToLoad =
+                        ContactForm(
+                            name = EditableName(display = "Anna"),
+                            events =
+                                listOf(
+                                    EditableEvent(
+                                        dataId = 6,
+                                        kind = EventKind.OTHER,
+                                        unparsedDate = "1985-03-0X",
+                                    ),
+                                ),
+                        )
+                }
+            val viewModel = viewModel(repository)
+            viewModel.load(7)
+            advanceUntilIdle()
+
+            val event =
+                viewModel.uiState.value.events
+                    .single()
+                    .value
+            assertEquals("1985-03-0X", event.unparsedDate)
+            assertEquals(false, viewModel.isDirty())
+
+            viewModel.onSave()
+            advanceUntilIdle()
+
+            val form = repository.updated.single().second
+            assertEquals("1985-03-0X", form.events.single().unparsedDate)
+            assertEquals(null, form.events.single().date)
+        }
+
+    @Test
+    fun `removing unparsed event makes form dirty`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeEditorRepository().apply {
+                    formToLoad =
+                        ContactForm(
+                            name = EditableName(display = "Anna"),
+                            events =
+                                listOf(
+                                    EditableEvent(
+                                        dataId = 6,
+                                        kind = EventKind.OTHER,
+                                        unparsedDate = "1985-03-0X",
+                                    ),
+                                ),
+                        )
+                }
+            val viewModel = viewModel(repository)
+            viewModel.load(7)
+            advanceUntilIdle()
+
+            val rowId =
+                viewModel.uiState.value.events
+                    .single()
+                    .rowId
+            viewModel.onRemoveEvent(rowId)
+            advanceUntilIdle()
+
+            assertEquals(true, viewModel.isDirty())
+        }
+
+    @Test
+    fun `repeated load of same contact keeps unsaved edits`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeEditorRepository().apply {
+                    formToLoad = ContactForm(name = EditableName(display = "Anna"))
+                }
+            val viewModel = viewModel(repository)
+            viewModel.load(7)
+            advanceUntilIdle()
+
+            viewModel.onDisplayNameChange("Edited")
+            // Повторный вызов — например, после возврата с экрана системных разрешений.
+            viewModel.load(7)
+            advanceUntilIdle()
+
+            assertEquals("Edited", viewModel.uiState.value.displayName)
+        }
 }

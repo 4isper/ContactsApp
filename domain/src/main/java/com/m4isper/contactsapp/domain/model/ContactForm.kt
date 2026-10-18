@@ -69,6 +69,11 @@ data class EditableEvent(
     val date: Birthday? = null,
     val kind: EventKind = EventKind.ANNIVERSARY,
     val customLabel: String? = null,
+    /**
+     * Дата в формате провайдера, которую не удалось разобрать: строка события не теряется,
+     * сохраняется как есть, пока пользователь не задаст дату.
+     */
+    val unparsedDate: String? = null,
 )
 
 enum class NameMode {
@@ -164,4 +169,4 @@ private fun ContactForm.isEffectivelyEmpty(): Boolean =
         birthday.value == null &&
         nickname.nickname.isBlank() &&
         relations.none { it.name.isNotBlank() } &&
-        events.none { it.date != null }
+        events.none { it.date != null || it.unparsedDate != null }

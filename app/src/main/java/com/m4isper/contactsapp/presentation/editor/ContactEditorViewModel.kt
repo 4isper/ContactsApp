@@ -30,6 +30,7 @@ import com.m4isper.contactsapp.domain.usecase.DeleteContactUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactFormUseCase
 import com.m4isper.contactsapp.domain.usecase.SaveResult
 import com.m4isper.contactsapp.domain.usecase.UpdateContactUseCase
+import com.m4isper.contactsapp.presentation.common.logw
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
@@ -40,6 +41,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+private const val EDITOR_TAG = "ContactEditor"
 
 /**
  * Строка списка в редакторе: доменная модель плюс стабильный [rowId] для Compose-ключа.
@@ -179,7 +182,7 @@ private fun ContactForm.withoutBlankRows(): ContactForm =
                 .map { it.copy(customLabel = it.customLabel.stripped()) },
         events =
             events
-                .filter { it.date != null }
+                .filter { it.date != null || it.unparsedDate != null }
                 .map { it.copy(customLabel = it.customLabel.stripped()) },
     )
 
@@ -199,11 +202,18 @@ class ContactEditorViewModel(
     private val state = MutableStateFlow(EditorUiState())
     private var nextRowId = 0L
 
+    /** Повторный load того же контакта (например, после выдачи разрешения) не перезагружает форму. */
+    private var loadStarted = false
+    private var loadStartedFor: Long? = null
+
     internal val uiState: StateFlow<EditorUiState> = state.asStateFlow()
 
     // Catch-all осознанный: любая ошибка превращается в Error-стейт.
     @Suppress("TooGenericExceptionCaught")
     fun load(id: Long?) {
+        if (loadStarted && loadStartedFor == id) return
+        loadStarted = true
+        loadStartedFor = id
         if (id == null) {
             state.value = EditorUiState(phones = listOf(newRow(EditablePhone(number = ""))))
             return
@@ -225,6 +235,7 @@ class ContactEditorViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                logw(EDITOR_TAG, "load contact form failed", e)
                 state.update { it.copy(errorMessage = e.message, isBusy = false) }
             }
         }
@@ -464,6 +475,7 @@ class ContactEditorViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                logw(EDITOR_TAG, "save contact failed", e)
                 state.update { it.copy(errorMessage = e.message) }
             } finally {
                 state.update { it.copy(isBusy = false) }
@@ -483,6 +495,7 @@ class ContactEditorViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                logw(EDITOR_TAG, "delete contact failed", e)
                 state.update { it.copy(errorMessage = e.message) }
             } finally {
                 state.update { it.copy(isBusy = false) }
@@ -491,7 +504,7 @@ class ContactEditorViewModel(
     }
 
     private fun updateData(transform: (EditorUiState) -> EditorUiState) {
-        state.update { transform(it).copy(formError = null) }
+        state.update { transform(it).copy(formError = null, errorMessage = null) }
     }
 
     /** Новая строка со стабильным ключом: счётчик живёт в пределах экрана. */

@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp.data.vcard
 
+import com.m4isper.contactsapp.domain.model.AddressKind
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.EditableAddress
@@ -14,9 +15,11 @@ import com.m4isper.contactsapp.domain.model.EditableOrganization
 import com.m4isper.contactsapp.domain.model.EditablePhone
 import com.m4isper.contactsapp.domain.model.EditableRelation
 import com.m4isper.contactsapp.domain.model.EditableWebsite
+import com.m4isper.contactsapp.domain.model.EmailKind
 import com.m4isper.contactsapp.domain.model.EventKind
 import com.m4isper.contactsapp.domain.model.NameMode
 import com.m4isper.contactsapp.domain.model.NameParts
+import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.RelationKind
 import java.util.Locale
 
@@ -33,7 +36,11 @@ internal fun parseVCards(text: String): List<ContactForm> {
         val marker = line.trim().uppercase(Locale.ROOT)
         val container = cardLines
         when {
-            marker == "BEGIN:VCARD" -> cardLines = mutableListOf()
+            marker == "BEGIN:VCARD" -> {
+                // Незакрытый блок (битый файл) не теряем: разбираем его до нового BEGIN.
+                container?.let { parseVCardBlock(it)?.let(forms::add) }
+                cardLines = mutableListOf()
+            }
             marker == "END:VCARD" -> {
                 container?.let { parseVCardBlock(it)?.let(forms::add) }
                 cardLines = null
@@ -45,7 +52,7 @@ internal fun parseVCards(text: String): List<ContactForm> {
 }
 
 private fun parseVCardBlock(lines: List<String>): ContactForm? {
-    val builder = VCardBuilder()
+    val builder = VCardAccumulator()
     lines.forEach(builder::apply)
     return builder.build()
 }
@@ -72,23 +79,26 @@ private data class VCardProperty(
     val params: Map<String, String>,
     val types: Set<String>,
     val value: String,
+    val group: String? = null,
 )
 
 /**
- * Строка свойства вида "имя-или-группа.имя;параметры:значение".
- * Групповой префикс (item1.) отбрасывается, TYPE-параметры собираются в types свойства.
+ * Разбирает строку свойства: имя, параметры и значение.
+ * Групповой префикс сохраняется, на него ссылаются подписи X-ABLabel.
  */
 private fun parseVCardProperty(line: String): VCardProperty? {
     val colon = line.indexOf(':')
     if (colon <= 0) return null
     val value = line.substring(colon + 1)
     val segments = line.substring(0, colon).split(';')
-    val name =
-        segments
-            .first()
-            .substringAfterLast('.')
+    val head = segments.first().trim()
+    val name = head.substringAfterLast('.').trim().uppercase(Locale.ROOT)
+    val group =
+        head
+            .substringBeforeLast('.', missingDelimiterValue = "")
             .trim()
-            .uppercase(Locale.ROOT)
+            .lowercase(Locale.ROOT)
+            .takeIf { it.isNotEmpty() }
     val params = mutableMapOf<String, String>()
     val types = mutableSetOf<String>()
     segments.drop(1).forEach { segment ->
@@ -109,10 +119,14 @@ private fun parseVCardProperty(line: String): VCardProperty? {
                 ?.let(types::add)
         }
     }
-    return if (name.isEmpty()) null else VCardProperty(name = name, params = params, types = types, value = value)
+    return if (name.isEmpty()) {
+        null
+    } else {
+        VCardProperty(name = name, params = params, types = types, value = value, group = group)
+    }
 }
 
-private class VCardBuilder {
+private class VCardAccumulator {
     private var displayName = ""
     private var parts: NameParts? = null
     private val phones = mutableListOf<EditablePhone>()
@@ -128,8 +142,15 @@ private class VCardBuilder {
     private var nickname = ""
     private var birthday: Birthday? = null
 
+    /** Подписи itemN.X-ABLabel применяются к последнему элементу группы itemN. */
+    private val groupLabelAppliers = mutableMapOf<String, (String) -> Unit>()
+
     fun apply(line: String) {
         val property = parseVCardProperty(line) ?: return
+        if (property.name == "X-ABLABEL") {
+            applyGroupLabel(property)
+            return
+        }
         val value = unescapeVCard(property.value)
         when (property.name) {
             "FN", "N", "ORG", "TITLE", "NOTE", "BDAY", "NICKNAME" -> applyIdentityProperty(property, value)
@@ -137,6 +158,49 @@ private class VCardBuilder {
             "ANNIVERSARY", "X-ABDATE", "RELATED", "X-ABRELATEDNAMES" -> applyExtraProperty(property, value)
         }
     }
+
+    private fun applyGroupLabel(property: VCardProperty) {
+        val group = property.group ?: return
+        val label = cleanVCardLabel(unescapeVCard(property.value))
+        if (label.isNotEmpty()) {
+            groupLabelAppliers[group]?.invoke(label)
+        }
+    }
+
+    /**
+     * Запоминает, как применить подпись группы: строка itemN.X-ABLabel идёт
+     * после самого свойства и уточняет уже добавленный элемент.
+     */
+    private fun <T> rememberGroupLabel(
+        property: VCardProperty,
+        items: MutableList<T>,
+        index: Int,
+        withLabel: (T, String) -> T,
+    ) {
+        val group = property.group ?: return
+        groupLabelAppliers[group] = { label -> items[index] = withLabel(items[index], label) }
+    }
+
+    private fun phoneWithLabel(
+        phone: EditablePhone,
+        label: String,
+    ): EditablePhone =
+        phoneKindOfVCardLabel(label)?.let { phone.copy(kind = it) }
+            ?: phone.copy(kind = PhoneKind.OTHER, customLabel = label)
+
+    private fun emailWithLabel(
+        email: EditableEmail,
+        label: String,
+    ): EditableEmail =
+        emailKindOfVCardLabel(label)?.let { email.copy(kind = it) }
+            ?: email.copy(kind = EmailKind.OTHER, customLabel = label)
+
+    private fun addressWithLabel(
+        address: EditableAddress,
+        label: String,
+    ): EditableAddress =
+        addressKindOfVCardLabel(label)?.let { address.copy(kind = it) }
+            ?: address.copy(kind = AddressKind.OTHER, customLabel = label)
 
     private fun applyIdentityProperty(
         property: VCardProperty,
@@ -162,11 +226,13 @@ private class VCardBuilder {
                 val number = cleanPhoneNumber(value)
                 if (number.isNotBlank()) {
                     phones += EditablePhone(number = number, kind = phoneKindOfVCard(property.types))
+                    rememberGroupLabel(property, phones, phones.lastIndex, ::phoneWithLabel)
                 }
             }
             "EMAIL" -> {
                 if (value.isNotBlank()) {
                     emails += EditableEmail(address = value, kind = emailKindOfVCard(property.types))
+                    rememberGroupLabel(property, emails, emails.lastIndex, ::emailWithLabel)
                 }
             }
             "ADR" -> {
@@ -177,6 +243,7 @@ private class VCardBuilder {
                             address = joined,
                             kind = addressKindOfVCard(property.types),
                         )
+                    rememberGroupLabel(property, addresses, addresses.lastIndex, ::addressWithLabel)
                 }
             }
             "URL" -> {
@@ -213,6 +280,10 @@ private class VCardBuilder {
                             kind = EventKind.OTHER,
                             customLabel = vcardLabelOf(property.params),
                         )
+                    rememberGroupLabel(property, events, events.lastIndex) { event, label ->
+                        eventKindOfVCardLabel(label)?.let { event.copy(kind = it, customLabel = null) }
+                            ?: event.copy(kind = EventKind.OTHER, customLabel = label)
+                    }
                 }
             "RELATED", "X-ABRELATEDNAMES" ->
                 if (value.isNotBlank()) {
@@ -223,6 +294,9 @@ private class VCardBuilder {
                             kind = kind,
                             customLabel = vcardLabelOf(property.params).takeIf { kind == RelationKind.OTHER },
                         )
+                    rememberGroupLabel(property, relations, relations.lastIndex) { relation, label ->
+                        relation.copy(kind = RelationKind.OTHER, customLabel = label)
+                    }
                 }
         }
     }

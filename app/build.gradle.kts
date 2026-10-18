@@ -40,6 +40,13 @@ android {
         compose = true
         buildConfig = true
     }
+
+    testOptions {
+        unitTests {
+            // Стенды android.util.Log и подобных классов в JVM-тестах не должны падать.
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 dependencies {

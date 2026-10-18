@@ -10,6 +10,7 @@ import com.m4isper.contactsapp.domain.usecase.ImportContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.domain.vcard.VCardCodec
 import com.m4isper.contactsapp.presentation.common.Loadable
+import com.m4isper.contactsapp.presentation.common.logw
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
@@ -75,6 +76,8 @@ sealed interface ContactsEvent {
 }
 
 internal const val SUBSCRIBE_TIMEOUT_MILLIS = 5_000L
+
+private const val LIST_TAG = "ContactsList"
 
 private data class ContactsLoad(
     val all: List<ContactDetails>,
@@ -277,7 +280,8 @@ class ContactsViewModel(
                     ids.mapNotNull { getContactDetailsUseCase(it) }
                 } catch (e: CancellationException) {
                     throw e
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    logw(LIST_TAG, "share vCard encode failed", e)
                     emptyList()
                 }
             eventFlow.value = ContactsEvent.Share(vCardCodec.encode(contacts))
@@ -301,6 +305,7 @@ class ContactsViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                logw(LIST_TAG, "refresh contacts failed", e)
                 loadFailure.value = e
             } finally {
                 isLoading.value = false
@@ -310,6 +315,9 @@ class ContactsViewModel(
 
     fun clear() {
         allContacts.value = emptyList()
+        searchQueryFlow.value = ""
+        favoritesOnlyFlow.value = false
+        loadFailure.value = null
         selectionFlow.value = emptySet()
     }
 }

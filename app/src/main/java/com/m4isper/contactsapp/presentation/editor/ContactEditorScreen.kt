@@ -1,6 +1,7 @@
 package com.m4isper.contactsapp.presentation.editor
 
 import android.Manifest
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -125,6 +126,11 @@ fun ContactEditorScreen(
         } else {
             onBack()
         }
+    }
+
+    // Системный и предиктивный back тоже проходят через guard несохранённых изменений.
+    BackHandler(enabled = hasWritePermission) {
+        tryBack()
     }
 
     if (!hasWritePermission) {

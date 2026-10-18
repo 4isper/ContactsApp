@@ -949,4 +949,30 @@ class ContactsViewModelTest {
 
             assertEquals(ContactsEvent.ExportFailed, viewModel.uiState.value.event)
         }
+
+    @Test
+    fun `clear resets search favorites and failure`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            repository.failure = RuntimeException("boom")
+            viewModel.refresh()
+            advanceUntilIdle()
+            assertTrue(viewModel.uiState.value.content is Loadable.Error)
+
+            viewModel.onSearchQueryChange("ann")
+            viewModel.onToggleFavoritesOnly()
+            advanceUntilIdle()
+
+            viewModel.clear()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals("", state.searchQuery)
+            assertEquals(false, state.showFavoritesOnly)
+            assertEquals(emptySet<Long>(), state.selection)
+            assertTrue(state.content is Loadable.Empty)
+        }
 }

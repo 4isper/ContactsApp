@@ -72,6 +72,7 @@ import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.hasPermission
+import com.m4isper.contactsapp.presentation.common.logw
 import com.m4isper.contactsapp.ui.components.ConfirmDialog
 import com.m4isper.contactsapp.ui.components.EmptyState
 import com.m4isper.contactsapp.ui.components.ErrorState
@@ -84,6 +85,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private const val EXPORT_FILE_NAME = "contacts.vcf"
+
+private const val IMPORT_TAG = "ContactsImport"
 
 /** MIME-типы, под которыми файловые менеджеры отдают .vcf. */
 private val VCARD_IMPORT_MIME_TYPES =
@@ -145,12 +148,16 @@ internal fun ContactList(
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             if (uri != null) {
                 scope.launch {
+                    // Битый или отозванный документ не должен ронять экран: читаем безопасно,
+                    // при любой ошибке пользователь увидит общий тост о неудачном импорте.
                     val text =
                         withContext(Dispatchers.IO) {
-                            context.contentResolver
-                                .openInputStream(uri)
-                                ?.bufferedReader()
-                                ?.use { it.readText() }
+                            runCatching {
+                                context.contentResolver
+                                    .openInputStream(uri)
+                                    ?.bufferedReader()
+                                    ?.use { it.readText() }
+                            }.onFailure { logw(IMPORT_TAG, "import file read failed", it) }.getOrNull()
                         }
                     if (text.isNullOrBlank()) {
                         Toast.makeText(context, R.string.import_failed, Toast.LENGTH_SHORT).show()

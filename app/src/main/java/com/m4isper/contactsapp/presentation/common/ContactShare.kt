@@ -5,17 +5,19 @@ import android.content.Intent
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.m4isper.contactsapp.R
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 
 private const val SHARE_TAG = "ContactsShare"
 
 /** Шарит один контакт: vCard-текст собирает слой данных, сюда приходит готовым. */
-internal fun shareContact(
+internal suspend fun shareContact(
     context: Context,
     vCardText: String,
 ) = shareContacts(context, vCardText)
 
-internal fun shareContacts(
+internal suspend fun shareContacts(
     context: Context,
     vCardText: String,
 ) {
@@ -23,10 +25,19 @@ internal fun shareContacts(
         showShareFailed(context)
         return
     }
+    // Одно фиксированное имя: повторные шаринги перезаписывают файл, кэш не растёт.
+    val file = File(context.cacheDir, "shared_contacts.vcf")
+    val written =
+        withContext(Dispatchers.IO) {
+            runCatching { file.writeText(vCardText) }
+                .onFailure { logw(SHARE_TAG, "write shared vCard failed", it) }
+                .isSuccess
+        }
+    if (!written) {
+        showShareFailed(context)
+        return
+    }
     runCatching {
-        // Одно фиксированное имя: повторные шаринги перезаписывают файл, кэш не растёт.
-        val file = File(context.cacheDir, "shared_contacts.vcf")
-        file.writeText(vCardText)
         val uri =
             FileProvider.getUriForFile(
                 context,

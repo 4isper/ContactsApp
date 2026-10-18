@@ -81,4 +81,15 @@ class ContactFormValidatorTest {
             ),
         )
     }
+
+    @Test
+    fun `event with unparsed date counts as non-empty form`() {
+        assertNull(
+            validateContactForm(
+                ContactForm(
+                    events = listOf(EditableEvent(unparsedDate = "1985-03-0X")),
+                ),
+            ),
+        )
+    }
 }

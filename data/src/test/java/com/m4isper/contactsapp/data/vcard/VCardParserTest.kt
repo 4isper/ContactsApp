@@ -179,6 +179,89 @@ class VCardParserTest {
             ).single()
 
         assertEquals("+79990001122", form.phones.single().number)
+        assertEquals(PhoneKind.OTHER, form.phones.single().kind)
+        assertEquals("Мобильный", form.phones.single().customLabel)
+    }
+
+    @Test
+    fun `unwraps android wrapped standard labels`() {
+        val wrappedWork = "_" + '$' + "!<Work>!" + '$' + "_"
+        val form =
+            parseVCards(
+                "BEGIN:VCARD\nFN:Kate\nitem1.TEL:111\nitem1.X-ABLabel:$wrappedWork\nEND:VCARD",
+            ).single()
+
+        assertEquals(PhoneKind.WORK, form.phones.single().kind)
+        assertEquals(null, form.phones.single().customLabel)
+    }
+
+    @Test
+    fun `applies ablabel to its own group only`() {
+        val form =
+            parseVCards(
+                """
+                BEGIN:VCARD
+                FN:Max
+                item1.TEL:111
+                item2.TEL:222
+                item2.X-ABLabel:Второй
+                END:VCARD
+                """.trimIndent(),
+            ).single()
+
+        assertEquals(listOf(null, "Второй"), form.phones.map { it.customLabel })
+    }
+
+    @Test
+    fun `parses event labels from ablabel groups`() {
+        val form =
+            parseVCards(
+                """
+                BEGIN:VCARD
+                FN:Lena
+                item1.X-ABDATE:2020-09-10
+                item1.X-ABLabel:Свадьба
+                item2.X-ABDATE:2015-06-01
+                item2.X-ABLabel:Anniversary
+                END:VCARD
+                """.trimIndent(),
+            ).single()
+
+        assertEquals(EventKind.OTHER, form.events[0].kind)
+        assertEquals("Свадьба", form.events[0].customLabel)
+        assertEquals(EventKind.ANNIVERSARY, form.events[1].kind)
+    }
+
+    @Test
+    fun `round-trips custom labels of phones and emails`() {
+        val details =
+            ContactDetails(
+                contactId = 1,
+                name = "Anna",
+                phones = listOf(PhoneNumber("111", PhoneKind.OTHER, customLabel = "Рабочий")),
+                emails = listOf(EmailAddress("a@x.com", EmailKind.OTHER, customLabel = "Личная")),
+            )
+
+        val form = parseVCards(buildVCards(listOf(details))).single()
+
+        assertEquals("Рабочий", form.phones.single().customLabel)
+        assertEquals("Личная", form.emails.single().customLabel)
+    }
+
+    @Test
+    fun `keeps card cut by repeated begin`() {
+        val forms =
+            parseVCards(
+                """
+                BEGIN:VCARD
+                FN:First
+                BEGIN:VCARD
+                FN:Second
+                END:VCARD
+                """.trimIndent(),
+            )
+
+        assertEquals(listOf("First", "Second"), forms.map { it.name.display })
     }
 
     @Test

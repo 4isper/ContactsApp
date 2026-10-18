@@ -3,7 +3,6 @@ package com.m4isper.contactsapp.data.datasource
 import android.content.ContentProviderOperation
 import android.provider.ContactsContract
 import android.provider.ContactsContract.CommonDataKinds.Email
-import android.provider.ContactsContract.CommonDataKinds.Event
 import android.provider.ContactsContract.CommonDataKinds.Note
 import android.provider.ContactsContract.CommonDataKinds.Organization
 import android.provider.ContactsContract.CommonDataKinds.Phone
@@ -200,23 +199,7 @@ private fun singleOperations(
             update = { dataId -> dataUpdate(dataId).withValues(noteValues(noteText)) },
         )
     val birthday = form.birthday.value
-    ops +=
-        when {
-            birthday == null ->
-                rows.birthday?.let { listOf(deleteDataOperation(it.dataId)) }.orEmpty()
-            rows.birthday != null ->
-                if (rows.birthday.raw == birthday.toStorageString()) {
-                    emptyList()
-                } else {
-                    listOf(dataUpdate(rows.birthday.dataId).withValues(eventValues(birthday)).build())
-                }
-            else ->
-                listOf(
-                    dataInsert(Event.CONTENT_ITEM_TYPE, rawContactId = rawContactId)
-                        .withValues(eventValues(birthday))
-                        .build(),
-                )
-        }
+    ops += birthdayWriteOperations(rawContactId, rows.birthday, birthday)
     return ops
 }
 

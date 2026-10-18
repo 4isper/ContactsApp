@@ -6,6 +6,7 @@ import android.provider.ContactsContract.CommonDataKinds.Relation
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactEvent
 import com.m4isper.contactsapp.domain.model.ContactRelation
+import com.m4isper.contactsapp.domain.model.EditableEvent
 import com.m4isper.contactsapp.domain.model.EventKind
 import com.m4isper.contactsapp.domain.model.RelationKind
 
@@ -80,3 +81,18 @@ internal fun nicknameOf(rows: List<DataRow>): String? =
         ?.data1
         ?.trim()
         ?.takeIf { it.isNotEmpty() }
+
+/**
+ * Событие в форме редактора: неразобранная дата сохраняется как есть —
+ * чтобы строка не исчезла из формы и не была удалена при сохранении.
+ */
+internal fun editableEventOf(row: ExistingEvent): EditableEvent {
+    val date = Birthday.parse(row.raw)
+    return EditableEvent(
+        dataId = row.dataId,
+        date = date,
+        kind = mapEventKind(row.type),
+        customLabel = customLabelOf(row.type, row.label, Event.TYPE_CUSTOM),
+        unparsedDate = row.raw.takeIf { date == null },
+    )
+}

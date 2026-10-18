@@ -5,15 +5,14 @@ import com.m4isper.contactsapp.data.datasource.ContactsDataSource
 import com.m4isper.contactsapp.data.datasource.ContactsWriterDataSource
 import com.m4isper.contactsapp.data.datasource.ExistingAddress
 import com.m4isper.contactsapp.data.datasource.ExistingEmail
-import com.m4isper.contactsapp.data.datasource.ExistingEvent
 import com.m4isper.contactsapp.data.datasource.ExistingInstantMessage
 import com.m4isper.contactsapp.data.datasource.ExistingName
 import com.m4isper.contactsapp.data.datasource.ExistingPhone
 import com.m4isper.contactsapp.data.datasource.ExistingRelation
 import com.m4isper.contactsapp.data.datasource.customLabelOf
+import com.m4isper.contactsapp.data.datasource.editableEventOf
 import com.m4isper.contactsapp.data.datasource.mapAddressKind
 import com.m4isper.contactsapp.data.datasource.mapEmailKind
-import com.m4isper.contactsapp.data.datasource.mapEventKind
 import com.m4isper.contactsapp.data.datasource.mapImProtocol
 import com.m4isper.contactsapp.data.datasource.mapPhoneKind
 import com.m4isper.contactsapp.data.datasource.mapRelationKind
@@ -23,7 +22,6 @@ import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.EditableAddress
 import com.m4isper.contactsapp.domain.model.EditableBirthday
 import com.m4isper.contactsapp.domain.model.EditableEmail
-import com.m4isper.contactsapp.domain.model.EditableEvent
 import com.m4isper.contactsapp.domain.model.EditableInstantMessage
 import com.m4isper.contactsapp.domain.model.EditableName
 import com.m4isper.contactsapp.domain.model.EditableNickname
@@ -76,7 +74,7 @@ class ContactsRepositoryImpl(
                     ?.let { EditableNickname(dataId = it.dataId, nickname = it.nickname) }
                     ?: EditableNickname(),
             relations = rows.relations.map { it.toEditable() },
-            events = rows.events.mapNotNull { it.toEditable() },
+            events = rows.events.map(::editableEventOf),
             photoUri = details.photoUri,
             photoChanged = false,
         )
@@ -181,19 +179,3 @@ private fun ExistingRelation.toEditable(): EditableRelation =
                 ContactsContract.CommonDataKinds.Relation.TYPE_CUSTOM,
             ),
     )
-
-/** Событие без разобранной даты пропускаем: показывать и редактировать нечего. */
-private fun ExistingEvent.toEditable(): EditableEvent? =
-    Birthday.parse(raw)?.let { date ->
-        EditableEvent(
-            dataId = dataId,
-            date = date,
-            kind = mapEventKind(type),
-            customLabel =
-                customLabelOf(
-                    type,
-                    label,
-                    ContactsContract.CommonDataKinds.Event.TYPE_CUSTOM,
-                ),
-        )
-    }

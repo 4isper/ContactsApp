@@ -1,9 +1,9 @@
 package com.m4isper.contactsapp.data.vcard
 
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactEvent
-import com.m4isper.contactsapp.domain.model.ContactRelation
+import com.m4isper.contactsapp.domain.model.AddressKind
+import com.m4isper.contactsapp.domain.model.EmailKind
 import com.m4isper.contactsapp.domain.model.EventKind
+import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.RelationKind
 import java.util.Locale
 
@@ -21,29 +21,42 @@ internal fun relationKindOfVCard(types: Set<String>): RelationKind =
 internal fun vcardLabelOf(params: Map<String, String>): String? =
     params["X-ABLABEL"]?.trim()?.takeIf { it.isNotEmpty() }
 
-/** Связь: RELATED с TYPE; метка произвольного вида — в X-ABLabel. */
-internal fun vcardRelationProperty(relation: ContactRelation): String {
-    val label = relation.customLabel?.takeIf { relation.kind == RelationKind.OTHER && it.isNotBlank() }
-    val head =
-        buildString {
-            append("RELATED;TYPE=").append(vcardRelationType(relation.kind))
-            label?.let { append(";X-ABLabel=").append(it) }
-        }
-    return "$head:${escapeVCard(relation.name)}"
-}
+/** Подпись "Anniversary" — это вид события, а не произвольная подпись. */
+internal fun eventKindOfVCardLabel(label: String): EventKind? =
+    if (label.trim().lowercase(Locale.ROOT) == "anniversary") EventKind.ANNIVERSARY else null
 
-/** Годовщина — стандартное ANNIVERSARY, прочие даты — X-ABDATE (формат Apple/Android). */
-internal fun vcardEventProperty(event: ContactEvent): String {
-    val name = if (event.kind == EventKind.ANNIVERSARY) "ANNIVERSARY" else "X-ABDATE"
-    val label = event.customLabel?.takeIf { event.kind == EventKind.OTHER && it.isNotBlank() }
-    val head = if (label == null) name else "$name;X-ABLabel=$label"
-    return "$head:${event.date.toStorageString()}"
-}
-
-/** Расширенные свойства экспорта: никнейм, связи и события. */
-internal fun vcardExtraLines(details: ContactDetails): List<String> =
-    buildList {
-        details.nickname?.let { add("NICKNAME:${escapeVCard(it)}") }
-        details.relations.forEach { add(vcardRelationProperty(it)) }
-        details.events.forEach { add(vcardEventProperty(it)) }
+/** Подпись X-ABLabel может совпадать со стандартным типом: тогда это тип, а не CUSTOM. */
+internal fun phoneKindOfVCardLabel(label: String): PhoneKind? =
+    when (label.trim().lowercase(Locale.ROOT)) {
+        "mobile", "cell" -> PhoneKind.MOBILE
+        "home" -> PhoneKind.HOME
+        "work" -> PhoneKind.WORK
+        else -> null
     }
+
+internal fun emailKindOfVCardLabel(label: String): EmailKind? =
+    when (label.trim().lowercase(Locale.ROOT)) {
+        "home" -> EmailKind.HOME
+        "work" -> EmailKind.WORK
+        else -> null
+    }
+
+internal fun addressKindOfVCardLabel(label: String): AddressKind? =
+    when (label.trim().lowercase(Locale.ROOT)) {
+        "home" -> AddressKind.HOME
+        "work" -> AddressKind.WORK
+        else -> null
+    }
+
+private const val ANDROID_LABEL_PREFIX = "_\$!<"
+private const val ANDROID_LABEL_SUFFIX = ">!\$_"
+
+/** Подпись группы itemN.X-ABLabel: Android оборачивает стандартные имена в _$!<...>!$_. */
+internal fun cleanVCardLabel(raw: String): String {
+    val trimmed = raw.trim()
+    return if (trimmed.startsWith(ANDROID_LABEL_PREFIX) && trimmed.endsWith(ANDROID_LABEL_SUFFIX)) {
+        trimmed.substring(ANDROID_LABEL_PREFIX.length, trimmed.length - ANDROID_LABEL_SUFFIX.length)
+    } else {
+        trimmed
+    }
+}

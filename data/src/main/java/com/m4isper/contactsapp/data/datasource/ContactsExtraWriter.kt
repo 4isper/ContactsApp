@@ -60,31 +60,62 @@ internal fun contactEventValues(
 ): ContentValues =
     ContentValues().apply {
         put(Event.START_DATE, date.toStorageString())
-        put(Event.TYPE, eventTypeInt(event))
-        put(Event.LABEL, event.customLabel.takeIf { event.kind == EventKind.OTHER && !it.isNullOrBlank() })
+        putEventKindAndLabel(event)
     }
 
-/** События без даты не сохраняются: строка события без даты бессмысленна. */
+/** Событие с неразобранной датой: дата пишется обратно как есть, вид и подпись — из формы. */
+internal fun preservedEventValues(
+    rawDate: String,
+    event: EditableEvent,
+): ContentValues =
+    ContentValues().apply {
+        put(Event.START_DATE, rawDate)
+        putEventKindAndLabel(event)
+    }
+
+private fun ContentValues.putEventKindAndLabel(event: EditableEvent) {
+    put(Event.TYPE, eventTypeInt(event))
+    put(Event.LABEL, event.customLabel.takeIf { event.kind == EventKind.OTHER && !it.isNullOrBlank() })
+}
+
+/** События без даты (плейсхолдеры строк) в план не попадают; неразобранные строки сохраняются. */
 internal fun eventOperations(
     rawContactId: Long,
     rows: ContactRows,
     form: ContactForm,
-): List<ContentProviderOperation> {
-    val dated =
-        form.events.mapNotNull { event -> event.date?.let { date -> event to date } }
-    return diffListOperations(
-        newItems = dated,
-        existingIds = rows.events.mapTo(mutableSetOf()) { it.dataId },
-        dataIdOf = { (event, _) -> event.dataId },
-        insert = { (event, date) ->
-            dataInsert(Event.CONTENT_ITEM_TYPE, rawContactId = rawContactId)
-                .withValues(contactEventValues(event, date))
-        },
-        update = { dataId, (event, date) ->
-            dataUpdate(dataId).withValues(contactEventValues(event, date))
-        },
-    )
-}
+): List<ContentProviderOperation> =
+    planEventWriteOps(rows.events, form.events).map { op ->
+        when (op) {
+            is EventWriteOp.Insert ->
+                dataInsert(Event.CONTENT_ITEM_TYPE, rawContactId = rawContactId)
+                    .withValues(contactEventValues(op.event, op.date))
+                    .build()
+            is EventWriteOp.Update ->
+                dataUpdate(op.dataId).withValues(contactEventValues(op.event, op.date)).build()
+            is EventWriteOp.UpdatePreserved ->
+                dataUpdate(op.dataId).withValues(preservedEventValues(op.rawDate, op.event)).build()
+            is EventWriteOp.Delete -> deleteDataOperation(op.dataId)
+        }
+    }
+
+/** Операции дня рождения по плану [planBirthdayWrite]: неразобранная дата не удаляется. */
+internal fun birthdayWriteOperations(
+    rawContactId: Long,
+    existing: ExistingBirthday?,
+    value: Birthday?,
+): List<ContentProviderOperation> =
+    when (val plan = planBirthdayWrite(existing, value)) {
+        BirthdayWriteOp.None -> emptyList()
+        is BirthdayWriteOp.Insert ->
+            listOf(
+                dataInsert(Event.CONTENT_ITEM_TYPE, rawContactId = rawContactId)
+                    .withValues(eventValues(plan.value))
+                    .build(),
+            )
+        is BirthdayWriteOp.Update ->
+            listOf(dataUpdate(plan.dataId).withValues(eventValues(plan.value)).build())
+        is BirthdayWriteOp.Delete -> listOf(deleteDataOperation(plan.dataId))
+    }
 
 internal fun nicknameValues(nickname: String): ContentValues =
     ContentValues().apply {

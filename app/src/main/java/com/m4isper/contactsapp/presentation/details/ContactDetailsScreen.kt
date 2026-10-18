@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp.presentation.details
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -40,6 +41,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,6 +78,7 @@ import com.m4isper.contactsapp.ui.components.ErrorState
 import com.m4isper.contactsapp.ui.components.LoadingState
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 import dev.zacsweers.metrox.viewmodel.metroViewModel
+import kotlinx.coroutines.launch
 
 private data class CallTarget(
     val name: String,
@@ -99,6 +102,7 @@ fun ContactDetailsScreen(
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val requestCall = rememberCallHandler()
+    val scope = rememberCoroutineScope()
 
     var pendingConfirm by remember { mutableStateOf<CallTarget?>(null) }
 
@@ -122,7 +126,14 @@ fun ContactDetailsScreen(
                 isFavorite = uiState.isFavorite,
                 onBack = onBack,
                 onEdit = onEdit,
-                onShare = { viewModel.vCardText()?.let { content -> shareContact(context, content) } },
+                onShare = {
+                    val vCard = viewModel.vCardText()
+                    if (vCard == null) {
+                        Toast.makeText(context, R.string.share_failed, Toast.LENGTH_SHORT).show()
+                    } else {
+                        scope.launch { shareContact(context, vCard) }
+                    }
+                },
                 onToggleFavorite = viewModel::toggleFavorite,
             )
         },

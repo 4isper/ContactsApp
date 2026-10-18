@@ -8,6 +8,7 @@ import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
 import com.m4isper.contactsapp.domain.vcard.VCardCodec
 import com.m4isper.contactsapp.presentation.common.Loadable
+import com.m4isper.contactsapp.presentation.common.logw
 import com.m4isper.contactsapp.presentation.contacts.SUBSCRIBE_TIMEOUT_MILLIS
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
@@ -20,6 +21,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+private const val DETAILS_TAG = "ContactDetails"
 
 data class DetailsUiState(
     val content: Loadable<ContactDetails> = Loadable.Loading,
@@ -74,10 +77,18 @@ class ContactDetailsViewModel(
         refresh()
     }
 
+    // Catch-all осознанный: сбой записи избранного не должен ронять экран.
+    @Suppress("TooGenericExceptionCaught")
     fun toggleFavorite() {
         val contactId = selectedContactId.value ?: return
         viewModelScope.launch {
-            toggleFavoriteUseCase(contactId)
+            try {
+                toggleFavoriteUseCase(contactId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logw(DETAILS_TAG, "toggleFavorite failed", e)
+            }
         }
     }
 

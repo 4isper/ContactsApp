@@ -268,9 +268,11 @@ class VCardBuilderTest {
             listOf(
                 "NICKNAME:Нюша",
                 "RELATED;TYPE=FRIEND:Bob",
-                "RELATED;TYPE=OTHER;X-ABLabel=Кум:Михалыч",
+                "item1.RELATED;TYPE=OTHER:Михалыч",
+                "item1.X-ABLabel:Кум",
                 "ANNIVERSARY:2015-06-01",
-                "X-ABDATE;X-ABLabel=Свадьба:--09-10",
+                "item2.X-ABDATE:--09-10",
+                "item2.X-ABLabel:Свадьба",
             ),
             vcard
                 .trim()
@@ -278,5 +280,50 @@ class VCardBuilderTest {
                 .drop(3)
                 .dropLast(1),
         )
+    }
+
+    @Test
+    fun `writes custom labels of contacts as item groups`() {
+        val details =
+            ContactDetails(
+                contactId = 7,
+                name = "Anna",
+                phones = listOf(PhoneNumber("111", PhoneKind.OTHER, customLabel = "Рабочий")),
+                emails = listOf(EmailAddress("a@x.com", EmailKind.OTHER, customLabel = "Личная")),
+                addresses = listOf(PostalAddress("Moscow 1", AddressKind.OTHER, customLabel = "Дача")),
+            )
+
+        val vcard = buildVCard(details)
+
+        assertEquals(
+            listOf(
+                "item1.TEL;TYPE=VOICE:111",
+                "item1.X-ABLabel:Рабочий",
+                "item2.EMAIL;TYPE=OTHER:a@x.com",
+                "item2.X-ABLabel:Личная",
+                "item3.ADR;TYPE=OTHER:;;Moscow 1;;;;",
+                "item3.X-ABLabel:Дача",
+            ),
+            vcard
+                .trim()
+                .lines()
+                .drop(3)
+                .dropLast(1),
+        )
+    }
+
+    @Test
+    fun `escapes carriage returns and urls`() {
+        val details =
+            ContactDetails(
+                contactId = 1,
+                name = "line1\r\nline2\rline3",
+                websites = listOf(Website("https://x.dev/a,b")),
+            )
+
+        val vcard = buildVCard(details)
+
+        assertEquals("FN:line1\\nline2\\nline3", vcard.lines().first { it.startsWith("FN:") })
+        assertEquals("URL:https://x.dev/a\\,b", vcard.lines().first { it.startsWith("URL:") })
     }
 }
