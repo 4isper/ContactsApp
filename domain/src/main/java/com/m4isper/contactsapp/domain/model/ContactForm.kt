@@ -159,14 +159,22 @@ fun validateContactForm(form: ContactForm): FormError? =
 
 private fun ContactForm.isEffectivelyEmpty(): Boolean =
     name.isEmpty &&
-        phones.none { it.number.isNotBlank() } &&
+        hasNoListFields() &&
+        hasNoSingleFields()
+
+/** Многозначные поля (списки строк) не заполнены. */
+private fun ContactForm.hasNoListFields(): Boolean =
+    phones.none { it.number.isNotBlank() } &&
         emails.none { it.address.isNotBlank() } &&
         addresses.none { it.address.isNotBlank() } &&
         websites.none { it.url.isNotBlank() } &&
         instantMessages.none { it.address.isNotBlank() } &&
-        organization.isEmpty &&
-        note.note.isBlank() &&
-        birthday.value == null &&
-        nickname.nickname.isBlank() &&
         relations.none { it.name.isNotBlank() } &&
         events.none { it.date != null || it.unparsedDate != null }
+
+/** Одиночные поля (организация, заметка, ДР, никнейм) не заполнены. */
+private fun ContactForm.hasNoSingleFields(): Boolean =
+    organization.isEmpty &&
+        note.note.isBlank() &&
+        birthday.value == null &&
+        nickname.nickname.isBlank()

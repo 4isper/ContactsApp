@@ -2,14 +2,10 @@ package com.m4isper.contactsapp.data.datasource
 
 import android.content.ContentProviderOperation
 import android.provider.ContactsContract
-import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Note
 import android.provider.ContactsContract.CommonDataKinds.Organization
-import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.Photo
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
-import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
-import android.provider.ContactsContract.CommonDataKinds.Website
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.EditableName
 
@@ -120,54 +116,11 @@ private fun listOperations(
     rawContactId: Long,
     rows: ContactRows,
     form: ContactForm,
-): List<ContentProviderOperation> {
-    val ops = mutableListOf<ContentProviderOperation>()
-    ops +=
-        diffListOperations(
-            newItems = form.phones.filter { it.number.isNotBlank() },
-            existingIds = rows.phones.mapTo(mutableSetOf()) { it.dataId },
-            dataIdOf = { it.dataId },
-            insert = { phone ->
-                dataInsert(Phone.CONTENT_ITEM_TYPE, rawContactId = rawContactId)
-                    .withValues(phoneValues(phone))
-            },
-            update = { dataId, phone -> dataUpdate(dataId).withValues(phoneValues(phone)) },
-        )
-    ops +=
-        diffListOperations(
-            newItems = form.emails.filter { it.address.isNotBlank() },
-            existingIds = rows.emails.mapTo(mutableSetOf()) { it.dataId },
-            dataIdOf = { it.dataId },
-            insert = { email ->
-                dataInsert(Email.CONTENT_ITEM_TYPE, rawContactId = rawContactId)
-                    .withValues(emailValues(email))
-            },
-            update = { dataId, email -> dataUpdate(dataId).withValues(emailValues(email)) },
-        )
-    ops +=
-        diffListOperations(
-            newItems = form.addresses.filter { it.address.isNotBlank() },
-            existingIds = rows.addresses.mapTo(mutableSetOf()) { it.dataId },
-            dataIdOf = { it.dataId },
-            insert = { address ->
-                dataInsert(StructuredPostal.CONTENT_ITEM_TYPE, rawContactId = rawContactId)
-                    .withValues(addressValues(address))
-            },
-            update = { dataId, address -> dataUpdate(dataId).withValues(addressValues(address)) },
-        )
-    ops +=
-        diffListOperations(
-            newItems = form.websites.filter { it.url.isNotBlank() },
-            existingIds = rows.websites.mapTo(mutableSetOf()) { it.dataId },
-            dataIdOf = { it.dataId },
-            insert = { website ->
-                dataInsert(Website.CONTENT_ITEM_TYPE, rawContactId = rawContactId)
-                    .withValues(websiteValues(website))
-            },
-            update = { dataId, website -> dataUpdate(dataId).withValues(websiteValues(website)) },
-        )
-    return ops
-}
+): List<ContentProviderOperation> =
+    phoneListOperations(rawContactId, rows, form) +
+        emailListOperations(rawContactId, rows, form) +
+        addressListOperations(rawContactId, rows, form) +
+        websiteListOperations(rawContactId, rows, form)
 
 private fun singleOperations(
     rawContactId: Long,

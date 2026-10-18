@@ -235,17 +235,7 @@ private class VCardAccumulator {
                     rememberGroupLabel(property, emails, emails.lastIndex, ::emailWithLabel)
                 }
             }
-            "ADR" -> {
-                val joined = splitVCardParts(property.value).filter { it.isNotBlank() }.joinToString(", ")
-                if (joined.isNotBlank()) {
-                    addresses +=
-                        EditableAddress(
-                            address = joined,
-                            kind = addressKindOfVCard(property.types),
-                        )
-                    rememberGroupLabel(property, addresses, addresses.lastIndex, ::addressWithLabel)
-                }
-            }
+            "ADR" -> addAddressProperty(property)
             "URL" -> {
                 if (value.isNotBlank()) {
                     websites += EditableWebsite(url = value)
@@ -260,6 +250,15 @@ private class VCardAccumulator {
                         )
                 }
             }
+        }
+    }
+
+    /** Адрес: непустые части ADR склеиваются в одну строку через запятую. */
+    private fun addAddressProperty(property: VCardProperty) {
+        val joined = splitVCardParts(property.value).filter { it.isNotBlank() }.joinToString(", ")
+        if (joined.isNotBlank()) {
+            addresses += EditableAddress(address = joined, kind = addressKindOfVCard(property.types))
+            rememberGroupLabel(property, addresses, addresses.lastIndex, ::addressWithLabel)
         }
     }
 

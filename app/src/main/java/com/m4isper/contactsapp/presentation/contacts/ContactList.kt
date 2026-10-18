@@ -1,10 +1,6 @@
 package com.m4isper.contactsapp.presentation.contacts
 
-import android.Manifest
 import android.net.Uri
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -71,8 +67,6 @@ import androidx.compose.ui.unit.sp
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.presentation.common.Loadable
-import com.m4isper.contactsapp.presentation.common.hasPermission
-import com.m4isper.contactsapp.presentation.common.logw
 import com.m4isper.contactsapp.ui.components.ConfirmDialog
 import com.m4isper.contactsapp.ui.components.EmptyState
 import com.m4isper.contactsapp.ui.components.ErrorState
@@ -80,23 +74,7 @@ import com.m4isper.contactsapp.ui.components.ListAvatar
 import com.m4isper.contactsapp.ui.components.LoadingState
 import com.m4isper.contactsapp.ui.components.SearchField
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-
-private const val EXPORT_FILE_NAME = "contacts.vcf"
-
-private const val IMPORT_TAG = "ContactsImport"
-
-/** MIME-типы, под которыми файловые менеджеры отдают .vcf. */
-private val VCARD_IMPORT_MIME_TYPES =
-    arrayOf(
-        "text/vcard",
-        "text/x-vcard",
-        "text/directory",
-        "text/plain",
-        "application/octet-stream",
-    )
 
 internal fun groupContactsByFirstLetter(contacts: List<ContactDetails>): Map<Char, List<ContactDetails>> =
     contacts
@@ -139,53 +117,18 @@ internal fun ContactList(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     var showDeleteDialog by remember { mutableStateOf(false) }
     var pendingExportUri by remember { mutableStateOf<Uri?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val importLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-            if (uri != null) {
-                scope.launch {
-                    // Битый или отозванный документ не должен ронять экран: читаем безопасно,
-                    // при любой ошибке пользователь увидит общий тост о неудачном импорте.
-                    val text =
-                        withContext(Dispatchers.IO) {
-                            runCatching {
-                                context.contentResolver
-                                    .openInputStream(uri)
-                                    ?.bufferedReader()
-                                    ?.use { it.readText() }
-                            }.onFailure { logw(IMPORT_TAG, "import file read failed", it) }.getOrNull()
-                        }
-                    if (text.isNullOrBlank()) {
-                        Toast.makeText(context, R.string.import_failed, Toast.LENGTH_SHORT).show()
-                    } else {
-                        onImportText(text)
-                    }
-                }
-            }
-        }
-
-    val exportLauncher =
-        rememberLauncherForActivityResult(
-            ActivityResultContracts.CreateDocument("text/vcard"),
-        ) { uri ->
-            if (uri != null) {
+    val vCardLaunchers =
+        rememberVCardLaunchers(
+            onImportText = onImportText,
+            onExportSelected = { uri ->
                 pendingExportUri = uri
                 onExportRequested()
-            }
-        }
-
-    val writePermissionLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            if (granted) {
-                importLauncher.launch(VCARD_IMPORT_MIME_TYPES)
-            } else {
-                Toast.makeText(context, R.string.import_no_permission, Toast.LENGTH_SHORT).show()
-            }
-        }
+            },
+        )
 
     val event = uiState.event
     LaunchedEffect(event) {
@@ -253,14 +196,8 @@ internal fun ContactList(
                     showFavoritesOnly = uiState.showFavoritesOnly,
                     onSearchQueryChange = onSearchQueryChange,
                     onFavoritesOnlyChange = onFavoritesOnlyChange,
-                    onImportClick = {
-                        if (hasPermission(context, Manifest.permission.WRITE_CONTACTS)) {
-                            importLauncher.launch(VCARD_IMPORT_MIME_TYPES)
-                        } else {
-                            writePermissionLauncher.launch(Manifest.permission.WRITE_CONTACTS)
-                        }
-                    },
-                    onExportClick = { exportLauncher.launch(EXPORT_FILE_NAME) },
+                    onImportClick = { vCardLaunchers.startImport(context) },
+                    onExportClick = { vCardLaunchers.startExport() },
                 )
             }
             ContactListBody(
