@@ -1,6 +1,6 @@
 package com.m4isper.contactsapp.presentation.details
 
-import com.m4isper.contactsapp.data.vcard.VCardCodecImpl
+import com.m4isper.contactsapp.FakeVCardCodec
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.PhoneKind
@@ -10,6 +10,7 @@ import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
+import com.m4isper.contactsapp.domain.vcard.VCardCodec
 import com.m4isper.contactsapp.presentation.common.Loadable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -80,13 +81,15 @@ class ContactDetailsViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun viewModel(repository: FakeDetailsRepository) =
-        ContactDetailsViewModel(
-            GetContactDetailsUseCase(repository),
-            ToggleFavoriteUseCase(repository),
-            ObserveFavoritesUseCase(repository),
-            VCardCodecImpl(),
-        )
+    private fun viewModel(
+        repository: FakeDetailsRepository,
+        codec: VCardCodec = FakeVCardCodec(),
+    ) = ContactDetailsViewModel(
+        GetContactDetailsUseCase(repository),
+        ToggleFavoriteUseCase(repository),
+        ObserveFavoritesUseCase(repository),
+        codec,
+    )
 
     @Test
     fun `load emits contact content`() =
@@ -178,7 +181,7 @@ class ContactDetailsViewModelTest {
                     GetContactDetailsUseCase(repository),
                     ToggleFavoriteUseCase(repository),
                     ObserveFavoritesUseCase(repository),
-                    VCardCodecImpl(),
+                    FakeVCardCodec(),
                 )
             backgroundScope.launch { viewModel.uiState.collect { } }
 
@@ -220,7 +223,7 @@ class ContactDetailsViewModelTest {
         }
 
     @Test
-    fun `vCardText returns vcard of loaded contact and null otherwise`() =
+    fun `vCardText returns encoded vcard of loaded contact and null otherwise`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val repository =
@@ -233,16 +236,18 @@ class ContactDetailsViewModelTest {
                         ),
                     ),
                 )
-            val viewModel = viewModel(repository)
+            val codec = FakeVCardCodec(encoded = "CARD")
+            val viewModel = viewModel(repository, codec)
             backgroundScope.launch { viewModel.uiState.collect { } }
 
+            // Пока контакт не загружен, в порт не обращаемся.
             assertEquals(null, viewModel.vCardText())
+            assertEquals(emptyList<List<ContactDetails>>(), codec.encodedContacts)
 
             viewModel.load(7)
             advanceUntilIdle()
 
-            val text = viewModel.vCardText().orEmpty()
-            assertTrue(text.contains("FN:Anna"))
-            assertTrue(text.contains("TEL;TYPE=CELL:111"))
+            assertEquals("CARD", viewModel.vCardText())
+            assertEquals(listOf(7L), codec.encodedContacts.single().map { it.contactId })
         }
 }

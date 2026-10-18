@@ -1,6 +1,6 @@
 package com.m4isper.contactsapp.presentation.contacts
 
-import com.m4isper.contactsapp.data.vcard.VCardCodecImpl
+import com.m4isper.contactsapp.FakeVCardCodec
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.ContactRelation
@@ -120,15 +120,17 @@ class ContactsViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun viewModel(repository: FakeContactsRepository) =
-        ContactsViewModel(
-            GetContactsUseCase(repository),
-            ObserveFavoritesUseCase(repository),
-            GetContactDetailsUseCase(repository),
-            DeleteContactsUseCase(repository, repository),
-            ImportContactsUseCase(repository),
-            VCardCodecImpl(),
-        )
+    private fun viewModel(
+        repository: FakeContactsRepository,
+        codec: FakeVCardCodec = FakeVCardCodec(),
+    ) = ContactsViewModel(
+        GetContactsUseCase(repository),
+        ObserveFavoritesUseCase(repository),
+        GetContactDetailsUseCase(repository),
+        DeleteContactsUseCase(repository, repository),
+        ImportContactsUseCase(repository),
+        codec,
+    )
 
     @Test
     fun `refresh emits loaded contacts`() =
@@ -807,7 +809,8 @@ class ContactsViewModelTest {
                         details(2, "Bob", "222"),
                     ),
                 )
-            val viewModel = viewModel(repository)
+            val codec = FakeVCardCodec(encoded = "shared-vcard")
+            val viewModel = viewModel(repository, codec)
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
             advanceUntilIdle()
@@ -819,9 +822,9 @@ class ContactsViewModelTest {
 
             val event = viewModel.uiState.value.event
             assertTrue(event is ContactsEvent.Share)
-            val content = (event as ContactsEvent.Share).content
-            assertTrue(content.contains("FN:Bob"))
-            assertEquals(false, content.contains("FN:Anna"))
+            assertEquals("shared-vcard", (event as ContactsEvent.Share).content)
+            // Шарится только выделенный контакт: детали остальных в порт не уходят.
+            assertEquals(listOf(2L), codec.encodedContacts.single().map { it.contactId })
 
             viewModel.onEventHandled()
             advanceUntilIdle()
@@ -833,22 +836,25 @@ class ContactsViewModelTest {
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val repository = FakeContactsRepository()
-            val viewModel = viewModel(repository)
+            val codec = FakeVCardCodec(forms = listOf(ContactForm()))
+            val viewModel = viewModel(repository, codec)
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
             advanceUntilIdle()
 
-            viewModel.files.onImportText(
+            val text =
                 """
                 BEGIN:VCARD
                 VERSION:3.0
                 FN:Anna
                 TEL;TYPE=CELL:+71112223344
                 END:VCARD
-                """.trimIndent(),
-            )
+                """.trimIndent()
+            viewModel.files.onImportText(text)
             advanceUntilIdle()
 
+            // Текст без изменений уходит в порт, создаётся каждая разобранная форма.
+            assertEquals(listOf(text), codec.parsedTexts)
             assertEquals(1, repository.created.size)
             val state = viewModel.uiState.value
             assertEquals(ContactsEvent.ImportFinished(1), state.event)
@@ -875,7 +881,7 @@ class ContactsViewModelTest {
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val repository = FakeContactsRepository(failure = RuntimeException("boom"))
-            val viewModel = viewModel(repository)
+            val viewModel = viewModel(repository, FakeVCardCodec(forms = listOf(ContactForm())))
             backgroundScope.launch { viewModel.uiState.collect { } }
 
             viewModel.files.onImportText(
@@ -901,7 +907,8 @@ class ContactsViewModelTest {
                         details(2, "Bob", "222"),
                     ),
                 )
-            val viewModel = viewModel(repository)
+            val codec = FakeVCardCodec(encoded = "exported-vcard")
+            val viewModel = viewModel(repository, codec)
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
             advanceUntilIdle()
@@ -913,8 +920,9 @@ class ContactsViewModelTest {
             assertTrue(event is ContactsEvent.ExportReady)
             val ready = event as ContactsEvent.ExportReady
             assertEquals(2, ready.count)
-            assertTrue(ready.content.contains("FN:Anna"))
-            assertTrue(ready.content.contains("FN:Bob"))
+            assertEquals("exported-vcard", ready.content)
+            // В порт уходят полные детали всех контактов списка.
+            assertEquals(listOf(1L, 2L), codec.encodedContacts.single().map { it.contactId })
         }
 
     @Test

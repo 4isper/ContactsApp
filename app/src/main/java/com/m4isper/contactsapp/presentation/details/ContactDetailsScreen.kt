@@ -74,11 +74,13 @@ fun ContactDetailsScreen(
                 onBack = onBack,
                 onEdit = onEdit,
                 onShare = {
-                    val vCard = viewModel.vCardText()
-                    if (vCard == null) {
-                        Toast.makeText(context, R.string.share_failed, Toast.LENGTH_SHORT).show()
-                    } else {
-                        scope.launch { shareContact(context, vCard) }
+                    scope.launch {
+                        val vCard = viewModel.vCardText()
+                        if (vCard == null) {
+                            Toast.makeText(context, R.string.share_failed, Toast.LENGTH_SHORT).show()
+                        } else {
+                            shareContact(context, vCard)
+                        }
                     }
                 },
                 onToggleFavorite = viewModel::toggleFavorite,

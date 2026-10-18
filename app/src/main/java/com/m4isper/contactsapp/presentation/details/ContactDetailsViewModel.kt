@@ -92,8 +92,11 @@ class ContactDetailsViewModel(
         }
     }
 
-    /** Готовый vCard-текст загруженного контакта для share-интента; null, пока контакт не загружен. */
-    fun vCardText(): String? = loadedDetails.value?.let { vCardCodec.encode(listOf(it)) }
+    /**
+     * Готовый vCard-текст загруженного контакта для share-интента; null, пока контакт не загружен.
+     * suspend: сборка текста уходит на фоновый диспетчер.
+     */
+    suspend fun vCardText(): String? = loadedDetails.value?.let { vCardCodec.encode(listOf(it)) }
 
     // Catch-all осознанный: любая ошибка загрузки превращается в Error-стейт.
     @Suppress("TooGenericExceptionCaught")

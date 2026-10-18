@@ -31,7 +31,7 @@ ContactsApp/
 - **DI — Metro** (compile-time, no KSP/KAPT) instead of Hilt: smaller generated code, faster builds.
 - **Navigation — Navigation 3** (`NavDisplay` + `NavBackStack`) with Material adaptive `ListDetailSceneStrategy` for tablets/foldables and custom slide/fade transition specs.
 - **State** — single `UiState` + sealed `Loadable<T>` (Loading/Empty/Content/Error) per screen.
-- **vCard** — разбор и сборка .vcf живут в `:data` за портом `VCardCodec` из `:domain`: presentation не знает формата, а UI получает готовый текст (share/export) или формы контактов (import).
+- **vCard** — разбор и сборка .vcf живут в `:data` за портом `VCardCodec` из `:domain`: presentation не знает формата, а UI получает готовый текст (share/export) или формы контактов (import); методы порта suspend — разбор и сборка больших файлов не идут на главном потоке.
 - **Static analysis** — Detekt + ktlint applied to every module (`detekt`, `ktlintCheck`).
 
 ## Stack

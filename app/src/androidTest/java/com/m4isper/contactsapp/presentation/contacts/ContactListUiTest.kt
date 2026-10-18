@@ -13,8 +13,8 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.m4isper.contactsapp.FakeAndroidRepository
+import com.m4isper.contactsapp.FakeVCardCodec
 import com.m4isper.contactsapp.R
-import com.m4isper.contactsapp.data.vcard.VCardCodecImpl
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
@@ -44,7 +44,7 @@ class ContactListUiTest {
             GetContactDetailsUseCase(repository),
             DeleteContactsUseCase(repository, repository),
             ImportContactsUseCase(repository),
-            VCardCodecImpl(),
+            FakeVCardCodec(),
         )
 
     @Test
