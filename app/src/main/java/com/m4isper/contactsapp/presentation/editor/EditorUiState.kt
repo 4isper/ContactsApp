@@ -120,6 +120,64 @@ internal data class EditorUiState(
         )
 }
 
+/** Состояние формы по загруженной форме; [idGenerator] выдаёт стабильные ключи строк. */
+internal fun editorStateFromForm(
+    contactId: Long,
+    form: ContactForm,
+    idGenerator: () -> Long,
+): EditorUiState {
+    fun <T> row(value: T) = EditorRow(rowId = idGenerator(), value = value)
+    return EditorUiState(
+        contactId = contactId,
+        nameMode = form.name.mode,
+        displayName = form.name.display,
+        givenName = form.name.given,
+        familyName = form.name.family,
+        middleName = form.name.middle,
+        namePrefix = form.name.prefix,
+        nameSuffix = form.name.suffix,
+        phoneticGivenName = form.name.phoneticGiven,
+        phoneticMiddleName = form.name.phoneticMiddle,
+        phoneticFamilyName = form.name.phoneticFamily,
+        phones = form.phones.map(::row).ifEmpty { listOf(row(EditablePhone(number = ""))) },
+        emails = form.emails.map(::row),
+        addresses = form.addresses.map(::row),
+        websites = form.websites.map(::row),
+        instantMessages = form.instantMessages.map(::row),
+        relations = form.relations.map(::row),
+        events = form.events.map(::row),
+        organization = form.organization,
+        note = form.note,
+        birthday = form.birthday,
+        nickname = form.nickname,
+        photoUri = form.photoUri,
+        photoChanged = false,
+        isBusy = false,
+        initialForm = form,
+    )
+}
+
+/** Список строк, в котором строка [rowId] заменяется результатом [transform]. */
+internal fun <T> List<EditorRow<T>>.withRow(
+    rowId: Long,
+    transform: (T) -> T,
+): List<EditorRow<T>> =
+    map { row ->
+        if (row.rowId == rowId) row.copy(value = transform(row.value)) else row
+    }
+
+/**
+ * DISPLAY → STRUCTURED: если компоненты пустые, переносим полное имя в «Имя»,
+ * чтобы данные не потерялись. STRUCTURED → DISPLAY: собираем имя из компонентов.
+ */
+internal fun EditorUiState.toggledNameMode(): EditorUiState =
+    if (nameMode == NameMode.DISPLAY) {
+        val given = if (hasNameComponents) givenName else displayName.trim()
+        copy(nameMode = NameMode.STRUCTURED, givenName = given)
+    } else {
+        copy(nameMode = NameMode.DISPLAY, displayName = composedName)
+    }
+
 /** Пустые строки — плейсхолдеры для ввода, в форму сохранения они не попадают. */
 internal fun ContactForm.withoutBlankRows(): ContactForm =
     copy(

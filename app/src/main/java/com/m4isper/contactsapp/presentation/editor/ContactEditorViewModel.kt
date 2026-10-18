@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.m4isper.contactsapp.domain.model.AddressKind
 import com.m4isper.contactsapp.domain.model.Birthday
-import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.EditableAddress
 import com.m4isper.contactsapp.domain.model.EditableEmail
 import com.m4isper.contactsapp.domain.model.EditableEvent
@@ -15,7 +14,6 @@ import com.m4isper.contactsapp.domain.model.EditableWebsite
 import com.m4isper.contactsapp.domain.model.EmailKind
 import com.m4isper.contactsapp.domain.model.EventKind
 import com.m4isper.contactsapp.domain.model.ImProtocol
-import com.m4isper.contactsapp.domain.model.NameMode
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.RelationKind
 import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
@@ -36,15 +34,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val EDITOR_TAG = "ContactEditor"
-
-/** Список строк, в котором строка [rowId] заменяется результатом [transform]. */
-private fun <T> List<EditorRow<T>>.withRow(
-    rowId: Long,
-    transform: (T) -> T,
-): List<EditorRow<T>> =
-    map { row ->
-        if (row.rowId == rowId) row.copy(value = transform(row.value)) else row
-    }
 
 @Inject
 @ViewModelKey
@@ -88,7 +77,7 @@ class ContactEditorViewModel(
                 if (form == null) {
                     state.update { it.copy(closeScreen = true) }
                 } else {
-                    state.value = stateFromForm(id, form)
+                    state.value = editorStateFromForm(id, form) { ++nextRowId }
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -117,22 +106,7 @@ class ContactEditorViewModel(
 
     fun onPhoneticFamilyNameChange(value: String) = updateData { it.copy(phoneticFamilyName = value) }
 
-    /**
-     * DISPLAY → STRUCTURED: если компоненты пустые, переносим полное имя в «Имя»,
-     * чтобы данные не потерялись. STRUCTURED → DISPLAY: собираем имя из компонентов.
-     */
-    fun onToggleNameMode() =
-        updateData { editor ->
-            if (editor.nameMode == NameMode.DISPLAY) {
-                val given = if (editor.hasNameComponents) editor.givenName else editor.displayName.trim()
-                editor.copy(nameMode = NameMode.STRUCTURED, givenName = given)
-            } else {
-                editor.copy(
-                    nameMode = NameMode.DISPLAY,
-                    displayName = editor.composedName,
-                )
-            }
-        }
+    fun onToggleNameMode() = updateData { it.toggledNameMode() }
 
     fun onPhoneChange(
         rowId: Long,
@@ -367,37 +341,4 @@ class ContactEditorViewModel(
 
     /** Новая строка со стабильным ключом: счётчик живёт в пределах экрана. */
     private fun <T> newRow(value: T) = EditorRow(rowId = ++nextRowId, value = value)
-
-    private fun stateFromForm(
-        contactId: Long,
-        form: ContactForm,
-    ): EditorUiState =
-        EditorUiState(
-            contactId = contactId,
-            nameMode = form.name.mode,
-            displayName = form.name.display,
-            givenName = form.name.given,
-            familyName = form.name.family,
-            middleName = form.name.middle,
-            namePrefix = form.name.prefix,
-            nameSuffix = form.name.suffix,
-            phoneticGivenName = form.name.phoneticGiven,
-            phoneticMiddleName = form.name.phoneticMiddle,
-            phoneticFamilyName = form.name.phoneticFamily,
-            phones = form.phones.map(::newRow).ifEmpty { listOf(newRow(EditablePhone(number = ""))) },
-            emails = form.emails.map(::newRow),
-            addresses = form.addresses.map(::newRow),
-            websites = form.websites.map(::newRow),
-            instantMessages = form.instantMessages.map(::newRow),
-            relations = form.relations.map(::newRow),
-            events = form.events.map(::newRow),
-            organization = form.organization,
-            note = form.note,
-            birthday = form.birthday,
-            nickname = form.nickname,
-            photoUri = form.photoUri,
-            photoChanged = false,
-            isBusy = false,
-            initialForm = form,
-        )
 }
