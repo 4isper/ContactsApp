@@ -14,6 +14,10 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+private class RecordingException(
+    message: String,
+) : RuntimeException(message)
+
 private class RecordingRepository :
     ContactsRepository,
     FavoritesRepository {
@@ -21,6 +25,8 @@ private class RecordingRepository :
     val updated = mutableListOf<Pair<Long, ContactForm>>()
     val deleted = mutableListOf<Long>()
     val removedFavorites = mutableListOf<Long>()
+    val failDeleteFor = mutableSetOf<Long>()
+    val failFavoriteRemovalFor = mutableSetOf<Long>()
 
     override suspend fun getContacts(): List<ContactDetails> = emptyList()
 
@@ -41,6 +47,7 @@ private class RecordingRepository :
 
     override suspend fun deleteContact(contactId: Long) {
         deleted += contactId
+        if (contactId in failDeleteFor) throw RecordingException("delete failed for $contactId")
     }
 
     override fun observeFavorites(): Flow<Set<Long>> = flowOf(emptySet())
@@ -49,6 +56,7 @@ private class RecordingRepository :
 
     override suspend fun removeFavorite(contactId: Long) {
         removedFavorites += contactId
+        if (contactId in failFavoriteRemovalFor) throw RecordingException("favorite cleanup failed for $contactId")
     }
 }
 
@@ -115,8 +123,47 @@ class EditorUseCasesTest {
         runTest {
             val repository = RecordingRepository()
 
-            DeleteContactUseCase(repository, repository)(7)
+            val result = DeleteContactsUseCase(repository, repository)(setOf(7))
 
+            assertEquals(DeleteContactsResult(deletedIds = setOf(7L), failedIds = emptySet()), result)
+            assertEquals(listOf(7L), repository.deleted)
+            assertEquals(listOf(7L), repository.removedFavorites)
+        }
+
+    @Test
+    fun `delete keeps going after one failure and reports it`() =
+        runTest {
+            val repository = RecordingRepository().apply { failDeleteFor += 2L }
+            val useCase = DeleteContactsUseCase(repository, repository)
+
+            val result = useCase(setOf(1L, 2L, 3L))
+
+            assertEquals(setOf(1L, 3L), result.deletedIds)
+            assertEquals(setOf(2L), result.failedIds)
+            assertEquals(listOf(1L, 2L, 3L), repository.deleted)
+            assertEquals(listOf(1L, 3L), repository.removedFavorites)
+        }
+
+    @Test
+    fun `failed favorite cleanup does not fail the deletion`() =
+        runTest {
+            val repository = RecordingRepository().apply { failFavoriteRemovalFor += 1L }
+            val useCase = DeleteContactsUseCase(repository, repository)
+
+            val result = useCase(setOf(1L))
+
+            assertEquals(setOf(1L), result.deletedIds)
+            assertTrue(result.allDeleted)
+        }
+
+    @Test
+    fun `single delete delegates to batch and returns success`() =
+        runTest {
+            val repository = RecordingRepository()
+
+            val deleted = DeleteContactUseCase(DeleteContactsUseCase(repository, repository))(7)
+
+            assertTrue(deleted)
             assertEquals(listOf(7L), repository.deleted)
             assertEquals(listOf(7L), repository.removedFavorites)
         }

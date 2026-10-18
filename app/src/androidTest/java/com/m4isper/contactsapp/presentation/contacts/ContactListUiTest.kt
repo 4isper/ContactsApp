@@ -61,6 +61,7 @@ class ContactListUiTest {
                 onSelectAll = {},
                 onDeleteSelected = {},
                 onUndoDelete = {},
+                onDeleteWindowClosed = {},
                 onShareSelected = {},
                 onImportText = {},
                 onExportRequested = {},
@@ -89,6 +90,7 @@ class ContactListUiTest {
                 onSelectAll = {},
                 onDeleteSelected = {},
                 onUndoDelete = {},
+                onDeleteWindowClosed = {},
                 onShareSelected = {},
                 onImportText = {},
                 onExportRequested = {},
@@ -118,6 +120,7 @@ class ContactListUiTest {
                 onSelectAll = {},
                 onDeleteSelected = {},
                 onUndoDelete = {},
+                onDeleteWindowClosed = {},
                 onShareSelected = {},
                 onImportText = {},
                 onExportRequested = {},
@@ -149,6 +152,7 @@ class ContactListUiTest {
                 onSelectAll = viewModel::onSelectAll,
                 onDeleteSelected = viewModel::onDeleteSelected,
                 onUndoDelete = viewModel::onUndoDelete,
+                onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
                 onShareSelected = viewModel::onShareSelected,
                 onImportText = viewModel.files::onImportText,
                 onExportRequested = viewModel.files::onExportRequested,
@@ -188,6 +192,7 @@ class ContactListUiTest {
                 onSelectAll = {},
                 onDeleteSelected = {},
                 onUndoDelete = {},
+                onDeleteWindowClosed = {},
                 onShareSelected = {},
                 onImportText = {},
                 onExportRequested = {},
@@ -219,6 +224,7 @@ class ContactListUiTest {
                 onSelectAll = viewModel::onSelectAll,
                 onDeleteSelected = viewModel::onDeleteSelected,
                 onUndoDelete = viewModel::onUndoDelete,
+                onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
                 onShareSelected = viewModel::onShareSelected,
                 onImportText = viewModel.files::onImportText,
                 onExportRequested = viewModel.files::onExportRequested,
@@ -238,6 +244,7 @@ class ContactListUiTest {
 
         compose.onNodeWithTag("delete_selected_button").performClick()
         compose.onNodeWithTag("confirm_batch_delete").performClick()
+        // Удаление коммитится по истечении окна отмены (~4 c реального времени).
         compose.waitUntil(timeoutMillis = 10_000) {
             repository.deleted.isNotEmpty()
         }
@@ -268,6 +275,7 @@ class ContactListUiTest {
                 onSelectAll = viewModel::onSelectAll,
                 onDeleteSelected = viewModel::onDeleteSelected,
                 onUndoDelete = viewModel::onUndoDelete,
+                onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
                 onShareSelected = viewModel::onShareSelected,
                 onImportText = viewModel.files::onImportText,
                 onExportRequested = viewModel.files::onExportRequested,
@@ -326,6 +334,7 @@ class ContactListUiTest {
                 onSelectAll = viewModel::onSelectAll,
                 onDeleteSelected = viewModel::onDeleteSelected,
                 onUndoDelete = viewModel::onUndoDelete,
+                onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
                 onShareSelected = viewModel::onShareSelected,
                 onImportText = viewModel.files::onImportText,
                 onExportRequested = viewModel.files::onExportRequested,
@@ -371,6 +380,7 @@ class ContactListUiTest {
                 onSelectAll = {},
                 onDeleteSelected = {},
                 onUndoDelete = {},
+                onDeleteWindowClosed = {},
                 onShareSelected = {},
                 onImportText = {},
                 onExportRequested = {},

@@ -128,6 +128,7 @@ internal fun ContactList(
     onSelectAll: (List<Long>) -> Unit,
     onDeleteSelected: () -> Unit,
     onUndoDelete: () -> Unit,
+    onDeleteWindowClosed: () -> Unit,
     onShareSelected: () -> Unit,
     onImportText: (String) -> Unit,
     onExportRequested: () -> Unit,
@@ -191,7 +192,9 @@ internal fun ContactList(
     DeleteUndoEffect(
         snackbarHostState = snackbarHostState,
         pendingDeleteIds = uiState.pendingDeleteIds,
+        deleteClosing = uiState.deleteClosing,
         onUndoDelete = onUndoDelete,
+        onWindowClosed = onDeleteWindowClosed,
     )
 
     val visibleIds = (uiState.content as? Loadable.Content)?.data?.map { it.contactId }.orEmpty()

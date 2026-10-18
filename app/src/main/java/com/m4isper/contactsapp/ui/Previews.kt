@@ -92,6 +92,7 @@ private fun ContactListContent(selection: Set<Long> = emptySet()) {
         onSelectAll = {},
         onDeleteSelected = {},
         onUndoDelete = {},
+        onDeleteWindowClosed = {},
         onShareSelected = {},
         onImportText = {},
         onExportRequested = {},

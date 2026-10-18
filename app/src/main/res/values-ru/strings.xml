@@ -193,6 +193,12 @@
         <item quantity="many">%d контактов удалено</item>
         <item quantity="other">%d контакта удалено</item>
     </plurals>
+    <plurals name="batch_delete_undone">
+        <item quantity="one">%d контакт восстановлен</item>
+        <item quantity="few">%d контакта восстановлено</item>
+        <item quantity="many">%d контактов восстановлено</item>
+        <item quantity="other">%d контакта восстановлено</item>
+    </plurals>
     <plurals name="import_success">
         <item quantity="one">Импортирован %d контакт</item>
         <item quantity="few">Импортировано %d контакта</item>

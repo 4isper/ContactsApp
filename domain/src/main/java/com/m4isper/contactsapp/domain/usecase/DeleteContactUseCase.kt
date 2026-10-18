@@ -1,16 +1,11 @@
 package com.m4isper.contactsapp.domain.usecase
 
-import com.m4isper.contactsapp.domain.repository.ContactsRepository
-import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import dev.zacsweers.metro.Inject
 
 @Inject
 class DeleteContactUseCase(
-    private val repository: ContactsRepository,
-    private val favoritesRepository: FavoritesRepository,
+    private val deleteContacts: DeleteContactsUseCase,
 ) {
-    suspend operator fun invoke(contactId: Long) {
-        repository.deleteContact(contactId)
-        favoritesRepository.removeFavorite(contactId)
-    }
+    /** @return true, если контакт удалён вместе с записью избранного. */
+    suspend operator fun invoke(contactId: Long): Boolean = deleteContacts(setOf(contactId)).allDeleted
 }

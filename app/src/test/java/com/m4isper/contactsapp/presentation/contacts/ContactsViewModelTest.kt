@@ -45,6 +45,9 @@ private fun details(
     phones = phones.map { PhoneNumber(it, PhoneKind.MOBILE) },
 )
 
+/** Технический сбой удаления одного контакта, независимый от [FakeContactsRepository.failure]. */
+private class DeleteFailedException : RuntimeException("delete failed")
+
 private class FakeContactsRepository(
     var contacts: List<ContactDetails> = emptyList(),
     var failure: Throwable? = null,
@@ -54,6 +57,9 @@ private class FakeContactsRepository(
     private val favoritesFlow = MutableStateFlow(initialFavorites)
     val deleted = mutableListOf<Long>()
     val created = mutableListOf<ContactForm>()
+
+    /** Удаление этих контактов падает технически (в отличие от [failure], не влияет на загрузку). */
+    val failDeleteFor = mutableSetOf<Long>()
 
     override suspend fun getContacts(): List<ContactDetails> {
         failure?.let { throw it }
@@ -98,6 +104,7 @@ private class FakeContactsRepository(
 
     override suspend fun deleteContact(contactId: Long) {
         failure?.let { throw it }
+        if (contactId in failDeleteFor) throw DeleteFailedException()
         deleted += contactId
         contacts = contacts.filterNot { it.contactId == contactId }
     }
@@ -585,37 +592,17 @@ class ContactsViewModelTest {
             viewModel.onContactSelected(2)
             advanceUntilIdle()
             viewModel.onDeleteSelected()
+            runCurrent()
+            viewModel.onUndoDelete()
             advanceUntilIdle()
 
-            assertEquals(listOf(1L, 2L), repository.deleted)
-            val state = viewModel.uiState.value
-            assertEquals(emptySet<Long>(), state.selection)
-            assertEquals(emptySet<Long>(), state.favorites)
-            assertTrue(state.content is Loadable.Empty)
-        }
-
-    @Test
-    fun `delete failure emits event keeps list and clears selection`() =
-        runTest {
-            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
-            val viewModel = viewModel(repository)
-            backgroundScope.launch { viewModel.uiState.collect { } }
-            viewModel.refresh()
-            advanceUntilIdle()
-            repository.failure = RuntimeException("boom")
-            viewModel.onContactSelected(1)
-            advanceUntilIdle()
-
-            viewModel.onDeleteSelected()
-            advanceUntilIdle()
-
-            val state = viewModel.uiState.value
-            assertEquals(ContactsEvent.DeleteFailed, state.event)
-            assertEquals(emptySet<Long>(), state.selection)
-            assertEquals(emptySet<Long>(), state.pendingDeleteIds)
             assertEquals(emptyList<Long>(), repository.deleted)
-            assertTrue(state.content is Loadable.Content)
+            val state = viewModel.uiState.value
+            assertEquals(emptySet<Long>(), state.selection)
+            assertEquals(setOf(1L, 2L), state.favorites)
+            val content = state.content
+            assertTrue(content is Loadable.Content)
+            assertEquals(listOf("Anna", "Bob"), (content as Loadable.Content).data.map { it.name })
         }
 
     @Test
@@ -641,6 +628,7 @@ class ContactsViewModelTest {
 
             val state = viewModel.uiState.value
             assertEquals(setOf(1L), state.pendingDeleteIds)
+            assertEquals(false, state.deleteClosing)
             assertEquals(emptyList<Long>(), repository.deleted)
             val content = state.content
             assertTrue(content is Loadable.Content)
@@ -672,6 +660,7 @@ class ContactsViewModelTest {
 
             val state = viewModel.uiState.value
             assertEquals(emptySet<Long>(), state.pendingDeleteIds)
+            assertEquals(false, state.deleteClosing)
             assertEquals(null, state.event)
             assertEquals(emptyList<Long>(), repository.deleted)
             val content = state.content
@@ -707,6 +696,102 @@ class ContactsViewModelTest {
             assertEquals(emptySet<Long>(), state.pendingDeleteIds)
             assertEquals(listOf(1L, 2L), repository.deleted)
             assertTrue(state.content is Loadable.Empty)
+        }
+
+    @Test
+    fun `delete window closes after commit and undo is a no-op then`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+            viewModel.onContactSelected(1)
+            viewModel.onDeleteSelected()
+            runCurrent()
+
+            advanceTimeBy(DELETE_UNDO_TIMEOUT_MILLIS + 1)
+            runCurrent()
+            assertEquals(true, viewModel.uiState.value.deleteClosing)
+
+            // UI гасит snackbar и сообщает о закрытии окна.
+            viewModel.onDeleteWindowClosed()
+            runCurrent()
+            assertEquals(false, viewModel.uiState.value.deleteClosing)
+
+            // После коммита отмена ничего не возвращает и не трогает список.
+            viewModel.onUndoDelete()
+            runCurrent()
+            assertEquals(listOf(1L), repository.deleted)
+            assertTrue(viewModel.uiState.value.content is Loadable.Empty)
+        }
+
+    @Test
+    fun `partial delete keeps failed contacts and reports failure`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(
+                    listOf(
+                        details(1, "Anna", "111"),
+                        details(2, "Bob", "222"),
+                    ),
+                ).apply { failDeleteFor += 2L }
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+            viewModel.onContactSelected(1)
+            viewModel.onContactSelected(2)
+            viewModel.onDeleteSelected()
+            runCurrent()
+
+            advanceTimeBy(DELETE_UNDO_TIMEOUT_MILLIS + 1)
+            runCurrent()
+
+            val state = viewModel.uiState.value
+            assertEquals(ContactsEvent.DeleteFailed, state.event)
+            assertEquals(listOf(1L), repository.deleted)
+            val content = state.content
+            assertTrue(content is Loadable.Content)
+            assertEquals(listOf("Bob"), (content as Loadable.Content).data.map { it.name })
+        }
+
+    @Test
+    fun `second delete during undo window extends the window`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(
+                    listOf(
+                        details(1, "Anna", "111"),
+                        details(2, "Bob", "222"),
+                    ),
+                )
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+            viewModel.onContactSelected(1)
+            viewModel.onDeleteSelected()
+            runCurrent()
+            advanceTimeBy(DELETE_UNDO_TIMEOUT_MILLIS / 2)
+            runCurrent()
+
+            viewModel.onContactSelected(2)
+            viewModel.onDeleteSelected()
+            runCurrent()
+            assertEquals(setOf(1L, 2L), viewModel.uiState.value.pendingDeleteIds)
+
+            // Половина исходного окна прошла, но окно перезапущено: пока удалений не было.
+            advanceTimeBy(DELETE_UNDO_TIMEOUT_MILLIS / 2 + 1)
+            runCurrent()
+            assertEquals(emptyList<Long>(), repository.deleted)
+
+            advanceTimeBy(DELETE_UNDO_TIMEOUT_MILLIS + 1)
+            runCurrent()
+            assertEquals(listOf(1L, 2L), repository.deleted)
         }
 
     @Test

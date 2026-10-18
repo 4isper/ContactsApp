@@ -181,6 +181,10 @@
         <item quantity="one">%d contact deleted</item>
         <item quantity="other">%d contacts deleted</item>
     </plurals>
+    <plurals name="batch_delete_undone">
+        <item quantity="one">%d contact restored</item>
+        <item quantity="other">%d contacts restored</item>
+    </plurals>
     <plurals name="import_success">
         <item quantity="one">Imported %d contact</item>
         <item quantity="other">Imported %d contacts</item>

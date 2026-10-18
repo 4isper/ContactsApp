@@ -19,6 +19,7 @@ import com.m4isper.contactsapp.domain.repository.ContactsRepository
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactUseCase
+import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactFormUseCase
 import com.m4isper.contactsapp.domain.usecase.UpdateContactUseCase
 import kotlinx.coroutines.Dispatchers
@@ -84,7 +85,7 @@ class ContactEditorViewModelTest {
                 GetContactFormUseCase(repository),
                 CreateContactUseCase(repository),
                 UpdateContactUseCase(repository),
-                DeleteContactUseCase(repository, repository),
+                DeleteContactUseCase(DeleteContactsUseCase(repository, repository)),
             )
         backgroundScope.launch { viewModel.uiState.collect { } }
         return viewModel
