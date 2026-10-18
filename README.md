@@ -19,8 +19,8 @@ Multi-module Clean Architecture with a build-enforced dependency rule — `:doma
 
 ```
 ContactsApp/
-├── domain/   # pure models, repository interfaces, use cases (+ fast JVM tests)
-├── data/     # ContentResolver sources, repository implementations
+├── domain/   # pure models, repository interfaces, use cases, ports (+ fast JVM tests)
+├── data/     # ContentResolver sources, repositories, vCard codec
 └── app/      # presentation/, di/, ui/
     ├── presentation/   # screens, ViewModels, UiState (contacts/, details/, editor/, common/, navigation/)
     ├── di/             # Metro dependency graph (needs :data on classpath for codegen)
@@ -30,6 +30,7 @@ ContactsApp/
 - **DI — Metro** (compile-time, no KSP/KAPT) instead of Hilt: smaller generated code, faster builds.
 - **Navigation — Navigation 3** (`NavDisplay` + `NavBackStack`) with Material adaptive `ListDetailSceneStrategy` for tablets/foldables and custom slide/fade transition specs.
 - **State** — single `UiState` + sealed `Loadable<T>` (Loading/Empty/Content/Error) per screen.
+- **vCard** — разбор и сборка .vcf живут в `:data` за портом `VCardCodec` из `:domain`: presentation не знает формата, а UI получает готовый текст (share/export) или формы контактов (import).
 - **Static analysis** — Detekt + ktlint applied to every module (`detekt`, `ktlintCheck`).
 
 ## Stack
@@ -49,7 +50,7 @@ Android permissions used: `READ_CONTACTS` (list), `WRITE_CONTACTS` (editor), `CA
 
 ```bash
 ./gradlew :app:assembleDebug          # debug APK
-./gradlew :domain:test :data:testDebugUnitTest :app:testDebugUnitTest  # 144 unit tests
+./gradlew :domain:test :data:testDebugUnitTest :app:testDebugUnitTest  # 150 unit tests
 ./gradlew :app:connectedDebugAndroidTest  # 28 Compose UI tests (needs a running emulator)
 ./gradlew detekt ktlintCheck          # static analysis, all modules
 ```
