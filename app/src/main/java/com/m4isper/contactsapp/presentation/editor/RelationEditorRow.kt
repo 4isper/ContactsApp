@@ -24,13 +24,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.domain.model.EditableRelation
 import com.m4isper.contactsapp.domain.model.RelationKind
 import com.m4isper.contactsapp.presentation.common.relationKindLabel
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 
 @Composable
 internal fun RelationEditorRow(
-    row: EditorRelationRow,
+    row: EditorRow<EditableRelation>,
     onNameChange: (Long, String) -> Unit,
     onKindChange: (Long, RelationKind) -> Unit,
     onCustomLabelChange: (Long, String) -> Unit,
@@ -50,7 +51,7 @@ internal fun RelationEditorRow(
         Column(modifier = Modifier.padding(spacing.m)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(
-                    value = row.name,
+                    value = row.value.name,
                     onValueChange = { onNameChange(row.rowId, it) },
                     label = { Text(stringResource(R.string.editor_relation_label)) },
                     singleLine = true,
@@ -66,7 +67,7 @@ internal fun RelationEditorRow(
                             .testTag("editor_relation_field"),
                 )
                 KindMenu(
-                    current = row.kind,
+                    current = row.value.kind,
                     options = RelationKind.entries,
                     label = { relationKindLabel(it) },
                     onSelect = { onKindChange(row.rowId, it) },
@@ -78,10 +79,10 @@ internal fun RelationEditorRow(
                     )
                 }
             }
-            if (row.kind == RelationKind.OTHER) {
+            if (row.value.kind == RelationKind.OTHER) {
                 Spacer(modifier = Modifier.height(spacing.s))
                 OutlinedTextField(
-                    value = row.customLabel,
+                    value = row.value.customLabel.orEmpty(),
                     onValueChange = { onCustomLabelChange(row.rowId, it) },
                     label = { Text(stringResource(R.string.editor_kind_label)) },
                     singleLine = true,

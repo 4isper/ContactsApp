@@ -56,7 +56,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.AddressKind
 import com.m4isper.contactsapp.domain.model.Birthday
+import com.m4isper.contactsapp.domain.model.EditableAddress
 import com.m4isper.contactsapp.domain.model.EditableBirthday
+import com.m4isper.contactsapp.domain.model.EditableEmail
+import com.m4isper.contactsapp.domain.model.EditablePhone
+import com.m4isper.contactsapp.domain.model.EditableWebsite
 import com.m4isper.contactsapp.domain.model.EmailKind
 import com.m4isper.contactsapp.domain.model.FormError
 import com.m4isper.contactsapp.domain.model.PhoneKind
@@ -554,7 +558,7 @@ private fun EditorForm(
     val eventPickerRow = uiState.events.firstOrNull { it.rowId == eventPickerRowId }
     if (eventPickerRow != null) {
         BirthdayPickerDialog(
-            birthday = eventPickerRow.date,
+            birthday = eventPickerRow.value.date,
             confirmTestTag = "editor_event_date_confirm",
             onConfirmed = { birthday ->
                 viewModel.onEventDateChange(eventPickerRow.rowId, birthday)
@@ -652,7 +656,7 @@ private fun SectionHeader(
 
 @Composable
 private fun PhoneEditorRow(
-    row: EditorPhoneRow,
+    row: EditorRow<EditablePhone>,
     canRemove: Boolean,
     onPhoneChange: (Long, String) -> Unit,
     onKindChange: (Long, PhoneKind) -> Unit,
@@ -673,7 +677,7 @@ private fun PhoneEditorRow(
         Column(modifier = Modifier.padding(spacing.m)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(
-                    value = row.number,
+                    value = row.value.number,
                     onValueChange = { onPhoneChange(row.rowId, it) },
                     label = { Text(stringResource(R.string.editor_phone_label)) },
                     singleLine = true,
@@ -689,7 +693,7 @@ private fun PhoneEditorRow(
                             .testTag("editor_phone_field"),
                 )
                 KindMenu(
-                    current = row.kind,
+                    current = row.value.kind,
                     options = PhoneKind.entries,
                     label = { phoneKindLabel(it) },
                     onSelect = { onKindChange(row.rowId, it) },
@@ -703,10 +707,10 @@ private fun PhoneEditorRow(
                     }
                 }
             }
-            if (row.kind == PhoneKind.OTHER) {
+            if (row.value.kind == PhoneKind.OTHER) {
                 Spacer(modifier = Modifier.height(spacing.s))
                 OutlinedTextField(
-                    value = row.customLabel,
+                    value = row.value.customLabel.orEmpty(),
                     onValueChange = { onCustomLabelChange(row.rowId, it) },
                     label = { Text(stringResource(R.string.editor_kind_label)) },
                     singleLine = true,
@@ -725,7 +729,7 @@ private fun PhoneEditorRow(
 
 @Composable
 private fun EmailEditorRow(
-    row: EditorEmailRow,
+    row: EditorRow<EditableEmail>,
     onEmailChange: (Long, String) -> Unit,
     onKindChange: (Long, EmailKind) -> Unit,
     onCustomLabelChange: (Long, String) -> Unit,
@@ -745,7 +749,7 @@ private fun EmailEditorRow(
         Column(modifier = Modifier.padding(spacing.m)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(
-                    value = row.address,
+                    value = row.value.address,
                     onValueChange = { onEmailChange(row.rowId, it) },
                     label = { Text(stringResource(R.string.editor_email_label)) },
                     singleLine = true,
@@ -761,7 +765,7 @@ private fun EmailEditorRow(
                             .testTag("editor_email_field"),
                 )
                 KindMenu(
-                    current = row.kind,
+                    current = row.value.kind,
                     options = EmailKind.entries,
                     label = { emailKindLabel(it) },
                     onSelect = { onKindChange(row.rowId, it) },
@@ -773,10 +777,10 @@ private fun EmailEditorRow(
                     )
                 }
             }
-            if (row.kind == EmailKind.OTHER) {
+            if (row.value.kind == EmailKind.OTHER) {
                 Spacer(modifier = Modifier.height(spacing.s))
                 OutlinedTextField(
-                    value = row.customLabel,
+                    value = row.value.customLabel.orEmpty(),
                     onValueChange = { onCustomLabelChange(row.rowId, it) },
                     label = { Text(stringResource(R.string.editor_kind_label)) },
                     singleLine = true,
@@ -795,7 +799,7 @@ private fun EmailEditorRow(
 
 @Composable
 private fun AddressEditorRow(
-    row: EditorAddressRow,
+    row: EditorRow<EditableAddress>,
     onAddressChange: (Long, String) -> Unit,
     onKindChange: (Long, AddressKind) -> Unit,
     onCustomLabelChange: (Long, String) -> Unit,
@@ -814,7 +818,7 @@ private fun AddressEditorRow(
     ) {
         Column(modifier = Modifier.padding(spacing.m)) {
             OutlinedTextField(
-                value = row.address,
+                value = row.value.address,
                 onValueChange = { onAddressChange(row.rowId, it) },
                 label = { Text(stringResource(R.string.editor_address_label)) },
                 minLines = 2,
@@ -826,7 +830,7 @@ private fun AddressEditorRow(
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 KindMenu(
-                    current = row.kind,
+                    current = row.value.kind,
                     options = AddressKind.entries,
                     label = { addressKindLabel(it) },
                     onSelect = { onKindChange(row.rowId, it) },
@@ -839,9 +843,9 @@ private fun AddressEditorRow(
                     )
                 }
             }
-            if (row.kind == AddressKind.OTHER) {
+            if (row.value.kind == AddressKind.OTHER) {
                 OutlinedTextField(
-                    value = row.customLabel,
+                    value = row.value.customLabel.orEmpty(),
                     onValueChange = { onCustomLabelChange(row.rowId, it) },
                     label = { Text(stringResource(R.string.editor_kind_label)) },
                     singleLine = true,
@@ -860,7 +864,7 @@ private fun AddressEditorRow(
 
 @Composable
 private fun WebsiteEditorRow(
-    row: EditorWebsiteRow,
+    row: EditorRow<EditableWebsite>,
     onWebsiteChange: (Long, String) -> Unit,
     onRemove: (Long) -> Unit,
 ) {
@@ -880,7 +884,7 @@ private fun WebsiteEditorRow(
             modifier = Modifier.padding(spacing.m),
         ) {
             OutlinedTextField(
-                value = row.url,
+                value = row.value.url,
                 onValueChange = { onWebsiteChange(row.rowId, it) },
                 label = { Text(stringResource(R.string.editor_website_label)) },
                 singleLine = true,

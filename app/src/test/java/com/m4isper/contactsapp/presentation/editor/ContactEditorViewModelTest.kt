@@ -132,7 +132,8 @@ class ContactEditorViewModelTest {
             val state = viewModel.uiState.value
             assertEquals(NameMode.DISPLAY, state.nameMode)
             assertEquals("Anna", state.displayName)
-            assertEquals("anna@example.com", state.emails.single().address)
+            val email = state.emails.single()
+            assertEquals("anna@example.com", email.value.address)
             assertEquals("ACME", state.organization.company)
             assertEquals("Note", state.note.note)
             assertEquals(Birthday(day = 24, month = 5, year = 1990), state.birthday.value)
@@ -167,9 +168,9 @@ class ContactEditorViewModelTest {
             val row =
                 viewModel.uiState.value.instantMessages
                     .single()
-            assertEquals(3L, row.dataId)
-            assertEquals("skype_anna", row.address)
-            assertEquals(ImProtocol.SKYPE, row.protocol)
+            assertEquals(3L, row.value.dataId)
+            assertEquals("skype_anna", row.value.address)
+            assertEquals(ImProtocol.SKYPE, row.value.protocol)
         }
 
     @Test
@@ -511,13 +512,16 @@ class ContactEditorViewModelTest {
 
             val state = viewModel.uiState.value
             assertEquals("Нюша", state.nickname.nickname)
-            assertEquals(listOf("Bob", "Михалыч"), state.relations.map { it.name })
-            assertEquals(5L, state.relations[0].dataId)
-            assertEquals(RelationKind.FRIEND, state.relations[0].kind)
-            assertEquals("Кум", state.relations[1].customLabel)
-            assertEquals(6L, state.events.single().dataId)
-            assertEquals(Birthday(day = 1, month = 6, year = 2015), state.events.single().date)
-            assertEquals(EventKind.ANNIVERSARY, state.events.single().kind)
+            val relations = state.relations
+            assertEquals(listOf("Bob", "Михалыч"), relations.map { it.value.name })
+            val bob = relations[0]
+            assertEquals(5L, bob.value.dataId)
+            assertEquals(RelationKind.FRIEND, bob.value.kind)
+            assertEquals("Кум", relations[1].value.customLabel)
+            val event = state.events.single()
+            assertEquals(6L, event.value.dataId)
+            assertEquals(Birthday(day = 1, month = 6, year = 2015), event.value.date)
+            assertEquals(EventKind.ANNIVERSARY, event.value.kind)
         }
 
     @Test

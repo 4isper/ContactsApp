@@ -24,13 +24,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.domain.model.EditableInstantMessage
 import com.m4isper.contactsapp.domain.model.ImProtocol
 import com.m4isper.contactsapp.presentation.common.imProtocolLabel
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 
 @Composable
 internal fun ImEditorRow(
-    row: EditorImRow,
+    row: EditorRow<EditableInstantMessage>,
     onImChange: (Long, String) -> Unit,
     onProtocolChange: (Long, ImProtocol) -> Unit,
     onCustomProtocolChange: (Long, String) -> Unit,
@@ -50,7 +51,7 @@ internal fun ImEditorRow(
         Column(modifier = Modifier.padding(spacing.m)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(
-                    value = row.address,
+                    value = row.value.address,
                     onValueChange = { onImChange(row.rowId, it) },
                     label = { Text(stringResource(R.string.editor_im_label)) },
                     singleLine = true,
@@ -66,7 +67,7 @@ internal fun ImEditorRow(
                             .testTag("editor_im_field"),
                 )
                 KindMenu(
-                    current = row.protocol,
+                    current = row.value.protocol,
                     options = ImProtocol.entries,
                     label = { imProtocolLabel(it) },
                     onSelect = { onProtocolChange(row.rowId, it) },
@@ -78,10 +79,10 @@ internal fun ImEditorRow(
                     )
                 }
             }
-            if (row.protocol == ImProtocol.CUSTOM) {
+            if (row.value.protocol == ImProtocol.CUSTOM) {
                 Spacer(modifier = Modifier.height(spacing.s))
                 OutlinedTextField(
-                    value = row.customProtocol,
+                    value = row.value.customProtocol.orEmpty(),
                     onValueChange = { onCustomProtocolChange(row.rowId, it) },
                     label = { Text(stringResource(R.string.editor_im_service)) },
                     singleLine = true,

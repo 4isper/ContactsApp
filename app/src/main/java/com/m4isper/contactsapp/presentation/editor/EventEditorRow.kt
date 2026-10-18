@@ -28,6 +28,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.Birthday
+import com.m4isper.contactsapp.domain.model.EditableEvent
 import com.m4isper.contactsapp.domain.model.EventKind
 import com.m4isper.contactsapp.presentation.common.birthdayText
 import com.m4isper.contactsapp.presentation.common.eventKindLabel
@@ -36,7 +37,7 @@ import java.time.LocalDate
 
 @Composable
 internal fun EventEditorRow(
-    row: EditorEventRow,
+    row: EditorRow<EditableEvent>,
     onKindChange: (Long, EventKind) -> Unit,
     onDatePickClick: (Long) -> Unit,
     onDateChange: (Long, Birthday?) -> Unit,
@@ -44,7 +45,7 @@ internal fun EventEditorRow(
     onRemove: (Long) -> Unit,
 ) {
     val spacing = LocalSpacing.current
-    val date = row.date
+    val date = row.value.date
     Card(
         colors =
             CardDefaults.cardColors(
@@ -58,7 +59,7 @@ internal fun EventEditorRow(
         Column(modifier = Modifier.padding(spacing.m)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 KindMenu(
-                    current = row.kind,
+                    current = row.value.kind,
                     options = EventKind.entries,
                     label = { eventKindLabel(it) },
                     onSelect = { onKindChange(row.rowId, it) },
@@ -100,10 +101,10 @@ internal fun EventEditorRow(
                     )
                 }
             }
-            if (row.kind == EventKind.OTHER) {
+            if (row.value.kind == EventKind.OTHER) {
                 Spacer(modifier = Modifier.height(spacing.s))
                 OutlinedTextField(
-                    value = row.customLabel,
+                    value = row.value.customLabel.orEmpty(),
                     onValueChange = { onCustomLabelChange(row.rowId, it) },
                     label = { Text(stringResource(R.string.editor_kind_label)) },
                     singleLine = true,
