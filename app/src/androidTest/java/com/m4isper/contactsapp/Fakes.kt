@@ -49,6 +49,7 @@ internal class FakeAndroidRepository(
     val created = mutableListOf<ContactForm>()
     val updated = mutableListOf<Pair<Long, ContactForm>>()
     val deleted = mutableListOf<Long>()
+    val merged = mutableListOf<Pair<Long, List<Long>>>()
 
     override suspend fun getContacts(): List<ContactDetails> {
         failure?.let { throw it }
@@ -98,6 +99,15 @@ internal class FakeAndroidRepository(
     override suspend fun deleteContact(contactId: Long) {
         failure?.let { throw it }
         deleted += contactId
+    }
+
+    override suspend fun mergeContacts(
+        targetId: Long,
+        sourceIds: List<Long>,
+    ) {
+        failure?.let { throw it }
+        merged += targetId to sourceIds
+        contacts = contacts.filterNot { it.contactId in sourceIds }
     }
 
     override fun observeFavorites(): Flow<Set<Long>> = favoritesFlow.asStateFlow()

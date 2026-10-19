@@ -115,6 +115,14 @@ private class FakeContactsRepository(
         deleted += contactId
         contacts = contacts.filterNot { it.contactId == contactId }
     }
+
+    override suspend fun mergeContacts(
+        targetId: Long,
+        sourceIds: List<Long>,
+    ) {
+        failure?.let { throw it }
+        contacts = contacts.filterNot { it.contactId in sourceIds }
+    }
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)

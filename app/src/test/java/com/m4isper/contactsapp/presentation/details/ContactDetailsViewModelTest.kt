@@ -75,6 +75,11 @@ private class FakeDetailsRepository(
     ) = Unit
 
     override suspend fun deleteContact(contactId: Long) = Unit
+
+    override suspend fun mergeContacts(
+        targetId: Long,
+        sourceIds: List<Long>,
+    ) = Unit
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -180,6 +185,11 @@ class ContactDetailsViewModelTest {
                     ) = Unit
 
                     override suspend fun deleteContact(contactId: Long) = Unit
+
+                    override suspend fun mergeContacts(
+                        targetId: Long,
+                        sourceIds: List<Long>,
+                    ) = Unit
                 }
             val viewModel =
                 ContactDetailsViewModel(

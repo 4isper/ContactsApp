@@ -459,5 +459,6 @@ class ContactListUiTest {
 
         compose.onNodeWithTag("import_menu_item").assertIsDisplayed()
         compose.onNodeWithTag("export_menu_item").assertIsDisplayed()
+        compose.onNodeWithTag("duplicates_menu_item").assertIsDisplayed()
     }
 }

@@ -52,6 +52,7 @@ internal fun FilterHeader(
     onGroupSelected: (Long?) -> Unit = {},
     onCreateGroup: (String) -> Unit = {},
     onManageGroupsClick: () -> Unit = {},
+    onDuplicatesClick: () -> Unit = {},
 ) {
     val spacing = LocalSpacing.current
     var menuOpen by remember { mutableStateOf(false) }
@@ -126,6 +127,14 @@ internal fun FilterHeader(
                             onExportClick()
                         },
                         modifier = Modifier.testTag("export_menu_item"),
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.duplicates_menu)) },
+                        onClick = {
+                            menuOpen = false
+                            onDuplicatesClick()
+                        },
+                        modifier = Modifier.testTag("duplicates_menu_item"),
                     )
                 }
             }

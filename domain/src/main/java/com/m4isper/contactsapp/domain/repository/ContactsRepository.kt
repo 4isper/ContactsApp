@@ -18,4 +18,10 @@ interface ContactsRepository {
     )
 
     suspend fun deleteContact(contactId: Long)
+
+    /** Слияние дубликатов: данные source-контактов переносятся в target, источники удаляются. */
+    suspend fun mergeContacts(
+        targetId: Long,
+        sourceIds: List<Long>,
+    )
 }

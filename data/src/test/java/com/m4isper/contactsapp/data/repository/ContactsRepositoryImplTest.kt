@@ -24,16 +24,19 @@ import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.EditableName
+import com.m4isper.contactsapp.domain.model.EmailAddress
 import com.m4isper.contactsapp.domain.model.EmailKind
 import com.m4isper.contactsapp.domain.model.EventKind
 import com.m4isper.contactsapp.domain.model.ImProtocol
 import com.m4isper.contactsapp.domain.model.NameMode
 import com.m4isper.contactsapp.domain.model.PhoneKind
+import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.model.RelationKind
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ContactsRepositoryImplTest {
@@ -192,6 +195,69 @@ class ContactsRepositoryImplTest {
         assertEquals(listOf(7L), writer.deleted)
     }
 
+    @Test
+    fun `merge moves source data into the target and deletes sources`() {
+        val target =
+            ContactDetails(
+                contactId = 7,
+                name = "Anna",
+                phones = listOf(PhoneNumber("+7111", PhoneKind.MOBILE)),
+            )
+        val source =
+            ContactDetails(
+                contactId = 8,
+                name = "Anna",
+                emails = listOf(EmailAddress("a@x.com", EmailKind.HOME)),
+            )
+        val targetRows = ContactRows(phones = listOf(ExistingPhone(1, 10, "+7111", Phone.TYPE_MOBILE, null)))
+        val sourceRows = ContactRows(emails = listOf(ExistingEmail(2, 20, "a@x.com", Email.TYPE_HOME, null)))
+        val writer =
+            FakeWriter(
+                rawContactIdsByContact = mapOf(7L to 10L, 8L to 20L),
+                rowsByContact = mapOf(7L to targetRows, 8L to sourceRows),
+            )
+        val repository = ContactsRepositoryImpl(FakeReader(byId = mapOf(7L to target, 8L to source)), writer)
+
+        runBlocking { repository.mergeContacts(targetId = 7, sourceIds = listOf(8)) }
+
+        val update = writer.updated.single()
+        assertEquals(10L, update.rawContactId)
+        assertEquals(targetRows, update.rows)
+        assertEquals(listOf("+7111"), update.form.phones.map { it.number })
+        assertEquals(listOf("a@x.com"), update.form.emails.map { it.address })
+        assertNull(
+            update
+                .form
+                .emails
+                .single()
+                .dataId,
+        )
+        assertEquals(listOf(8L), writer.deleted)
+    }
+
+    @Test
+    fun `merge ignores sources that no longer exist`() {
+        val writer = FakeWriter()
+        val repository = ContactsRepositoryImpl(FakeReader(details), writer)
+
+        runBlocking { repository.mergeContacts(targetId = 7, sourceIds = listOf(99)) }
+
+        assertTrue(writer.updated.isEmpty())
+        assertTrue(writer.deleted.isEmpty())
+    }
+
+    @Test
+    fun `merge fails when the target is missing`() {
+        val writer = FakeWriter()
+        val source = ContactDetails(contactId = 8, name = "Bob")
+        val repository = ContactsRepositoryImpl(FakeReader(byId = mapOf(8L to source)), writer)
+
+        assertThrows(IllegalArgumentException::class.java) {
+            runBlocking { repository.mergeContacts(targetId = 7, sourceIds = listOf(8)) }
+        }
+        assertTrue(writer.deleted.isEmpty())
+    }
+
     private fun name(
         dataId: Long,
         rawContactId: Long,
@@ -217,16 +283,20 @@ private data class UpdateCall(
 )
 
 private class FakeReader(
-    private val details: ContactDetails?,
+    private val details: ContactDetails? = null,
+    private val byId: Map<Long, ContactDetails> = emptyMap(),
 ) : ContactsDataSource {
-    override suspend fun loadContacts(): List<ContactDetails> = listOfNotNull(details)
+    override suspend fun loadContacts(): List<ContactDetails> = listOfNotNull(details) + byId.values
 
-    override suspend fun loadContact(contactId: Long): ContactDetails? = details
+    override suspend fun loadContact(contactId: Long): ContactDetails? =
+        byId[contactId] ?: details?.takeIf { it.contactId == contactId }
 }
 
 private class FakeWriter(
     private val rawContactId: Long? = 10,
     private val rows: ContactRows = ContactRows(),
+    private val rawContactIdsByContact: Map<Long, Long> = emptyMap(),
+    private val rowsByContact: Map<Long, ContactRows> = emptyMap(),
 ) : ContactsWriterDataSource {
     val created = mutableListOf<ContactForm>()
     val updated = mutableListOf<UpdateCall>()
@@ -244,9 +314,9 @@ private class FakeWriter(
         updated += UpdateCall(rawContactId = rawContactId, rows = rows, form = form)
     }
 
-    override suspend fun loadContactRows(contactId: Long): ContactRows = rows
+    override suspend fun loadContactRows(contactId: Long): ContactRows = rowsByContact[contactId] ?: rows
 
-    override suspend fun loadRawContactId(contactId: Long): Long? = rawContactId
+    override suspend fun loadRawContactId(contactId: Long): Long? = rawContactIdsByContact[contactId] ?: rawContactId
 
     override suspend fun deleteContact(contactId: Long) {
         deleted += contactId

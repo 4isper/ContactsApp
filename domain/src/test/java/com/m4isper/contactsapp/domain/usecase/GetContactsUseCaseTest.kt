@@ -38,6 +38,11 @@ private class StubContactsRepository(
     ) = Unit
 
     override suspend fun deleteContact(contactId: Long) = Unit
+
+    override suspend fun mergeContacts(
+        targetId: Long,
+        sourceIds: List<Long>,
+    ) = Unit
 }
 
 class GetContactsUseCaseTest {

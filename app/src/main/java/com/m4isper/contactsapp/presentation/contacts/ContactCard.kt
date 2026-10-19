@@ -99,7 +99,7 @@ internal fun ContactCard(
 }
 
 @Composable
-private fun contactSubtitle(contact: ContactDetails): String =
+internal fun contactSubtitle(contact: ContactDetails): String =
     if (contact.phones.isEmpty()) {
         contact.emails
             .firstOrNull()

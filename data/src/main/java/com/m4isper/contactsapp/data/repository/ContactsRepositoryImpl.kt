@@ -16,6 +16,7 @@ import com.m4isper.contactsapp.data.datasource.read.mapEmailKind
 import com.m4isper.contactsapp.data.datasource.read.mapImProtocol
 import com.m4isper.contactsapp.data.datasource.read.mapPhoneKind
 import com.m4isper.contactsapp.data.datasource.read.mapRelationKind
+import com.m4isper.contactsapp.data.datasource.write.mergeContactForms
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
@@ -96,6 +97,24 @@ class ContactsRepositoryImpl(
     }
 
     override suspend fun deleteContact(contactId: Long) = writer.deleteContact(contactId)
+
+    override suspend fun mergeContacts(
+        targetId: Long,
+        sourceIds: List<Long>,
+    ) {
+        if (sourceIds.isEmpty()) return
+        val sources =
+            sourceIds
+                .filter { it != targetId }
+                .mapNotNull { id -> getContactForm(id)?.let { id to it } }
+        if (sources.isEmpty()) return
+        val targetForm =
+            requireNotNull(getContactForm(targetId)) {
+                "No contact form for id=$targetId"
+            }
+        updateContact(targetId, mergeContactForms(targetForm, sources.map { it.second }))
+        sources.forEach { (id, _) -> deleteContact(id) }
+    }
 }
 
 /** Имя для редактора: строка целевого raw contact, иначе самая младшая по raw id. */

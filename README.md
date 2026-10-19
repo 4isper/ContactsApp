@@ -12,6 +12,7 @@ A native Android contacts manager built with modern Jetpack libraries and Clean 
 - Contact details: phones, emails, instant messengers, addresses, websites, organization, note, birthday, nickname, relations (family, friends, etc.), events (anniversaries and custom dates with labels) and group memberships (labels); call (with confirmation), SMS, email, map, open link and copy actions; vCard sharing (with structured `N`, `IMPP`, `NICKNAME`, `RELATED` and `ANNIVERSARY`/`X-ABDATE` properties); favorites toggle
 - Contact editor: create, update and delete contacts; structured name — a single full-name field or given/family/middle/prefix/suffix components with phonetic variants, toggled with an animated chevron; multi-raw contacts are updated consistently (deterministic target raw contact, group membership rows of all raw contacts reconciled); photo pick with preview and removal; dynamic typed rows for phones, emails, instant messengers, addresses, websites, relations and events (with custom labels, optional year for dates and a shared date picker); group membership picker with inline creation of a new group; nickname field; validation and unsaved-changes guard
 - Groups (labels): a dedicated screen to create, rename and delete groups with member counts, opened from the list filter or the filter chip menu
+- Duplicates: a dedicated screen (list overflow menu) that finds likely duplicates by normalized phone, email or full name, shows name-only matches with a warning, lets you pick the primary contact and merges all data, labels and the photo into it while keeping favorites; the merged-away contacts are deleted
 - Favorites persisted with DataStore; Material You dynamic color; adaptive two-pane layout on wide screens
 
 ## Architecture
@@ -23,7 +24,7 @@ ContactsApp/
 ├── domain/   # pure models, repository interfaces, use cases, ports (+ fast JVM tests)
 ├── data/     # ContactsContract sources (datasource/read/, datasource/write/), repositories, vCard codec
 └── app/      # presentation/, di/, ui/
-    ├── presentation/   # screens, ViewModels, UiState (contacts/, details/, editor/, groups/,
+    ├── presentation/   # screens, ViewModels, UiState (contacts/, details/, editor/, groups/, duplicates/,
     │                   # navigation/; shared helpers in common/: permissions/, call/, share/, format/)
     ├── di/             # Metro dependency graph (needs :data on classpath for codegen)
     └── ui/             # design system: theme tokens + components
@@ -52,7 +53,7 @@ Android permissions used: `READ_CONTACTS` (list), `WRITE_CONTACTS` (editor), `CA
 
 ```bash
 ./gradlew :app:assembleDebug          # debug APK
-./gradlew :domain:test :data:testDebugUnitTest :app:testDebugUnitTest  # 215 unit tests
-./gradlew :app:connectedDebugAndroidTest  # 31 Compose UI tests (needs a running emulator)
+./gradlew :domain:test :data:testDebugUnitTest :app:testDebugUnitTest  # 251 unit tests
+./gradlew :app:connectedDebugAndroidTest  # 33 Compose UI tests (needs a running emulator)
 ./gradlew detekt ktlintCheck          # static analysis, all modules
 ```

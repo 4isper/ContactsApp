@@ -23,6 +23,7 @@ import androidx.navigation3.ui.NavDisplay
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.presentation.contacts.ContactsScreen
 import com.m4isper.contactsapp.presentation.details.ContactDetailsScreen
+import com.m4isper.contactsapp.presentation.duplicates.DuplicatesScreen
 import com.m4isper.contactsapp.presentation.editor.ContactEditorScreen
 import com.m4isper.contactsapp.presentation.groups.GroupsScreen
 import com.m4isper.contactsapp.ui.components.EmptyState
@@ -33,6 +34,9 @@ data object ContactsListKey : NavKey
 
 @Serializable
 data object GroupsKey : NavKey
+
+@Serializable
+data object DuplicatesKey : NavKey
 
 @Serializable
 data class ContactDetailsKey(
@@ -109,10 +113,18 @@ fun ContactsNavHost(modifier: Modifier = Modifier) {
                             onGroupsClick = {
                                 backStack.add(GroupsKey)
                             },
+                            onDuplicatesClick = {
+                                backStack.add(DuplicatesKey)
+                            },
                         )
                     }
                     entry<GroupsKey> {
                         GroupsScreen(
+                            onBack = dropUnlessResumed { backStack.removeLastOrNull() },
+                        )
+                    }
+                    entry<DuplicatesKey> {
+                        DuplicatesScreen(
                             onBack = dropUnlessResumed { backStack.removeLastOrNull() },
                         )
                     }

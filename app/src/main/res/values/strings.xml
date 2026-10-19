@@ -122,6 +122,15 @@
     <string name="export_empty">Nothing to export</string>
     <string name="export_failed">Couldn\'t export contacts</string>
 
+    <string name="duplicates_title">Duplicates</string>
+    <string name="duplicates_menu">Find duplicates</string>
+    <string name="duplicates_empty">No duplicates found</string>
+    <string name="duplicates_primary_label">Primary contact</string>
+    <string name="duplicates_name_only_hint">Matched by name only — make sure this is the same person</string>
+    <string name="duplicates_merged">Duplicates merged</string>
+    <string name="duplicates_action_failed">Couldn\'t merge duplicates</string>
+    <string name="action_merge">Merge</string>
+
     <string name="filter_groups">Groups</string>
     <string name="groups_all">All contacts</string>
     <string name="groups_manage">Manage groups</string>

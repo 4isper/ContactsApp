@@ -69,6 +69,11 @@ private class FakeEditorRepository :
 
     override suspend fun deleteContact(contactId: Long) = Unit
 
+    override suspend fun mergeContacts(
+        targetId: Long,
+        sourceIds: List<Long>,
+    ) = Unit
+
     override fun observeFavorites(): Flow<Set<Long>> = MutableStateFlow(emptySet<Long>()).asStateFlow()
 
     override suspend fun toggleFavorite(contactId: Long) = Unit

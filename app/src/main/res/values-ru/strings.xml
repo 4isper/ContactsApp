@@ -122,6 +122,15 @@
     <string name="export_empty">Нет контактов для экспорта</string>
     <string name="export_failed">Не удалось экспортировать контакты</string>
 
+    <string name="duplicates_title">Дубликаты</string>
+    <string name="duplicates_menu">Найти дубликаты</string>
+    <string name="duplicates_empty">Дубликаты не найдены</string>
+    <string name="duplicates_primary_label">Основной контакт</string>
+    <string name="duplicates_name_only_hint">Совпадение только по имени — проверьте, что это один человек</string>
+    <string name="duplicates_merged">Дубликаты объединены</string>
+    <string name="duplicates_action_failed">Не удалось объединить дубликаты</string>
+    <string name="action_merge">Объединить</string>
+
     <string name="filter_groups">Группы</string>
     <string name="groups_all">Все контакты</string>
     <string name="groups_manage">Управление группами</string>
