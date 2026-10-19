@@ -52,6 +52,8 @@ internal fun ContactListBody(
                     isSelectionMode = uiState.isSelectionMode,
                     onContactClick = onContactClick,
                     onContactLongClick = onContactLongClick,
+                    sortOrder = uiState.sortOrder,
+                    density = uiState.listDensity,
                 )
         }
     }

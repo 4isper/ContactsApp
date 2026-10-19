@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.ListDensity
 import com.m4isper.contactsapp.ui.components.ListAvatar
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 
@@ -35,8 +36,10 @@ internal fun ContactCard(
     isSelectionMode: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
+    density: ListDensity = ListDensity.COMFORTABLE,
 ) {
     val spacing = LocalSpacing.current
+    val compact = density == ListDensity.COMPACT
     Card(
         colors =
             CardDefaults.cardColors(
@@ -60,11 +63,16 @@ internal fun ContactCard(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(spacing.m),
+            modifier =
+                Modifier.padding(
+                    horizontal = spacing.m,
+                    vertical = if (compact) spacing.xs else spacing.m,
+                ),
         ) {
             ListAvatar(
                 name = contact.name,
                 photoUri = contact.photoUri,
+                size = if (compact) spacing.avatarList - spacing.s else spacing.avatarList,
             )
 
             Spacer(modifier = Modifier.width(spacing.m))

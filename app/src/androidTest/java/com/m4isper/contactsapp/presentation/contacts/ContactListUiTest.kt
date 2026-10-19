@@ -14,6 +14,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.m4isper.contactsapp.FakeAndroidRepository
 import com.m4isper.contactsapp.FakeGroupsRepository
+import com.m4isper.contactsapp.FakeSettingsRepository
 import com.m4isper.contactsapp.FakeVCardCodec
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactGroup
@@ -26,6 +27,7 @@ import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.ImportContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
+import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.testDetails
 import org.junit.Assert.assertEquals
@@ -46,9 +48,11 @@ class ContactListUiTest {
     private fun viewModel(
         repository: FakeAndroidRepository,
         groups: FakeGroupsRepository = FakeGroupsRepository(),
+        settings: FakeSettingsRepository = FakeSettingsRepository(),
     ) = ContactsViewModel(
         GetContactsUseCase(repository),
         ObserveFavoritesUseCase(repository),
+        ObserveSettingsUseCase(settings),
         GetContactDetailsUseCase(repository),
         DeleteContactsUseCase(repository, repository),
         ImportContactsUseCase(repository),
@@ -460,5 +464,6 @@ class ContactListUiTest {
         compose.onNodeWithTag("import_menu_item").assertIsDisplayed()
         compose.onNodeWithTag("export_menu_item").assertIsDisplayed()
         compose.onNodeWithTag("duplicates_menu_item").assertIsDisplayed()
+        compose.onNodeWithTag("settings_menu_item").assertIsDisplayed()
     }
 }

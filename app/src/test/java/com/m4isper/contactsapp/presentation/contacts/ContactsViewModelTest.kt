@@ -1,13 +1,17 @@
 package com.m4isper.contactsapp.presentation.contacts
 
 import com.m4isper.contactsapp.FakeGroupsRepository
+import com.m4isper.contactsapp.FakeSettingsRepository
 import com.m4isper.contactsapp.FakeVCardCodec
+import com.m4isper.contactsapp.domain.model.AppSettings
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.ContactRelation
+import com.m4isper.contactsapp.domain.model.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.EmailAddress
 import com.m4isper.contactsapp.domain.model.EmailKind
+import com.m4isper.contactsapp.domain.model.ListDensity
 import com.m4isper.contactsapp.domain.model.NameParts
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
@@ -23,6 +27,7 @@ import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.ImportContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
+import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -138,9 +143,11 @@ class ContactsViewModelTest {
         repository: FakeContactsRepository,
         groups: FakeGroupsRepository = FakeGroupsRepository(),
         codec: FakeVCardCodec = FakeVCardCodec(),
+        settings: FakeSettingsRepository = FakeSettingsRepository(),
     ) = ContactsViewModel(
         GetContactsUseCase(repository),
         ObserveFavoritesUseCase(repository),
+        ObserveSettingsUseCase(settings),
         GetContactDetailsUseCase(repository),
         DeleteContactsUseCase(repository, repository),
         ImportContactsUseCase(repository),
@@ -171,6 +178,28 @@ class ContactsViewModelTest {
             val content = viewModel.uiState.value.content
             assertTrue(content is Loadable.Content)
             assertEquals(2, (content as Loadable.Content).data.size)
+        }
+
+    @Test
+    fun `settings land in ui state as sort order and density`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val settings =
+                FakeSettingsRepository(
+                    AppSettings(
+                        sortOrder = ContactSortOrder.BY_FAMILY,
+                        listDensity = ListDensity.COMPACT,
+                    ),
+                )
+            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val viewModel = viewModel(repository, settings = settings)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            assertEquals(ContactSortOrder.BY_FAMILY, viewModel.uiState.value.sortOrder)
+            assertEquals(ListDensity.COMPACT, viewModel.uiState.value.listDensity)
         }
 
     @Test

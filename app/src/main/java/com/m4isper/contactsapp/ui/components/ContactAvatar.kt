@@ -74,12 +74,12 @@ fun ListAvatar(
     name: String,
     photoUri: String?,
     modifier: Modifier = Modifier,
+    size: Dp = LocalSpacing.current.avatarList,
 ) {
-    val spacing = LocalSpacing.current
     ContactAvatar(
         name = name,
         photoUri = photoUri,
-        size = spacing.avatarList,
+        size = size,
         textStyle = MaterialTheme.typography.titleMedium,
         modifier = modifier,
     )

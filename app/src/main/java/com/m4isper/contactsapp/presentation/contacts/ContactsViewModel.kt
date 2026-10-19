@@ -2,8 +2,11 @@ package com.m4isper.contactsapp.presentation.contacts
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.m4isper.contactsapp.domain.model.AppSettings
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactGroup
+import com.m4isper.contactsapp.domain.model.ContactSortOrder
+import com.m4isper.contactsapp.domain.model.ListDensity
 import com.m4isper.contactsapp.domain.usecase.AddContactsToGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
@@ -13,6 +16,7 @@ import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.ImportContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
+import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
 import com.m4isper.contactsapp.domain.vcard.VCardCodec
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.logw
@@ -39,6 +43,8 @@ data class ContactsUiState(
     val deleteClosing: Boolean = false,
     val groups: List<ContactGroup> = emptyList(),
     val selectedGroupId: Long? = null,
+    val sortOrder: ContactSortOrder = ContactSortOrder.BY_NAME,
+    val listDensity: ListDensity = ListDensity.COMFORTABLE,
     val event: ContactsEvent? = null,
 ) {
     val isSearching: Boolean
@@ -139,6 +145,7 @@ private data class ContactsMiddle(
 class ContactsViewModel(
     private val getContactsUseCase: GetContactsUseCase,
     observeFavoritesUseCase: ObserveFavoritesUseCase,
+    observeSettingsUseCase: ObserveSettingsUseCase,
     private val getContactDetailsUseCase: GetContactDetailsUseCase,
     deleteContactsUseCase: DeleteContactsUseCase,
     importContactsUseCase: ImportContactsUseCase,
@@ -174,6 +181,14 @@ class ContactsViewModel(
                 initialValue = emptySet(),
             )
 
+    private val settingsFlow: StateFlow<AppSettings> =
+        observeSettingsUseCase()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(SUBSCRIBE_TIMEOUT_MILLIS),
+                initialValue = AppSettings(),
+            )
+
     val uiState: StateFlow<ContactsUiState> =
         combine(
             combine(allContacts, isLoading, searchQueryFlow, loadFailure, ::ContactsLoad),
@@ -199,7 +214,8 @@ class ContactsViewModel(
                     membership = groups.membership,
                 )
             },
-        ) { load, middle -> contactsUiState(load, middle) }
+            settingsFlow,
+        ) { load, middle, settings -> contactsUiState(load, middle, settings) }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(SUBSCRIBE_TIMEOUT_MILLIS),
@@ -209,6 +225,7 @@ class ContactsViewModel(
     private fun contactsUiState(
         load: ContactsLoad,
         middle: ContactsMiddle,
+        settings: AppSettings,
     ): ContactsUiState {
         val pending = middle.window?.contactIds.orEmpty()
         val visible =
@@ -238,6 +255,8 @@ class ContactsViewModel(
             deleteClosing = middle.window?.closing == true,
             groups = middle.groups,
             selectedGroupId = middle.selectedGroupId,
+            sortOrder = settings.sortOrder,
+            listDensity = settings.listDensity,
             event = middle.event,
         )
     }

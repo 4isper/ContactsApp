@@ -131,6 +131,19 @@
     <string name="duplicates_action_failed">Не удалось объединить дубликаты</string>
     <string name="action_merge">Объединить</string>
 
+    <string name="settings_menu">Настройки</string>
+    <string name="settings_title">Настройки</string>
+    <string name="settings_theme">Тема</string>
+    <string name="settings_theme_system">Системная</string>
+    <string name="settings_theme_light">Светлая</string>
+    <string name="settings_theme_dark">Тёмная</string>
+    <string name="settings_sort_order">Сортировка контактов</string>
+    <string name="settings_sort_by_name">По полному имени</string>
+    <string name="settings_sort_by_family">По фамилии</string>
+    <string name="settings_list_density">Плотность списка</string>
+    <string name="settings_density_comfortable">Обычная</string>
+    <string name="settings_density_compact">Компактная</string>
+
     <string name="filter_groups">Группы</string>
     <string name="groups_all">Все контакты</string>
     <string name="groups_manage">Управление группами</string>

@@ -26,6 +26,7 @@ import com.m4isper.contactsapp.presentation.details.ContactDetailsScreen
 import com.m4isper.contactsapp.presentation.duplicates.DuplicatesScreen
 import com.m4isper.contactsapp.presentation.editor.ContactEditorScreen
 import com.m4isper.contactsapp.presentation.groups.GroupsScreen
+import com.m4isper.contactsapp.presentation.settings.SettingsScreen
 import com.m4isper.contactsapp.ui.components.EmptyState
 import kotlinx.serialization.Serializable
 
@@ -37,6 +38,9 @@ data object GroupsKey : NavKey
 
 @Serializable
 data object DuplicatesKey : NavKey
+
+@Serializable
+data object SettingsKey : NavKey
 
 @Serializable
 data class ContactDetailsKey(
@@ -116,6 +120,9 @@ fun ContactsNavHost(modifier: Modifier = Modifier) {
                             onDuplicatesClick = {
                                 backStack.add(DuplicatesKey)
                             },
+                            onSettingsClick = {
+                                backStack.add(SettingsKey)
+                            },
                         )
                     }
                     entry<GroupsKey> {
@@ -125,6 +132,11 @@ fun ContactsNavHost(modifier: Modifier = Modifier) {
                     }
                     entry<DuplicatesKey> {
                         DuplicatesScreen(
+                            onBack = dropUnlessResumed { backStack.removeLastOrNull() },
+                        )
+                    }
+                    entry<SettingsKey> {
+                        SettingsScreen(
                             onBack = dropUnlessResumed { backStack.removeLastOrNull() },
                         )
                     }

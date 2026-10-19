@@ -53,6 +53,7 @@ internal fun FilterHeader(
     onCreateGroup: (String) -> Unit = {},
     onManageGroupsClick: () -> Unit = {},
     onDuplicatesClick: () -> Unit = {},
+    onSettingsClick: () -> Unit = {},
 ) {
     val spacing = LocalSpacing.current
     var menuOpen by remember { mutableStateOf(false) }
@@ -135,6 +136,14 @@ internal fun FilterHeader(
                             onDuplicatesClick()
                         },
                         modifier = Modifier.testTag("duplicates_menu_item"),
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.settings_menu)) },
+                        onClick = {
+                            menuOpen = false
+                            onSettingsClick()
+                        },
+                        modifier = Modifier.testTag("settings_menu_item"),
                     )
                 }
             }

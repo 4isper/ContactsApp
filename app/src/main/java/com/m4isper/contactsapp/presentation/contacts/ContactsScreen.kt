@@ -24,6 +24,7 @@ fun ContactsScreen(
     onAddClick: () -> Unit,
     onGroupsClick: () -> Unit,
     onDuplicatesClick: () -> Unit,
+    onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ContactsViewModel = metroViewModel(),
 ) {
@@ -86,6 +87,7 @@ fun ContactsScreen(
             onManageGroupsClick = onGroupsClick,
             onAddSelectedToGroup = viewModel::onAddSelectedToGroup,
             onDuplicatesClick = onDuplicatesClick,
+            onSettingsClick = onSettingsClick,
             modifier = modifier,
         )
     }

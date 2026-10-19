@@ -131,6 +131,19 @@
     <string name="duplicates_action_failed">Couldn\'t merge duplicates</string>
     <string name="action_merge">Merge</string>
 
+    <string name="settings_menu">Settings</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_sort_order">Sort contacts by</string>
+    <string name="settings_sort_by_name">Full name</string>
+    <string name="settings_sort_by_family">Last name</string>
+    <string name="settings_list_density">List density</string>
+    <string name="settings_density_comfortable">Comfortable</string>
+    <string name="settings_density_compact">Compact</string>
+
     <string name="filter_groups">Groups</string>
     <string name="groups_all">All contacts</string>
     <string name="groups_manage">Manage groups</string>

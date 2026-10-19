@@ -1,12 +1,36 @@
 package com.m4isper.contactsapp.presentation.contacts
 
 import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.ContactSortOrder
+import java.util.Locale
 
-internal fun groupContactsByFirstLetter(contacts: List<ContactDetails>): Map<Char, List<ContactDetails>> =
+/**
+ * Ключ сортировки: полное имя или фамилия (с откатом к полному имени,
+ * если фамилии в структурированном имени нет).
+ */
+internal fun contactSortKey(
+    contact: ContactDetails,
+    sortOrder: ContactSortOrder,
+): String =
+    when (sortOrder) {
+        ContactSortOrder.BY_NAME -> contact.name
+        ContactSortOrder.BY_FAMILY ->
+            contact.nameParts
+                ?.family
+                ?.takeIf { it.isNotBlank() }
+                ?: contact.name
+    }
+
+/** Контакты без имени отбрасываются; внутри буквы порядок — по ключу сортировки. */
+internal fun groupContactsByFirstLetter(
+    contacts: List<ContactDetails>,
+    sortOrder: ContactSortOrder = ContactSortOrder.BY_NAME,
+): Map<Char, List<ContactDetails>> =
     contacts
         .filter { it.name.isNotBlank() }
+        .sortedBy { contactSortKey(it, sortOrder).lowercase(Locale.ROOT) }
         .groupBy {
-            val first = it.name.first().uppercaseChar()
+            val first = contactSortKey(it, sortOrder).trim().first().uppercaseChar()
             if (first.isLetter()) first else '#'
         }.toSortedMap()
 

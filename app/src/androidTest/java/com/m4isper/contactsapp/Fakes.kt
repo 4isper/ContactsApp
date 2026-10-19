@@ -1,21 +1,26 @@
 package com.m4isper.contactsapp
 
+import com.m4isper.contactsapp.domain.model.AppSettings
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactEvent
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.ContactRelation
+import com.m4isper.contactsapp.domain.model.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.EditableEvent
 import com.m4isper.contactsapp.domain.model.EditableName
 import com.m4isper.contactsapp.domain.model.EditableNickname
 import com.m4isper.contactsapp.domain.model.EditablePhone
 import com.m4isper.contactsapp.domain.model.EditableRelation
 import com.m4isper.contactsapp.domain.model.InstantMessage
+import com.m4isper.contactsapp.domain.model.ListDensity
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
+import com.m4isper.contactsapp.domain.model.ThemeMode
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import com.m4isper.contactsapp.domain.repository.GroupsRepository
+import com.m4isper.contactsapp.domain.repository.SettingsRepository
 import com.m4isper.contactsapp.domain.vcard.VCardCodec
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -203,5 +208,36 @@ internal class FakeVCardCodec(
     override suspend fun encode(contacts: List<ContactDetails>): String {
         encodedContacts += contacts
         return encoded
+    }
+}
+
+/** Фейк репозитория настроек: in-memory состояние и запись вызовов для проверок. */
+internal class FakeSettingsRepository(
+    initial: AppSettings = AppSettings(),
+) : SettingsRepository {
+    private val state = MutableStateFlow(initial)
+
+    /** Текущие настройки; тесты могут менять их отсюда, чтобы проверить реакцию UI. */
+    val settings: MutableStateFlow<AppSettings> = state
+
+    val themeModes = mutableListOf<ThemeMode>()
+    val sortOrders = mutableListOf<ContactSortOrder>()
+    val densities = mutableListOf<ListDensity>()
+
+    override fun observeSettings(): Flow<AppSettings> = state
+
+    override suspend fun setThemeMode(mode: ThemeMode) {
+        themeModes += mode
+        state.value = state.value.copy(themeMode = mode)
+    }
+
+    override suspend fun setSortOrder(order: ContactSortOrder) {
+        sortOrders += order
+        state.value = state.value.copy(sortOrder = order)
+    }
+
+    override suspend fun setListDensity(density: ListDensity) {
+        densities += density
+        state.value = state.value.copy(listDensity = density)
     }
 }

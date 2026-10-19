@@ -54,6 +54,7 @@ internal fun ContactList(
     onManageGroupsClick: () -> Unit = {},
     onAddSelectedToGroup: (Set<Long>) -> Unit = {},
     onDuplicatesClick: () -> Unit = {},
+    onSettingsClick: () -> Unit = {},
 ) {
     val context = LocalContext.current
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -154,6 +155,7 @@ internal fun ContactList(
                     onCreateGroup = onCreateGroup,
                     onManageGroupsClick = onManageGroupsClick,
                     onDuplicatesClick = onDuplicatesClick,
+                    onSettingsClick = onSettingsClick,
                 )
             }
             ContactListBody(

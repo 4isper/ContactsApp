@@ -23,6 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.ContactSortOrder
+import com.m4isper.contactsapp.domain.model.ListDensity
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 import kotlinx.coroutines.launch
 
@@ -34,9 +36,11 @@ internal fun GroupedContacts(
     isSelectionMode: Boolean,
     onContactClick: (Long) -> Unit,
     onContactLongClick: (Long) -> Unit,
+    sortOrder: ContactSortOrder = ContactSortOrder.BY_NAME,
+    density: ListDensity = ListDensity.COMFORTABLE,
 ) {
     val spacing = LocalSpacing.current
-    val grouped = groupContactsByFirstLetter(contacts)
+    val grouped = groupContactsByFirstLetter(contacts, sortOrder)
     val indices = remember(grouped) { letterIndices(grouped) }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
@@ -85,6 +89,7 @@ internal fun GroupedContacts(
                             isSelectionMode = isSelectionMode,
                             onClick = { onContactClick(contact.contactId) },
                             onLongClick = { onContactLongClick(contact.contactId) },
+                            density = density,
                         )
                     }
                 }
