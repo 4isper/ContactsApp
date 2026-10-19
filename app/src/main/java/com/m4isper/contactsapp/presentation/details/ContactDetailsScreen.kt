@@ -93,16 +93,18 @@ fun ContactDetailsScreen(
                 .padding(innerPadding)
 
         when (val content = uiState.content) {
-            is Loadable.Loading -> LoadingState()
+            is Loadable.Loading -> LoadingState(screenModifier)
             is Loadable.Empty ->
                 EmptyState(
                     icon = Icons.Filled.PersonSearch,
                     title = stringResource(R.string.contact_not_found),
+                    modifier = screenModifier,
                 )
             is Loadable.Error ->
                 ErrorState(
                     message = content.message,
                     onRetry = viewModel::refresh,
+                    modifier = screenModifier,
                 )
             is Loadable.Content ->
                 DetailsContent(

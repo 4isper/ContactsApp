@@ -6,6 +6,7 @@
     <string name="permission_open_settings">Открыть настройки</string>
 
     <string name="search_label">Поиск</string>
+    <string name="action_clear_search">Очистить поиск</string>
     <string name="contacts_empty">Контакты не найдены</string>
     <string name="contacts_nothing_found">Ничего не найдено</string>
     <string name="contacts_load_error">Не удалось загрузить контакты</string>
@@ -95,6 +96,13 @@
     <string name="editor_delete_title">Удалить контакт?</string>
     <string name="editor_delete_message">Это действие нельзя отменить</string>
     <string name="action_delete">Удалить</string>
+    <string name="action_delete_phone">Удалить номер</string>
+    <string name="action_delete_email">Удалить email</string>
+    <string name="action_delete_im">Удалить мессенджер</string>
+    <string name="action_delete_address">Удалить адрес</string>
+    <string name="action_delete_website">Удалить сайт</string>
+    <string name="action_delete_event">Удалить событие</string>
+    <string name="action_delete_relation">Удалить связь</string>
     <string name="action_undo">Отменить</string>
     <string name="editor_discard_title">Отменить изменения?</string>
     <string name="editor_discard_message">Несохранённые изменения будут потеряны</string>
@@ -105,7 +113,8 @@
     <string name="contact_select_prompt">Выберите контакт из списка</string>
     <string name="filter_favorites">Избранное</string>
     <string name="favorites_empty">Нет избранных контактов</string>
-    <string name="action_toggle_favorite">В избранное</string>
+    <string name="action_add_favorite">Добавить в избранное</string>
+    <string name="action_remove_favorite">Убрать из избранного</string>
     <string name="share_contact">Поделиться контактом</string>
     <string name="share_failed">Не удалось поделиться контактом</string>
     <string name="action_close">Закрыть</string>
@@ -151,7 +160,9 @@
     <string name="groups_title">Группы</string>
     <string name="groups_empty">Групп пока нет</string>
     <string name="group_name_label">Название группы</string>
+    <string name="group_label">Группа</string>
     <string name="group_rename">Переименовать группу</string>
+    <string name="action_delete_group">Удалить группу</string>
     <string name="group_delete_title">Удалить группу?</string>
     <string name="group_delete_message">Контакты останутся, удалится только группа</string>
     <string name="action_add_to_group">Добавить в группу</string>
@@ -164,6 +175,7 @@
     <string name="editor_change_photo">Изменить фото</string>
     <string name="editor_remove_photo">Удалить фото</string>
     <string name="editor_photo_desc">Фото контакта</string>
+    <string name="editor_section_phones">Телефоны</string>
     <string name="editor_section_emails">Email</string>
     <string name="editor_section_instant_messages">Мессенджеры</string>
     <string name="editor_section_addresses">Адреса</string>

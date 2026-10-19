@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactDetails
 
@@ -31,7 +32,13 @@ internal fun DetailsTopBar(
     onToggleFavorite: () -> Unit,
 ) {
     TopAppBar(
-        title = { Text(title ?: stringResource(R.string.action_back)) },
+        title = {
+            Text(
+                text = title ?: stringResource(R.string.action_back),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        },
         navigationIcon = {
             IconButton(
                 onClick = onBack,
@@ -64,7 +71,14 @@ internal fun DetailsTopBar(
                         } else {
                             Icons.Filled.FavoriteBorder
                         },
-                        contentDescription = stringResource(R.string.action_toggle_favorite),
+                        contentDescription =
+                            stringResource(
+                                if (isFavorite) {
+                                    R.string.action_remove_favorite
+                                } else {
+                                    R.string.action_add_favorite
+                                },
+                            ),
                         tint =
                             if (isFavorite) {
                                 MaterialTheme.colorScheme.tertiary

@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Icon
@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.EditableBirthday
@@ -68,17 +69,29 @@ internal fun BirthdayEditorRow(
             }
         }
         if (value != null) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .toggleable(
+                            value = value.year == null,
+                            role = Role.Switch,
+                            onValueChange = { noYear ->
+                                onBirthdayChange(
+                                    value.copy(year = if (noYear) null else LocalDate.now().year),
+                                )
+                            },
+                        ),
+            ) {
                 Text(
                     text = stringResource(R.string.editor_birthday_no_year),
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                Spacer(modifier = Modifier.width(spacing.s))
+                Spacer(modifier = Modifier.weight(1f))
                 Switch(
                     checked = value.year == null,
-                    onCheckedChange = { noYear ->
-                        onBirthdayChange(value.copy(year = if (noYear) null else LocalDate.now().year))
-                    },
+                    onCheckedChange = null,
                     modifier = Modifier.testTag("editor_birthday_switch"),
                 )
             }

@@ -2,6 +2,7 @@ package com.m4isper.contactsapp.presentation.contacts
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -57,6 +58,10 @@ internal fun GroupedContacts(
         Row(modifier = Modifier.fillMaxSize()) {
             LazyColumn(
                 state = listState,
+                contentPadding =
+                    PaddingValues(
+                        bottom = if (isSelectionMode) spacing.m else spacing.fabClearance,
+                    ),
                 modifier =
                     Modifier
                         .weight(1f)

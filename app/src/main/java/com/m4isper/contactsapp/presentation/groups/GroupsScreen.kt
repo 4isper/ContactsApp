@@ -2,6 +2,7 @@ package com.m4isper.contactsapp.presentation.groups
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,10 +11,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Label
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -36,6 +37,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactGroup
@@ -111,7 +113,7 @@ fun GroupsScreen(
             is Loadable.Loading -> LoadingState(screenModifier)
             is Loadable.Empty ->
                 EmptyState(
-                    icon = Icons.Filled.Label,
+                    icon = Icons.AutoMirrored.Filled.Label,
                     title = stringResource(R.string.groups_empty),
                     modifier = screenModifier,
                 )
@@ -183,6 +185,7 @@ private fun GroupList(
 ) {
     val spacing = LocalSpacing.current
     LazyColumn(
+        contentPadding = PaddingValues(bottom = spacing.fabClearance),
         modifier = modifier.testTag("groups_list"),
     ) {
         items(
@@ -206,6 +209,7 @@ private fun GroupRow(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val spacing = LocalSpacing.current
     Card(
         colors =
             CardDefaults.cardColors(
@@ -218,12 +222,19 @@ private fun GroupRow(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(start = LocalSpacing.current.m),
+            modifier =
+                Modifier.padding(
+                    start = spacing.m,
+                    top = spacing.s,
+                    bottom = spacing.s,
+                ),
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = item.group.title,
                     style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     text =
@@ -251,7 +262,8 @@ private fun GroupRow(
             ) {
                 Icon(
                     Icons.Filled.Delete,
-                    contentDescription = stringResource(R.string.action_delete),
+                    contentDescription = stringResource(R.string.action_delete_group),
+                    tint = MaterialTheme.colorScheme.error,
                 )
             }
         }

@@ -1,13 +1,15 @@
 package com.m4isper.contactsapp.presentation.common.groups
 
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -25,7 +27,7 @@ internal fun GroupNameDialog(
     initialName: String = "",
     confirmTestTag: String? = null,
 ) {
-    var name by remember { mutableStateOf(initialName) }
+    var name by rememberSaveable { mutableStateOf(initialName) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
@@ -35,8 +37,10 @@ internal fun GroupNameDialog(
                 onValueChange = { name = it },
                 label = { Text(stringResource(R.string.group_name_label)) },
                 singleLine = true,
+                shape = MaterialTheme.shapes.medium,
                 modifier =
                     Modifier
+                        .fillMaxWidth()
                         .testTag("group_name_field"),
             )
         },

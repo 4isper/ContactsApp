@@ -9,8 +9,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.Message
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
@@ -102,7 +102,7 @@ internal fun DetailsHeader(
                     }
                     OutlinedButton(onClick = onSmsPrimary) {
                         Icon(
-                            Icons.Filled.Message,
+                            Icons.AutoMirrored.Filled.Message,
                             contentDescription = null,
                         )
                         Spacer(modifier = Modifier.width(spacing.s))

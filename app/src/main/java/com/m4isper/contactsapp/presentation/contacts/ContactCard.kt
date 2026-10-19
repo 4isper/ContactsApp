@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.Card
@@ -22,6 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ListDensity
@@ -56,9 +59,19 @@ internal fun ContactCard(
                 .padding(horizontal = spacing.m, vertical = spacing.xs)
                 .clip(MaterialTheme.shapes.medium)
                 .testTag("contact_row_${contact.contactId}")
-                .combinedClickable(
-                    onClick = onClick,
-                    onLongClick = onLongClick,
+                .then(
+                    if (isSelectionMode) {
+                        Modifier.selectable(
+                            selected = selected,
+                            role = Role.Checkbox,
+                            onClick = onClick,
+                        )
+                    } else {
+                        Modifier.combinedClickable(
+                            onClick = onClick,
+                            onLongClick = onLongClick,
+                        )
+                    },
                 ),
     ) {
         Row(
@@ -81,11 +94,15 @@ internal fun ContactCard(
                 Text(
                     text = contact.name,
                     style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     text = contactSubtitle(contact),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
 
@@ -99,7 +116,7 @@ internal fun ContactCard(
                     Icons.Filled.Favorite,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.tertiary,
-                    modifier = Modifier.size(spacing.m + spacing.s),
+                    modifier = Modifier.size(spacing.xl),
                 )
             }
         }

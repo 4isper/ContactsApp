@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import com.m4isper.contactsapp.R
@@ -81,22 +82,35 @@ internal fun EventEditorRow(
                 IconButton(onClick = { onRemove(row.rowId) }) {
                     Icon(
                         Icons.Filled.Delete,
-                        contentDescription = stringResource(R.string.action_delete),
+                        contentDescription = stringResource(R.string.action_delete_event),
                     )
                 }
             }
             if (date != null) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .toggleable(
+                                value = date.year == null,
+                                role = Role.Switch,
+                                onValueChange = { noYear ->
+                                    onDateChange(
+                                        row.rowId,
+                                        date.copy(year = if (noYear) null else LocalDate.now().year),
+                                    )
+                                },
+                            ),
+                ) {
                     Text(
                         text = stringResource(R.string.editor_birthday_no_year),
                         style = MaterialTheme.typography.bodyMedium,
                     )
-                    Spacer(modifier = Modifier.width(spacing.s))
+                    Spacer(modifier = Modifier.weight(1f))
                     Switch(
                         checked = date.year == null,
-                        onCheckedChange = { noYear ->
-                            onDateChange(row.rowId, date.copy(year = if (noYear) null else LocalDate.now().year))
-                        },
+                        onCheckedChange = null,
                         modifier = Modifier.testTag("editor_event_switch"),
                     )
                 }

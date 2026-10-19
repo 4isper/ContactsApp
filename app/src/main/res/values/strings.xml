@@ -6,6 +6,7 @@
     <string name="permission_open_settings">Open settings</string>
 
     <string name="search_label">Search</string>
+    <string name="action_clear_search">Clear search</string>
     <string name="contacts_empty">No contacts found</string>
     <string name="contacts_nothing_found">Nothing found</string>
     <string name="contacts_load_error">Couldn\'t load contacts</string>
@@ -95,6 +96,13 @@
     <string name="editor_delete_title">Delete this contact?</string>
     <string name="editor_delete_message">This cannot be undone</string>
     <string name="action_delete">Delete</string>
+    <string name="action_delete_phone">Delete phone number</string>
+    <string name="action_delete_email">Delete email</string>
+    <string name="action_delete_im">Delete messenger</string>
+    <string name="action_delete_address">Delete address</string>
+    <string name="action_delete_website">Delete website</string>
+    <string name="action_delete_event">Delete event</string>
+    <string name="action_delete_relation">Delete relation</string>
     <string name="action_undo">Undo</string>
     <string name="editor_discard_title">Discard changes?</string>
     <string name="editor_discard_message">Unsaved changes will be lost</string>
@@ -105,7 +113,8 @@
     <string name="contact_select_prompt">Select a contact from the list</string>
     <string name="filter_favorites">Favorites</string>
     <string name="favorites_empty">No favorite contacts</string>
-    <string name="action_toggle_favorite">Toggle favorite</string>
+    <string name="action_add_favorite">Add to favorites</string>
+    <string name="action_remove_favorite">Remove from favorites</string>
     <string name="share_contact">Share contact</string>
     <string name="share_failed">Couldn\'t share the contact</string>
     <string name="action_close">Close</string>
@@ -151,7 +160,9 @@
     <string name="groups_title">Groups</string>
     <string name="groups_empty">No groups yet</string>
     <string name="group_name_label">Group name</string>
+    <string name="group_label">Group</string>
     <string name="group_rename">Rename group</string>
+    <string name="action_delete_group">Delete group</string>
     <string name="group_delete_title">Delete group?</string>
     <string name="group_delete_message">Contacts will be kept, only the group will be deleted</string>
     <string name="action_add_to_group">Add to group</string>
@@ -164,6 +175,7 @@
     <string name="editor_change_photo">Change photo</string>
     <string name="editor_remove_photo">Remove photo</string>
     <string name="editor_photo_desc">Contact photo</string>
+    <string name="editor_section_phones">Phones</string>
     <string name="editor_section_emails">Email</string>
     <string name="editor_section_instant_messages">Instant messaging</string>
     <string name="editor_section_addresses">Addresses</string>

@@ -1,10 +1,10 @@
 package com.m4isper.contactsapp.presentation.contacts
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Deselect
-import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import com.m4isper.contactsapp.R
 
 /** Контекстная панель режима выделения: счётчик, «выбрать все», добавление в группу, шаринг и удаление. */
@@ -37,6 +38,8 @@ internal fun SelectionTopBar(
             Text(
                 text = pluralStringResource(R.plurals.selection_count, count, count),
                 style = MaterialTheme.typography.titleLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         },
         navigationIcon = {
@@ -65,7 +68,7 @@ internal fun SelectionTopBar(
                 modifier = Modifier.testTag("add_to_group_button"),
             ) {
                 Icon(
-                    Icons.Filled.Label,
+                    Icons.AutoMirrored.Filled.Label,
                     contentDescription = stringResource(R.string.action_add_to_group),
                 )
             }
@@ -85,6 +88,7 @@ internal fun SelectionTopBar(
                 Icon(
                     Icons.Filled.Delete,
                     contentDescription = stringResource(R.string.action_delete),
+                    tint = MaterialTheme.colorScheme.error,
                 )
             }
         },

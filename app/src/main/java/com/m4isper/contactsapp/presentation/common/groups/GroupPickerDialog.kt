@@ -1,12 +1,13 @@
 package com.m4isper.contactsapp.presentation.common.groups
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -21,12 +22,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactGroup
@@ -48,7 +50,7 @@ internal fun GroupPickerDialog(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var newGroupName by remember { mutableStateOf("") }
+    var newGroupName by rememberSaveable { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
@@ -65,7 +67,8 @@ internal fun GroupPickerDialog(
                         modifier =
                             Modifier
                                 .heightIn(max = 320.dp)
-                                .verticalScroll(rememberScrollState()),
+                                .verticalScroll(rememberScrollState())
+                                .selectableGroup(),
                     ) {
                         groups.forEach { group ->
                             GroupCheckRow(
@@ -82,6 +85,7 @@ internal fun GroupPickerDialog(
                         onValueChange = { newGroupName = it },
                         label = { Text(stringResource(R.string.groups_new)) },
                         singleLine = true,
+                        shape = MaterialTheme.shapes.medium,
                         modifier =
                             Modifier
                                 .weight(1f)
@@ -132,8 +136,11 @@ private fun GroupCheckRow(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .clickable(onClick = onToggle)
-                .padding(vertical = spacing.xs)
+                .toggleable(
+                    value = checked,
+                    role = Role.Checkbox,
+                    onValueChange = { onToggle() },
+                ).padding(vertical = spacing.xs)
                 .testTag("group_check_row_$title"),
     ) {
         Checkbox(checked = checked, onCheckedChange = null)

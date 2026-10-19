@@ -75,7 +75,7 @@ internal fun ImEditorRow(
                 IconButton(onClick = { onRemove(row.rowId) }) {
                     Icon(
                         Icons.Filled.Delete,
-                        contentDescription = stringResource(R.string.action_delete),
+                        contentDescription = stringResource(R.string.action_delete_im),
                     )
                 }
             }

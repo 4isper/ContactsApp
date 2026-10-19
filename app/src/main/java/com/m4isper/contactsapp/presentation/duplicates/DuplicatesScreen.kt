@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Merge
@@ -38,6 +39,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactDetails
@@ -187,12 +189,14 @@ private fun DuplicateGroupCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = spacing.m),
             )
-            group.members.forEach { member ->
-                DuplicateMemberRow(
-                    member = member,
-                    selected = member.contactId == primaryId,
-                    onSelect = { selectedId = member.contactId },
-                )
+            Column(modifier = Modifier.selectableGroup()) {
+                group.members.forEach { member ->
+                    DuplicateMemberRow(
+                        member = member,
+                        selected = member.contactId == primaryId,
+                        onSelect = { selectedId = member.contactId },
+                    )
+                }
             }
             Row(
                 horizontalArrangement = Arrangement.End,
@@ -227,13 +231,12 @@ private fun DuplicateMemberRow(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = spacing.m, vertical = spacing.xs)
                 .testTag("duplicate_member_${member.contactId}")
                 .selectable(
                     selected = selected,
                     role = Role.RadioButton,
                     onClick = onSelect,
-                ),
+                ).padding(horizontal = spacing.m, vertical = spacing.xs),
     ) {
         RadioButton(
             selected = selected,
@@ -249,11 +252,15 @@ private fun DuplicateMemberRow(
             Text(
                 text = member.name,
                 style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = contactSubtitle(member),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }

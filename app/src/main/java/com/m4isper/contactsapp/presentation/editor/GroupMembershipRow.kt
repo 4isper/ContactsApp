@@ -4,8 +4,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Label
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -44,7 +44,7 @@ internal fun GroupMembershipRow(
             modifier = Modifier.padding(spacing.m),
         ) {
             Icon(
-                Icons.Filled.Label,
+                Icons.AutoMirrored.Filled.Label,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )

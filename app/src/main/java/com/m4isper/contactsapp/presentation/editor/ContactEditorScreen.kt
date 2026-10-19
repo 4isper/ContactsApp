@@ -78,14 +78,30 @@ fun ContactEditorScreen(
     }
 
     if (!hasWritePermission) {
-        PermissionRequest(
-            modifier = modifier,
-            rationale = stringResource(R.string.permission_write_rationale),
-            onGrantClick = {
-                writePermissionLauncher.launch(Manifest.permission.WRITE_CONTACTS)
+        Scaffold(
+            modifier = modifier.fillMaxSize(),
+            topBar = {
+                EditorTopBar(
+                    title = stringResource(R.string.app_name),
+                    saveEnabled = false,
+                    onBack = onBack,
+                    onSave = {},
+                    showSave = false,
+                )
             },
-            onSettingsClick = { openAppSettings(context) },
-        )
+        ) { innerPadding ->
+            PermissionRequest(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                rationale = stringResource(R.string.permission_write_rationale),
+                onGrantClick = {
+                    writePermissionLauncher.launch(Manifest.permission.WRITE_CONTACTS)
+                },
+                onSettingsClick = { openAppSettings(context) },
+            )
+        }
         return
     }
 

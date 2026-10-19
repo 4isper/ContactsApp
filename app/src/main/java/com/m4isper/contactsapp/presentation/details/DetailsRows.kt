@@ -5,9 +5,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Message
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -109,7 +109,7 @@ internal fun PhoneRow(
             }
             IconButton(onClick = onSmsClick) {
                 Icon(
-                    Icons.Filled.Message,
+                    Icons.AutoMirrored.Filled.Message,
                     contentDescription = stringResource(R.string.action_send_sms),
                 )
             }

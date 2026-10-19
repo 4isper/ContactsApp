@@ -58,7 +58,7 @@ internal fun DetailsContent(
             item(key = "nickname") {
                 DataRow(
                     primary = nickname,
-                    secondary = null,
+                    secondary = stringResource(R.string.editor_section_nickname),
                     actions =
                         listOf(
                             RowAction(
@@ -76,7 +76,7 @@ internal fun DetailsContent(
         ) { group ->
             DataRow(
                 primary = group.title,
-                secondary = null,
+                secondary = stringResource(R.string.group_label),
                 actions = emptyList(),
                 modifier = Modifier.testTag("group_row_${group.title}"),
             )
@@ -186,7 +186,7 @@ internal fun DetailsContent(
             item(key = "birthday") {
                 DataRow(
                     primary = birthdayText(birthday),
-                    secondary = null,
+                    secondary = stringResource(R.string.editor_section_birthday),
                     actions = emptyList(),
                     modifier = Modifier.testTag("birthday_row"),
                 )
@@ -224,7 +224,7 @@ internal fun DetailsContent(
             item(key = "note") {
                 DataRow(
                     primary = note,
-                    secondary = null,
+                    secondary = stringResource(R.string.editor_section_note),
                     actions = emptyList(),
                     modifier = Modifier.testTag("note_row"),
                 )

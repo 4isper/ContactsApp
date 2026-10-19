@@ -7,13 +7,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Label
+import androidx.compose.material.icons.filled.Merge
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
@@ -96,6 +100,7 @@ internal fun FilterHeader(
                 onManageGroupsClick = onManageGroupsClick,
                 modifier =
                     Modifier
+                        .weight(1f, fill = false)
                         .padding(top = spacing.xs, end = spacing.m, bottom = spacing.xs)
                         .testTag("groups_chip"),
             )
@@ -119,6 +124,12 @@ internal fun FilterHeader(
                             menuOpen = false
                             onImportClick()
                         },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Filled.UploadFile,
+                                contentDescription = null,
+                            )
+                        },
                         modifier = Modifier.testTag("import_menu_item"),
                     )
                     DropdownMenuItem(
@@ -126,6 +137,12 @@ internal fun FilterHeader(
                         onClick = {
                             menuOpen = false
                             onExportClick()
+                        },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Filled.Download,
+                                contentDescription = null,
+                            )
                         },
                         modifier = Modifier.testTag("export_menu_item"),
                     )
@@ -135,6 +152,12 @@ internal fun FilterHeader(
                             menuOpen = false
                             onDuplicatesClick()
                         },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Filled.Merge,
+                                contentDescription = null,
+                            )
+                        },
                         modifier = Modifier.testTag("duplicates_menu_item"),
                     )
                     DropdownMenuItem(
@@ -142,6 +165,12 @@ internal fun FilterHeader(
                         onClick = {
                             menuOpen = false
                             onSettingsClick()
+                        },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Filled.Settings,
+                                contentDescription = null,
+                            )
                         },
                         modifier = Modifier.testTag("settings_menu_item"),
                     )
@@ -176,7 +205,7 @@ private fun GroupsFilterChip(
     onManageGroupsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box {
+    Box(modifier = modifier) {
         FilterChip(
             selected = selectedGroup != null,
             onClick = { onExpandedChange(true) },
@@ -191,7 +220,7 @@ private fun GroupsFilterChip(
                 if (selectedGroup != null) {
                     {
                         Icon(
-                            Icons.Filled.Label,
+                            Icons.AutoMirrored.Filled.Label,
                             contentDescription = null,
                         )
                     }
@@ -204,7 +233,7 @@ private fun GroupsFilterChip(
                     contentDescription = null,
                 )
             },
-            modifier = modifier.widthIn(max = 220.dp),
+            modifier = Modifier.widthIn(max = 220.dp),
         )
         DropdownMenu(
             expanded = expanded,

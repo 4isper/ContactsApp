@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import com.m4isper.contactsapp.R
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -21,9 +22,16 @@ internal fun EditorTopBar(
     saveEnabled: Boolean,
     onBack: () -> Unit,
     onSave: () -> Unit,
+    showSave: Boolean = true,
 ) {
     TopAppBar(
-        title = { Text(title) },
+        title = {
+            Text(
+                text = title,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        },
         navigationIcon = {
             IconButton(
                 onClick = onBack,
@@ -36,12 +44,14 @@ internal fun EditorTopBar(
             }
         },
         actions = {
-            TextButton(
-                onClick = onSave,
-                enabled = saveEnabled,
-                modifier = Modifier.testTag("editor_save_button"),
-            ) {
-                Text(stringResource(R.string.editor_save))
+            if (showSave) {
+                TextButton(
+                    onClick = onSave,
+                    enabled = saveEnabled,
+                    modifier = Modifier.testTag("editor_save_button"),
+                ) {
+                    Text(stringResource(R.string.editor_save))
+                }
             }
         },
     )

@@ -11,8 +11,9 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -84,7 +85,6 @@ fun SettingsScreen(
                     )
                 }
             }
-            HorizontalDivider(modifier = Modifier.padding(horizontal = spacing.m))
             SettingsSection(title = stringResource(R.string.settings_sort_order)) {
                 ContactSortOrder.entries.forEach { order ->
                     SettingsOption(
@@ -95,7 +95,6 @@ fun SettingsScreen(
                     )
                 }
             }
-            HorizontalDivider(modifier = Modifier.padding(horizontal = spacing.m))
             SettingsSection(title = stringResource(R.string.settings_list_density)) {
                 ListDensity.entries.forEach { density ->
                     SettingsOption(
@@ -116,15 +115,26 @@ private fun SettingsSection(
     content: @Composable () -> Unit,
 ) {
     val spacing = LocalSpacing.current
-    Column(modifier = Modifier.padding(vertical = spacing.s)) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = spacing.m, vertical = spacing.xs),
-        )
-        Column(modifier = Modifier.selectableGroup()) {
-            content()
+    Card(
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            ),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = spacing.m, vertical = spacing.xs),
+    ) {
+        Column(modifier = Modifier.padding(vertical = spacing.s)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = spacing.m, vertical = spacing.xs),
+            )
+            Column(modifier = Modifier.selectableGroup()) {
+                content()
+            }
         }
     }
 }
@@ -142,13 +152,12 @@ private fun SettingsOption(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = spacing.m, vertical = spacing.s)
                 .testTag(testTag)
                 .selectable(
                     selected = selected,
                     role = Role.RadioButton,
                     onClick = onSelect,
-                ),
+                ).padding(horizontal = spacing.m, vertical = spacing.xs),
     ) {
         RadioButton(
             selected = selected,
