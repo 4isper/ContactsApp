@@ -1,6 +1,7 @@
 package com.m4isper.contactsapp
 
 import com.m4isper.contactsapp.domain.model.AppSettings
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactEvent
 import com.m4isper.contactsapp.domain.model.ContactForm
@@ -52,6 +53,8 @@ internal class FakeAndroidRepository(
     FavoritesRepository {
     private val favoritesFlow = MutableStateFlow(initialFavorites)
     val created = mutableListOf<ContactForm>()
+    val createdAccounts = mutableListOf<ContactAccount>()
+    var accounts: List<ContactAccount> = listOf(ContactAccount.Local)
     val updated = mutableListOf<Pair<Long, ContactForm>>()
     val deleted = mutableListOf<Long>()
     val merged = mutableListOf<Pair<Long, List<Long>>>()
@@ -89,9 +92,19 @@ internal class FakeAndroidRepository(
     }
 
     override suspend fun createContact(form: ContactForm) {
+        createContact(form, ContactAccount.Local)
+    }
+
+    override suspend fun createContact(
+        form: ContactForm,
+        account: ContactAccount,
+    ) {
         failure?.let { throw it }
         created += form
+        createdAccounts += account
     }
+
+    override suspend fun getContactAccounts(): List<ContactAccount> = accounts
 
     override suspend fun updateContact(
         contactId: Long,

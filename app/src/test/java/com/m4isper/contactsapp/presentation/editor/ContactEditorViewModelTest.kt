@@ -2,6 +2,7 @@ package com.m4isper.contactsapp.presentation.editor
 
 import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.domain.model.Birthday
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.EditableBirthday
@@ -23,6 +24,7 @@ import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactFormUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.UpdateContactUseCase
@@ -47,6 +49,8 @@ private class FakeEditorRepository :
     ContactsRepository,
     FavoritesRepository {
     val created = mutableListOf<ContactForm>()
+    val createdAccounts = mutableListOf<ContactAccount>()
+    var accounts: List<ContactAccount> = listOf(ContactAccount.Local)
     val updated = mutableListOf<Pair<Long, ContactForm>>()
     var formToLoad: ContactForm? = null
 
@@ -56,8 +60,18 @@ private class FakeEditorRepository :
 
     override suspend fun getContactForm(contactId: Long): ContactForm? = formToLoad
 
+    override suspend fun getContactAccounts(): List<ContactAccount> = accounts
+
     override suspend fun createContact(form: ContactForm) {
+        createContact(form, ContactAccount.Local)
+    }
+
+    override suspend fun createContact(
+        form: ContactForm,
+        account: ContactAccount,
+    ) {
         created += form
+        createdAccounts += account
     }
 
     override suspend fun updateContact(
@@ -100,6 +114,7 @@ class ContactEditorViewModelTest {
                 DeleteContactUseCase(DeleteContactsUseCase(repository, repository)),
                 GetGroupsUseCase(groups),
                 CreateGroupUseCase(groups),
+                GetContactAccountsUseCase(repository),
             )
         backgroundScope.launch { viewModel.uiState.collect { } }
         return viewModel
@@ -120,6 +135,30 @@ class ContactEditorViewModelTest {
 
             assertTrue(viewModel.uiState.value.closeScreen)
             assertEquals(1, repository.created.size)
+        }
+
+    @Test
+    fun `new contact loads accounts and saves to the selected one`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val google = ContactAccount(name = "user@gmail.com", type = "com.google")
+            val repository =
+                FakeEditorRepository().apply {
+                    accounts = listOf(ContactAccount.Local, google)
+                }
+            val viewModel = viewModel(repository)
+            viewModel.load(null)
+            advanceUntilIdle()
+
+            assertEquals(listOf(ContactAccount.Local, google), viewModel.uiState.value.accounts)
+            assertEquals(ContactAccount.Local, viewModel.uiState.value.selectedAccount)
+
+            viewModel.onAccountSelected(google)
+            viewModel.onDisplayNameChange("Anna")
+            viewModel.onSave()
+            advanceUntilIdle()
+
+            assertEquals(listOf(google), repository.createdAccounts)
         }
 
     @Test

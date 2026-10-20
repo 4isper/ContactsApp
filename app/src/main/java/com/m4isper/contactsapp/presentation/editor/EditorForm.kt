@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ButtonDefaults
@@ -44,6 +45,7 @@ internal fun EditorForm(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showDatePicker by remember { mutableStateOf(false) }
     var showGroupPicker by remember { mutableStateOf(false) }
+    var showAccountPicker by remember { mutableStateOf(false) }
     var eventPickerRowId by remember { mutableStateOf<Long?>(null) }
     val photoPicker =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -69,6 +71,7 @@ internal fun EditorForm(
                 onRemove = viewModel::onPhotoRemoved,
             )
         }
+        accountItems(uiState = uiState, onClick = { showAccountPicker = true })
         item(key = "name") {
             NameEditor(
                 mode = uiState.nameMode,
@@ -208,5 +211,31 @@ internal fun EditorForm(
             onConfirm = { showGroupPicker = false },
             onDismiss = { showGroupPicker = false },
         )
+    }
+
+    if (showAccountPicker) {
+        AccountPickerDialog(
+            accounts = uiState.accounts,
+            selected = uiState.selectedAccount,
+            onSelect = { account ->
+                viewModel.onAccountSelected(account)
+                showAccountPicker = false
+            },
+            onDismiss = { showAccountPicker = false },
+        )
+    }
+}
+
+/** Секция аккаунта нужна только новому контакту, когда есть из чего выбирать. */
+private fun LazyListScope.accountItems(
+    uiState: EditorUiState,
+    onClick: () -> Unit,
+) {
+    if (!uiState.isNew || uiState.accounts.size <= 1) return
+    item(key = "account-header") {
+        SectionHeader(titleRes = R.string.editor_section_account)
+    }
+    item(key = "account") {
+        AccountRow(account = uiState.selectedAccount, onClick = onClick)
     }
 }

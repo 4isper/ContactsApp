@@ -8,6 +8,7 @@ import android.provider.ContactsContract.CommonDataKinds.Photo
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
 import com.m4isper.contactsapp.data.datasource.read.ContactRows
 import com.m4isper.contactsapp.data.datasource.read.ExistingName
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.EditableName
 
@@ -44,17 +45,18 @@ internal fun deleteDataOperation(dataId: Long): ContentProviderOperation =
             arrayOf(dataId.toString()),
         ).build()
 
-/** Операции создания контакта в локальном аккаунте. */
+/** Операции создания контакта в выбранном аккаунте; локальный — null account. */
 internal fun buildCreateOperations(
     form: ContactForm,
     photo: ByteArray?,
+    account: ContactAccount,
 ): ArrayList<ContentProviderOperation> {
     val ops = ArrayList<ContentProviderOperation>()
     ops +=
         ContentProviderOperation
             .newInsert(ContactsContract.RawContacts.CONTENT_URI)
-            .withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, null)
-            .withValue(ContactsContract.RawContacts.ACCOUNT_NAME, null)
+            .withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, account.type)
+            .withValue(ContactsContract.RawContacts.ACCOUNT_NAME, account.name)
             .build()
     if (!form.name.isEmpty) {
         ops +=

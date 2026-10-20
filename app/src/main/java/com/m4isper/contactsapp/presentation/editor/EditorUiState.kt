@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp.presentation.editor
 
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.EditableAddress
@@ -29,6 +30,9 @@ internal data class EditorRow<T>(
 
 internal data class EditorUiState(
     val contactId: Long? = null,
+    /** Аккаунты, доступные для нового контакта; у существующего список пуст. */
+    val accounts: List<ContactAccount> = emptyList(),
+    val selectedAccount: ContactAccount? = null,
     val nameMode: NameMode = NameMode.DISPLAY,
     val displayName: String = "",
     val givenName: String = "",

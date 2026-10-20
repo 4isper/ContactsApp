@@ -21,6 +21,7 @@ import com.m4isper.contactsapp.data.datasource.read.ExistingPhone
 import com.m4isper.contactsapp.data.datasource.read.ExistingRelation
 import com.m4isper.contactsapp.data.datasource.read.ExistingWebsite
 import com.m4isper.contactsapp.domain.model.Birthday
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.EditableName
@@ -192,7 +193,21 @@ class ContactsRepositoryImplTest {
         }
 
         assertEquals(listOf(form), writer.created)
+        assertEquals(listOf(ContactAccount.Local), writer.createdAccounts)
         assertEquals(listOf(7L), writer.deleted)
+    }
+
+    @Test
+    fun `create uses the selected account`() {
+        val writer = FakeWriter()
+        val repository = ContactsRepositoryImpl(FakeReader(details), writer)
+        val form = ContactForm()
+        val account = ContactAccount(name = "user@gmail.com", type = "com.google")
+
+        runBlocking { repository.createContact(form, account) }
+
+        assertEquals(listOf(form), writer.created)
+        assertEquals(listOf(account), writer.createdAccounts)
     }
 
     @Test
@@ -299,11 +314,16 @@ private class FakeWriter(
     private val rowsByContact: Map<Long, ContactRows> = emptyMap(),
 ) : ContactsWriterDataSource {
     val created = mutableListOf<ContactForm>()
+    val createdAccounts = mutableListOf<ContactAccount>()
     val updated = mutableListOf<UpdateCall>()
     val deleted = mutableListOf<Long>()
 
-    override suspend fun createContact(form: ContactForm) {
+    override suspend fun createContact(
+        form: ContactForm,
+        account: ContactAccount,
+    ) {
         created += form
+        createdAccounts += account
     }
 
     override suspend fun updateContact(

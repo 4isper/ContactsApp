@@ -1,6 +1,10 @@
 package com.m4isper.contactsapp.data.datasource
 
+import android.accounts.Account
+import android.accounts.AccountManager
+import android.content.ContentResolver
 import android.content.Context
+import android.net.Uri
 import android.provider.ContactsContract
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Nickname
@@ -13,6 +17,7 @@ import com.m4isper.contactsapp.data.datasource.read.DataColumns
 import com.m4isper.contactsapp.data.datasource.read.DataRow
 import com.m4isper.contactsapp.data.datasource.read.aggregateContacts
 import com.m4isper.contactsapp.data.datasource.read.buildContactDetails
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
@@ -75,6 +80,120 @@ class ContactsDataSourceImpl(
                 )
             buildContactDetails(header, rows)
         }
+
+    override suspend fun getContactAccounts(): List<ContactAccount> =
+        withContext(Dispatchers.IO) {
+            val contactTypes = contactSyncAccountTypes()
+            val accounts = linkedMapOf<String, ContactAccount>()
+            addAccountManagerAccounts(contactTypes, accounts)
+            addSettingsAccounts(contactTypes, accounts)
+            if (accounts.isEmpty()) {
+                addRawContactAccounts(contactTypes, accounts)
+            }
+            listOf(ContactAccount.Local) +
+                accounts.values.sortedWith(
+                    Comparator { first, second ->
+                        val byName =
+                            String.CASE_INSENSITIVE_ORDER.compare(
+                                first.name.orEmpty(),
+                                second.name.orEmpty(),
+                            )
+                        if (byName != 0) {
+                            byName
+                        } else {
+                            String.CASE_INSENSITIVE_ORDER.compare(
+                                first.type.orEmpty(),
+                                second.type.orEmpty(),
+                            )
+                        }
+                    },
+                )
+        }
+
+    /** Типы аккаунтов, у которых есть sync adapter для контактов с поддержкой записи. */
+    private fun contactSyncAccountTypes(): Set<String> =
+        ContentResolver
+            .getSyncAdapterTypes()
+            .filter { it.authority == ContactsContract.AUTHORITY && it.supportsUploading() }
+            .mapTo(mutableSetOf()) { it.accountType }
+
+    private fun addAccountManagerAccounts(
+        contactTypes: Set<String>,
+        result: MutableMap<String, ContactAccount>,
+    ) {
+        val accountManager = AccountManager.get(context)
+        contactTypes.forEach { type ->
+            val accounts =
+                try {
+                    accountManager.getAccountsByType(type)
+                } catch (_: SecurityException) {
+                    emptyArray<Account>()
+                }
+            accounts.forEach { addAccount(result, it.name, it.type) }
+        }
+    }
+
+    private fun addSettingsAccounts(
+        contactTypes: Set<String>,
+        result: MutableMap<String, ContactAccount>,
+    ) {
+        queryProviderAccounts(
+            uri = ContactsContract.Settings.CONTENT_URI,
+            nameColumn = ContactsContract.Settings.ACCOUNT_NAME,
+            typeColumn = ContactsContract.Settings.ACCOUNT_TYPE,
+            contactTypes = contactTypes,
+            result = result,
+        )
+    }
+
+    /** Запасной источник, если настройки аккаунтов недоступны: уже существующие raw contacts. */
+    private fun addRawContactAccounts(
+        contactTypes: Set<String>,
+        result: MutableMap<String, ContactAccount>,
+    ) {
+        queryProviderAccounts(
+            uri = ContactsContract.RawContacts.CONTENT_URI,
+            nameColumn = ContactsContract.RawContacts.ACCOUNT_NAME,
+            typeColumn = ContactsContract.RawContacts.ACCOUNT_TYPE,
+            contactTypes = contactTypes,
+            result = result,
+        )
+    }
+
+    private fun queryProviderAccounts(
+        uri: Uri,
+        nameColumn: String,
+        typeColumn: String,
+        contactTypes: Set<String>,
+        result: MutableMap<String, ContactAccount>,
+    ) {
+        val cursor =
+            try {
+                context.contentResolver.query(uri, arrayOf(nameColumn, typeColumn), null, null, null)
+            } catch (_: SecurityException) {
+                null
+            }
+        cursor?.use {
+            val nameIndex = it.getColumnIndexOrThrow(nameColumn)
+            val typeIndex = it.getColumnIndexOrThrow(typeColumn)
+            while (it.moveToNext()) {
+                val name = it.getString(nameIndex)
+                val type = it.getString(typeIndex)
+                if (type != null && (contactTypes.isEmpty() || type in contactTypes)) {
+                    addAccount(result, name, type)
+                }
+            }
+        }
+    }
+
+    private fun addAccount(
+        result: MutableMap<String, ContactAccount>,
+        name: String?,
+        type: String?,
+    ) {
+        if (name.isNullOrBlank() || type.isNullOrBlank()) return
+        result.putIfAbsent("$type\u0000$name", ContactAccount(name = name, type = type))
+    }
 
     private fun queryHeaders(
         selection: String?,

@@ -176,6 +176,13 @@
     <string name="editor_remove_photo">Remove photo</string>
     <string name="editor_photo_desc">Contact photo</string>
     <string name="editor_section_phones">Phones</string>
+    <string name="editor_section_account">Account</string>
+    <string name="editor_account_local">Local</string>
+    <string name="editor_account_local_hint">Stored on this device</string>
+    <string name="editor_account_google">Google</string>
+    <string name="editor_account_exchange">Exchange</string>
+    <string name="editor_account_choose">Choose account</string>
+    <string name="editor_account_title">Save contact to</string>
     <string name="editor_section_emails">Email</string>
     <string name="editor_section_instant_messages">Instant messaging</string>
     <string name="editor_section_addresses">Addresses</string>

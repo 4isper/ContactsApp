@@ -10,6 +10,7 @@ import com.m4isper.contactsapp.data.datasource.read.parseContactRows
 import com.m4isper.contactsapp.data.datasource.write.buildCreateOperations
 import com.m4isper.contactsapp.data.datasource.write.buildUpdateOperations
 import com.m4isper.contactsapp.data.datasource.write.readDownscaledPhoto
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactForm
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
@@ -24,11 +25,14 @@ import kotlinx.coroutines.withContext
 class ContactsWriterDataSourceImpl(
     private val context: Context,
 ) : ContactsWriterDataSource {
-    override suspend fun createContact(form: ContactForm): Unit =
+    override suspend fun createContact(
+        form: ContactForm,
+        account: ContactAccount,
+    ): Unit =
         withContext(Dispatchers.IO) {
             context.contentResolver.applyBatch(
                 ContactsContract.AUTHORITY,
-                buildCreateOperations(form, photo = preparePhoto(form)),
+                buildCreateOperations(form, photo = preparePhoto(form), account = account),
             )
         }
 

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.m4isper.contactsapp.domain.model.AddressKind
 import com.m4isper.contactsapp.domain.model.Birthday
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.EditableAddress
 import com.m4isper.contactsapp.domain.model.EditableEmail
@@ -20,6 +21,7 @@ import com.m4isper.contactsapp.domain.model.RelationKind
 import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactUseCase
+import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactFormUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.SaveResult
@@ -50,6 +52,7 @@ class ContactEditorViewModel(
     private val deleteContactUseCase: DeleteContactUseCase,
     private val getGroupsUseCase: GetGroupsUseCase,
     private val createGroupUseCase: CreateGroupUseCase,
+    private val getContactAccountsUseCase: GetContactAccountsUseCase,
 ) : ViewModel() {
     private val state = MutableStateFlow(EditorUiState())
     private var nextRowId = 0L
@@ -67,8 +70,7 @@ class ContactEditorViewModel(
         loadStarted = true
         loadStartedFor = id
         if (id == null) {
-            state.value = EditorUiState(phones = listOf(newRow(EditablePhone(number = ""))))
-            viewModelScope.launch { state.update { it.copy(allGroups = loadGroups()) } }
+            startNewContact()
             return
         }
         state.value =
@@ -90,6 +92,32 @@ class ContactEditorViewModel(
             } catch (e: Exception) {
                 logw(EDITOR_TAG, "load contact form failed", e)
                 state.update { it.copy(errorMessage = e.message, isBusy = false) }
+            }
+        }
+    }
+
+    /** Новый контакт: сразу показываем локальный аккаунт, затем подгружаем доступные. */
+    private fun startNewContact() {
+        state.value =
+            EditorUiState(
+                phones = listOf(newRow(EditablePhone(number = ""))),
+                accounts = listOf(ContactAccount.Local),
+                selectedAccount = ContactAccount.Local,
+            )
+        viewModelScope.launch {
+            val accounts = loadAccounts()
+            val groups = loadGroups()
+            state.update { current ->
+                val selected =
+                    current.selectedAccount
+                        ?.takeIf { it in accounts }
+                        ?: accounts.firstOrNull { it.isLocal }
+                        ?: accounts.firstOrNull()
+                current.copy(
+                    accounts = accounts,
+                    selectedAccount = selected,
+                    allGroups = groups,
+                )
             }
         }
     }
@@ -230,6 +258,11 @@ class ContactEditorViewModel(
 
     fun onNicknameChange(value: String) = updateData { it.copy(nickname = it.nickname.copy(nickname = value)) }
 
+    fun onAccountSelected(account: ContactAccount) {
+        if (!state.value.isNew) return
+        updateData { it.copy(selectedAccount = account) }
+    }
+
     fun onGroupToggled(groupId: Long) =
         updateData {
             it.copy(
@@ -336,7 +369,7 @@ class ContactEditorViewModel(
             try {
                 val result =
                     if (id == null) {
-                        createContactUseCase(form)
+                        createContactUseCase(form, state.value.selectedAccount ?: ContactAccount.Local)
                     } else {
                         updateContactUseCase(id, form)
                     }
@@ -390,6 +423,21 @@ class ContactEditorViewModel(
             logw(EDITOR_TAG, "load groups failed", e)
             emptyList()
         }
+
+    /** Аккаунты для нового контакта: сбой чтения оставляет только локальный. */
+    @Suppress("TooGenericExceptionCaught")
+    private suspend fun loadAccounts(): List<ContactAccount> {
+        val loaded =
+            try {
+                getContactAccountsUseCase()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logw(EDITOR_TAG, "load accounts failed", e)
+                emptyList()
+            }
+        return (listOf(ContactAccount.Local) + loaded.filterNot { it.isLocal }).distinct()
+    }
 
     /** Новая строка со стабильным ключом: счётчик живёт в пределах экрана. */
     private fun <T> newRow(value: T) = EditorRow(rowId = ++nextRowId, value = value)

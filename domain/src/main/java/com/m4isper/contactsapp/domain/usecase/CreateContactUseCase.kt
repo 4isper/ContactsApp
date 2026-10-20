@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp.domain.usecase
 
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.FormError
 import com.m4isper.contactsapp.domain.model.validateContactForm
@@ -18,9 +19,12 @@ sealed interface SaveResult {
 class CreateContactUseCase(
     private val repository: ContactsRepository,
 ) {
-    suspend operator fun invoke(form: ContactForm): SaveResult {
+    suspend operator fun invoke(
+        form: ContactForm,
+        account: ContactAccount = ContactAccount.Local,
+    ): SaveResult {
         validateContactForm(form)?.let { return SaveResult.Invalid(it) }
-        repository.createContact(form)
+        repository.createContact(form, account)
         return SaveResult.Saved
     }
 }

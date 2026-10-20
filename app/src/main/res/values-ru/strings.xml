@@ -176,6 +176,13 @@
     <string name="editor_remove_photo">Удалить фото</string>
     <string name="editor_photo_desc">Фото контакта</string>
     <string name="editor_section_phones">Телефоны</string>
+    <string name="editor_section_account">Аккаунт</string>
+    <string name="editor_account_local">Локальный</string>
+    <string name="editor_account_local_hint">Хранится на устройстве</string>
+    <string name="editor_account_google">Google</string>
+    <string name="editor_account_exchange">Exchange</string>
+    <string name="editor_account_choose">Выбрать аккаунт</string>
+    <string name="editor_account_title">Куда сохранить контакт</string>
     <string name="editor_section_emails">Email</string>
     <string name="editor_section_instant_messages">Мессенджеры</string>
     <string name="editor_section_addresses">Адреса</string>

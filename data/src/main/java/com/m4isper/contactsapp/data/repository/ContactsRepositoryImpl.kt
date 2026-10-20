@@ -18,6 +18,7 @@ import com.m4isper.contactsapp.data.datasource.read.mapPhoneKind
 import com.m4isper.contactsapp.data.datasource.read.mapRelationKind
 import com.m4isper.contactsapp.data.datasource.write.mergeContactForms
 import com.m4isper.contactsapp.domain.model.Birthday
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.EditableAddress
@@ -82,7 +83,14 @@ class ContactsRepositoryImpl(
         )
     }
 
-    override suspend fun createContact(form: ContactForm) = writer.createContact(form)
+    override suspend fun getContactAccounts(): List<ContactAccount> = dataSource.getContactAccounts()
+
+    override suspend fun createContact(form: ContactForm) = writer.createContact(form, ContactAccount.Local)
+
+    override suspend fun createContact(
+        form: ContactForm,
+        account: ContactAccount,
+    ) = writer.createContact(form, account)
 
     override suspend fun updateContact(
         contactId: Long,

@@ -17,6 +17,7 @@ import androidx.test.rule.GrantPermissionRule
 import com.m4isper.contactsapp.FakeAndroidRepository
 import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.domain.model.Birthday
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactEvent
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.EventKind
@@ -25,6 +26,7 @@ import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactFormUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.UpdateContactUseCase
@@ -54,7 +56,37 @@ class ContactEditorUiTest {
         DeleteContactUseCase(DeleteContactsUseCase(repository, repository)),
         GetGroupsUseCase(groups),
         CreateGroupUseCase(groups),
+        GetContactAccountsUseCase(repository),
     )
+
+    @Test
+    fun createMode_savesToSelectedAccount() {
+        val google = ContactAccount(name = "user@gmail.com", type = "com.google")
+        val repository =
+            FakeAndroidRepository().apply {
+                accounts = listOf(ContactAccount.Local, google)
+            }
+        val viewModel = viewModel(repository)
+        compose.setContent {
+            ContactEditorScreen(
+                contactId = null,
+                onDone = {},
+                onBack = {},
+                viewModel = viewModel,
+            )
+        }
+        compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.accounts.size == 2 }
+
+        compose.onNodeWithTag("editor_account_row").performClick()
+        compose.onNodeWithTag("account_option_com.google/user@gmail.com").performClick()
+        compose.onNodeWithTag("editor_name_field").performTextInput("Anna")
+        compose.onAllNodesWithTag("editor_phone_field")[0].performTextInput("111")
+        compose.onNodeWithTag("editor_save_button").performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
+        compose.waitForIdle()
+        assertEquals(listOf(google), repository.createdAccounts)
+    }
 
     @Test
     fun createMode_savesValidForm() {

@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp.domain.usecase
 
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.EditableName
@@ -22,6 +23,7 @@ private class RecordingRepository :
     ContactsRepository,
     FavoritesRepository {
     val created = mutableListOf<ContactForm>()
+    val createdAccounts = mutableListOf<ContactAccount>()
     val updated = mutableListOf<Pair<Long, ContactForm>>()
     val deleted = mutableListOf<Long>()
     val merged = mutableListOf<Pair<Long, List<Long>>>()
@@ -36,7 +38,15 @@ private class RecordingRepository :
     override suspend fun getContactForm(contactId: Long): ContactForm? = null
 
     override suspend fun createContact(form: ContactForm) {
+        createContact(form, ContactAccount.Local)
+    }
+
+    override suspend fun createContact(
+        form: ContactForm,
+        account: ContactAccount,
+    ) {
         created += form
+        createdAccounts += account
     }
 
     override suspend fun updateContact(
@@ -83,6 +93,20 @@ class EditorUseCasesTest {
 
             assertEquals(SaveResult.Saved, result)
             assertEquals(listOf(form), repository.created)
+            assertEquals(listOf(ContactAccount.Local), repository.createdAccounts)
+        }
+
+    @Test
+    fun `create saves to the selected account`() =
+        runTest {
+            val repository = RecordingRepository()
+            val form = ContactForm(name = EditableName(display = "Anna"))
+            val account = ContactAccount(name = "user@gmail.com", type = "com.google")
+
+            val result = CreateContactUseCase(repository)(form, account)
+
+            assertEquals(SaveResult.Saved, result)
+            assertEquals(listOf(account), repository.createdAccounts)
         }
 
     @Test
