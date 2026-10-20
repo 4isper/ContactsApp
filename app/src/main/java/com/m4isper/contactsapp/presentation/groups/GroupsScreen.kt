@@ -42,6 +42,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.presentation.common.Loadable
+import com.m4isper.contactsapp.presentation.common.account.contactAccountLabel
 import com.m4isper.contactsapp.presentation.common.groups.GroupNameDialog
 import com.m4isper.contactsapp.ui.components.ConfirmDialog
 import com.m4isper.contactsapp.ui.components.EmptyState
@@ -245,6 +246,12 @@ private fun GroupRow(
                         ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = contactAccountLabel(item.group.account),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.testTag("group_account_${item.group.id}"),
                 )
             }
             IconButton(

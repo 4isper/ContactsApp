@@ -6,6 +6,7 @@ import android.provider.ContactsContract.CommonDataKinds.Relation
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import com.m4isper.contactsapp.domain.model.AddressKind
 import com.m4isper.contactsapp.domain.model.Birthday
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.EmailKind
 import com.m4isper.contactsapp.domain.model.EventKind
 import com.m4isper.contactsapp.domain.model.ImProtocol
@@ -41,6 +42,15 @@ class BuildContactDetailsTest {
         assertEquals("CTO", details.organization?.title)
         assertEquals("Important", details.note)
         assertEquals(Birthday(day = 24, month = 5, year = 1990), details.birthday)
+    }
+
+    @Test
+    fun `keeps contact account`() {
+        val google = ContactAccount(name = "user@gmail.com", type = "com.google")
+
+        val details = buildContactDetails(header(1, "Anna"), emptyList(), account = google)
+
+        assertEquals(google, details.account)
     }
 
     @Test

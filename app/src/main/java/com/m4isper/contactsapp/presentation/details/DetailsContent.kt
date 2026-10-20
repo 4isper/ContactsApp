@@ -17,6 +17,7 @@ import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.PhoneNumber
+import com.m4isper.contactsapp.presentation.common.account.contactAccountLabel
 import com.m4isper.contactsapp.presentation.common.format.addressKindLabel
 import com.m4isper.contactsapp.presentation.common.format.birthdayText
 import com.m4isper.contactsapp.presentation.common.format.contactEventLabel
@@ -54,6 +55,14 @@ internal fun DetailsContent(
                 },
             )
         }
+        item(key = "account") {
+            DataRow(
+                primary = contactAccountLabel(details.account),
+                secondary = stringResource(R.string.editor_section_account),
+                actions = emptyList(),
+                modifier = Modifier.testTag("details_account_row"),
+            )
+        }
         details.nickname?.let { nickname ->
             item(key = "nickname") {
                 DataRow(
@@ -76,7 +85,11 @@ internal fun DetailsContent(
         ) { group ->
             DataRow(
                 primary = group.title,
-                secondary = stringResource(R.string.group_label),
+                secondary =
+                    listOf(
+                        stringResource(R.string.group_label),
+                        contactAccountLabel(group.account),
+                    ).joinToString(" · "),
                 actions = emptyList(),
                 modifier = Modifier.testTag("group_row_${group.title}"),
             )

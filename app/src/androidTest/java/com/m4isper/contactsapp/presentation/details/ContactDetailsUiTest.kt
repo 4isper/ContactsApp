@@ -14,6 +14,7 @@ import com.m4isper.contactsapp.FakeAndroidRepository
 import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.FakeVCardCodec
 import com.m4isper.contactsapp.domain.model.Birthday
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactEvent
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.ContactRelation
@@ -67,6 +68,23 @@ class ContactDetailsUiTest {
         compose.onAllNodesWithText("Anna").assertCountEquals(2)
         compose.onNodeWithText("111").assertIsDisplayed()
         compose.onNodeWithText("112").assertIsDisplayed()
+    }
+
+    @Test
+    fun showsContactAccount() {
+        val google = ContactAccount(name = "user@gmail.com", type = "com.google")
+        val repository =
+            FakeAndroidRepository(
+                listOf(testDetails(7, "Anna", "111").copy(account = google)),
+            )
+        val viewModel = viewModel(repository)
+        compose.setContent {
+            ContactDetailsScreen(contactId = 7, onBack = {}, onEdit = {}, viewModel = viewModel)
+        }
+        awaitContent(viewModel)
+
+        compose.onNodeWithTag("details_account_row").assertIsDisplayed()
+        compose.onNodeWithText("user@gmail.com", substring = true).assertIsDisplayed()
     }
 
     @Test

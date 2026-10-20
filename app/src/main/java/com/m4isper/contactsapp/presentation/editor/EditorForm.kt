@@ -226,16 +226,29 @@ internal fun EditorForm(
     }
 }
 
-/** Секция аккаунта нужна только новому контакту, когда есть из чего выбирать. */
+/**
+ * Новому контакту — выбор аккаунта, если есть из чего выбирать;
+ * существующему — аккаунт только для чтения.
+ */
 private fun LazyListScope.accountItems(
     uiState: EditorUiState,
     onClick: () -> Unit,
 ) {
-    if (!uiState.isNew || uiState.accounts.size <= 1) return
-    item(key = "account-header") {
-        SectionHeader(titleRes = R.string.editor_section_account)
-    }
-    item(key = "account") {
-        AccountRow(account = uiState.selectedAccount, onClick = onClick)
+    if (uiState.isNew) {
+        if (uiState.accounts.size <= 1) return
+        item(key = "account-header") {
+            SectionHeader(titleRes = R.string.editor_section_account)
+        }
+        item(key = "account") {
+            AccountRow(account = uiState.selectedAccount, onClick = onClick)
+        }
+    } else {
+        val account = uiState.selectedAccount ?: return
+        item(key = "account-header") {
+            SectionHeader(titleRes = R.string.editor_section_account)
+        }
+        item(key = "account") {
+            AccountRow(account = account, onClick = null)
+        }
     }
 }

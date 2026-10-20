@@ -91,6 +91,9 @@ internal class FakeAndroidRepository(
         return contacts.firstOrNull { it.contactId == contactId }
     }
 
+    override suspend fun getContactAccount(contactId: Long): ContactAccount =
+        contacts.firstOrNull { it.contactId == contactId }?.account ?: ContactAccount.Local
+
     override suspend fun createContact(form: ContactForm) {
         createContact(form, ContactAccount.Local)
     }
@@ -152,6 +155,7 @@ internal class FakeGroupsRepository(
     var failure: Throwable? = null,
 ) : GroupsRepository {
     val addedToGroup = mutableListOf<Pair<Long, List<Long>>>()
+    val createdGroupAccounts = mutableListOf<ContactAccount>()
 
     override suspend fun getGroups(): List<ContactGroup> {
         failure?.let { throw it }
@@ -175,6 +179,7 @@ internal class FakeGroupsRepository(
         account: ContactAccount,
     ): ContactGroup {
         failure?.let { throw it }
+        createdGroupAccounts += account
         val group =
             ContactGroup(
                 id = (groups.maxOfOrNull { it.id } ?: 0L) + 1,
@@ -247,6 +252,7 @@ internal class FakeSettingsRepository(
     val themeModes = mutableListOf<ThemeMode>()
     val sortOrders = mutableListOf<ContactSortOrder>()
     val densities = mutableListOf<ListDensity>()
+    val lastContactAccounts = mutableListOf<ContactAccount>()
 
     override fun observeSettings(): Flow<AppSettings> = state
 
@@ -263,5 +269,10 @@ internal class FakeSettingsRepository(
     override suspend fun setListDensity(density: ListDensity) {
         densities += density
         state.value = state.value.copy(listDensity = density)
+    }
+
+    override suspend fun setLastContactAccount(account: ContactAccount) {
+        lastContactAccounts += account
+        state.value = state.value.copy(lastContactAccount = account)
     }
 }

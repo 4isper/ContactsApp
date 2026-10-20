@@ -32,6 +32,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactGroup
+import com.m4isper.contactsapp.presentation.common.account.contactAccountLabel
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 
 /**
@@ -73,6 +74,7 @@ internal fun GroupPickerDialog(
                         groups.forEach { group ->
                             GroupCheckRow(
                                 title = group.title,
+                                accountLabel = contactAccountLabel(group.account),
                                 checked = group.id in selectedIds,
                                 onToggle = { onToggle(group.id) },
                             )
@@ -127,6 +129,7 @@ internal fun GroupPickerDialog(
 @Composable
 private fun GroupCheckRow(
     title: String,
+    accountLabel: String,
     checked: Boolean,
     onToggle: () -> Unit,
 ) {
@@ -144,10 +147,16 @@ private fun GroupCheckRow(
                 .testTag("group_check_row_$title"),
     ) {
         Checkbox(checked = checked, onCheckedChange = null)
-        Text(
-            text = title,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.padding(start = spacing.s),
-        )
+        Column(modifier = Modifier.padding(start = spacing.s)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            Text(
+                text = accountLabel,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }

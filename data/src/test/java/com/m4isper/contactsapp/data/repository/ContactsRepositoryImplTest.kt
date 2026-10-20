@@ -44,6 +44,14 @@ class ContactsRepositoryImplTest {
     private val details = ContactDetails(contactId = 7, name = "Anna")
 
     @Test
+    fun `contact account delegates to reader`() {
+        val google = ContactAccount(name = "user@gmail.com", type = "com.google")
+        val repository = ContactsRepositoryImpl(FakeReader(details, account = google), FakeWriter())
+
+        assertEquals(google, runBlocking { repository.getContactAccount(7) })
+    }
+
+    @Test
     fun `form is null for an unknown contact`() {
         val repository = ContactsRepositoryImpl(FakeReader(details = null), FakeWriter())
 
@@ -300,11 +308,14 @@ private data class UpdateCall(
 private class FakeReader(
     private val details: ContactDetails? = null,
     private val byId: Map<Long, ContactDetails> = emptyMap(),
+    private val account: ContactAccount = ContactAccount.Local,
 ) : ContactsDataSource {
     override suspend fun loadContacts(): List<ContactDetails> = listOfNotNull(details) + byId.values
 
     override suspend fun loadContact(contactId: Long): ContactDetails? =
         byId[contactId] ?: details?.takeIf { it.contactId == contactId }
+
+    override suspend fun loadContactAccount(contactId: Long): ContactAccount = account
 }
 
 private class FakeWriter(

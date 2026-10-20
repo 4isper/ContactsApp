@@ -1,6 +1,7 @@
 package com.m4isper.contactsapp.domain.repository
 
 import com.m4isper.contactsapp.domain.model.AppSettings
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.ListDensity
 import com.m4isper.contactsapp.domain.model.ThemeMode
@@ -15,4 +16,6 @@ interface SettingsRepository {
     suspend fun setSortOrder(order: ContactSortOrder)
 
     suspend fun setListDensity(density: ListDensity)
+
+    suspend fun setLastContactAccount(account: ContactAccount)
 }

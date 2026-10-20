@@ -9,6 +9,9 @@ interface ContactsDataSource {
 
     suspend fun loadContact(contactId: Long): ContactDetails?
 
+    /** Аккаунт целевого raw contact; локальный, если raw contact не найден. */
+    suspend fun loadContactAccount(contactId: Long): ContactAccount = ContactAccount.Local
+
     /** Аккаунты, в которые можно сохранить контакт; локальный есть всегда. */
     suspend fun getContactAccounts(): List<ContactAccount> = listOf(ContactAccount.Local)
 }

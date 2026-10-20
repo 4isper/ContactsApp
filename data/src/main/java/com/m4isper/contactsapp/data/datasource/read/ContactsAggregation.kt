@@ -1,6 +1,7 @@
 package com.m4isper.contactsapp.data.datasource.read
 
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.NameParts
 
@@ -8,6 +9,7 @@ import com.m4isper.contactsapp.domain.model.NameParts
 internal fun buildContactDetails(
     header: ContactHeaderRow,
     rows: List<DataRow>,
+    account: ContactAccount = ContactAccount.Local,
 ): ContactDetails =
     ContactDetails(
         contactId = header.contactId,
@@ -25,6 +27,7 @@ internal fun buildContactDetails(
         nickname = nicknameOf(rows),
         photoUri = header.photoUri,
         nameParts = namePartsOf(rows),
+        account = account,
     )
 
 /**

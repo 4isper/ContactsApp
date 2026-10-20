@@ -13,6 +13,9 @@ data class ContactGroup(
     val isLocal: Boolean
         get() = accountName.isNullOrBlank() && accountType.isNullOrBlank()
 
+    val account: ContactAccount
+        get() = ContactAccount(name = accountName, type = accountType)
+
     /** Принадлежит ли группа аккаунту [account]; локальная группа соответствует [ContactAccount.Local]. */
     fun belongsTo(account: ContactAccount): Boolean =
         if (account.isLocal) {

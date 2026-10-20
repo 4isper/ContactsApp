@@ -1,6 +1,8 @@
 package com.m4isper.contactsapp.presentation.editor
 
 import com.m4isper.contactsapp.FakeGroupsRepository
+import com.m4isper.contactsapp.FakeSettingsRepository
+import com.m4isper.contactsapp.domain.model.AppSettings
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactForm
@@ -24,9 +26,12 @@ import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactFormUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetLastContactAccountUseCase
+import com.m4isper.contactsapp.domain.usecase.SetLastContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.UpdateContactUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -51,6 +56,7 @@ private class FakeEditorRepository :
     val created = mutableListOf<ContactForm>()
     val createdAccounts = mutableListOf<ContactAccount>()
     var accounts: List<ContactAccount> = listOf(ContactAccount.Local)
+    var accountToLoad: ContactAccount = ContactAccount.Local
     val updated = mutableListOf<Pair<Long, ContactForm>>()
     var formToLoad: ContactForm? = null
 
@@ -59,6 +65,8 @@ private class FakeEditorRepository :
     override suspend fun getContactDetails(contactId: Long) = null
 
     override suspend fun getContactForm(contactId: Long): ContactForm? = formToLoad
+
+    override suspend fun getContactAccount(contactId: Long): ContactAccount = accountToLoad
 
     override suspend fun getContactAccounts(): List<ContactAccount> = accounts
 
@@ -105,6 +113,7 @@ class ContactEditorViewModelTest {
     private fun TestScope.viewModel(
         repository: FakeEditorRepository,
         groups: FakeGroupsRepository = FakeGroupsRepository(),
+        settings: FakeSettingsRepository = FakeSettingsRepository(),
     ): ContactEditorViewModel {
         val viewModel =
             ContactEditorViewModel(
@@ -115,6 +124,9 @@ class ContactEditorViewModelTest {
                 GetGroupsUseCase(groups),
                 CreateGroupUseCase(groups),
                 GetContactAccountsUseCase(repository),
+                GetContactAccountUseCase(repository),
+                GetLastContactAccountUseCase(settings),
+                SetLastContactAccountUseCase(settings),
             )
         backgroundScope.launch { viewModel.uiState.collect { } }
         return viewModel
@@ -135,6 +147,58 @@ class ContactEditorViewModelTest {
 
             assertTrue(viewModel.uiState.value.closeScreen)
             assertEquals(1, repository.created.size)
+        }
+
+    @Test
+    fun `new contact starts from the last selected account`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val google = ContactAccount(name = "user@gmail.com", type = "com.google")
+            val repository =
+                FakeEditorRepository().apply {
+                    accounts = listOf(ContactAccount.Local, google)
+                }
+            val settings = FakeSettingsRepository(AppSettings(lastContactAccount = google))
+            val viewModel = viewModel(repository, settings = settings)
+
+            viewModel.load(null)
+            advanceUntilIdle()
+
+            assertEquals(google, viewModel.uiState.value.selectedAccount)
+        }
+
+    @Test
+    fun `new contact falls back to local when last account is unavailable`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val google = ContactAccount(name = "user@gmail.com", type = "com.google")
+            val settings = FakeSettingsRepository(AppSettings(lastContactAccount = google))
+            val viewModel = viewModel(FakeEditorRepository(), settings = settings)
+
+            viewModel.load(null)
+            advanceUntilIdle()
+
+            assertEquals(ContactAccount.Local, viewModel.uiState.value.selectedAccount)
+        }
+
+    @Test
+    fun `selecting account remembers it for the next contact`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val google = ContactAccount(name = "user@gmail.com", type = "com.google")
+            val repository =
+                FakeEditorRepository().apply {
+                    accounts = listOf(ContactAccount.Local, google)
+                }
+            val settings = FakeSettingsRepository()
+            val viewModel = viewModel(repository, settings = settings)
+            viewModel.load(null)
+            advanceUntilIdle()
+
+            viewModel.onAccountSelected(google)
+            advanceUntilIdle()
+
+            assertEquals(listOf(google), settings.lastContactAccounts)
         }
 
     @Test
@@ -889,6 +953,45 @@ class ContactEditorViewModelTest {
             assertEquals(setOf(100L, 200L), state.selectedGroupIds)
             // selectedGroups отдаёт метки в порядке списка всех групп.
             assertEquals(listOf("Семья", "Работа"), state.selectedGroups.map { it.title })
+        }
+
+    @Test
+    fun `existing contact uses its account for groups and new groups`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val google = ContactAccount(name = "user@gmail.com", type = "com.google")
+            val localGroup = ContactGroup(id = 100, title = "Семья")
+            val googleGroup =
+                ContactGroup(
+                    id = 200,
+                    title = "Работа",
+                    accountName = google.name,
+                    accountType = google.type,
+                )
+            val repository =
+                FakeEditorRepository().apply {
+                    accountToLoad = google
+                    formToLoad =
+                        ContactForm(
+                            name = EditableName(display = "Anna"),
+                            groups = listOf(200L),
+                        )
+                }
+            val groups = FakeGroupsRepository(groups = listOf(localGroup, googleGroup))
+            val viewModel = viewModel(repository, groups)
+            viewModel.load(7)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(google, state.selectedAccount)
+            assertEquals(listOf(googleGroup), state.availableGroups)
+            assertEquals(setOf(200L), state.selectedGroupIds)
+
+            viewModel.onCreateGroup("Проект")
+            advanceUntilIdle()
+
+            assertEquals(listOf(google), groups.createdGroupAccounts)
+            assertEquals(listOf(googleGroup, groups.groups.last()), viewModel.uiState.value.availableGroups)
         }
 
     @Test

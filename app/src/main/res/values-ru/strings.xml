@@ -183,6 +183,7 @@
     <string name="editor_account_exchange">Exchange</string>
     <string name="editor_account_choose">Выбрать аккаунт</string>
     <string name="editor_account_title">Куда сохранить контакт</string>
+    <string name="account_with_type">%1$s (%2$s)</string>
     <string name="editor_section_emails">Email</string>
     <string name="editor_section_instant_messages">Мессенджеры</string>
     <string name="editor_section_addresses">Адреса</string>

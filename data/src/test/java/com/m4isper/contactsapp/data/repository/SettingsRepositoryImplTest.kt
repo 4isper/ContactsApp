@@ -2,6 +2,7 @@ package com.m4isper.contactsapp.data.repository
 
 import com.m4isper.contactsapp.data.datasource.SettingsDataSource
 import com.m4isper.contactsapp.domain.model.AppSettings
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.ListDensity
 import com.m4isper.contactsapp.domain.model.ThemeMode
@@ -20,6 +21,7 @@ private class FakeSettingsDataSource(
     val themeModes = mutableListOf<String>()
     val sortOrders = mutableListOf<String>()
     val densities = mutableListOf<String>()
+    val lastContactAccounts = mutableListOf<ContactAccount>()
 
     override val settings: Flow<AppSettings> = state
 
@@ -33,6 +35,10 @@ private class FakeSettingsDataSource(
 
     override suspend fun setListDensity(density: String) {
         densities += density
+    }
+
+    override suspend fun setLastContactAccount(account: ContactAccount) {
+        lastContactAccounts += account
     }
 }
 
@@ -79,5 +85,16 @@ class SettingsRepositoryImplTest {
             SettingsRepositoryImpl(dataSource).setListDensity(ListDensity.COMPACT)
 
             assertEquals(listOf("COMPACT"), dataSource.densities)
+        }
+
+    @Test
+    fun `set last contact account delegates to data source`() =
+        runBlocking {
+            val dataSource = FakeSettingsDataSource()
+            val google = ContactAccount(name = "user@gmail.com", type = "com.google")
+
+            SettingsRepositoryImpl(dataSource).setLastContactAccount(google)
+
+            assertEquals(listOf(google), dataSource.lastContactAccounts)
         }
 }

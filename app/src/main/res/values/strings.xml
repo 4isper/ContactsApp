@@ -183,6 +183,7 @@
     <string name="editor_account_exchange">Exchange</string>
     <string name="editor_account_choose">Choose account</string>
     <string name="editor_account_title">Save contact to</string>
+    <string name="account_with_type">%1$s (%2$s)</string>
     <string name="editor_section_emails">Email</string>
     <string name="editor_section_instant_messages">Instant messaging</string>
     <string name="editor_section_addresses">Addresses</string>

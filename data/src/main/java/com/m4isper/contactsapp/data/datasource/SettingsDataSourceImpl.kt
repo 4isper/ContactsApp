@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.m4isper.contactsapp.domain.model.AppSettings
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.ListDensity
 import com.m4isper.contactsapp.domain.model.ThemeMode
@@ -24,6 +25,8 @@ private val Context.settingsDataStore: DataStore<Preferences> by preferencesData
 private val THEME_MODE = stringPreferencesKey("theme_mode")
 private val SORT_ORDER = stringPreferencesKey("sort_order")
 private val LIST_DENSITY = stringPreferencesKey("list_density")
+private val LAST_ACCOUNT_NAME = stringPreferencesKey("last_contact_account_name")
+private val LAST_ACCOUNT_TYPE = stringPreferencesKey("last_contact_account_type")
 
 /** Неизвестные значения (старая версия, битые данные) откатываются к дефолтам модели. */
 @Inject
@@ -38,6 +41,11 @@ class SettingsDataSourceImpl(
                 themeMode = prefs[THEME_MODE].toThemeMode(),
                 sortOrder = prefs[SORT_ORDER].toSortOrder(),
                 listDensity = prefs[LIST_DENSITY].toListDensity(),
+                lastContactAccount =
+                    ContactAccount(
+                        name = prefs[LAST_ACCOUNT_NAME],
+                        type = prefs[LAST_ACCOUNT_TYPE],
+                    ),
             )
         }
 
@@ -51,6 +59,17 @@ class SettingsDataSourceImpl(
 
     override suspend fun setListDensity(density: String) {
         context.settingsDataStore.edit { prefs -> prefs[LIST_DENSITY] = density }
+    }
+
+    override suspend fun setLastContactAccount(account: ContactAccount) {
+        context.settingsDataStore.edit { prefs ->
+            prefs.remove(LAST_ACCOUNT_NAME)
+            prefs.remove(LAST_ACCOUNT_TYPE)
+            if (!account.isLocal) {
+                account.name?.let { prefs[LAST_ACCOUNT_NAME] = it }
+                account.type?.let { prefs[LAST_ACCOUNT_TYPE] = it }
+            }
+        }
     }
 }
 

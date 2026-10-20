@@ -8,6 +8,7 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
@@ -16,6 +17,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import com.m4isper.contactsapp.FakeAndroidRepository
 import com.m4isper.contactsapp.FakeGroupsRepository
+import com.m4isper.contactsapp.FakeSettingsRepository
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactEvent
@@ -26,9 +28,12 @@ import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactFormUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetLastContactAccountUseCase
+import com.m4isper.contactsapp.domain.usecase.SetLastContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.UpdateContactUseCase
 import com.m4isper.contactsapp.testDetails
 import org.junit.Assert.assertEquals
@@ -49,6 +54,7 @@ class ContactEditorUiTest {
     private fun viewModel(
         repository: FakeAndroidRepository,
         groups: FakeGroupsRepository = FakeGroupsRepository(),
+        settings: FakeSettingsRepository = FakeSettingsRepository(),
     ) = ContactEditorViewModel(
         GetContactFormUseCase(repository),
         CreateContactUseCase(repository),
@@ -57,6 +63,9 @@ class ContactEditorUiTest {
         GetGroupsUseCase(groups),
         CreateGroupUseCase(groups),
         GetContactAccountsUseCase(repository),
+        GetContactAccountUseCase(repository),
+        GetLastContactAccountUseCase(settings),
+        SetLastContactAccountUseCase(settings),
     )
 
     @Test
@@ -461,6 +470,81 @@ class ContactEditorUiTest {
         compose.onNodeWithTag("editor_groups_row").performClick()
         compose.onNodeWithTag("group_check_row_Работа").assertIsDisplayed()
         compose.onNodeWithTag("group_check_row_Семья").assertDoesNotExist()
+    }
+
+    @Test
+    fun editMode_showsAccountAndFiltersGroups() {
+        val google = ContactAccount(name = "user@gmail.com", type = "com.google")
+        val repository =
+            FakeAndroidRepository(
+                listOf(testDetails(7, "Anna", "111").copy(account = google)),
+            )
+        val groups =
+            FakeGroupsRepository(
+                groups =
+                    listOf(
+                        ContactGroup(id = 100, title = "Семья"),
+                        ContactGroup(
+                            id = 200,
+                            title = "Работа",
+                            accountName = google.name,
+                            accountType = google.type,
+                        ),
+                    ),
+            )
+        val viewModel = viewModel(repository, groups)
+        compose.setContent {
+            ContactEditorScreen(
+                contactId = 7,
+                onDone = {},
+                onBack = {},
+                viewModel = viewModel,
+            )
+        }
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.displayName == "Anna" &&
+                viewModel.uiState.value.selectedAccount == google
+        }
+
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_account_row"))
+        compose.onNodeWithTag("editor_account_row").assertIsDisplayed()
+        compose.onNodeWithText("user@gmail.com").assertIsDisplayed()
+
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_groups_row"))
+        compose.onNodeWithTag("editor_groups_row").performClick()
+        compose.onNodeWithTag("group_check_row_Работа").assertIsDisplayed()
+        compose.onNodeWithTag("group_check_row_Семья").assertDoesNotExist()
+    }
+
+    @Test
+    fun createMode_createsGroupInSelectedAccount() {
+        val google = ContactAccount(name = "user@gmail.com", type = "com.google")
+        val repository =
+            FakeAndroidRepository().apply {
+                accounts = listOf(ContactAccount.Local, google)
+            }
+        val groups = FakeGroupsRepository()
+        val viewModel = viewModel(repository, groups)
+        compose.setContent {
+            ContactEditorScreen(
+                contactId = null,
+                onDone = {},
+                onBack = {},
+                viewModel = viewModel,
+            )
+        }
+        compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.accounts.size == 2 }
+
+        compose.onNodeWithTag("editor_account_row").performClick()
+        compose.onNodeWithTag("account_option_com.google/user@gmail.com").performClick()
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_groups_row"))
+        compose.onNodeWithTag("editor_groups_row").performClick()
+        compose.onNodeWithTag("new_group_field").performTextInput("Проект")
+        compose.onNodeWithTag("new_group_confirm").performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { groups.groups.size == 1 }
+        assertEquals(listOf(google), groups.createdGroupAccounts)
+        compose.onNodeWithTag("group_check_row_Проект").assertIsDisplayed()
     }
 
     @Test

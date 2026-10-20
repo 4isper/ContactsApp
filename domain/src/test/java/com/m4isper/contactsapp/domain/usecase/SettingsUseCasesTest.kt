@@ -1,6 +1,7 @@
 package com.m4isper.contactsapp.domain.usecase
 
 import com.m4isper.contactsapp.domain.model.AppSettings
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.ListDensity
 import com.m4isper.contactsapp.domain.model.ThemeMode
@@ -20,6 +21,7 @@ private class StubSettingsRepository(
     val themeModes = mutableListOf<ThemeMode>()
     val sortOrders = mutableListOf<ContactSortOrder>()
     val densities = mutableListOf<ListDensity>()
+    val lastContactAccounts = mutableListOf<ContactAccount>()
 
     override fun observeSettings(): Flow<AppSettings> = state
 
@@ -36,6 +38,11 @@ private class StubSettingsRepository(
     override suspend fun setListDensity(density: ListDensity) {
         densities += density
         state.value = state.value.copy(listDensity = density)
+    }
+
+    override suspend fun setLastContactAccount(account: ContactAccount) {
+        lastContactAccounts += account
+        state.value = state.value.copy(lastContactAccount = account)
     }
 }
 
@@ -82,5 +89,25 @@ class SettingsUseCasesTest {
             SetListDensityUseCase(repository)(ListDensity.COMPACT)
 
             assertEquals(listOf(ListDensity.COMPACT), repository.densities)
+        }
+
+    @Test
+    fun `get last contact account returns saved account`() =
+        runTest {
+            val google = ContactAccount(name = "user@gmail.com", type = "com.google")
+            val repository = StubSettingsRepository(AppSettings(lastContactAccount = google))
+
+            assertEquals(google, GetLastContactAccountUseCase(repository)())
+        }
+
+    @Test
+    fun `set last contact account delegates to repository`() =
+        runTest {
+            val google = ContactAccount(name = "user@gmail.com", type = "com.google")
+            val repository = StubSettingsRepository()
+
+            SetLastContactAccountUseCase(repository)(google)
+
+            assertEquals(listOf(google), repository.lastContactAccounts)
         }
 }

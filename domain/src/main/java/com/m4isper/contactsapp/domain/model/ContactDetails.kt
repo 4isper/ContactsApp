@@ -190,6 +190,8 @@ data class ContactDetails(
     val nickname: String? = null,
     val photoUri: String? = null,
     val nameParts: NameParts? = null,
+    /** Аккаунт целевого raw contact; локальный контакт — [ContactAccount.Local]. */
+    val account: ContactAccount = ContactAccount.Local,
 ) {
     val primaryPhone: String
         get() = phones.firstOrNull()?.number.orEmpty()

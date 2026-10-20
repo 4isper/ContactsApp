@@ -24,6 +24,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -38,6 +39,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactGroup
+import com.m4isper.contactsapp.presentation.common.account.contactAccountLabel
 import com.m4isper.contactsapp.presentation.common.groups.GroupNameDialog
 import com.m4isper.contactsapp.ui.components.SearchField
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
@@ -250,7 +252,16 @@ private fun GroupsFilterChip(
             )
             groups.forEach { group ->
                 DropdownMenuItem(
-                    text = { Text(group.title) },
+                    text = {
+                        Column {
+                            Text(group.title)
+                            Text(
+                                text = contactAccountLabel(group.account),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    },
                     onClick = {
                         onExpandedChange(false)
                         onGroupSelected(group.id)

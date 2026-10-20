@@ -21,10 +21,13 @@ import com.m4isper.contactsapp.domain.model.RelationKind
 import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactUseCase
+import com.m4isper.contactsapp.domain.usecase.GetContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactFormUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetLastContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.SaveResult
+import com.m4isper.contactsapp.domain.usecase.SetLastContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.UpdateContactUseCase
 import com.m4isper.contactsapp.presentation.common.logw
 import dev.zacsweers.metro.AppScope
@@ -53,6 +56,9 @@ class ContactEditorViewModel(
     private val getGroupsUseCase: GetGroupsUseCase,
     private val createGroupUseCase: CreateGroupUseCase,
     private val getContactAccountsUseCase: GetContactAccountsUseCase,
+    private val getContactAccountUseCase: GetContactAccountUseCase,
+    private val getLastContactAccountUseCase: GetLastContactAccountUseCase,
+    private val setLastContactAccountUseCase: SetLastContactAccountUseCase,
 ) : ViewModel() {
     private val state = MutableStateFlow(EditorUiState())
     private var nextRowId = 0L
@@ -85,7 +91,12 @@ class ContactEditorViewModel(
                 if (form == null) {
                     state.update { it.copy(closeScreen = true) }
                 } else {
-                    state.value = editorStateFromForm(id, form) { ++nextRowId }.copy(allGroups = loadGroups())
+                    state.value =
+                        editorStateFromForm(id, form) { ++nextRowId }
+                            .copy(
+                                allGroups = loadGroups(),
+                                selectedAccount = loadContactAccount(id),
+                            )
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -107,10 +118,11 @@ class ContactEditorViewModel(
         viewModelScope.launch {
             val accounts = loadAccounts()
             val groups = loadGroups()
+            val lastAccount = loadLastContactAccount()
             state.update { current ->
                 val selected =
-                    current.selectedAccount
-                        ?.takeIf { it in accounts }
+                    lastAccount.takeIf { it in accounts }
+                        ?: current.selectedAccount.takeIf { it in accounts }
                         ?: accounts.firstOrNull { it.isLocal }
                         ?: accounts.firstOrNull()
                 val availableGroupIds =
@@ -275,6 +287,7 @@ class ContactEditorViewModel(
                 selectedGroupIds = current.selectedGroupIds.intersect(availableGroupIds),
             )
         }
+        viewModelScope.launch { persistLastAccount(account) }
     }
 
     fun onGroupToggled(groupId: Long) =
@@ -458,6 +471,41 @@ class ContactEditorViewModel(
                 emptyList()
             }
         return (listOf(ContactAccount.Local) + loaded.filterNot { it.isLocal }).distinct()
+    }
+
+    /** Аккаунт существующего контакта: сбой чтения не мешает редактированию. */
+    @Suppress("TooGenericExceptionCaught")
+    private suspend fun loadContactAccount(contactId: Long): ContactAccount =
+        try {
+            getContactAccountUseCase(contactId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logw(EDITOR_TAG, "load contact account failed", e)
+            ContactAccount.Local
+        }
+
+    /** Последний выбранный аккаунт: сбой настроек не мешает созданию контакта. */
+    @Suppress("TooGenericExceptionCaught")
+    private suspend fun loadLastContactAccount(): ContactAccount =
+        try {
+            getLastContactAccountUseCase()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logw(EDITOR_TAG, "load last contact account failed", e)
+            ContactAccount.Local
+        }
+
+    @Suppress("TooGenericExceptionCaught")
+    private suspend fun persistLastAccount(account: ContactAccount) {
+        try {
+            setLastContactAccountUseCase(account)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logw(EDITOR_TAG, "save last contact account failed", e)
+        }
     }
 
     /** Новая строка со стабильным ключом: счётчик живёт в пределах экрана. */

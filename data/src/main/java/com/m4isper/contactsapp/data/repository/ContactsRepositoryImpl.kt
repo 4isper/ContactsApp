@@ -51,6 +51,8 @@ class ContactsRepositoryImpl(
 
     override suspend fun getContactDetails(contactId: Long): ContactDetails? = dataSource.loadContact(contactId)
 
+    override suspend fun getContactAccount(contactId: Long): ContactAccount = dataSource.loadContactAccount(contactId)
+
     override suspend fun getContactForm(contactId: Long): ContactForm? {
         val details = dataSource.loadContact(contactId) ?: return null
         val rows = writer.loadContactRows(contactId)

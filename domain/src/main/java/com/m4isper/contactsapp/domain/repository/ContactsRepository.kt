@@ -11,6 +11,10 @@ interface ContactsRepository {
 
     suspend fun getContactForm(contactId: Long): ContactForm?
 
+    /** Аккаунт существующего контакта; локальный, если данные недоступны. */
+    suspend fun getContactAccount(contactId: Long): ContactAccount =
+        getContactDetails(contactId)?.account ?: ContactAccount.Local
+
     /** Аккаунты для выбора при создании; локальный аккаунт есть всегда. */
     suspend fun getContactAccounts(): List<ContactAccount> = listOf(ContactAccount.Local)
 

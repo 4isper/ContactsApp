@@ -95,15 +95,11 @@ internal data class EditorUiState(
     val selectedGroups: List<ContactGroup>
         get() = allGroups.filter { it.id in selectedGroupIds }
 
-    /** Группы, доступные для выбранного аккаунта; у существующего контакта — все. */
+    /** Группы, доступные для аккаунта контакта. */
     val availableGroups: List<ContactGroup>
         get() {
-            val account = selectedAccount
-            return if (isNew && account != null) {
-                allGroups.filter { it.belongsTo(account) }
-            } else {
-                allGroups
-            }
+            val account = selectedAccount ?: return allGroups
+            return allGroups.filter { it.belongsTo(account) }
         }
 
     /** Текущее состояние формы; пустые строки-плейсхолдеры убирает [withoutBlankRows]. */

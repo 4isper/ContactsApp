@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp.presentation.editor
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,18 +30,20 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactAccount
+import com.m4isper.contactsapp.presentation.common.account.contactAccountSubtitle
+import com.m4isper.contactsapp.presentation.common.account.contactAccountTitle
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 
-/** Строка выбора аккаунта для нового контакта. */
+/** Строка аккаунта: интерактивная для нового контакта, только для чтения у существующего. */
 @Composable
 internal fun AccountRow(
     account: ContactAccount?,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)?,
 ) {
     val spacing = LocalSpacing.current
     val selected = account ?: ContactAccount.Local
+    val clickModifier = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier
     Card(
-        onClick = onClick,
         colors =
             CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -49,6 +52,7 @@ internal fun AccountRow(
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = spacing.m, vertical = spacing.xs)
+                .then(clickModifier)
                 .testTag("editor_account_row"),
     ) {
         Row(
@@ -67,21 +71,23 @@ internal fun AccountRow(
                         .padding(horizontal = spacing.s),
             ) {
                 Text(
-                    text = accountTitle(selected),
+                    text = contactAccountTitle(selected),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = accountSubtitle(selected),
+                    text = contactAccountSubtitle(selected),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Icon(
-                Icons.Filled.Edit,
-                contentDescription = stringResource(R.string.editor_account_choose),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            if (onClick != null) {
+                Icon(
+                    Icons.Filled.Edit,
+                    contentDescription = stringResource(R.string.editor_account_choose),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
@@ -128,11 +134,11 @@ internal fun AccountPickerDialog(
                             modifier = Modifier.padding(start = spacing.s),
                         ) {
                             Text(
-                                text = accountTitle(account),
+                                text = contactAccountTitle(account),
                                 style = MaterialTheme.typography.bodyLarge,
                             )
                             Text(
-                                text = accountSubtitle(account),
+                                text = contactAccountSubtitle(account),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -149,24 +155,6 @@ internal fun AccountPickerDialog(
         modifier = Modifier.testTag("account_picker_dialog"),
     )
 }
-
-@Composable
-private fun accountTitle(account: ContactAccount): String =
-    if (account.isLocal) {
-        stringResource(R.string.editor_account_local)
-    } else {
-        account.name.orEmpty()
-    }
-
-@Composable
-private fun accountSubtitle(account: ContactAccount): String =
-    when {
-        account.isLocal -> stringResource(R.string.editor_account_local_hint)
-        account.type?.contains("google", ignoreCase = true) == true -> stringResource(R.string.editor_account_google)
-        account.type?.contains("exchange", ignoreCase = true) == true ->
-            stringResource(R.string.editor_account_exchange)
-        else -> account.type.orEmpty()
-    }
 
 /** Стабильный test tag: локальный аккаунт и пара type/name. */
 private fun ContactAccount.testKey(): String = if (isLocal) "local" else "${type.orEmpty()}/${name.orEmpty()}"

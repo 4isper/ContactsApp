@@ -78,7 +78,12 @@ class ContactsDataSourceImpl(
                     selection = "${ContactsContract.Data.CONTACT_ID} = ?",
                     args = arrayOf(contactId.toString()),
                 )
-            buildContactDetails(header, rows)
+            buildContactDetails(header, rows, account = queryContactAccount(context, contactId))
+        }
+
+    override suspend fun loadContactAccount(contactId: Long): ContactAccount =
+        withContext(Dispatchers.IO) {
+            queryContactAccount(context, contactId)
         }
 
     override suspend fun getContactAccounts(): List<ContactAccount> =
@@ -109,13 +114,6 @@ class ContactsDataSourceImpl(
                     },
                 )
         }
-
-    /** Типы аккаунтов, у которых есть sync adapter для контактов с поддержкой записи. */
-    private fun contactSyncAccountTypes(): Set<String> =
-        ContentResolver
-            .getSyncAdapterTypes()
-            .filter { it.authority == ContactsContract.AUTHORITY && it.supportsUploading() }
-            .mapTo(mutableSetOf()) { it.accountType }
 
     private fun addAccountManagerAccounts(
         contactTypes: Set<String>,
@@ -259,3 +257,41 @@ class ContactsDataSourceImpl(
         return rows
     }
 }
+
+/** Типы аккаунтов, у которых есть sync adapter для контактов с поддержкой записи. */
+private fun contactSyncAccountTypes(): Set<String> =
+    ContentResolver
+        .getSyncAdapterTypes()
+        .filter { it.authority == ContactsContract.AUTHORITY && it.supportsUploading() }
+        .mapTo(mutableSetOf()) { it.accountType }
+
+/**
+ * Аккаунт целевого raw contact — минимальный raw id, как в редакторе.
+ * Локальные raw contacts хранят null в account name/type.
+ */
+private fun queryContactAccount(
+    context: Context,
+    contactId: Long,
+): ContactAccount =
+    context.contentResolver
+        .query(
+            ContactsContract.RawContacts.CONTENT_URI,
+            arrayOf(
+                ContactsContract.RawContacts.ACCOUNT_NAME,
+                ContactsContract.RawContacts.ACCOUNT_TYPE,
+            ),
+            "${ContactsContract.RawContacts.CONTACT_ID} = ?",
+            arrayOf(contactId.toString()),
+            "${ContactsContract.RawContacts._ID} ASC",
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val nameIndex = cursor.getColumnIndexOrThrow(ContactsContract.RawContacts.ACCOUNT_NAME)
+                val typeIndex = cursor.getColumnIndexOrThrow(ContactsContract.RawContacts.ACCOUNT_TYPE)
+                ContactAccount(
+                    name = cursor.getString(nameIndex),
+                    type = cursor.getString(typeIndex),
+                )
+            } else {
+                ContactAccount.Local
+            }
+        } ?: ContactAccount.Local

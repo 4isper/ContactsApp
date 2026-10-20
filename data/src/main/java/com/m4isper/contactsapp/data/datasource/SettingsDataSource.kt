@@ -1,6 +1,7 @@
 package com.m4isper.contactsapp.data.datasource
 
 import com.m4isper.contactsapp.domain.model.AppSettings
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import kotlinx.coroutines.flow.Flow
 
 /** Настройки приложения в локальном хранилище. */
@@ -12,4 +13,6 @@ interface SettingsDataSource {
     suspend fun setSortOrder(order: String)
 
     suspend fun setListDensity(density: String)
+
+    suspend fun setLastContactAccount(account: ContactAccount)
 }

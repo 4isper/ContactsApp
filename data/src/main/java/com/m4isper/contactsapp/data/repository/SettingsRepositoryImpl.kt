@@ -2,6 +2,7 @@ package com.m4isper.contactsapp.data.repository
 
 import com.m4isper.contactsapp.data.datasource.SettingsDataSource
 import com.m4isper.contactsapp.domain.model.AppSettings
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.ListDensity
 import com.m4isper.contactsapp.domain.model.ThemeMode
@@ -25,4 +26,6 @@ class SettingsRepositoryImpl(
     override suspend fun setSortOrder(order: ContactSortOrder) = dataSource.setSortOrder(order.name)
 
     override suspend fun setListDensity(density: ListDensity) = dataSource.setListDensity(density.name)
+
+    override suspend fun setLastContactAccount(account: ContactAccount) = dataSource.setLastContactAccount(account)
 }
