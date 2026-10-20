@@ -5,6 +5,7 @@ import android.provider.ContactsContract.CommonDataKinds.Event
 import android.provider.ContactsContract.CommonDataKinds.Note
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
+import com.m4isper.contactsapp.data.format.birthdayFromString
 import com.m4isper.contactsapp.domain.model.AddressKind
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.EmailAddress
@@ -114,4 +115,4 @@ internal fun noteOf(rows: List<DataRow>): String? =
 internal fun birthdayOf(rows: List<DataRow>): Birthday? =
     rows
         .firstOrNull { it.mimetype == Event.CONTENT_ITEM_TYPE && it.data2Int == Event.TYPE_BIRTHDAY }
-        ?.let { Birthday.parse(it.data1) }
+        ?.let { birthdayFromString(it.data1) }

@@ -19,6 +19,7 @@ import com.m4isper.contactsapp.FakeVCardCodec
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.usecase.AddContactsToGroupUseCase
+import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
@@ -55,7 +56,7 @@ class ContactListUiTest {
         ObserveSettingsUseCase(settings),
         GetContactDetailsUseCase(repository),
         DeleteContactsUseCase(repository, repository),
-        ImportContactsUseCase(repository),
+        ImportContactsUseCase(CreateContactUseCase(repository)),
         GetGroupsUseCase(groups),
         GetGroupMembershipUseCase(groups),
         CreateGroupUseCase(groups),

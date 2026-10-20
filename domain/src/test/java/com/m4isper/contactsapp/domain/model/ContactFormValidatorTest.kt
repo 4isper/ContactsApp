@@ -66,15 +66,13 @@ class ContactFormValidatorTest {
     }
 
     @Test
-    fun `blank phone row is blank phone error`() {
+    fun `blank phone row alone is empty form`() {
         assertEquals(
-            FormError.BLANK_PHONE,
+            FormError.EMPTY_FORM,
             validateContactForm(
                 ContactForm(
-                    name = EditableName(display = "Anna"),
                     phones =
                         listOf(
-                            EditablePhone(number = "111"),
                             EditablePhone(number = "  "),
                         ),
                 ),

@@ -4,6 +4,7 @@ import android.provider.ContactsContract.CommonDataKinds.Event
 import android.provider.ContactsContract.CommonDataKinds.Im
 import android.provider.ContactsContract.CommonDataKinds.Relation
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
+import com.m4isper.contactsapp.data.format.birthdayToString
 import com.m4isper.contactsapp.domain.model.AddressKind
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactAccount
@@ -232,7 +233,7 @@ class BuildContactDetailsTest {
         val details = buildContactDetails(header(1, "Anna"), rows)
 
         assertEquals(Birthday(day = 24, month = 5, year = 1990), details.birthday)
-        assertEquals(listOf("2015-06-01", "2020-09-10"), details.events.map { it.date.toStorageString() })
+        assertEquals(listOf("2015-06-01", "2020-09-10"), details.events.map { birthdayToString(it.date) })
         assertEquals(EventKind.ANNIVERSARY, details.events[0].kind)
         assertEquals(EventKind.OTHER, details.events[1].kind)
         assertEquals("Свадьба", details.events[1].customLabel)

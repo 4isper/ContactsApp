@@ -9,6 +9,7 @@ import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.Photo
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import android.provider.ContactsContract.CommonDataKinds.Website
+import com.m4isper.contactsapp.data.format.birthdayToString
 import com.m4isper.contactsapp.domain.model.AddressKind
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.EditableAddress
@@ -107,7 +108,7 @@ internal fun noteValues(note: String): ContentValues =
 
 internal fun eventValues(birthday: Birthday): ContentValues =
     ContentValues().apply {
-        put(Event.START_DATE, birthday.toStorageString())
+        put(Event.START_DATE, birthdayToString(birthday))
         put(Event.TYPE, Event.TYPE_BIRTHDAY)
     }
 

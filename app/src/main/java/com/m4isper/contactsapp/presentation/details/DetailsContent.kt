@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.PhoneNumber
@@ -207,13 +208,13 @@ internal fun DetailsContent(
         }
         items(
             items = details.events,
-            key = { "event_${it.date.toStorageString()}_${it.kind.name}" },
+            key = { "event_${birthdayKey(it.date)}_${it.kind.name}" },
         ) { event ->
             DataRow(
                 primary = birthdayText(event.date),
                 secondary = contactEventLabel(event),
                 actions = emptyList(),
-                modifier = Modifier.testTag("event_row_${event.date.toStorageString()}"),
+                modifier = Modifier.testTag("event_row_${birthdayKey(event.date)}"),
             )
         }
         items(
@@ -245,3 +246,16 @@ internal fun DetailsContent(
         }
     }
 }
+
+/** Ключ строки события для списка и testTag; формат не связан с форматом хранения. */
+private fun birthdayKey(date: Birthday): String =
+    buildString {
+        append(date.year?.toString()?.padStart(YEAR_DIGITS, '0') ?: "--")
+        append('-')
+        append(date.month.toString().padStart(DATE_PART_DIGITS, '0'))
+        append('-')
+        append(date.day.toString().padStart(DATE_PART_DIGITS, '0'))
+    }
+
+private const val YEAR_DIGITS = 4
+private const val DATE_PART_DIGITS = 2

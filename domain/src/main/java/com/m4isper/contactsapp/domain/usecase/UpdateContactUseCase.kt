@@ -1,6 +1,7 @@
 package com.m4isper.contactsapp.domain.usecase
 
 import com.m4isper.contactsapp.domain.model.ContactForm
+import com.m4isper.contactsapp.domain.model.normalized
 import com.m4isper.contactsapp.domain.model.validateContactForm
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
 import dev.zacsweers.metro.Inject
@@ -13,8 +14,9 @@ class UpdateContactUseCase(
         contactId: Long,
         form: ContactForm,
     ): SaveResult {
-        validateContactForm(form)?.let { return SaveResult.Invalid(it) }
-        repository.updateContact(contactId, form)
+        val normalized = form.normalized()
+        validateContactForm(normalized)?.let { return SaveResult.Invalid(it) }
+        repository.updateContact(contactId, normalized)
         return SaveResult.Saved
     }
 }

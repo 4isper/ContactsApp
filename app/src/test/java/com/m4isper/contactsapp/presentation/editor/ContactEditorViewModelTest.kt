@@ -24,7 +24,6 @@ import com.m4isper.contactsapp.domain.repository.ContactsRepository
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
-import com.m4isper.contactsapp.domain.usecase.DeleteContactUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
@@ -58,6 +57,8 @@ private class FakeEditorRepository :
     var accounts: List<ContactAccount> = listOf(ContactAccount.Local)
     var accountToLoad: ContactAccount = ContactAccount.Local
     val updated = mutableListOf<Pair<Long, ContactForm>>()
+    val deleted = mutableListOf<Long>()
+    var deleteFails = false
     var formToLoad: ContactForm? = null
 
     override suspend fun getContacts() = emptyList<com.m4isper.contactsapp.domain.model.ContactDetails>()
@@ -89,7 +90,10 @@ private class FakeEditorRepository :
         updated += contactId to form
     }
 
-    override suspend fun deleteContact(contactId: Long) = Unit
+    override suspend fun deleteContact(contactId: Long) {
+        deleted += contactId
+        if (deleteFails) error("delete failed")
+    }
 
     override suspend fun mergeContacts(
         targetId: Long,
@@ -120,7 +124,7 @@ class ContactEditorViewModelTest {
                 GetContactFormUseCase(repository),
                 CreateContactUseCase(repository),
                 UpdateContactUseCase(repository),
-                DeleteContactUseCase(DeleteContactsUseCase(repository, repository)),
+                DeleteContactsUseCase(repository, repository),
                 GetGroupsUseCase(groups),
                 CreateGroupUseCase(groups),
                 GetContactAccountsUseCase(repository),
@@ -234,7 +238,7 @@ class ContactEditorViewModelTest {
                     formToLoad =
                         ContactForm(
                             name = EditableName(display = "Anna"),
-                            emails = listOf(EditableEmail(dataId = 9, address = "anna@example.com")),
+                            emails = listOf(EditableEmail(rowId = 9, address = "anna@example.com")),
                             organization = EditableOrganization(company = "ACME", title = "CTO"),
                             note = EditableNote(note = "Note"),
                             birthday = EditableBirthday(value = Birthday(day = 24, month = 5, year = 1990)),
@@ -270,7 +274,7 @@ class ContactEditorViewModelTest {
                             instantMessages =
                                 listOf(
                                     EditableInstantMessage(
-                                        dataId = 3,
+                                        rowId = 3,
                                         address = "skype_anna",
                                         protocol = ImProtocol.SKYPE,
                                     ),
@@ -285,7 +289,7 @@ class ContactEditorViewModelTest {
             val row =
                 viewModel.uiState.value.instantMessages
                     .single()
-            assertEquals(3L, row.value.dataId)
+            assertEquals(3L, row.value.rowId)
             assertEquals("skype_anna", row.value.address)
             assertEquals(ImProtocol.SKYPE, row.value.protocol)
         }
@@ -605,7 +609,7 @@ class ContactEditorViewModelTest {
                             nickname = EditableNickname(nickname = "Нюша"),
                             relations =
                                 listOf(
-                                    EditableRelation(dataId = 5, name = "Bob", kind = RelationKind.FRIEND),
+                                    EditableRelation(rowId = 5, name = "Bob", kind = RelationKind.FRIEND),
                                     EditableRelation(
                                         name = "Михалыч",
                                         kind = RelationKind.OTHER,
@@ -615,7 +619,7 @@ class ContactEditorViewModelTest {
                             events =
                                 listOf(
                                     EditableEvent(
-                                        dataId = 6,
+                                        rowId = 6,
                                         date = Birthday(day = 1, month = 6, year = 2015),
                                         kind = EventKind.ANNIVERSARY,
                                     ),
@@ -632,11 +636,11 @@ class ContactEditorViewModelTest {
             val relations = state.relations
             assertEquals(listOf("Bob", "Михалыч"), relations.map { it.value.name })
             val bob = relations[0]
-            assertEquals(5L, bob.value.dataId)
+            assertEquals(5L, bob.value.rowId)
             assertEquals(RelationKind.FRIEND, bob.value.kind)
             assertEquals("Кум", relations[1].value.customLabel)
             val event = state.events.single()
-            assertEquals(6L, event.value.dataId)
+            assertEquals(6L, event.value.rowId)
             assertEquals(Birthday(day = 1, month = 6, year = 2015), event.value.date)
             assertEquals(EventKind.ANNIVERSARY, event.value.kind)
         }
@@ -730,7 +734,7 @@ class ContactEditorViewModelTest {
                             events =
                                 listOf(
                                     EditableEvent(
-                                        dataId = 6,
+                                        rowId = 6,
                                         kind = EventKind.OTHER,
                                         unparsedDate = "1985-03-0X",
                                     ),
@@ -768,7 +772,7 @@ class ContactEditorViewModelTest {
                             events =
                                 listOf(
                                     EditableEvent(
-                                        dataId = 6,
+                                        rowId = 6,
                                         kind = EventKind.OTHER,
                                         unparsedDate = "1985-03-0X",
                                     ),
@@ -1087,5 +1091,46 @@ class ContactEditorViewModelTest {
             val state = viewModel.uiState.value
             assertEquals(listOf(ContactGroup(id = 1, title = "Друзья")), state.allGroups)
             assertEquals(setOf(1L), state.selectedGroupIds)
+        }
+
+    @Test
+    fun `delete success closes screen`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeEditorRepository().apply {
+                    formToLoad = ContactForm(name = EditableName(display = "Anna"))
+                }
+            val viewModel = viewModel(repository)
+            viewModel.load(7)
+            advanceUntilIdle()
+
+            viewModel.onDelete()
+            advanceUntilIdle()
+
+            assertEquals(listOf(7L), repository.deleted)
+            assertEquals(true, viewModel.uiState.value.closeScreen)
+            assertEquals(false, viewModel.uiState.value.deleteFailed)
+        }
+
+    @Test
+    fun `delete failure keeps screen open and reports it`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeEditorRepository().apply {
+                    formToLoad = ContactForm(name = EditableName(display = "Anna"))
+                    deleteFails = true
+                }
+            val viewModel = viewModel(repository)
+            viewModel.load(7)
+            advanceUntilIdle()
+
+            viewModel.onDelete()
+            advanceUntilIdle()
+
+            assertEquals(listOf(7L), repository.deleted)
+            assertEquals(false, viewModel.uiState.value.closeScreen)
+            assertEquals(true, viewModel.uiState.value.deleteFailed)
         }
 }

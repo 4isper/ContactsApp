@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp.data.vcard
 
+import com.m4isper.contactsapp.data.format.birthdayToString
 import com.m4isper.contactsapp.domain.model.AddressKind
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactEvent
@@ -92,7 +93,7 @@ private class VCardWriter {
             }
         }
         details.note?.let { writeProperty("NOTE", escapeVCard(it)) }
-        details.birthday?.let { writeProperty("BDAY", it.toStorageString()) }
+        details.birthday?.let { writeProperty("BDAY", birthdayToString(it)) }
         details.nickname?.let { writeProperty("NICKNAME", escapeVCard(it)) }
         details.relations.forEach(::writeRelation)
         details.events.forEach(::writeEvent)
@@ -146,7 +147,7 @@ private class VCardWriter {
     private fun writeEvent(event: ContactEvent) {
         writeProperty(
             if (event.kind == EventKind.ANNIVERSARY) "ANNIVERSARY" else "X-ABDATE",
-            event.date.toStorageString(),
+            birthdayToString(event.date),
             event.customLabel?.takeIf { event.kind == EventKind.OTHER && it.isNotBlank() },
         )
     }

@@ -18,6 +18,7 @@ import com.m4isper.contactsapp.domain.model.EditableWebsite
 import com.m4isper.contactsapp.domain.model.FormError
 import com.m4isper.contactsapp.domain.model.NameMode
 import com.m4isper.contactsapp.domain.model.composeDisplayName
+import com.m4isper.contactsapp.domain.model.normalized
 
 /**
  * Строка списка в редакторе: доменная модель плюс стабильный [rowId] для Compose-ключа.
@@ -61,6 +62,8 @@ internal data class EditorUiState(
     val isBusy: Boolean = false,
     val formError: FormError? = null,
     val errorMessage: String? = null,
+    /** Удаление не удалось: экран не закрывается, форма остаётся доступной. */
+    val deleteFailed: Boolean = false,
     val closeScreen: Boolean = false,
     /** Форма на момент загрузки: база для сравнения в [isDirty]. */
     val initialForm: ContactForm = ContactForm(),
@@ -102,7 +105,7 @@ internal data class EditorUiState(
             return allGroups.filter { it.belongsTo(account) }
         }
 
-    /** Текущее состояние формы; пустые строки-плейсхолдеры убирает [withoutBlankRows]. */
+    /** Текущее состояние формы; пустые строки-плейсхолдеры убирает доменная нормализация. */
     fun toForm(): ContactForm =
         ContactForm(
             name = editableName(),
@@ -122,7 +125,7 @@ internal data class EditorUiState(
             photoChanged = photoChanged,
         )
 
-    fun isDirty(): Boolean = toForm().withoutBlankRows() != initialForm.withoutBlankRows()
+    fun isDirty(): Boolean = toForm().normalized() != initialForm.normalized()
 
     private fun editableName(): EditableName =
         EditableName(
@@ -197,36 +200,3 @@ internal fun EditorUiState.toggledNameMode(): EditorUiState =
     } else {
         copy(nameMode = NameMode.DISPLAY, displayName = composedName)
     }
-
-/** Пустые строки — плейсхолдеры для ввода, в форму сохранения они не попадают. */
-internal fun ContactForm.withoutBlankRows(): ContactForm =
-    copy(
-        phones =
-            phones
-                .filter { it.number.isNotBlank() }
-                .map { it.copy(customLabel = it.customLabel.stripped()) },
-        emails =
-            emails
-                .filter { it.address.isNotBlank() }
-                .map { it.copy(customLabel = it.customLabel.stripped()) },
-        addresses =
-            addresses
-                .filter { it.address.isNotBlank() }
-                .map { it.copy(customLabel = it.customLabel.stripped()) },
-        websites = websites.filter { it.url.isNotBlank() },
-        instantMessages =
-            instantMessages
-                .filter { it.address.isNotBlank() }
-                .map { it.copy(customProtocol = it.customProtocol.stripped()) },
-        relations =
-            relations
-                .filter { it.name.isNotBlank() }
-                .map { it.copy(customLabel = it.customLabel.stripped()) },
-        events =
-            events
-                .filter { it.date != null || it.unparsedDate != null }
-                .map { it.copy(customLabel = it.customLabel.stripped()) },
-        groups = groups.sorted(),
-    )
-
-private fun String?.stripped(): String? = this?.takeIf { it.isNotBlank() }

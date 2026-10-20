@@ -69,8 +69,8 @@ internal fun DetailsHeader(
                     text =
                         pluralStringResource(
                             R.plurals.phone_count,
-                            details.phoneCount,
-                            details.phoneCount,
+                            details.phones.size,
+                            details.phones.size,
                         ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -80,8 +80,8 @@ internal fun DetailsHeader(
                     text =
                         pluralStringResource(
                             R.plurals.email_count,
-                            details.emailCount,
-                            details.emailCount,
+                            details.emails.size,
+                            details.emails.size,
                         ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

@@ -253,7 +253,7 @@ class ContactsRepositoryImplTest {
                 .form
                 .emails
                 .single()
-                .dataId,
+                .rowId,
         )
         assertEquals(listOf(8L), writer.deleted)
     }

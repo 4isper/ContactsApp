@@ -109,7 +109,6 @@
     <string name="action_discard">Discard</string>
     <string name="action_edit">Edit</string>
     <string name="form_error_empty">Fill in at least one field</string>
-    <string name="form_error_blank_phone">Fill in all numbers or remove empty ones</string>
     <string name="contact_select_prompt">Select a contact from the list</string>
     <string name="filter_favorites">Favorites</string>
     <string name="favorites_empty">No favorite contacts</string>

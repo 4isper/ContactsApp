@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp.data.datasource.write
 
+import com.m4isper.contactsapp.data.format.birthdayToString
 import com.m4isper.contactsapp.domain.model.EditableAddress
 import com.m4isper.contactsapp.domain.model.EditableEmail
 import com.m4isper.contactsapp.domain.model.EditableEvent
@@ -27,7 +28,7 @@ internal fun relationKey(relation: EditableRelation): String? = normalizedText(r
 
 /** Ключ события: вид и дата — разобранная из формы или неразобранная строка провайдера. */
 internal fun eventKey(event: EditableEvent): String? {
-    val raw = event.date?.toStorageString() ?: event.unparsedDate ?: return null
+    val raw = event.date?.let(::birthdayToString) ?: event.unparsedDate ?: return null
     return "${event.kind.name}|$raw"
 }
 

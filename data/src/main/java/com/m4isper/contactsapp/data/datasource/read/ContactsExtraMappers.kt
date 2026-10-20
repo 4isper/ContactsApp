@@ -3,7 +3,7 @@ package com.m4isper.contactsapp.data.datasource.read
 import android.provider.ContactsContract.CommonDataKinds.Event
 import android.provider.ContactsContract.CommonDataKinds.Nickname
 import android.provider.ContactsContract.CommonDataKinds.Relation
-import com.m4isper.contactsapp.domain.model.Birthday
+import com.m4isper.contactsapp.data.format.birthdayFromString
 import com.m4isper.contactsapp.domain.model.ContactEvent
 import com.m4isper.contactsapp.domain.model.ContactRelation
 import com.m4isper.contactsapp.domain.model.EditableEvent
@@ -66,7 +66,7 @@ internal fun eventsOf(rows: List<DataRow>): List<ContactEvent> =
     rows
         .filter { it.mimetype == Event.CONTENT_ITEM_TYPE && it.data2Int != Event.TYPE_BIRTHDAY }
         .mapNotNull { row ->
-            Birthday.parse(row.data1)?.let { date ->
+            birthdayFromString(row.data1)?.let { date ->
                 ContactEvent(
                     date = date,
                     kind = mapEventKind(row.data2Int),
@@ -87,9 +87,9 @@ internal fun nicknameOf(rows: List<DataRow>): String? =
  * чтобы строка не исчезла из формы и не была удалена при сохранении.
  */
 internal fun editableEventOf(row: ExistingEvent): EditableEvent {
-    val date = Birthday.parse(row.raw)
+    val date = birthdayFromString(row.raw)
     return EditableEvent(
-        dataId = row.dataId,
+        rowId = row.dataId,
         date = date,
         kind = mapEventKind(row.type),
         customLabel = customLabelOf(row.type, row.label, Event.TYPE_CUSTOM),

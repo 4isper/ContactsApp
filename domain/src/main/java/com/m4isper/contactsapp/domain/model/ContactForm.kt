@@ -1,40 +1,45 @@
 package com.m4isper.contactsapp.domain.model
 
+/**
+ * Строки формы, загруженные из репозитория, несут [rowId] — непрозрачный идентификатор
+ * существующей записи. Его назначает репозиторий, домен его не интерпретирует;
+ * у новых строк rowId == null.
+ */
 data class EditablePhone(
-    val dataId: Long? = null,
+    val rowId: Long? = null,
     val number: String,
     val kind: PhoneKind = PhoneKind.MOBILE,
     val customLabel: String? = null,
 )
 
 data class EditableEmail(
-    val dataId: Long? = null,
+    val rowId: Long? = null,
     val address: String,
     val kind: EmailKind = EmailKind.HOME,
     val customLabel: String? = null,
 )
 
 data class EditableAddress(
-    val dataId: Long? = null,
+    val rowId: Long? = null,
     val address: String,
     val kind: AddressKind = AddressKind.HOME,
     val customLabel: String? = null,
 )
 
 data class EditableWebsite(
-    val dataId: Long? = null,
+    val rowId: Long? = null,
     val url: String,
 )
 
 data class EditableInstantMessage(
-    val dataId: Long? = null,
+    val rowId: Long? = null,
     val address: String,
     val protocol: ImProtocol = ImProtocol.CUSTOM,
     val customProtocol: String? = null,
 )
 
 data class EditableOrganization(
-    val dataId: Long? = null,
+    val rowId: Long? = null,
     val company: String = "",
     val title: String = "",
 ) {
@@ -43,29 +48,29 @@ data class EditableOrganization(
 }
 
 data class EditableNote(
-    val dataId: Long? = null,
+    val rowId: Long? = null,
     val note: String = "",
 )
 
 data class EditableBirthday(
-    val dataId: Long? = null,
+    val rowId: Long? = null,
     val value: Birthday? = null,
 )
 
 data class EditableNickname(
-    val dataId: Long? = null,
+    val rowId: Long? = null,
     val nickname: String = "",
 )
 
 data class EditableRelation(
-    val dataId: Long? = null,
+    val rowId: Long? = null,
     val name: String,
     val kind: RelationKind = RelationKind.OTHER,
     val customLabel: String? = null,
 )
 
 data class EditableEvent(
-    val dataId: Long? = null,
+    val rowId: Long? = null,
     val date: Birthday? = null,
     val kind: EventKind = EventKind.ANNIVERSARY,
     val customLabel: String? = null,
@@ -147,17 +152,48 @@ data class ContactForm(
     val photoChanged: Boolean = false,
 )
 
+/**
+ * Нормализует форму перед сохранением: убирает пустые строки-плейсхолдеры редактора,
+ * пустые подписи и сортирует группы. Единая точка нормализации для всех сценариев:
+ * редактор, импорт и любые будущие точки входа.
+ */
+fun ContactForm.normalized(): ContactForm =
+    copy(
+        phones =
+            phones
+                .filter { it.number.isNotBlank() }
+                .map { it.copy(customLabel = it.customLabel.stripped()) },
+        emails =
+            emails
+                .filter { it.address.isNotBlank() }
+                .map { it.copy(customLabel = it.customLabel.stripped()) },
+        addresses =
+            addresses
+                .filter { it.address.isNotBlank() }
+                .map { it.copy(customLabel = it.customLabel.stripped()) },
+        websites = websites.filter { it.url.isNotBlank() },
+        instantMessages =
+            instantMessages
+                .filter { it.address.isNotBlank() }
+                .map { it.copy(customProtocol = it.customProtocol.stripped()) },
+        relations =
+            relations
+                .filter { it.name.isNotBlank() }
+                .map { it.copy(customLabel = it.customLabel.stripped()) },
+        events =
+            events
+                .filter { it.date != null || it.unparsedDate != null }
+                .map { it.copy(customLabel = it.customLabel.stripped()) },
+        groups = groups.sorted(),
+    )
+
+private fun String?.stripped(): String? = this?.takeIf { it.isNotBlank() }
+
 enum class FormError {
     EMPTY_FORM,
-    BLANK_PHONE,
 }
 
-fun validateContactForm(form: ContactForm): FormError? =
-    when {
-        form.isEffectivelyEmpty() -> FormError.EMPTY_FORM
-        form.phones.any { it.number.isBlank() } -> FormError.BLANK_PHONE
-        else -> null
-    }
+fun validateContactForm(form: ContactForm): FormError? = FormError.EMPTY_FORM.takeIf { form.isEffectivelyEmpty() }
 
 private fun ContactForm.isEffectivelyEmpty(): Boolean =
     name.isEmpty &&

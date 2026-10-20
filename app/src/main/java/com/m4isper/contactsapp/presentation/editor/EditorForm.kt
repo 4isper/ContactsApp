@@ -129,17 +129,10 @@ internal fun EditorForm(
             onBirthdayClick = { showDatePicker = true },
             onEventDateClick = { eventPickerRowId = it },
         )
-        if (uiState.formError != null || uiState.errorMessage != null) {
+        if (uiState.formError != null || uiState.errorMessage != null || uiState.deleteFailed) {
             item(key = "error") {
                 Text(
-                    text =
-                        when (uiState.formError) {
-                            FormError.EMPTY_FORM ->
-                                stringResource(R.string.form_error_empty)
-                            FormError.BLANK_PHONE ->
-                                stringResource(R.string.form_error_blank_phone)
-                            null -> uiState.errorMessage.orEmpty()
-                        },
+                    text = formMessage(uiState),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(horizontal = spacing.m, vertical = spacing.s),
@@ -252,3 +245,12 @@ private fun LazyListScope.accountItems(
         }
     }
 }
+
+/** Текст ошибки формы: удаление, валидация или сообщение исключения. */
+@Composable
+private fun formMessage(uiState: EditorUiState): String =
+    when {
+        uiState.deleteFailed -> stringResource(R.string.batch_delete_failed)
+        uiState.formError == FormError.EMPTY_FORM -> stringResource(R.string.form_error_empty)
+        else -> uiState.errorMessage.orEmpty()
+    }

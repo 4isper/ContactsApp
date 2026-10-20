@@ -26,7 +26,6 @@ import com.m4isper.contactsapp.domain.model.EventKind
 import com.m4isper.contactsapp.domain.model.NameMode
 import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
-import com.m4isper.contactsapp.domain.usecase.DeleteContactUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
@@ -59,7 +58,7 @@ class ContactEditorUiTest {
         GetContactFormUseCase(repository),
         CreateContactUseCase(repository),
         UpdateContactUseCase(repository),
-        DeleteContactUseCase(DeleteContactsUseCase(repository, repository)),
+        DeleteContactsUseCase(repository, repository),
         GetGroupsUseCase(groups),
         CreateGroupUseCase(groups),
         GetContactAccountsUseCase(repository),

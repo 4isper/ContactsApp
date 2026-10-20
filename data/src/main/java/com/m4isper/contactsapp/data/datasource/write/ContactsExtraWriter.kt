@@ -9,6 +9,7 @@ import com.m4isper.contactsapp.data.datasource.read.ContactRows
 import com.m4isper.contactsapp.data.datasource.read.ExistingBirthday
 import com.m4isper.contactsapp.data.datasource.read.ExistingNickname
 import com.m4isper.contactsapp.data.datasource.read.relationTypeInt
+import com.m4isper.contactsapp.data.format.birthdayToString
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.EditableEvent
@@ -43,7 +44,7 @@ internal fun relationOperations(
     diffListOperations(
         newItems = form.relations.filter { it.name.isNotBlank() },
         existingIds = rows.relations.mapTo(mutableSetOf()) { it.dataId },
-        dataIdOf = { it.dataId },
+        dataIdOf = { it.rowId },
         insert = { relation ->
             dataInsert(Relation.CONTENT_ITEM_TYPE, rawContactId = rawContactId)
                 .withValues(relationValues(relation))
@@ -63,7 +64,7 @@ internal fun contactEventValues(
     date: Birthday,
 ): ContentValues =
     ContentValues().apply {
-        put(Event.START_DATE, date.toStorageString())
+        put(Event.START_DATE, birthdayToString(date))
         putEventKindAndLabel(event)
     }
 

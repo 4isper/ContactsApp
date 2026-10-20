@@ -131,15 +131,15 @@ internal fun contactSubtitle(contact: ContactDetails): String =
             ?.address
             .orEmpty()
     } else {
-        val primary = contact.primaryPhone
-        if (contact.phoneCount <= 1) {
+        val primary = contact.phones.first().number
+        if (contact.phones.size <= 1) {
             primary
         } else {
             "$primary · " +
                 pluralStringResource(
                     R.plurals.phone_count_extra,
-                    contact.phoneCount - 1,
-                    contact.phoneCount - 1,
+                    contact.phones.size - 1,
+                    contact.phones.size - 1,
                 )
         }
     }

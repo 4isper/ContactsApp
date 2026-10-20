@@ -5,6 +5,8 @@ import com.m4isper.contactsapp.data.datasource.read.ExistingBirthday
 import com.m4isper.contactsapp.data.datasource.read.ExistingEvent
 import com.m4isper.contactsapp.data.datasource.read.customLabelOf
 import com.m4isper.contactsapp.data.datasource.read.mapEventKind
+import com.m4isper.contactsapp.data.format.birthdayFromString
+import com.m4isper.contactsapp.data.format.birthdayToString
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.EditableEvent
 
@@ -46,20 +48,20 @@ internal fun planEventWriteOps(
     val ops = mutableListOf<EventWriteOp>()
     events.forEach { event ->
         val date = event.date
-        val dataId = event.dataId
+        val rowId = event.rowId
         val unparsed = event.unparsedDate
         when {
-            date != null && dataId != null && dataId in existingIds ->
-                ops += EventWriteOp.Update(dataId, event, date)
+            date != null && rowId != null && rowId in existingIds ->
+                ops += EventWriteOp.Update(rowId, event, date)
             date != null -> ops += EventWriteOp.Insert(event, date)
-            unparsed != null && dataId != null -> {
+            unparsed != null && rowId != null -> {
                 val changed =
-                    existing.firstOrNull { it.dataId == dataId }?.let { preservedChanged(it, event) } == true
-                if (changed) ops += EventWriteOp.UpdatePreserved(dataId, unparsed, event)
+                    existing.firstOrNull { it.dataId == rowId }?.let { preservedChanged(it, event) } == true
+                if (changed) ops += EventWriteOp.UpdatePreserved(rowId, unparsed, event)
             }
         }
     }
-    val keptIds = events.mapNotNullTo(mutableSetOf()) { it.dataId }
+    val keptIds = events.mapNotNullTo(mutableSetOf()) { it.rowId }
     existing.forEach { row ->
         if (row.dataId !in keptIds) ops += EventWriteOp.Delete(row.dataId)
     }
@@ -104,10 +106,10 @@ internal fun planBirthdayWrite(
         value == null ->
             when {
                 existing == null -> BirthdayWriteOp.None
-                Birthday.parse(existing.raw) == null -> BirthdayWriteOp.None
+                birthdayFromString(existing.raw) == null -> BirthdayWriteOp.None
                 else -> BirthdayWriteOp.Delete(existing.dataId)
             }
         existing == null -> BirthdayWriteOp.Insert(value)
-        existing.raw == value.toStorageString() -> BirthdayWriteOp.None
+        existing.raw == birthdayToString(value) -> BirthdayWriteOp.None
         else -> BirthdayWriteOp.Update(existing.dataId, value)
     }

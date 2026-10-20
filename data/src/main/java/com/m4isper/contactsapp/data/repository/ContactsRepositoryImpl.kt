@@ -17,7 +17,7 @@ import com.m4isper.contactsapp.data.datasource.read.mapImProtocol
 import com.m4isper.contactsapp.data.datasource.read.mapPhoneKind
 import com.m4isper.contactsapp.data.datasource.read.mapRelationKind
 import com.m4isper.contactsapp.data.datasource.write.mergeContactForms
-import com.m4isper.contactsapp.domain.model.Birthday
+import com.m4isper.contactsapp.data.format.birthdayFromString
 import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
@@ -62,20 +62,20 @@ class ContactsRepositoryImpl(
             phones = rows.phones.map { it.toEditable() },
             emails = rows.emails.map { it.toEditable() },
             addresses = rows.addresses.map { it.toEditable() },
-            websites = rows.websites.map { EditableWebsite(dataId = it.dataId, url = it.url) },
+            websites = rows.websites.map { EditableWebsite(rowId = it.dataId, url = it.url) },
             instantMessages = rows.instantMessages.map { it.toEditable() },
             organization =
                 rows.organization
-                    ?.let { EditableOrganization(dataId = it.dataId, company = it.company, title = it.title) }
+                    ?.let { EditableOrganization(rowId = it.dataId, company = it.company, title = it.title) }
                     ?: EditableOrganization(),
-            note = rows.note?.let { EditableNote(dataId = it.dataId, note = it.note) } ?: EditableNote(),
+            note = rows.note?.let { EditableNote(rowId = it.dataId, note = it.note) } ?: EditableNote(),
             birthday =
                 rows.birthday
-                    ?.let { EditableBirthday(dataId = it.dataId, value = Birthday.parse(it.raw)) }
+                    ?.let { EditableBirthday(rowId = it.dataId, value = birthdayFromString(it.raw)) }
                     ?: EditableBirthday(),
             nickname =
                 rows.nickname
-                    ?.let { EditableNickname(dataId = it.dataId, nickname = it.nickname) }
+                    ?.let { EditableNickname(rowId = it.dataId, nickname = it.nickname) }
                     ?: EditableNickname(),
             relations = rows.relations.map { it.toEditable() },
             events = rows.events.map(::editableEventOf),
@@ -160,7 +160,7 @@ private fun editableNameOf(
 
 private fun ExistingPhone.toEditable(): EditablePhone =
     EditablePhone(
-        dataId = dataId,
+        rowId = dataId,
         number = number,
         kind = mapPhoneKind(type),
         customLabel = customLabelOf(type, label, ContactsContract.CommonDataKinds.Phone.TYPE_CUSTOM),
@@ -168,7 +168,7 @@ private fun ExistingPhone.toEditable(): EditablePhone =
 
 private fun ExistingEmail.toEditable(): EditableEmail =
     EditableEmail(
-        dataId = dataId,
+        rowId = dataId,
         address = address,
         kind = mapEmailKind(type),
         customLabel = customLabelOf(type, label, ContactsContract.CommonDataKinds.Email.TYPE_CUSTOM),
@@ -176,7 +176,7 @@ private fun ExistingEmail.toEditable(): EditableEmail =
 
 private fun ExistingAddress.toEditable(): EditableAddress =
     EditableAddress(
-        dataId = dataId,
+        rowId = dataId,
         address = address,
         kind = mapAddressKind(type),
         customLabel =
@@ -190,7 +190,7 @@ private fun ExistingAddress.toEditable(): EditableAddress =
 private fun ExistingInstantMessage.toEditable(): EditableInstantMessage {
     val imProtocol = mapImProtocol(protocol)
     return EditableInstantMessage(
-        dataId = dataId,
+        rowId = dataId,
         address = address,
         protocol = imProtocol,
         customProtocol = customProtocol?.takeIf { imProtocol == ImProtocol.CUSTOM && it.isNotBlank() },
@@ -199,7 +199,7 @@ private fun ExistingInstantMessage.toEditable(): EditableInstantMessage {
 
 private fun ExistingRelation.toEditable(): EditableRelation =
     EditableRelation(
-        dataId = dataId,
+        rowId = dataId,
         name = name,
         kind = mapRelationKind(type),
         customLabel =

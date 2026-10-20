@@ -49,7 +49,7 @@ internal fun imOperations(
     return diffListOperations(
         newItems = form.instantMessages.filter { it.address.isNotBlank() },
         existingIds = rows.instantMessages.mapTo(mutableSetOf()) { it.dataId },
-        dataIdOf = { it.dataId },
+        dataIdOf = { it.rowId },
         insert = { im ->
             dataInsert(Im.CONTENT_ITEM_TYPE, rawContactId = rawContactId)
                 .withValues(instantMessageValues(im))

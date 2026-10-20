@@ -1,7 +1,5 @@
 package com.m4isper.contactsapp.domain.model
 
-import java.util.Locale
-
 enum class PhoneKind {
     MOBILE,
     HOME,
@@ -97,46 +95,7 @@ data class Birthday(
     val day: Int,
     val month: Int,
     val year: Int? = null,
-) {
-    fun toStorageString(): String =
-        if (year == null) {
-            String.format(Locale.US, "--%02d-%02d", month, day)
-        } else {
-            String.format(Locale.US, "%04d-%02d-%02d", year, month, day)
-        }
-
-    companion object {
-        private val PATTERN = Regex("""(?:(\d{4})-|--)(\d{2})-(\d{2})""")
-        private val MONTHS = 1..12
-        private val DAYS = 1..31
-        private const val YEAR_GROUP = 1
-        private const val MONTH_GROUP = 2
-        private const val DAY_GROUP = 3
-
-        /** Разбирает "yyyy-MM-dd" или "--MM-dd"; null, если формат не распознан. */
-        fun parse(raw: String?): Birthday? =
-            PATTERN
-                .matchEntire(raw?.trim().orEmpty())
-                ?.let(::birthdayFromMatch)
-
-        private fun birthdayFromMatch(match: MatchResult): Birthday? =
-            match.groupValues[MONTH_GROUP]
-                .toIntOrNull()
-                ?.takeIf { it in MONTHS }
-                ?.let { month ->
-                    match.groupValues[DAY_GROUP]
-                        .toIntOrNull()
-                        ?.takeIf { it in DAYS }
-                        ?.let { day ->
-                            Birthday(
-                                day = day,
-                                month = month,
-                                year = match.groupValues[YEAR_GROUP].takeIf { it.isNotEmpty() }?.toIntOrNull(),
-                            )
-                        }
-                }
-    }
-}
+)
 
 /** Тип события с датой: годовщина или произвольная дата. */
 enum class EventKind {
@@ -192,13 +151,4 @@ data class ContactDetails(
     val nameParts: NameParts? = null,
     /** Аккаунт целевого raw contact; локальный контакт — [ContactAccount.Local]. */
     val account: ContactAccount = ContactAccount.Local,
-) {
-    val primaryPhone: String
-        get() = phones.firstOrNull()?.number.orEmpty()
-
-    val phoneCount: Int
-        get() = phones.size
-
-    val emailCount: Int
-        get() = emails.size
-}
+)

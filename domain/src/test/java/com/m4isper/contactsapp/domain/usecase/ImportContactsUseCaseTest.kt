@@ -49,7 +49,7 @@ class ImportContactsUseCaseTest {
             val repository = ImportFakeRepository()
             val forms = listOf(form("Anna"), form("Bob"))
 
-            val imported = ImportContactsUseCase(repository)(forms)
+            val imported = ImportContactsUseCase(CreateContactUseCase(repository))(forms)
 
             assertEquals(2, imported)
             assertEquals(forms, repository.created)
@@ -61,7 +61,7 @@ class ImportContactsUseCaseTest {
             val repository = ImportFakeRepository(failAt = 1)
             val forms = listOf(form("Anna"), form("Bob"), form("Cara"))
 
-            val imported = ImportContactsUseCase(repository)(forms)
+            val imported = ImportContactsUseCase(CreateContactUseCase(repository))(forms)
 
             assertEquals(2, imported)
             assertEquals(listOf("Anna", "Cara"), repository.created.map { it.name.display })
@@ -70,8 +70,20 @@ class ImportContactsUseCaseTest {
     @Test
     fun `empty list reports zero`() =
         runTest {
-            val imported = ImportContactsUseCase(ImportFakeRepository())(emptyList())
+            val imported = ImportContactsUseCase(CreateContactUseCase(ImportFakeRepository()))(emptyList())
 
             assertEquals(0, imported)
+        }
+
+    @Test
+    fun `skips invalid form without reaching repository`() =
+        runTest {
+            val repository = ImportFakeRepository()
+            val forms = listOf(form("Anna"), ContactForm())
+
+            val imported = ImportContactsUseCase(CreateContactUseCase(repository))(forms)
+
+            assertEquals(1, imported)
+            assertEquals(listOf("Anna"), repository.created.map { it.name.display })
         }
 }

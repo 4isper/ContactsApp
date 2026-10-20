@@ -25,7 +25,7 @@ class ContactsWritePlansTest {
         val ops =
             planEventWriteOps(
                 existing = listOf(existingEvent(dataId = 1)),
-                events = listOf(EditableEvent(dataId = 1, date = date)),
+                events = listOf(EditableEvent(rowId = 1, date = date)),
             )
 
         val op = ops.single() as EventWriteOp.Update
@@ -34,7 +34,7 @@ class ContactsWritePlansTest {
     }
 
     @Test
-    fun `dated event without dataId is inserted`() {
+    fun `dated event without rowId is inserted`() {
         val event = EditableEvent(date = date)
 
         val ops = planEventWriteOps(existing = emptyList(), events = listOf(event))
@@ -54,7 +54,7 @@ class ContactsWritePlansTest {
         val ops =
             planEventWriteOps(
                 existing = listOf(existingEvent(dataId = 4, raw = "1985-03-0X", type = Event.TYPE_OTHER)),
-                events = listOf(EditableEvent(dataId = 4, date = date, unparsedDate = "1985-03-0X")),
+                events = listOf(EditableEvent(rowId = 4, date = date, unparsedDate = "1985-03-0X")),
             )
 
         val op = ops.single() as EventWriteOp.Update
@@ -69,7 +69,7 @@ class ContactsWritePlansTest {
                 events =
                     listOf(
                         EditableEvent(
-                            dataId = 4,
+                            rowId = 4,
                             kind = EventKind.OTHER,
                             unparsedDate = "1985-03-0X",
                         ),
@@ -87,7 +87,7 @@ class ContactsWritePlansTest {
                 events =
                     listOf(
                         EditableEvent(
-                            dataId = 4,
+                            rowId = 4,
                             kind = EventKind.ANNIVERSARY,
                             unparsedDate = "1985-03-0X",
                         ),
@@ -107,7 +107,7 @@ class ContactsWritePlansTest {
                 events =
                     listOf(
                         EditableEvent(
-                            dataId = 4,
+                            rowId = 4,
                             kind = EventKind.OTHER,
                             customLabel = "Годовщина",
                             unparsedDate = "1985-03-0X",

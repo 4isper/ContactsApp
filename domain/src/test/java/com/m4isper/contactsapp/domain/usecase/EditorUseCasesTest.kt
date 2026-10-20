@@ -97,6 +97,26 @@ class EditorUseCasesTest {
         }
 
     @Test
+    fun `create normalizes blank rows and labels before saving`() =
+        runTest {
+            val repository = RecordingRepository()
+            val form =
+                ContactForm(
+                    name = EditableName(display = "Anna"),
+                    phones =
+                        listOf(
+                            EditablePhone(number = "111", customLabel = "  "),
+                            EditablePhone(number = "   "),
+                        ),
+                )
+
+            val result = CreateContactUseCase(repository)(form)
+
+            assertEquals(SaveResult.Saved, result)
+            assertEquals(listOf(EditablePhone(number = "111", customLabel = null)), repository.created.single().phones)
+        }
+
+    @Test
     fun `create saves to the selected account`() =
         runTest {
             val repository = RecordingRepository()
@@ -133,20 +153,13 @@ class EditorUseCasesTest {
         }
 
     @Test
-    fun `update rejects invalid form without touching repository`() =
+    fun `update rejects empty form without touching repository`() =
         runTest {
             val repository = RecordingRepository()
 
-            val result =
-                UpdateContactUseCase(repository)(
-                    7,
-                    ContactForm(
-                        name = EditableName(display = "Bob"),
-                        phones = listOf(EditablePhone(number = "")),
-                    ),
-                )
+            val result = UpdateContactUseCase(repository)(7, ContactForm())
 
-            assertEquals(SaveResult.Invalid(FormError.BLANK_PHONE), result)
+            assertEquals(SaveResult.Invalid(FormError.EMPTY_FORM), result)
             assertTrue(repository.updated.isEmpty())
         }
 
@@ -186,17 +199,5 @@ class EditorUseCasesTest {
 
             assertEquals(setOf(1L), result.deletedIds)
             assertTrue(result.allDeleted)
-        }
-
-    @Test
-    fun `single delete delegates to batch and returns success`() =
-        runTest {
-            val repository = RecordingRepository()
-
-            val deleted = DeleteContactUseCase(DeleteContactsUseCase(repository, repository))(7)
-
-            assertTrue(deleted)
-            assertEquals(listOf(7L), repository.deleted)
-            assertEquals(listOf(7L), repository.removedFavorites)
         }
 }

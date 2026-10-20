@@ -20,7 +20,7 @@ import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.RelationKind
 import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
-import com.m4isper.contactsapp.domain.usecase.DeleteContactUseCase
+import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactFormUseCase
@@ -52,7 +52,7 @@ class ContactEditorViewModel(
     private val getContactFormUseCase: GetContactFormUseCase,
     private val createContactUseCase: CreateContactUseCase,
     private val updateContactUseCase: UpdateContactUseCase,
-    private val deleteContactUseCase: DeleteContactUseCase,
+    private val deleteContactsUseCase: DeleteContactsUseCase,
     private val getGroupsUseCase: GetGroupsUseCase,
     private val createGroupUseCase: CreateGroupUseCase,
     private val getContactAccountsUseCase: GetContactAccountsUseCase,
@@ -397,7 +397,7 @@ class ContactEditorViewModel(
     @Suppress("TooGenericExceptionCaught")
     fun onSave() {
         val id = state.value.contactId
-        val form = state.value.toForm().withoutBlankRows()
+        val form = state.value.toForm()
         viewModelScope.launch {
             state.update { it.copy(isBusy = true, errorMessage = null) }
             try {
@@ -427,10 +427,15 @@ class ContactEditorViewModel(
     fun onDelete() {
         val id = state.value.contactId ?: return
         viewModelScope.launch {
-            state.update { it.copy(isBusy = true) }
+            state.update { it.copy(isBusy = true, deleteFailed = false) }
             try {
-                deleteContactUseCase(id)
-                state.update { it.copy(closeScreen = true) }
+                val result = deleteContactsUseCase(setOf(id))
+                state.update {
+                    it.copy(
+                        closeScreen = result.allDeleted,
+                        deleteFailed = !result.allDeleted,
+                    )
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -443,7 +448,7 @@ class ContactEditorViewModel(
     }
 
     private fun updateData(transform: (EditorUiState) -> EditorUiState) {
-        state.update { transform(it).copy(formError = null, errorMessage = null) }
+        state.update { transform(it).copy(formError = null, errorMessage = null, deleteFailed = false) }
     }
 
     /** Список групп для пикера: сбой чтения не должен ломать редактирование контакта. */

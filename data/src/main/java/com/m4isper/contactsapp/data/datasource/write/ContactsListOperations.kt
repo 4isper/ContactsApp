@@ -17,7 +17,7 @@ internal fun phoneListOperations(
     diffListOperations(
         newItems = form.phones.filter { it.number.isNotBlank() },
         existingIds = rows.phones.mapTo(mutableSetOf()) { it.dataId },
-        dataIdOf = { it.dataId },
+        dataIdOf = { it.rowId },
         insert = { phone ->
             dataInsert(Phone.CONTENT_ITEM_TYPE, rawContactId = rawContactId)
                 .withValues(phoneValues(phone))
@@ -34,7 +34,7 @@ internal fun emailListOperations(
     diffListOperations(
         newItems = form.emails.filter { it.address.isNotBlank() },
         existingIds = rows.emails.mapTo(mutableSetOf()) { it.dataId },
-        dataIdOf = { it.dataId },
+        dataIdOf = { it.rowId },
         insert = { email ->
             dataInsert(Email.CONTENT_ITEM_TYPE, rawContactId = rawContactId)
                 .withValues(emailValues(email))
@@ -51,7 +51,7 @@ internal fun addressListOperations(
     diffListOperations(
         newItems = form.addresses.filter { it.address.isNotBlank() },
         existingIds = rows.addresses.mapTo(mutableSetOf()) { it.dataId },
-        dataIdOf = { it.dataId },
+        dataIdOf = { it.rowId },
         insert = { address ->
             dataInsert(StructuredPostal.CONTENT_ITEM_TYPE, rawContactId = rawContactId)
                 .withValues(addressValues(address))
@@ -68,7 +68,7 @@ internal fun websiteListOperations(
     diffListOperations(
         newItems = form.websites.filter { it.url.isNotBlank() },
         existingIds = rows.websites.mapTo(mutableSetOf()) { it.dataId },
-        dataIdOf = { it.dataId },
+        dataIdOf = { it.rowId },
         insert = { website ->
             dataInsert(Website.CONTENT_ITEM_TYPE, rawContactId = rawContactId)
                 .withValues(websiteValues(website))

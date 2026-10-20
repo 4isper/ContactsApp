@@ -9,6 +9,7 @@ import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.ContactRelation
 import com.m4isper.contactsapp.domain.model.ContactSortOrder
+import com.m4isper.contactsapp.domain.model.EditableName
 import com.m4isper.contactsapp.domain.model.EmailAddress
 import com.m4isper.contactsapp.domain.model.EmailKind
 import com.m4isper.contactsapp.domain.model.ListDensity
@@ -19,6 +20,7 @@ import com.m4isper.contactsapp.domain.model.RelationKind
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import com.m4isper.contactsapp.domain.usecase.AddContactsToGroupUseCase
+import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
@@ -150,7 +152,7 @@ class ContactsViewModelTest {
         ObserveSettingsUseCase(settings),
         GetContactDetailsUseCase(repository),
         DeleteContactsUseCase(repository, repository),
-        ImportContactsUseCase(repository),
+        ImportContactsUseCase(CreateContactUseCase(repository)),
         GetGroupsUseCase(groups),
         GetGroupMembershipUseCase(groups),
         CreateGroupUseCase(groups),
@@ -884,7 +886,7 @@ class ContactsViewModelTest {
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val repository = FakeContactsRepository()
-            val codec = FakeVCardCodec(forms = listOf(ContactForm()))
+            val codec = FakeVCardCodec(forms = listOf(ContactForm(name = EditableName(display = "Anna"))))
             val viewModel = viewModel(repository, codec = codec)
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()

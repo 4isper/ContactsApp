@@ -19,33 +19,33 @@ internal fun mergeContactForms(
     val sourcePhoto = sources.firstNotNullOfOrNull { it.photoUri }
     return ContactForm(
         name = mergedName(target, sources),
-        phones = mergeValues(target, sources, ContactForm::phones, ::phoneKey) { it.copy(dataId = null) },
-        emails = mergeValues(target, sources, ContactForm::emails, ::emailKey) { it.copy(dataId = null) },
-        addresses = mergeValues(target, sources, ContactForm::addresses, ::addressKey) { it.copy(dataId = null) },
-        websites = mergeValues(target, sources, ContactForm::websites, ::websiteKey) { it.copy(dataId = null) },
+        phones = mergeValues(target, sources, ContactForm::phones, ::phoneKey) { it.copy(rowId = null) },
+        emails = mergeValues(target, sources, ContactForm::emails, ::emailKey) { it.copy(rowId = null) },
+        addresses = mergeValues(target, sources, ContactForm::addresses, ::addressKey) { it.copy(rowId = null) },
+        websites = mergeValues(target, sources, ContactForm::websites, ::websiteKey) { it.copy(rowId = null) },
         instantMessages =
-            mergeValues(target, sources, ContactForm::instantMessages, ::imKey) { it.copy(dataId = null) },
+            mergeValues(target, sources, ContactForm::instantMessages, ::imKey) { it.copy(rowId = null) },
         events =
             mergeValues(target, sources, { form -> form.events.filter { it.date != null } }, ::eventKey) {
-                it.copy(dataId = null)
+                it.copy(rowId = null)
             },
         organization =
             firstFilled(target.organization, sources.map { it.organization }, { !it.isEmpty }) {
-                it.copy(dataId = null)
+                it.copy(rowId = null)
             },
         note =
             firstFilled(target.note, sources.map { it.note }, { it.note.isNotBlank() }) {
-                it.copy(dataId = null)
+                it.copy(rowId = null)
             },
         birthday =
             firstFilled(target.birthday, sources.map { it.birthday }, { it.value != null }) {
-                it.copy(dataId = null)
+                it.copy(rowId = null)
             },
         nickname =
             firstFilled(target.nickname, sources.map { it.nickname }, { it.nickname.isNotBlank() }) {
-                it.copy(dataId = null)
+                it.copy(rowId = null)
             },
-        relations = mergeValues(target, sources, ContactForm::relations, ::relationKey) { it.copy(dataId = null) },
+        relations = mergeValues(target, sources, ContactForm::relations, ::relationKey) { it.copy(rowId = null) },
         groups = (listOf(target.groups) + sources.map { it.groups }).flatten().distinct(),
         photoUri = target.photoUri ?: sourcePhoto,
         photoChanged = target.photoChanged || (target.photoUri == null && sourcePhoto != null),

@@ -109,7 +109,6 @@
     <string name="action_discard">Не сохранять</string>
     <string name="action_edit">Редактировать</string>
     <string name="form_error_empty">Заполните хотя бы одно поле</string>
-    <string name="form_error_blank_phone">Заполните все номера или удалите пустые</string>
     <string name="contact_select_prompt">Выберите контакт из списка</string>
     <string name="filter_favorites">Избранное</string>
     <string name="favorites_empty">Нет избранных контактов</string>
