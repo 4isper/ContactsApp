@@ -168,9 +168,20 @@ internal class FakeGroupsRepository(
         return groups.filter { it.id in membership[contactId].orEmpty() }
     }
 
-    override suspend fun createGroup(title: String): ContactGroup {
+    override suspend fun createGroup(title: String): ContactGroup = createGroup(title, ContactAccount.Local)
+
+    override suspend fun createGroup(
+        title: String,
+        account: ContactAccount,
+    ): ContactGroup {
         failure?.let { throw it }
-        val group = ContactGroup(id = (groups.maxOfOrNull { it.id } ?: 0L) + 1, title = title)
+        val group =
+            ContactGroup(
+                id = (groups.maxOfOrNull { it.id } ?: 0L) + 1,
+                title = title,
+                accountName = account.name,
+                accountType = account.type,
+            )
         groups = groups + group
         return group
     }

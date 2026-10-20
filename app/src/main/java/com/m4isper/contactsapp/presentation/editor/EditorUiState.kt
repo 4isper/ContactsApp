@@ -91,9 +91,20 @@ internal data class EditorUiState(
     val composedName: String
         get() = composeDisplayName(namePrefix, givenName, middleName, familyName, nameSuffix)
 
-    /** Выбранные группы в порядке списка доступных групп. */
+    /** Выбранные группы в порядке списка всех групп. */
     val selectedGroups: List<ContactGroup>
         get() = allGroups.filter { it.id in selectedGroupIds }
+
+    /** Группы, доступные для выбранного аккаунта; у существующего контакта — все. */
+    val availableGroups: List<ContactGroup>
+        get() {
+            val account = selectedAccount
+            return if (isNew && account != null) {
+                allGroups.filter { it.belongsTo(account) }
+            } else {
+                allGroups
+            }
+        }
 
     /** Текущее состояние формы; пустые строки-плейсхолдеры убирает [withoutBlankRows]. */
     fun toForm(): ContactForm =

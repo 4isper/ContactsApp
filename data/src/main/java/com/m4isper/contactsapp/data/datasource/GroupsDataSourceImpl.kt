@@ -9,6 +9,7 @@ import android.provider.ContactsContract.CommonDataKinds.GroupMembership
 import android.provider.ContactsContract.Data
 import android.provider.ContactsContract.Groups
 import android.provider.ContactsContract.RawContacts
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
@@ -24,9 +25,10 @@ private const val GROUP_TITLE_SORT_ORDER = "${Groups.TITLE} ASC"
 
 /**
  * Единственное место работы с [ContactsContract.Groups] и строками GroupMembership.
- * Новые группы создаются в локальном аккаунте (account = null); чтение и членство
+ * Группа создаётся в выбранном аккаунте (по умолчанию — локально); чтение и членство
  * доступны для групп любых аккаунтов.
  */
+@Suppress("TooManyFunctions")
 @Inject
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
@@ -39,7 +41,7 @@ class GroupsDataSourceImpl(
             context.contentResolver
                 .query(
                     Groups.CONTENT_URI,
-                    arrayOf(Groups._ID, Groups.TITLE),
+                    arrayOf(Groups._ID, Groups.TITLE, Groups.ACCOUNT_NAME, Groups.ACCOUNT_TYPE),
                     "${Groups.DELETED}=0 AND " +
                         "${Groups.GROUP_VISIBLE}=1 AND " +
                         "${Groups.TITLE} IS NOT NULL AND ${Groups.TITLE} != ''",
@@ -48,11 +50,15 @@ class GroupsDataSourceImpl(
                 )?.use { cursor ->
                     val idIndex = cursor.getColumnIndexOrThrow(Groups._ID)
                     val titleIndex = cursor.getColumnIndexOrThrow(Groups.TITLE)
+                    val accountNameIndex = cursor.getColumnIndexOrThrow(Groups.ACCOUNT_NAME)
+                    val accountTypeIndex = cursor.getColumnIndexOrThrow(Groups.ACCOUNT_TYPE)
                     while (cursor.moveToNext()) {
                         groups +=
                             ContactGroup(
                                 id = cursor.getLong(idIndex),
                                 title = cursor.getString(titleIndex).orEmpty(),
+                                accountName = cursor.getString(accountNameIndex),
+                                accountType = cursor.getString(accountTypeIndex),
                             )
                     }
                 }
@@ -72,7 +78,12 @@ class GroupsDataSourceImpl(
             )[contactId].orEmpty()
         }
 
-    override suspend fun createGroup(title: String): ContactGroup =
+    override suspend fun createGroup(title: String): ContactGroup = createGroup(title, ContactAccount.Local)
+
+    override suspend fun createGroup(
+        title: String,
+        account: ContactAccount,
+    ): ContactGroup =
         withContext(Dispatchers.IO) {
             val uri =
                 context.contentResolver.insert(
@@ -80,10 +91,19 @@ class GroupsDataSourceImpl(
                     ContentValues().apply {
                         put(Groups.TITLE, title)
                         put(Groups.GROUP_VISIBLE, 1)
+                        if (!account.isLocal) {
+                            put(Groups.ACCOUNT_NAME, account.name)
+                            put(Groups.ACCOUNT_TYPE, account.type)
+                        }
                     },
                 )
             val id = uri?.let(ContentUris::parseId) ?: error("group insert failed: \"$title\"")
-            ContactGroup(id = id, title = title)
+            ContactGroup(
+                id = id,
+                title = title,
+                accountName = account.name,
+                accountType = account.type,
+            )
         }
 
     override suspend fun renameGroup(

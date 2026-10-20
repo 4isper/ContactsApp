@@ -415,6 +415,55 @@ class ContactEditorUiTest {
     }
 
     @Test
+    fun createMode_filtersGroupsBySelectedAccount() {
+        val google = ContactAccount(name = "user@gmail.com", type = "com.google")
+        val repository =
+            FakeAndroidRepository().apply {
+                accounts = listOf(ContactAccount.Local, google)
+            }
+        val groups =
+            FakeGroupsRepository(
+                groups =
+                    listOf(
+                        ContactGroup(id = 100, title = "Семья"),
+                        ContactGroup(
+                            id = 200,
+                            title = "Работа",
+                            accountName = google.name,
+                            accountType = google.type,
+                        ),
+                    ),
+            )
+        val viewModel = viewModel(repository, groups)
+        compose.setContent {
+            ContactEditorScreen(
+                contactId = null,
+                onDone = {},
+                onBack = {},
+                viewModel = viewModel,
+            )
+        }
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.accounts.size == 2 && viewModel.uiState.value.allGroups.size == 2
+        }
+
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_groups_row"))
+        compose.onNodeWithTag("editor_groups_row").performClick()
+        compose.onNodeWithTag("group_check_row_Семья").assertIsDisplayed()
+        compose.onNodeWithTag("group_check_row_Работа").assertDoesNotExist()
+        Espresso.pressBack()
+
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_account_row"))
+        compose.onNodeWithTag("editor_account_row").performClick()
+        compose.onNodeWithTag("account_option_com.google/user@gmail.com").performClick()
+
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_groups_row"))
+        compose.onNodeWithTag("editor_groups_row").performClick()
+        compose.onNodeWithTag("group_check_row_Работа").assertIsDisplayed()
+        compose.onNodeWithTag("group_check_row_Семья").assertDoesNotExist()
+    }
+
+    @Test
     fun createMode_selectsGroupFromPickerAndSaves() {
         val repository = FakeAndroidRepository()
         val groups = FakeGroupsRepository(groups = listOf(ContactGroup(id = 100, title = "Семья")))

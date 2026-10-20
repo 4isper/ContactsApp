@@ -113,10 +113,15 @@ class ContactEditorViewModel(
                         ?.takeIf { it in accounts }
                         ?: accounts.firstOrNull { it.isLocal }
                         ?: accounts.firstOrNull()
+                val availableGroupIds =
+                    groups
+                        .filter { group -> selected?.let(group::belongsTo) == true }
+                        .mapTo(mutableSetOf(), ContactGroup::id)
                 current.copy(
                     accounts = accounts,
                     selectedAccount = selected,
                     allGroups = groups,
+                    selectedGroupIds = current.selectedGroupIds.intersect(availableGroupIds),
                 )
             }
         }
@@ -260,7 +265,16 @@ class ContactEditorViewModel(
 
     fun onAccountSelected(account: ContactAccount) {
         if (!state.value.isNew) return
-        updateData { it.copy(selectedAccount = account) }
+        updateData { current ->
+            val availableGroupIds =
+                current.allGroups
+                    .filter { it.belongsTo(account) }
+                    .mapTo(mutableSetOf(), ContactGroup::id)
+            current.copy(
+                selectedAccount = account,
+                selectedGroupIds = current.selectedGroupIds.intersect(availableGroupIds),
+            )
+        }
     }
 
     fun onGroupToggled(groupId: Long) =
@@ -279,13 +293,20 @@ class ContactEditorViewModel(
     @Suppress("TooGenericExceptionCaught")
     fun onCreateGroup(title: String) {
         if (title.isBlank()) return
+        val account = state.value.selectedAccount ?: ContactAccount.Local
         viewModelScope.launch {
             try {
-                val group = createGroupUseCase(title)
-                state.update {
-                    it.copy(
-                        allGroups = (it.allGroups + group).distinctBy(ContactGroup::id),
-                        selectedGroupIds = it.selectedGroupIds + group.id,
+                val group = createGroupUseCase(title, account)
+                state.update { current ->
+                    val currentAccount = current.selectedAccount ?: ContactAccount.Local
+                    current.copy(
+                        allGroups = (current.allGroups + group).distinctBy(ContactGroup::id),
+                        selectedGroupIds =
+                            if (group.belongsTo(currentAccount)) {
+                                current.selectedGroupIds + group.id
+                            } else {
+                                current.selectedGroupIds
+                            },
                     )
                 }
             } catch (e: CancellationException) {

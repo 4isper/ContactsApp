@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp
 
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.repository.GroupsRepository
 
@@ -12,6 +13,7 @@ class FakeGroupsRepository(
     val addedToGroup = mutableListOf<Pair<Long, List<Long>>>()
     val renamed = mutableListOf<Pair<Long, String>>()
     val deleted = mutableListOf<Long>()
+    val createdGroupAccounts = mutableListOf<ContactAccount>()
 
     override suspend fun getGroups(): List<ContactGroup> {
         failure?.let { throw it }
@@ -28,9 +30,21 @@ class FakeGroupsRepository(
         return groups.filter { it.id in membership[contactId].orEmpty() }
     }
 
-    override suspend fun createGroup(title: String): ContactGroup {
+    override suspend fun createGroup(title: String): ContactGroup = createGroup(title, ContactAccount.Local)
+
+    override suspend fun createGroup(
+        title: String,
+        account: ContactAccount,
+    ): ContactGroup {
         failure?.let { throw it }
-        val group = ContactGroup(id = (groups.maxOfOrNull { it.id } ?: 0L) + 1, title = title)
+        createdGroupAccounts += account
+        val group =
+            ContactGroup(
+                id = (groups.maxOfOrNull { it.id } ?: 0L) + 1,
+                title = title,
+                accountName = account.name,
+                accountType = account.type,
+            )
         groups = groups + group
         return group
     }

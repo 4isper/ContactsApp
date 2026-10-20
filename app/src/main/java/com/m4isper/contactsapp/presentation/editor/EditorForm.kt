@@ -203,7 +203,7 @@ internal fun EditorForm(
     if (showGroupPicker) {
         GroupPickerDialog(
             title = stringResource(R.string.editor_section_groups),
-            groups = uiState.allGroups,
+            groups = uiState.availableGroups,
             selectedIds = uiState.selectedGroupIds,
             confirmLabel = stringResource(R.string.action_done),
             onToggle = viewModel::onGroupToggled,

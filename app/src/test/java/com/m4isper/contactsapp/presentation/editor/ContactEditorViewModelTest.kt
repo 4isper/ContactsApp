@@ -759,6 +759,108 @@ class ContactEditorViewModelTest {
         }
 
     @Test
+    fun `new contact shows only groups of the selected account`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val google = ContactAccount(name = "user@gmail.com", type = "com.google")
+            val localGroup = ContactGroup(id = 100, title = "Семья")
+            val googleGroup =
+                ContactGroup(
+                    id = 200,
+                    title = "Работа",
+                    accountName = google.name,
+                    accountType = google.type,
+                )
+            val repository =
+                FakeEditorRepository().apply {
+                    accounts = listOf(ContactAccount.Local, google)
+                }
+            val groups = FakeGroupsRepository(groups = listOf(localGroup, googleGroup))
+            val viewModel = viewModel(repository, groups)
+            viewModel.load(null)
+            advanceUntilIdle()
+
+            assertEquals(listOf(localGroup), viewModel.uiState.value.availableGroups)
+
+            viewModel.onAccountSelected(google)
+
+            assertEquals(listOf(googleGroup), viewModel.uiState.value.availableGroups)
+            assertEquals(listOf(localGroup, googleGroup), viewModel.uiState.value.allGroups)
+        }
+
+    @Test
+    fun `switching account drops selected groups from another account`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val google = ContactAccount(name = "user@gmail.com", type = "com.google")
+            val groups =
+                FakeGroupsRepository(
+                    groups =
+                        listOf(
+                            ContactGroup(id = 100, title = "Семья"),
+                            ContactGroup(
+                                id = 200,
+                                title = "Работа",
+                                accountName = google.name,
+                                accountType = google.type,
+                            ),
+                        ),
+                )
+            val repository =
+                FakeEditorRepository().apply {
+                    accounts = listOf(ContactAccount.Local, google)
+                }
+            val viewModel = viewModel(repository, groups)
+            viewModel.load(null)
+            advanceUntilIdle()
+
+            viewModel.onGroupToggled(100)
+            assertEquals(setOf(100L), viewModel.uiState.value.selectedGroupIds)
+
+            viewModel.onAccountSelected(google)
+            assertEquals(emptySet<Long>(), viewModel.uiState.value.selectedGroupIds)
+
+            viewModel.onGroupToggled(200)
+            viewModel.onAccountSelected(ContactAccount.Local)
+            assertEquals(emptySet<Long>(), viewModel.uiState.value.selectedGroupIds)
+        }
+
+    @Test
+    fun `create group from picker uses the selected account`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val google = ContactAccount(name = "user@gmail.com", type = "com.google")
+            val repository =
+                FakeEditorRepository().apply {
+                    accounts = listOf(ContactAccount.Local, google)
+                }
+            val groups = FakeGroupsRepository()
+            val viewModel = viewModel(repository, groups)
+            viewModel.load(null)
+            advanceUntilIdle()
+            viewModel.onAccountSelected(google)
+
+            viewModel.onCreateGroup("Работа")
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(listOf(google), groups.createdGroupAccounts)
+            assertEquals(
+                listOf(
+                    ContactGroup(
+                        id = 1,
+                        title = "Работа",
+                        accountName = google.name,
+                        accountType = google.type,
+                    ),
+                ),
+                state.allGroups,
+            )
+            assertEquals(setOf(1L), state.selectedGroupIds)
+            assertEquals(state.allGroups, state.availableGroups)
+        }
+
+    @Test
     fun `load existing contact preselects its groups`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))

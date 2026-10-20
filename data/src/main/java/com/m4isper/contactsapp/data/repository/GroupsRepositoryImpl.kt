@@ -1,6 +1,7 @@
 package com.m4isper.contactsapp.data.repository
 
 import com.m4isper.contactsapp.data.datasource.GroupsDataSource
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.repository.GroupsRepository
 import dev.zacsweers.metro.AppScope
@@ -24,7 +25,12 @@ class GroupsRepositoryImpl(
         return dataSource.loadGroups().filter { it.id in groupIds }
     }
 
-    override suspend fun createGroup(title: String): ContactGroup = dataSource.createGroup(title.trim())
+    override suspend fun createGroup(title: String): ContactGroup = createGroup(title, ContactAccount.Local)
+
+    override suspend fun createGroup(
+        title: String,
+        account: ContactAccount,
+    ): ContactGroup = dataSource.createGroup(title.trim(), account)
 
     override suspend fun renameGroup(
         groupId: Long,

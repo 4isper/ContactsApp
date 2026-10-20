@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp.domain.repository
 
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactGroup
 
 /** Группы (метки) контактов: чтение, управление и членство. */
@@ -11,7 +12,14 @@ interface GroupsRepository {
 
     suspend fun getContactGroups(contactId: Long): List<ContactGroup>
 
+    /** Создаёт локальную группу. */
     suspend fun createGroup(title: String): ContactGroup
+
+    /** Создаёт группу в выбранном аккаунте; по умолчанию — локально. */
+    suspend fun createGroup(
+        title: String,
+        account: ContactAccount,
+    ): ContactGroup = createGroup(title)
 
     suspend fun renameGroup(
         groupId: Long,
