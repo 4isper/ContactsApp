@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp.presentation.contacts
 
+import com.m4isper.contactsapp.FakeContactsChangeSource
 import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.FakeSettingsRepository
 import com.m4isper.contactsapp.FakeVCardCodec
@@ -146,6 +147,7 @@ class ContactsViewModelTest {
         groups: FakeGroupsRepository = FakeGroupsRepository(),
         codec: FakeVCardCodec = FakeVCardCodec(),
         settings: FakeSettingsRepository = FakeSettingsRepository(),
+        changes: FakeContactsChangeSource = FakeContactsChangeSource(),
     ) = ContactsViewModel(
         GetContactsUseCase(repository),
         ObserveFavoritesUseCase(repository),
@@ -158,6 +160,7 @@ class ContactsViewModelTest {
         CreateGroupUseCase(groups),
         AddContactsToGroupUseCase(groups),
         codec,
+        changes,
     )
 
     @Test
@@ -180,6 +183,84 @@ class ContactsViewModelTest {
             val content = viewModel.uiState.value.content
             assertTrue(content is Loadable.Content)
             assertEquals(2, (content as Loadable.Content).data.size)
+        }
+
+    @Test
+    fun `provider change refreshes contacts automatically`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val changes = FakeContactsChangeSource()
+            val viewModel = viewModel(repository, changes = changes)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            repository.contacts = repository.contacts + details(2, "Bob", "222")
+            viewModel.startObservingChanges()
+            advanceUntilIdle()
+            changes.notifyChange()
+            advanceTimeBy(CONTACTS_CHANGE_DEBOUNCE_MILLIS + 1)
+            advanceUntilIdle()
+
+            val content = viewModel.uiState.value.content
+            assertTrue(content is Loadable.Content)
+            assertEquals(
+                listOf("Anna", "Bob"),
+                (content as Loadable.Content).data.map { it.name },
+            )
+        }
+
+    @Test
+    fun `provider change keeps current selection`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(
+                    listOf(
+                        details(1, "Anna", "111"),
+                        details(2, "Bob", "222"),
+                    ),
+                )
+            val changes = FakeContactsChangeSource()
+            val viewModel = viewModel(repository, changes = changes)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+            viewModel.onContactSelected(1)
+            advanceUntilIdle()
+
+            viewModel.startObservingChanges()
+            advanceUntilIdle()
+            changes.notifyChange()
+            advanceTimeBy(CONTACTS_CHANGE_DEBOUNCE_MILLIS + 1)
+            advanceUntilIdle()
+
+            assertEquals(setOf(1L), viewModel.uiState.value.selection)
+        }
+
+    @Test
+    fun `stopped observer ignores provider changes`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val changes = FakeContactsChangeSource()
+            val viewModel = viewModel(repository, changes = changes)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            viewModel.startObservingChanges()
+            advanceUntilIdle()
+            viewModel.stopObservingChanges()
+
+            repository.contacts = repository.contacts + details(2, "Bob", "222")
+            changes.notifyChange()
+            advanceTimeBy(CONTACTS_CHANGE_DEBOUNCE_MILLIS + 1)
+            advanceUntilIdle()
+
+            val content = viewModel.uiState.value.content as Loadable.Content
+            assertEquals(listOf("Anna"), content.data.map { it.name })
         }
 
     @Test

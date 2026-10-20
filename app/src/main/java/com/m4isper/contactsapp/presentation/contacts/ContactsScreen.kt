@@ -50,6 +50,15 @@ fun ContactsScreen(
         onPauseOrDispose { /* no-op */ }
     }
 
+    LifecycleResumeEffect(hasReadPermission) {
+        if (hasReadPermission) {
+            viewModel.startObservingChanges()
+        } else {
+            viewModel.stopObservingChanges()
+        }
+        onPauseOrDispose { viewModel.stopObservingChanges() }
+    }
+
     BackHandler(enabled = uiState.isSelectionMode) {
         viewModel.onClearSelection()
     }

@@ -18,12 +18,14 @@ import com.m4isper.contactsapp.domain.model.ListDensity
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.model.ThemeMode
+import com.m4isper.contactsapp.domain.repository.ContactsChangeSource
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import com.m4isper.contactsapp.domain.repository.GroupsRepository
 import com.m4isper.contactsapp.domain.repository.SettingsRepository
 import com.m4isper.contactsapp.domain.vcard.VCardCodec
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
@@ -145,6 +147,17 @@ internal class FakeAndroidRepository(
 
     override suspend fun removeFavorite(contactId: Long) {
         favoritesFlow.value = favoritesFlow.value - contactId
+    }
+}
+
+/** Фейк источника изменений провайдера: тест сам решает, когда «пришло» событие. */
+internal class FakeContactsChangeSource : ContactsChangeSource {
+    private val changes = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    override fun observeChanges(): Flow<Unit> = changes
+
+    fun notifyChange() {
+        changes.tryEmit(Unit)
     }
 }
 

@@ -13,6 +13,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.m4isper.contactsapp.FakeAndroidRepository
+import com.m4isper.contactsapp.FakeContactsChangeSource
 import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.FakeSettingsRepository
 import com.m4isper.contactsapp.FakeVCardCodec
@@ -62,6 +63,7 @@ class ContactListUiTest {
         CreateGroupUseCase(groups),
         AddContactsToGroupUseCase(groups),
         FakeVCardCodec(),
+        FakeContactsChangeSource(),
     )
 
     @Test

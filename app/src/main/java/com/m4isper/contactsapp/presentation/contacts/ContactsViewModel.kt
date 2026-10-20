@@ -7,6 +7,7 @@ import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.ListDensity
+import com.m4isper.contactsapp.domain.repository.ContactsChangeSource
 import com.m4isper.contactsapp.domain.usecase.AddContactsToGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
@@ -25,10 +26,13 @@ import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -101,6 +105,8 @@ sealed interface ContactsEvent {
 
 internal const val SUBSCRIBE_TIMEOUT_MILLIS = 5_000L
 
+internal const val CONTACTS_CHANGE_DEBOUNCE_MILLIS = 500L
+
 private const val LIST_TAG = "ContactsList"
 
 private data class ContactsLoad(
@@ -154,6 +160,7 @@ class ContactsViewModel(
     private val createGroupUseCase: CreateGroupUseCase,
     private val addContactsToGroupUseCase: AddContactsToGroupUseCase,
     private val vCardCodec: VCardCodec,
+    private val contactsChangeSource: ContactsChangeSource,
 ) : ViewModel() {
     private val allContacts = MutableStateFlow<List<ContactDetails>>(emptyList())
     private val isLoading = MutableStateFlow(false)
@@ -165,6 +172,8 @@ class ContactsViewModel(
     private val groupsFlow = MutableStateFlow<List<ContactGroup>>(emptyList())
     private val selectedGroupFlow = MutableStateFlow<Long?>(null)
     private val membershipFlow = MutableStateFlow<Map<Long, Set<Long>>>(emptyMap())
+    private var changesJob: Job? = null
+    private var pendingProviderRefresh = false
 
     /** Отложенное удаление: окно отмены живёт в [PendingDeleteCoordinator]. */
     internal val deletes =
@@ -437,25 +446,67 @@ class ContactsViewModel(
         }
     }
 
+    /**
+     * Подписка на изменения провайдера. Вызывается со стороны экрана и живёт
+     * только пока список видим, чтобы не держать ContentObserver в фоне.
+     */
+    @OptIn(FlowPreview::class)
+    fun startObservingChanges() {
+        if (changesJob?.isActive == true) return
+        changesJob =
+            viewModelScope.launch {
+                contactsChangeSource
+                    .observeChanges()
+                    .debounce(CONTACTS_CHANGE_DEBOUNCE_MILLIS)
+                    .collect { refreshSilently() }
+            }
+    }
+
+    fun stopObservingChanges() {
+        changesJob?.cancel()
+        changesJob = null
+        pendingProviderRefresh = false
+    }
+
+    /** Фоновое обновление сохраняет выделение: пользователь не теряет контекст. */
+    private fun refreshSilently() {
+        launchLoad(clearSelection = false)
+    }
+
+    fun refresh() {
+        launchLoad(clearSelection = true)
+    }
+
+    private fun launchLoad(clearSelection: Boolean) {
+        if (isLoading.value) {
+            if (!clearSelection) pendingProviderRefresh = true
+            return
+        }
+        isLoading.value = true
+        viewModelScope.launch {
+            loadContacts(clearSelection)
+        }
+    }
+
     // Catch-all осознанный: любая ошибка загрузки превращается в Error-стейт.
     @Suppress("TooGenericExceptionCaught")
-    fun refresh() {
-        if (isLoading.value) return
-        viewModelScope.launch {
-            isLoading.value = true
-            loadFailure.value = null
-            selectionFlow.value = emptySet()
-            try {
-                allContacts.value = getContactsUseCase()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logw(LIST_TAG, "refresh contacts failed", e)
-                loadFailure.value = e
-            } finally {
-                isLoading.value = false
-            }
-            refreshGroups()
+    private suspend fun loadContacts(clearSelection: Boolean) {
+        loadFailure.value = null
+        if (clearSelection) selectionFlow.value = emptySet()
+        try {
+            allContacts.value = getContactsUseCase()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logw(LIST_TAG, "refresh contacts failed", e)
+            loadFailure.value = e
+        } finally {
+            isLoading.value = false
+        }
+        refreshGroups()
+        if (pendingProviderRefresh) {
+            pendingProviderRefresh = false
+            launchLoad(clearSelection = false)
         }
     }
 
