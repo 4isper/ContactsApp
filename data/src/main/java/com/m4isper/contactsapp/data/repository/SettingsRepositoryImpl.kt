@@ -1,3 +1,6 @@
+// Подавление осознанное: набор настроек приложения растёт, дробить порт неудобно.
+@file:Suppress("TooManyFunctions")
+
 package com.m4isper.contactsapp.data.repository
 
 import com.m4isper.contactsapp.data.datasource.SettingsDataSource
@@ -33,4 +36,19 @@ class SettingsRepositoryImpl(
 
     override suspend fun setDefaultContactAccount(account: ContactAccount) =
         dataSource.setDefaultContactAccount(account)
+
+    override suspend fun setAppLanguage(language: String) = dataSource.setAppLanguage(language)
+
+    override suspend fun setDynamicColor(enabled: Boolean) = dataSource.setDynamicColor(enabled)
+
+    override suspend fun setShowPhotos(enabled: Boolean) = dataSource.setShowPhotos(enabled)
+
+    override suspend fun setAppLock(
+        enabled: Boolean,
+        pinHash: String,
+    ) = dataSource.setAppLock(enabled, pinHash)
+
+    override suspend fun setSecureWindow(enabled: Boolean) = dataSource.setSecureWindow(enabled)
+
+    override suspend fun resetSettings() = dataSource.resetSettings()
 }

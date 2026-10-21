@@ -7,9 +7,15 @@ import com.m4isper.contactsapp.domain.model.ListDensity
 import com.m4isper.contactsapp.domain.model.ThemeMode
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
+import com.m4isper.contactsapp.domain.usecase.ResetSettingsUseCase
+import com.m4isper.contactsapp.domain.usecase.SetAppLanguageUseCase
+import com.m4isper.contactsapp.domain.usecase.SetAppLockUseCase
 import com.m4isper.contactsapp.domain.usecase.SetDefaultContactAccountUseCase
+import com.m4isper.contactsapp.domain.usecase.SetDynamicColorUseCase
 import com.m4isper.contactsapp.domain.usecase.SetFavoritesFirstUseCase
 import com.m4isper.contactsapp.domain.usecase.SetListDensityUseCase
+import com.m4isper.contactsapp.domain.usecase.SetSecureWindowUseCase
+import com.m4isper.contactsapp.domain.usecase.SetShowPhotosUseCase
 import com.m4isper.contactsapp.domain.usecase.SetSortOrderUseCase
 import com.m4isper.contactsapp.domain.usecase.SetThemeModeUseCase
 import kotlinx.coroutines.Dispatchers
@@ -22,6 +28,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** Аккаунты для выбора аккаунта по умолчанию: в тесте настроек важен только список. */
@@ -52,6 +59,11 @@ private class SettingsFakeContactsRepository : com.m4isper.contactsapp.domain.re
     ): com.m4isper.contactsapp.domain.model.ContactLink? = null
 }
 
+/** Хранилище языка в памяти: настройки проверяются без Android-контекста. */
+private class FakeAppLanguageStore : AppLanguageStore {
+    override var language: String = ""
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingsViewModelTest {
     @After
@@ -68,7 +80,59 @@ class SettingsViewModelTest {
             SetFavoritesFirstUseCase(repository),
             SetDefaultContactAccountUseCase(repository),
             GetContactAccountsUseCase(SettingsFakeContactsRepository()),
+            SetAppLanguageUseCase(repository),
+            SetDynamicColorUseCase(repository),
+            SetShowPhotosUseCase(repository),
+            SetAppLockUseCase(repository),
+            SetSecureWindowUseCase(repository),
+            ResetSettingsUseCase(repository),
+            FakeAppLanguageStore(),
         )
+
+    @Test
+    fun `new settings are saved`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeSettingsRepository()
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+
+            viewModel.onLanguageSelected("ru")
+            viewModel.onDynamicColorChanged(false)
+            viewModel.onShowPhotosChanged(false)
+            viewModel.onSecureWindowChanged(true)
+            viewModel.onAppLockChanged(true, "1234")
+            advanceUntilIdle()
+
+            assertEquals(listOf("ru"), repository.languages)
+            assertEquals(listOf(false), repository.dynamicColorValues)
+            assertEquals(listOf(false), repository.showPhotosValues)
+            assertEquals(listOf(true), repository.secureWindowValues)
+            assertEquals(1, repository.appLocks.size)
+            assertEquals(true, repository.appLocks.single().first)
+            assertTrue(
+                repository.appLocks
+                    .single()
+                    .second
+                    .isNotBlank(),
+            )
+        }
+
+    @Test
+    fun `reset returns the default settings`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeSettingsRepository(AppSettings(dynamicColor = false, showPhotos = false))
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+
+            viewModel.onResetSettings()
+            advanceUntilIdle()
+
+            assertTrue(repository.resetCalled)
+            assertEquals(true, viewModel.uiState.value.settings.dynamicColor)
+            assertEquals(true, viewModel.uiState.value.settings.showPhotos)
+        }
 
     @Test
     fun `ui state reflects stored settings`() =
@@ -149,7 +213,7 @@ class SettingsViewModelTest {
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class ThemeViewModelTest {
+class AppSettingsViewModelTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
@@ -160,10 +224,10 @@ class ThemeViewModelTest {
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val repository = FakeSettingsRepository(AppSettings(themeMode = ThemeMode.DARK))
-            val viewModel = ThemeViewModel(ObserveSettingsUseCase(repository))
+            val viewModel = AppSettingsViewModel(ObserveSettingsUseCase(repository))
 
             advanceUntilIdle()
 
-            assertEquals(ThemeMode.DARK, viewModel.themeMode.value)
+            assertEquals(ThemeMode.DARK, viewModel.settings.value.themeMode)
         }
 }

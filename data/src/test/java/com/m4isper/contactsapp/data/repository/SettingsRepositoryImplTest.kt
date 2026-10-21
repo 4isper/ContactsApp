@@ -47,6 +47,21 @@ private class FakeSettingsDataSource(
     override suspend fun setLastContactAccount(account: ContactAccount) {
         lastContactAccounts += account
     }
+
+    override suspend fun setAppLanguage(language: String) = Unit
+
+    override suspend fun setDynamicColor(enabled: Boolean) = Unit
+
+    override suspend fun setShowPhotos(enabled: Boolean) = Unit
+
+    override suspend fun setAppLock(
+        enabled: Boolean,
+        pinHash: String,
+    ) = Unit
+
+    override suspend fun setSecureWindow(enabled: Boolean) = Unit
+
+    override suspend fun resetSettings() = Unit
 }
 
 class SettingsRepositoryImplTest {

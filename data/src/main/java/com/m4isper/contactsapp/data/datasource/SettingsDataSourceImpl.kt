@@ -31,8 +31,19 @@ private val LAST_ACCOUNT_NAME = stringPreferencesKey("last_contact_account_name"
 private val LAST_ACCOUNT_TYPE = stringPreferencesKey("last_contact_account_type")
 private val DEFAULT_ACCOUNT_NAME = stringPreferencesKey("default_contact_account_name")
 private val DEFAULT_ACCOUNT_TYPE = stringPreferencesKey("default_contact_account_type")
+private val APP_LANGUAGE = stringPreferencesKey("app_language")
+private val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
+private val SHOW_PHOTOS = booleanPreferencesKey("show_photos")
+private val APP_LOCK_ENABLED = booleanPreferencesKey("app_lock_enabled")
+private val APP_LOCK_PIN_HASH = stringPreferencesKey("app_lock_pin_hash")
+private val SECURE_WINDOW = booleanPreferencesKey("secure_window")
 
-/** Неизвестные значения (старая версия, битые данные) откатываются к дефолтам модели. */
+/**
+ * Неизвестные значения (старая версия, битые данные) откатываются к дефолтам модели.
+ *
+ * Подавление осознанное: по одной маленькой функции на настройку.
+ */
+@Suppress("TooManyFunctions")
 @Inject
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
@@ -56,6 +67,12 @@ class SettingsDataSourceImpl(
                         name = prefs[DEFAULT_ACCOUNT_NAME],
                         type = prefs[DEFAULT_ACCOUNT_TYPE],
                     ),
+                appLanguage = prefs[APP_LANGUAGE].orEmpty(),
+                dynamicColor = prefs[DYNAMIC_COLOR] ?: true,
+                showPhotos = prefs[SHOW_PHOTOS] ?: true,
+                appLockEnabled = prefs[APP_LOCK_ENABLED] ?: false,
+                appLockPinHash = prefs[APP_LOCK_PIN_HASH].orEmpty(),
+                secureWindow = prefs[SECURE_WINDOW] ?: false,
             )
         }
 
@@ -94,6 +111,61 @@ class SettingsDataSourceImpl(
                 account.name?.let { prefs[DEFAULT_ACCOUNT_NAME] = it }
                 account.type?.let { prefs[DEFAULT_ACCOUNT_TYPE] = it }
             }
+        }
+    }
+
+    override suspend fun setAppLanguage(language: String) {
+        context.settingsDataStore.edit { prefs ->
+            if (language.isBlank()) {
+                prefs.remove(APP_LANGUAGE)
+            } else {
+                prefs[APP_LANGUAGE] = language
+            }
+        }
+    }
+
+    override suspend fun setDynamicColor(enabled: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[DYNAMIC_COLOR] = enabled }
+    }
+
+    override suspend fun setShowPhotos(enabled: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[SHOW_PHOTOS] = enabled }
+    }
+
+    override suspend fun setAppLock(
+        enabled: Boolean,
+        pinHash: String,
+    ) {
+        context.settingsDataStore.edit { prefs ->
+            prefs[APP_LOCK_ENABLED] = enabled
+            if (pinHash.isBlank()) {
+                prefs.remove(APP_LOCK_PIN_HASH)
+            } else {
+                prefs[APP_LOCK_PIN_HASH] = pinHash
+            }
+        }
+    }
+
+    override suspend fun setSecureWindow(enabled: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[SECURE_WINDOW] = enabled }
+    }
+
+    override suspend fun resetSettings() {
+        context.settingsDataStore.edit { prefs ->
+            prefs.remove(THEME_MODE)
+            prefs.remove(SORT_ORDER)
+            prefs.remove(LIST_DENSITY)
+            prefs.remove(FAVORITES_FIRST)
+            prefs.remove(LAST_ACCOUNT_NAME)
+            prefs.remove(LAST_ACCOUNT_TYPE)
+            prefs.remove(DEFAULT_ACCOUNT_NAME)
+            prefs.remove(DEFAULT_ACCOUNT_TYPE)
+            prefs.remove(APP_LANGUAGE)
+            prefs.remove(DYNAMIC_COLOR)
+            prefs.remove(SHOW_PHOTOS)
+            prefs.remove(APP_LOCK_ENABLED)
+            prefs.remove(APP_LOCK_PIN_HASH)
+            prefs.remove(SECURE_WINDOW)
         }
     }
 }

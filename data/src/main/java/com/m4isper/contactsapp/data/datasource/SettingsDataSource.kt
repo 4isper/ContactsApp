@@ -1,3 +1,6 @@
+// Подавление осознанное: набор настроек приложения растёт, дробить порт неудобно.
+@file:Suppress("TooManyFunctions")
+
 package com.m4isper.contactsapp.data.datasource
 
 import com.m4isper.contactsapp.domain.model.AppSettings
@@ -20,4 +23,25 @@ interface SettingsDataSource {
 
     /** Аккаунт по умолчанию для новых контактов. */
     suspend fun setDefaultContactAccount(account: ContactAccount)
+
+    /** Язык приложения: пусто — язык системы. */
+    suspend fun setAppLanguage(language: String)
+
+    /** Динамические цвета вместо фирменной палитры. */
+    suspend fun setDynamicColor(enabled: Boolean)
+
+    /** Показывать фотографии контактов. */
+    suspend fun setShowPhotos(enabled: Boolean)
+
+    /** Защита приложения: вкл/выкл и хэш PIN-кода. */
+    suspend fun setAppLock(
+        enabled: Boolean,
+        pinHash: String,
+    )
+
+    /** Скрывать содержимое окна в недавних задачах. */
+    suspend fun setSecureWindow(enabled: Boolean)
+
+    /** Вернуть настройки к значениям по умолчанию. */
+    suspend fun resetSettings()
 }

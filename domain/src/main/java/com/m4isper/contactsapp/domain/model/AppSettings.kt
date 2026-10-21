@@ -33,4 +33,16 @@ data class AppSettings(
     val lastContactAccount: ContactAccount = ContactAccount.Local,
     /** Аккаунт, в который попадают новые контакты; по умолчанию — локальный. */
     val defaultContactAccount: ContactAccount = ContactAccount.Local,
+    /** Язык приложения: пусто — язык системы. */
+    val appLanguage: String = "",
+    /** Динамические цвета Android 12+ вместо фирменной палитры. */
+    val dynamicColor: Boolean = true,
+    /** Показывать фотографии контактов. */
+    val showPhotos: Boolean = true,
+    /** Защита приложения PIN-кодом. */
+    val appLockEnabled: Boolean = false,
+    /** Хэш PIN-кода защиты; пусто — код не задан. */
+    val appLockPinHash: String = "",
+    /** Скрывать содержимое окна в списке недавних задач. */
+    val secureWindow: Boolean = false,
 )

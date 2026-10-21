@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp.presentation.settings
 
+import android.app.Activity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,11 +23,16 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -37,6 +43,7 @@ import com.m4isper.contactsapp.domain.model.ListDensity
 import com.m4isper.contactsapp.domain.model.ThemeMode
 import com.m4isper.contactsapp.presentation.common.account.contactAccountTitle
 import com.m4isper.contactsapp.presentation.common.account.testKey
+import com.m4isper.contactsapp.ui.components.ConfirmDialog
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
@@ -48,9 +55,12 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = metroViewModel(),
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val settings = uiState.settings
     val spacing = LocalSpacing.current
+    var showPinDialog by remember { mutableStateOf(false) }
+    var showResetDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -130,8 +140,136 @@ fun SettingsScreen(
                     }
                 }
             }
+            SettingsSection(title = stringResource(R.string.settings_language)) {
+                APP_LANGUAGES.forEach { (tag, label) ->
+                    SettingsOption(
+                        label = label ?: stringResource(R.string.settings_language_system),
+                        selected = settings.appLanguage == tag,
+                        onSelect = {
+                            viewModel.onLanguageSelected(tag)
+                            // Язык применяется при создании Activity: пересоздаём окно.
+                            (context as? Activity)?.recreate()
+                        },
+                        testTag = "language_${tag.ifBlank { "system" }}",
+                    )
+                }
+            }
+            SettingsSection(title = stringResource(R.string.settings_appearance)) {
+                SettingsSwitch(
+                    label = stringResource(R.string.settings_dynamic_color),
+                    description = stringResource(R.string.settings_dynamic_color_desc),
+                    checked = settings.dynamicColor,
+                    onCheckedChange = viewModel::onDynamicColorChanged,
+                    testTag = "dynamic_color_switch",
+                )
+                SettingsSwitch(
+                    label = stringResource(R.string.settings_show_photos),
+                    description = stringResource(R.string.settings_show_photos_desc),
+                    checked = settings.showPhotos,
+                    onCheckedChange = viewModel::onShowPhotosChanged,
+                    testTag = "show_photos_switch",
+                )
+            }
+            SettingsSection(title = stringResource(R.string.settings_privacy)) {
+                SettingsSwitch(
+                    label = stringResource(R.string.settings_app_lock),
+                    description = stringResource(R.string.settings_app_lock_desc),
+                    checked = settings.appLockEnabled,
+                    onCheckedChange = { enabled ->
+                        if (enabled) {
+                            showPinDialog = true
+                        } else {
+                            viewModel.onAppLockChanged(false, "")
+                        }
+                    },
+                    testTag = "app_lock_switch",
+                )
+                SettingsSwitch(
+                    label = stringResource(R.string.settings_secure_window),
+                    description = stringResource(R.string.settings_secure_window_desc),
+                    checked = settings.secureWindow,
+                    onCheckedChange = viewModel::onSecureWindowChanged,
+                    testTag = "secure_window_switch",
+                )
+            }
+            SettingsSection(title = stringResource(R.string.settings_about)) {
+                SettingsInfo(
+                    label = stringResource(R.string.settings_version, appVersion(context)),
+                    testTag = "app_version",
+                )
+                SettingsInfo(
+                    label = stringResource(R.string.settings_privacy_note),
+                    testTag = "app_privacy_note",
+                )
+            }
+            TextButton(
+                onClick = { showResetDialog = true },
+                modifier = Modifier.testTag("reset_settings_button"),
+            ) {
+                Text(
+                    text = stringResource(R.string.settings_reset),
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
         }
     }
+
+    if (showPinDialog) {
+        PinSetupDialog(
+            onConfirm = { pin ->
+                showPinDialog = false
+                viewModel.onAppLockChanged(true, pin)
+            },
+            onDismiss = { showPinDialog = false },
+        )
+    }
+
+    if (showResetDialog) {
+        ConfirmDialog(
+            title = stringResource(R.string.settings_reset),
+            text = stringResource(R.string.settings_reset_desc),
+            confirmLabel = stringResource(R.string.action_reset),
+            onConfirm = {
+                showResetDialog = false
+                viewModel.onResetSettings()
+                (context as? Activity)?.recreate()
+            },
+            onDismiss = { showResetDialog = false },
+            danger = true,
+            confirmTestTag = "confirm_reset_settings",
+        )
+    }
+}
+
+/** Языки приложения: пустой код — язык системы. */
+private val APP_LANGUAGES =
+    listOf(
+        "" to null,
+        "en" to "English",
+        "ru" to "Русский",
+    )
+
+/** Версия приложения для раздела «О программе». */
+private fun appVersion(context: android.content.Context): String =
+    runCatching {
+        val info = context.packageManager.getPackageInfo(context.packageName, 0)
+        info.versionName.orEmpty()
+    }.getOrDefault("")
+
+@Composable
+private fun SettingsInfo(
+    label: String,
+    testTag: String,
+) {
+    val spacing = LocalSpacing.current
+    Text(
+        text = label,
+        style = MaterialTheme.typography.bodyLarge,
+        modifier =
+            Modifier
+                .padding(horizontal = spacing.m, vertical = spacing.xs)
+                .testTag(testTag),
+    )
 }
 
 @Composable

@@ -9,9 +9,15 @@ import com.m4isper.contactsapp.domain.model.ListDensity
 import com.m4isper.contactsapp.domain.model.ThemeMode
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
+import com.m4isper.contactsapp.domain.usecase.ResetSettingsUseCase
+import com.m4isper.contactsapp.domain.usecase.SetAppLanguageUseCase
+import com.m4isper.contactsapp.domain.usecase.SetAppLockUseCase
 import com.m4isper.contactsapp.domain.usecase.SetDefaultContactAccountUseCase
+import com.m4isper.contactsapp.domain.usecase.SetDynamicColorUseCase
 import com.m4isper.contactsapp.domain.usecase.SetFavoritesFirstUseCase
 import com.m4isper.contactsapp.domain.usecase.SetListDensityUseCase
+import com.m4isper.contactsapp.domain.usecase.SetSecureWindowUseCase
+import com.m4isper.contactsapp.domain.usecase.SetShowPhotosUseCase
 import com.m4isper.contactsapp.domain.usecase.SetSortOrderUseCase
 import com.m4isper.contactsapp.domain.usecase.SetThemeModeUseCase
 import com.m4isper.contactsapp.presentation.common.logw
@@ -36,6 +42,8 @@ data class SettingsUiState(
     val accounts: List<ContactAccount> = emptyList(),
 )
 
+// Подавление осознанное: набор настроек растёт, разбивать по файлам неудобно.
+@Suppress("TooManyFunctions")
 @Inject
 @ViewModelKey
 @ContributesIntoMap(AppScope::class)
@@ -47,6 +55,13 @@ class SettingsViewModel(
     private val setFavoritesFirstUseCase: SetFavoritesFirstUseCase,
     private val setDefaultContactAccountUseCase: SetDefaultContactAccountUseCase,
     private val getContactAccountsUseCase: GetContactAccountsUseCase,
+    private val setAppLanguageUseCase: SetAppLanguageUseCase,
+    private val setDynamicColorUseCase: SetDynamicColorUseCase,
+    private val setShowPhotosUseCase: SetShowPhotosUseCase,
+    private val setAppLockUseCase: SetAppLockUseCase,
+    private val setSecureWindowUseCase: SetSecureWindowUseCase,
+    private val resetSettingsUseCase: ResetSettingsUseCase,
+    private val languageStore: AppLanguageStore,
 ) : ViewModel() {
     private val accountsFlow = MutableStateFlow<List<ContactAccount>>(emptyList())
 
@@ -88,6 +103,35 @@ class SettingsViewModel(
 
     /** Аккаунт по умолчанию для новых контактов. */
     fun onDefaultAccountSelected(account: ContactAccount) = update { setDefaultContactAccountUseCase(account) }
+
+    /** Язык приложения: сохраняем и в настройках, и в общих настройках — нужен до запуска Activity. */
+    fun onLanguageSelected(language: String) =
+        update {
+            languageStore.language = language
+            setAppLanguageUseCase(language)
+        }
+
+    /** Динамические цвета Android 12+ вместо фирменной палитры. */
+    fun onDynamicColorChanged(enabled: Boolean) = update { setDynamicColorUseCase(enabled) }
+
+    /** Показывать фотографии контактов. */
+    fun onShowPhotosChanged(enabled: Boolean) = update { setShowPhotosUseCase(enabled) }
+
+    /** Защита приложения PIN-кодом. */
+    fun onAppLockChanged(
+        enabled: Boolean,
+        pin: String,
+    ) = update { setAppLockUseCase(enabled, pin) }
+
+    /** Скрывать содержимое окна в недавних задачах. */
+    fun onSecureWindowChanged(enabled: Boolean) = update { setSecureWindowUseCase(enabled) }
+
+    /** Вернуть настройки к значениям по умолчанию. */
+    fun onResetSettings() =
+        update {
+            languageStore.language = ""
+            resetSettingsUseCase()
+        }
 
     // Catch-all осознанный: ошибка записи настроек не должна ронять экран.
     @Suppress("TooGenericExceptionCaught")

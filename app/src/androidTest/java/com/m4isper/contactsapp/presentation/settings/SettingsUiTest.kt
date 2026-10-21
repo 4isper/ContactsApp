@@ -1,11 +1,15 @@
 package com.m4isper.contactsapp.presentation.settings
 
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.m4isper.contactsapp.FakeAndroidRepository
 import com.m4isper.contactsapp.FakeSettingsRepository
 import com.m4isper.contactsapp.domain.model.AppSettings
@@ -14,11 +18,18 @@ import com.m4isper.contactsapp.domain.model.ListDensity
 import com.m4isper.contactsapp.domain.model.ThemeMode
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
+import com.m4isper.contactsapp.domain.usecase.ResetSettingsUseCase
+import com.m4isper.contactsapp.domain.usecase.SetAppLanguageUseCase
+import com.m4isper.contactsapp.domain.usecase.SetAppLockUseCase
 import com.m4isper.contactsapp.domain.usecase.SetDefaultContactAccountUseCase
+import com.m4isper.contactsapp.domain.usecase.SetDynamicColorUseCase
 import com.m4isper.contactsapp.domain.usecase.SetFavoritesFirstUseCase
 import com.m4isper.contactsapp.domain.usecase.SetListDensityUseCase
+import com.m4isper.contactsapp.domain.usecase.SetSecureWindowUseCase
+import com.m4isper.contactsapp.domain.usecase.SetShowPhotosUseCase
 import com.m4isper.contactsapp.domain.usecase.SetSortOrderUseCase
 import com.m4isper.contactsapp.domain.usecase.SetThemeModeUseCase
+import com.m4isper.contactsapp.presentation.settings.SharedPrefsAppLanguageStore
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -39,6 +50,13 @@ class SettingsUiTest {
             SetFavoritesFirstUseCase(repository),
             SetDefaultContactAccountUseCase(repository),
             GetContactAccountsUseCase(FakeAndroidRepository()),
+            SetAppLanguageUseCase(repository),
+            SetDynamicColorUseCase(repository),
+            SetShowPhotosUseCase(repository),
+            SetAppLockUseCase(repository),
+            SetSecureWindowUseCase(repository),
+            ResetSettingsUseCase(repository),
+            SharedPrefsAppLanguageStore(InstrumentationRegistry.getInstrumentation().targetContext),
         )
 
     @Test
@@ -60,6 +78,59 @@ class SettingsUiTest {
         compose.onNodeWithTag("sort_BY_FAMILY").assertIsSelected()
         compose.onNodeWithTag("density_COMPACT").assertIsSelected()
         compose.onNodeWithTag("favorites_first_switch").assertIsOff()
+    }
+
+    @Test
+    fun showsNewSettingsSections() {
+        val repository = FakeSettingsRepository()
+        compose.setContent {
+            SettingsScreen(onBack = {}, viewModel = viewModel(repository))
+        }
+
+        compose.onNodeWithTag("language_system").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("dynamic_color_switch").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("show_photos_switch").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("app_lock_switch").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("secure_window_switch").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("app_version").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("reset_settings_button").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun togglingNewSwitchesPersistsThem() {
+        val repository = FakeSettingsRepository()
+        compose.setContent {
+            SettingsScreen(onBack = {}, viewModel = viewModel(repository))
+        }
+
+        compose.onNodeWithTag("dynamic_color_switch").performScrollTo().performClick()
+        compose.onNodeWithTag("show_photos_switch").performScrollTo().performClick()
+        compose.onNodeWithTag("secure_window_switch").performScrollTo().performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            repository.secureWindowValues.isNotEmpty()
+        }
+        assertEquals(listOf(false), repository.dynamicColorValues)
+        assertEquals(listOf(false), repository.showPhotosValues)
+        assertEquals(listOf(true), repository.secureWindowValues)
+    }
+
+    @Test
+    fun appLockAsksForPinBeforeEnabling() {
+        val repository = FakeSettingsRepository()
+        compose.setContent {
+            SettingsScreen(onBack = {}, viewModel = viewModel(repository))
+        }
+
+        compose.onNodeWithTag("app_lock_switch").performScrollTo().performClick()
+
+        compose.onNodeWithTag("app_lock_pin_dialog").assertIsDisplayed()
+        compose.onNodeWithTag("app_lock_pin_field").performTextInput("1234")
+        compose.onNodeWithTag("app_lock_pin_repeat_field").performTextInput("1234")
+        compose.onNodeWithTag("app_lock_pin_confirm").performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { repository.appLocks.isNotEmpty() }
+        assertEquals(true, repository.appLocks.single().first)
     }
 
     @Test
