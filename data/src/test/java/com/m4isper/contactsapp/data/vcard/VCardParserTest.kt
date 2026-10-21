@@ -514,6 +514,25 @@ class VCardParserTest {
     }
 
     @Test
+    fun `parses quoted-printable values`() {
+        val forms =
+            parseForms(
+                """
+                BEGIN:VCARD
+                VERSION:2.1
+                FN;CHARSET=QUOTED-PRINTABLE:Anna M=C3=BCller
+                NOTE;CHARSET=QUOTED-PRINTABLE:Long note that =
+                continues here
+                END:VCARD
+                """.trimIndent(),
+            )
+
+        val form = forms.single()
+        assertEquals("Anna Müller", form.name.display)
+        assertEquals("Long note that continues here", form.note.note)
+    }
+
+    @Test
     fun `parses google and apple style vcards`() {
         val google =
             parseVCards(

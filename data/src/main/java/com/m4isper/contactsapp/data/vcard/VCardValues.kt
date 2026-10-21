@@ -12,6 +12,8 @@ import com.m4isper.contactsapp.domain.model.NameParts
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.SipKind
 import com.m4isper.contactsapp.domain.model.WebsiteKind
+import java.io.ByteArrayOutputStream
+import java.nio.charset.Charset
 import java.util.Locale
 
 /** Разыменование vCard-экранирования: \n, \N и любой экранированный символ. */
@@ -204,3 +206,35 @@ internal fun birthdayFromVCard(raw: String): Birthday? {
             .takeIf { it.month in 1..LAST_MONTH && it.day in 1..LAST_DAY }
     }
 }
+
+/**
+ * Значение в quoted-printable: «=XX» — байт в кодировке [charset], одиночный «=» в конце
+ * строки — мягкий перенос (уже склеен при разворачивании строк).
+ */
+internal fun decodeQuotedPrintable(
+    value: String,
+    charset: Charset = Charsets.UTF_8,
+): String {
+    val bytes = ByteArrayOutputStream()
+    var index = 0
+    while (index < value.length) {
+        val char = value[index]
+        val hex =
+            if (char == '=' && index + HEX_DIGITS < value.length) {
+                value.substring(index + 1, index + 1 + HEX_DIGITS).toIntOrNull(16)
+            } else {
+                null
+            }
+        if (hex != null) {
+            bytes.write(hex)
+            index += 1 + HEX_DIGITS
+        } else {
+            bytes.write(char.toString().toByteArray(charset))
+            index += 1
+        }
+    }
+    return bytes.toByteArray().toString(charset)
+}
+
+/** Число шестнадцатеричных цифр в escape-последовательности quoted-printable. */
+private const val HEX_DIGITS = 2

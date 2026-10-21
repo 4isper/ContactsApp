@@ -28,6 +28,7 @@ import com.m4isper.contactsapp.domain.vcard.VCardContact
 import com.m4isper.contactsapp.domain.vcard.VCardInvalidContact
 import com.m4isper.contactsapp.domain.vcard.VCardIssue
 import com.m4isper.contactsapp.domain.vcard.VCardParseResult
+import java.nio.charset.Charset
 import java.util.Locale
 
 private const val TEL_URI_PREFIX = "tel:"
@@ -59,8 +60,8 @@ private val SUPPORTED_PROPERTIES =
 
 /**
  * Минимальный vCard-импортёр (2.1–4.0): BEGIN/END-блоки, folded-строки, экранирование,
- * групповые префиксы (item1.TEL), фото в base64 и категории (CATEGORIES).
- * quoted-printable не поддерживается.
+ * групповые префиксы (item1.TEL), фото в base64, категории (CATEGORIES) и
+ * значения в quoted-printable.
  */
 internal fun parseVCards(text: String): VCardParseResult {
     val contacts = mutableListOf<VCardContact>()
@@ -112,7 +113,10 @@ private fun parseVCardBlock(lines: List<String>): VCardBlock {
     return builder.build()
 }
 
-/** Разворачивает folded-строки: продолжение начинается с пробела или таба. */
+/**
+ * Разворачивает folded-строки: продолжение начинается с пробела или таба.
+ * В quoted-printable перенос строки помечается знаком «=» в конце строки.
+ */
 private fun unfoldVCardLines(text: String): List<String> {
     val lines = mutableListOf<String>()
     text
@@ -120,14 +124,32 @@ private fun unfoldVCardLines(text: String): List<String> {
         .replace('\r', '\n')
         .split('\n')
         .forEach { line ->
-            if ((line.startsWith(" ") || line.startsWith("\t")) && lines.isNotEmpty()) {
-                lines[lines.lastIndex] += line.substring(1)
-            } else {
-                lines += line
+            val previous = lines.lastOrNull()
+            when {
+                previous != null &&
+                    previous.endsWith(SOFT_BREAK) &&
+                    !previous.endsWith(ESCAPED_SOFT_BREAK) &&
+                    previous.isQuotedPrintable() -> {
+                    // Мягкий перенос quoted-printable: «=» в конце строки убираем.
+                    lines[lines.lastIndex] = previous.dropLast(1) + line
+                }
+                (line.startsWith(" ") || line.startsWith("\t")) && lines.isNotEmpty() -> {
+                    lines[lines.lastIndex] += line.substring(1)
+                }
+                else -> lines += line
             }
         }
     return lines
 }
+
+/** Знак мягкого переноса quoted-printable. */
+private const val SOFT_BREAK = "="
+
+/** Строка свойства в quoted-printable: только у них «=» в конце означает перенос. */
+private fun String.isQuotedPrintable(): Boolean = substringBefore(':').contains(QUOTED_PRINTABLE, ignoreCase = true)
+
+/** Экранированный знак «=» — обычный перенос не означает. */
+private const val ESCAPED_SOFT_BREAK = "\\="
 
 private data class VCardProperty(
     val name: String,
@@ -144,7 +166,7 @@ private data class VCardProperty(
 private fun parseVCardProperty(line: String): VCardProperty? {
     val colon = line.indexOf(':')
     if (colon <= 0) return null
-    val value = line.substring(colon + 1)
+    val rawValue = line.substring(colon + 1)
     val segments = line.substring(0, colon).split(';')
     val head = segments.first().trim()
     val name = head.substringAfterLast('.').trim().uppercase(Locale.ROOT)
@@ -174,12 +196,37 @@ private fun parseVCardProperty(line: String): VCardProperty? {
                 ?.let(types::add)
         }
     }
+    val value = decodeIfQuotedPrintable(rawValue, params)
     return if (name.isEmpty()) {
         null
     } else {
         VCardProperty(name = name, params = params, types = types, value = value, group = group)
     }
 }
+
+/** Значение в quoted-printable: «=XX» — байт, кодировка — из параметра CHARSET. */
+private fun decodeIfQuotedPrintable(
+    value: String,
+    params: Map<String, String>,
+): String {
+    val charset =
+        params[CHARSET_KEY]?.takeIf { it.equals(QUOTED_PRINTABLE, ignoreCase = true) }
+            ?: params[TYPE_KEY]?.takeIf { it.contains(QUOTED_PRINTABLE, ignoreCase = true) }
+            ?: return value
+    val encoding =
+        runCatching { Charset.forName(charset.takeIf { !it.equals(QUOTED_PRINTABLE, true) } ?: "UTF-8") }
+            .getOrDefault(Charsets.UTF_8)
+    return decodeQuotedPrintable(value, encoding)
+}
+
+/** Кодировка значения из параметра CHARSET. */
+private const val CHARSET_KEY = "CHARSET"
+
+/** Параметр TYPE со значением quoted-printable. */
+private const val TYPE_KEY = "TYPE"
+
+/** Признак quoted-printable. */
+private const val QUOTED_PRINTABLE = "QUOTED-PRINTABLE"
 
 // Подавление осознанное: накопитель держит по маленькому обработчику на тип свойства.
 @Suppress("TooManyFunctions")
