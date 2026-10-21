@@ -2,6 +2,7 @@ package com.m4isper.contactsapp.presentation.common.share
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.m4isper.contactsapp.R
@@ -38,6 +39,16 @@ internal suspend fun shareContacts(
         showShareFailed(context)
         return
     }
+    shareFile(context, file, "text/vcard", R.string.share_contact)
+}
+
+/** Отдаёт файл из кэша через выбор приложения. */
+private fun shareFile(
+    context: Context,
+    file: File,
+    mimeType: String,
+    chooserTitle: Int,
+) {
     runCatching {
         val uri =
             FileProvider.getUriForFile(
@@ -47,9 +58,36 @@ internal suspend fun shareContacts(
             )
         val sendIntent =
             Intent(Intent.ACTION_SEND).apply {
-                type = "text/vcard"
+                type = mimeType
                 putExtra(Intent.EXTRA_STREAM, uri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        context.startActivity(
+            Intent
+                .createChooser(sendIntent, context.getString(chooserTitle))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+        )
+    }.onFailure { e ->
+        logw(SHARE_TAG, "share file failed", e)
+        showShareFailed(context)
+    }
+}
+
+/** Шарит контакт обычным текстом: понимают мессенджеры и заметки. */
+internal suspend fun shareContactAsText(
+    context: Context,
+    text: String,
+) {
+    if (text.isBlank()) {
+        showShareFailed(context)
+        return
+    }
+    runCatching {
+        val sendIntent =
+            Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, text)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
         context.startActivity(
@@ -58,10 +96,46 @@ internal suspend fun shareContacts(
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
         )
     }.onFailure { e ->
-        logw(SHARE_TAG, "shareContacts failed", e)
+        logw(SHARE_TAG, "shareContactAsText failed", e)
         showShareFailed(context)
     }
 }
+
+/** Шарит контакт картинкой QR-кода: другой телефон сканирует обычной камерой. */
+internal suspend fun shareContactAsQr(
+    context: Context,
+    vCardText: String,
+) {
+    val file = writeQrFile(context, vCardText)
+    if (file == null) {
+        showShareFailed(context)
+        return
+    }
+    shareFile(context, file, "image/png", R.string.share_contact_qr)
+}
+
+/** Сохраняет QR-код контакта в кэш: одно имя, чтобы кэш не рос. */
+private suspend fun writeQrFile(
+    context: Context,
+    vCardText: String,
+): File? {
+    val bitmap = vCardText.takeIf { it.isNotBlank() }?.let { qrCodeBitmap(it) }
+    if (bitmap == null) return null
+    val file = File(context.cacheDir, QR_FILE_NAME)
+    val written =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                file.outputStream().use { out ->
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                }
+            }.onFailure { logw(SHARE_TAG, "write shared qr failed", it) }.isSuccess
+        }
+    bitmap.recycle()
+    return if (written) file else null
+}
+
+/** Имя файла с QR-кодом в кэше: одно, чтобы кэш не рос. */
+private const val QR_FILE_NAME = "shared_contact_qr.png"
 
 private fun showShareFailed(context: Context) {
     Toast

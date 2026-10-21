@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp.presentation.details
 
+import android.content.Context
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -7,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.runtime.Composable
@@ -20,6 +22,8 @@ import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.presentation.common.account.contactAccountLabel
+import com.m4isper.contactsapp.presentation.common.calendar.nextOccurrence
+import com.m4isper.contactsapp.presentation.common.calendar.openCalendarEvent
 import com.m4isper.contactsapp.presentation.common.format.addressKindLabel
 import com.m4isper.contactsapp.presentation.common.format.birthdayText
 import com.m4isper.contactsapp.presentation.common.format.contactEventLabel
@@ -246,7 +250,15 @@ internal fun DetailsContent(
                 DataRow(
                     primary = birthdayText(birthday),
                     secondary = stringResource(R.string.editor_section_birthday),
-                    actions = emptyList(),
+                    actions =
+                        listOf(
+                            calendarAction(
+                                context = context,
+                                title = context.getString(R.string.calendar_birthday_title, details.name),
+                                day = birthday.day,
+                                month = birthday.month,
+                            ),
+                        ),
                     modifier = Modifier.testTag("birthday_row"),
                 )
             }
@@ -258,7 +270,15 @@ internal fun DetailsContent(
             DataRow(
                 primary = birthdayText(event.date),
                 secondary = contactEventLabel(event),
-                actions = emptyList(),
+                actions =
+                    listOf(
+                        calendarAction(
+                            context = context,
+                            title = context.getString(R.string.calendar_event_title, details.name),
+                            day = event.date.day,
+                            month = event.date.month,
+                        ),
+                    ),
                 modifier = Modifier.testTag("event_row_${birthdayKey(event.date)}"),
             )
         }
@@ -310,3 +330,21 @@ private fun birthdayKey(date: Birthday): String =
 
 private const val YEAR_DIGITS = 4
 private const val DATE_PART_DIGITS = 2
+
+/** Действие «в календарь»: ближайшее наступление даты уходит в календарь. */
+@Composable
+private fun calendarAction(
+    context: Context,
+    title: String,
+    day: Int,
+    month: Int,
+): RowAction =
+    RowAction(
+        Icons.Filled.Event,
+        stringResource(R.string.action_add_to_calendar),
+    ) {
+        val date = nextOccurrence(day, month)
+        if (date != null) {
+            openCalendarEvent(context = context, title = title, date = date)
+        }
+    }

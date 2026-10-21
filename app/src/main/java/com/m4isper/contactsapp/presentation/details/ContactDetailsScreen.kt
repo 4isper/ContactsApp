@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp.presentation.details
 
+import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -26,10 +27,14 @@ import com.m4isper.contactsapp.presentation.common.account.contactAccountTitle
 import com.m4isper.contactsapp.presentation.common.call.ConfirmCallDialog
 import com.m4isper.contactsapp.presentation.common.call.rememberCallHandler
 import com.m4isper.contactsapp.presentation.common.format.phoneText
+import com.m4isper.contactsapp.presentation.common.share.contactAsText
 import com.m4isper.contactsapp.presentation.common.share.copyToClipboard
 import com.m4isper.contactsapp.presentation.common.share.openSms
 import com.m4isper.contactsapp.presentation.common.share.shareContact
+import com.m4isper.contactsapp.presentation.common.share.shareContactAsQr
+import com.m4isper.contactsapp.presentation.common.share.shareContactAsText
 import com.m4isper.contactsapp.presentation.editor.AccountPickerDialog
+import com.m4isper.contactsapp.presentation.widget.ContactsWidgetProvider
 import com.m4isper.contactsapp.ui.components.ConfirmDialog
 import com.m4isper.contactsapp.ui.components.EmptyState
 import com.m4isper.contactsapp.ui.components.ErrorState
@@ -96,7 +101,26 @@ fun ContactDetailsScreen(
                         }
                     }
                 },
-                onToggleFavorite = viewModel::toggleFavorite,
+                onShareAsText = {
+                    scope.launch {
+                        val details = (uiState.content as? Loadable.Content)?.data
+                        shareOrFail(context, details != null) {
+                            shareContactAsText(context, contactAsText(requireNotNull(details)))
+                        }
+                    }
+                },
+                onShareAsQr = {
+                    scope.launch {
+                        val vCard = viewModel.vCardText()
+                        shareOrFail(context, vCard != null) {
+                            shareContactAsQr(context, requireNotNull(vCard))
+                        }
+                    }
+                },
+                onToggleFavorite = {
+                    viewModel.toggleFavorite()
+                    ContactsWidgetProvider.refresh(context)
+                },
                 onCopyToAccount = {
                     pendingAction = AccountAction.COPY
                     showAccountPicker = true
@@ -227,5 +251,18 @@ private fun AccountChangeDialogs(
             onConfirm = { onMoveConfirmed(account) },
             onDismiss = onMoveDismissed,
         )
+    }
+}
+
+/** Показывает ошибку, если делиться нечем, иначе выполняет действие. */
+private suspend fun shareOrFail(
+    context: Context,
+    hasContent: Boolean,
+    action: suspend () -> Unit,
+) {
+    if (hasContent) {
+        action()
+    } else {
+        Toast.makeText(context, R.string.share_failed, Toast.LENGTH_SHORT).show()
     }
 }

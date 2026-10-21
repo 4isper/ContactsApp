@@ -259,6 +259,11 @@
     <string name="settings_reminder_lead_value">за %1$d дн. до</string>
     <string name="shortcut_new_contact">Новый контакт</string>
     <string name="shortcut_favorites">Избранное</string>
+    <string name="action_add_to_calendar">В календарь</string>
+    <string name="calendar_birthday_title">%1$s — день рождения</string>
+    <string name="calendar_event_title">%1$s — событие</string>
+    <string name="share_contact_text">Поделиться текстом</string>
+    <string name="share_contact_qr">Поделиться QR-кодом</string>
     <string name="settings_title">Настройки</string>
     <string name="settings_theme">Тема</string>
     <string name="settings_theme_system">Системная</string>

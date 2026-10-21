@@ -36,6 +36,8 @@ internal fun DetailsTopBar(
     onBack: () -> Unit,
     onEdit: () -> Unit,
     onShare: () -> Unit,
+    onShareAsText: () -> Unit,
+    onShareAsQr: () -> Unit,
     onToggleFavorite: () -> Unit,
     onCopyToAccount: () -> Unit,
     onMoveToAccount: () -> Unit,
@@ -116,6 +118,22 @@ internal fun DetailsTopBar(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false },
                 ) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.share_contact_text)) },
+                        onClick = {
+                            menuExpanded = false
+                            onShareAsText()
+                        },
+                        modifier = Modifier.testTag("share_as_text_menu_item"),
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.share_contact_qr)) },
+                        onClick = {
+                            menuExpanded = false
+                            onShareAsQr()
+                        },
+                        modifier = Modifier.testTag("share_as_qr_menu_item"),
+                    )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.details_copy_to_account)) },
                         onClick = {
