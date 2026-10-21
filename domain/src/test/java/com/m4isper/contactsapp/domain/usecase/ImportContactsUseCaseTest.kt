@@ -88,6 +88,16 @@ private class ImportFakeGroupsRepository(
 
     override suspend fun deleteGroup(groupId: Long) = Unit
 
+    override suspend fun removeContactsFromGroup(
+        groupId: Long,
+        contactIds: List<Long>,
+    ) = Unit
+
+    override suspend fun mergeGroups(
+        sourceGroupId: Long,
+        targetGroupId: Long,
+    ) = Unit
+
     override suspend fun addContactsToGroup(
         groupId: Long,
         contactIds: List<Long>,

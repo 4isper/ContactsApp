@@ -156,6 +156,61 @@ class GroupsDataSourceImpl(
             }
         }
 
+    override suspend fun removeContactsFromGroup(
+        groupId: Long,
+        contactIds: List<Long>,
+    ): Unit =
+        withContext(Dispatchers.IO) {
+            val ids = contactIds.distinct()
+            if (ids.isEmpty()) return@withContext
+            val targets = targetRawContacts(ids)
+            if (targets.isEmpty()) return@withContext
+            val rawIds = targets.values.toList()
+            rawIds.chunked(IDS_PER_QUERY).forEach { chunk ->
+                val placeholders = chunk.joinToString(",") { "?" }
+                val selection =
+                    "${Data.MIMETYPE}=? AND ${Data.RAW_CONTACT_ID} IN ($placeholders) AND " +
+                        "${GroupMembership.GROUP_ROW_ID}=?"
+                val args =
+                    arrayOf(
+                        GroupMembership.CONTENT_ITEM_TYPE,
+                        *chunk.map(Long::toString).toTypedArray(),
+                        groupId.toString(),
+                    )
+                context.contentResolver.delete(Data.CONTENT_URI, selection, args)
+            }
+        }
+
+    override suspend fun mergeGroups(
+        sourceGroupId: Long,
+        targetGroupId: Long,
+    ): Unit =
+        withContext(Dispatchers.IO) {
+            if (sourceGroupId == targetGroupId) return@withContext
+            val members = contactIdsOfGroup(sourceGroupId)
+            addContactsToGroup(targetGroupId, members)
+            deleteGroup(sourceGroupId)
+        }
+
+    /** id контактов, состоящих в группе. */
+    private fun contactIdsOfGroup(groupId: Long): List<Long> {
+        val ids = mutableListOf<Long>()
+        context.contentResolver
+            .query(
+                Data.CONTENT_URI,
+                arrayOf(Data.CONTACT_ID),
+                "${Data.MIMETYPE}=? AND ${GroupMembership.GROUP_ROW_ID}=?",
+                arrayOf(GroupMembership.CONTENT_ITEM_TYPE, groupId.toString()),
+                null,
+            )?.use { cursor ->
+                val idIndex = cursor.getColumnIndexOrThrow(Data.CONTACT_ID)
+                while (cursor.moveToNext()) {
+                    ids += cursor.getLong(idIndex)
+                }
+            }
+        return ids.distinct()
+    }
+
     private fun queryMembership(
         selection: String,
         args: Array<String>,

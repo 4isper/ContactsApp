@@ -106,6 +106,7 @@
     <string name="action_send_email">Email</string>
     <string name="action_open_map">Map</string>
     <string name="action_open_website">Open</string>
+    <string name="action_open_messenger">Open in messenger</string>
     <string name="action_copy">Copy</string>
     <string name="fast_scroller_desc">Quick letter navigation</string>
     <string name="permission_write_rationale">The app needs permission to edit your contacts</string>
@@ -145,6 +146,13 @@
     <string name="editor_discard_message">Unsaved changes will be lost</string>
     <string name="action_discard">Discard</string>
     <string name="action_edit">Edit</string>
+    <string name="form_error_phone">Check the phone number</string>
+    <string name="form_error_email">Check the email address</string>
+    <string name="form_error_url">Check the website address</string>
+    <string name="form_error_date">Check the date</string>
+    <string name="editor_duplicate_title">Such a contact already exists</string>
+    <string name="editor_duplicate_message">A contact with the same phone or email is already in your contacts:</string>
+    <string name="editor_duplicate_save_anyway">Save anyway</string>
     <string name="form_error_empty">Fill in at least one field</string>
     <string name="contact_select_prompt">Select a contact from the list</string>
     <string name="filter_favorites">Favorites</string>
@@ -243,6 +251,21 @@
     <string name="groups_empty">No groups yet</string>
     <string name="group_name_label">Group name</string>
     <string name="group_label">Group</string>
+    <string name="group_add_members">Add contacts</string>
+    <string name="group_add_members_action">Add</string>
+    <string name="group_remove_member">Remove from group</string>
+    <string name="group_members_empty">No contacts in the group</string>
+    <string name="group_not_found">Group not found</string>
+    <string name="group_merge">Merge group</string>
+    <string name="group_merge_message">Move the contacts to another group:</string>
+    <string name="group_delete_with_members">The group and its %1$d contacts will be deleted. You can undo it right after.</string>
+    <string name="group_deleted">Group deleted</string>
+    <string name="group_undo_delete">Undo</string>
+    <string name="group_restored">Group restored</string>
+    <string name="group_merged">Group merged</string>
+    <string name="group_renamed">Group renamed</string>
+    <string name="group_member_removed">Contact removed from the group</string>
+    <string name="group_members_added">Contacts added to the group</string>
     <string name="group_rename">Rename group</string>
     <string name="action_delete_group">Delete group</string>
     <string name="group_delete_title">Delete group?</string>
@@ -253,6 +276,9 @@
     <string name="action_done">Done</string>
     <string name="groups_action_failed">Couldn\'t update groups</string>
 
+    <string name="editor_take_photo">Camera</string>
+    <string name="editor_photo_crop">Crop</string>
+    <string name="editor_photo_crop_failed">Couldn\'t open the photo</string>
     <string name="editor_add_photo">Add photo</string>
     <string name="editor_change_photo">Change photo</string>
     <string name="editor_remove_photo">Remove photo</string>

@@ -189,6 +189,8 @@ internal class FakeGroupsRepository(
     var failure: Throwable? = null,
 ) : GroupsRepository {
     val addedToGroup = mutableListOf<Pair<Long, List<Long>>>()
+    val removed = mutableListOf<Pair<Long, List<Long>>>()
+    val merged = mutableListOf<Pair<Long, Long>>()
     val createdGroupAccounts = mutableListOf<ContactAccount>()
 
     override suspend fun getGroups(): List<ContactGroup> {
@@ -236,6 +238,21 @@ internal class FakeGroupsRepository(
     override suspend fun deleteGroup(groupId: Long) {
         failure?.let { throw it }
         groups = groups.filterNot { it.id == groupId }
+    }
+
+    override suspend fun removeContactsFromGroup(
+        groupId: Long,
+        contactIds: List<Long>,
+    ) {
+        removed += groupId to contactIds
+        membership = membership.mapValues { (_, ids) -> ids - groupId }
+    }
+
+    override suspend fun mergeGroups(
+        sourceGroupId: Long,
+        targetGroupId: Long,
+    ) {
+        merged += sourceGroupId to targetGroupId
     }
 
     override suspend fun addContactsToGroup(

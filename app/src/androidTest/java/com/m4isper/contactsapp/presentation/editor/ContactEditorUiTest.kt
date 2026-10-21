@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
@@ -31,12 +32,14 @@ import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactFormUseCase
+import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetDefaultContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.SetLastContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.UpdateContactUseCase
 import com.m4isper.contactsapp.testDetails
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -65,6 +68,7 @@ class ContactEditorUiTest {
         GetContactAccountsUseCase(repository),
         GetContactAccountUseCase(repository),
         GetDefaultContactAccountUseCase(settings),
+        GetContactsUseCase(repository),
         SetLastContactAccountUseCase(settings),
     )
 
@@ -331,6 +335,31 @@ class ContactEditorUiTest {
         assertEquals("Platform", form.organization.department)
         assertEquals("Leads engineering", form.organization.jobDescription)
         assertEquals("London", form.organization.officeLocation)
+    }
+
+    @Test
+    fun invalidEmail_showsErrorAndBlocksSaving() {
+        val repository = FakeAndroidRepository()
+        val viewModel = viewModel(repository)
+        compose.setContent {
+            ContactEditorScreen(
+                contactId = null,
+                onDone = {},
+                onBack = {},
+                viewModel = viewModel,
+            )
+        }
+
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_add_email_button"))
+        compose.onNodeWithTag("editor_add_email_button").performClick()
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_email_field"))
+        typeInForm("editor_email_field", "not-an-email")
+        compose.onNodeWithTag("editor_save_button").performClick()
+        compose.waitForIdle()
+
+        assertTrue(repository.created.isEmpty())
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasText("Check the email address"))
+        compose.onNodeWithText("Check the email address").assertIsDisplayed()
     }
 
     @Test

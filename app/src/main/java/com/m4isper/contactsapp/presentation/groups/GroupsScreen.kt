@@ -1,6 +1,7 @@
 package com.m4isper.contactsapp.presentation.groups
 
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -56,6 +57,7 @@ import dev.zacsweers.metrox.viewmodel.metroViewModel
 @Composable
 fun GroupsScreen(
     onBack: () -> Unit,
+    onGroupClick: (Long) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: GroupsViewModel = metroViewModel(),
 ) {
@@ -127,6 +129,7 @@ fun GroupsScreen(
             is Loadable.Content ->
                 GroupList(
                     items = content.data,
+                    onOpen = onGroupClick,
                     onRename = { renameTarget = it },
                     onDelete = { deleteTarget = it },
                     modifier = screenModifier,
@@ -180,6 +183,7 @@ fun GroupsScreen(
 @Composable
 private fun GroupList(
     items: List<GroupItem>,
+    onOpen: (Long) -> Unit,
     onRename: (ContactGroup) -> Unit,
     onDelete: (ContactGroup) -> Unit,
     modifier: Modifier = Modifier,
@@ -195,6 +199,7 @@ private fun GroupList(
         ) { item ->
             GroupRow(
                 item = item,
+                onOpen = { onOpen(item.group.id) },
                 onRename = { onRename(item.group) },
                 onDelete = { onDelete(item.group) },
                 modifier = Modifier.padding(horizontal = spacing.m, vertical = spacing.xs),
@@ -206,6 +211,7 @@ private fun GroupList(
 @Composable
 private fun GroupRow(
     item: GroupItem,
+    onOpen: () -> Unit,
     onRename: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
@@ -219,7 +225,8 @@ private fun GroupRow(
         modifier =
             modifier
                 .fillMaxWidth()
-                .testTag("group_row_${item.group.id}"),
+                .testTag("group_row_${item.group.id}")
+                .clickable(onClick = onOpen),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,

@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.m4isper.contactsapp.domain.model.AddressKind
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactAccount
+import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.EditableAddress
 import com.m4isper.contactsapp.domain.model.EditableEmail
@@ -16,17 +18,21 @@ import com.m4isper.contactsapp.domain.model.EditableSipAddress
 import com.m4isper.contactsapp.domain.model.EditableWebsite
 import com.m4isper.contactsapp.domain.model.EmailKind
 import com.m4isper.contactsapp.domain.model.EventKind
+import com.m4isper.contactsapp.domain.model.FormField
 import com.m4isper.contactsapp.domain.model.ImProtocol
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.RelationKind
 import com.m4isper.contactsapp.domain.model.SipKind
 import com.m4isper.contactsapp.domain.model.WebsiteKind
+import com.m4isper.contactsapp.domain.model.findSimilarContacts
+import com.m4isper.contactsapp.domain.model.validateContactFields
 import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactFormUseCase
+import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetDefaultContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.SaveResult
@@ -61,6 +67,7 @@ class ContactEditorViewModel(
     private val getContactAccountsUseCase: GetContactAccountsUseCase,
     private val getContactAccountUseCase: GetContactAccountUseCase,
     private val getDefaultContactAccountUseCase: GetDefaultContactAccountUseCase,
+    private val getContactsUseCase: GetContactsUseCase,
     private val setLastContactAccountUseCase: SetLastContactAccountUseCase,
 ) : ViewModel() {
     private val state = MutableStateFlow(EditorUiState())
@@ -109,6 +116,18 @@ class ContactEditorViewModel(
             }
         }
     }
+
+    /** Похожие контакты для предупреждения о дубле: сбой не мешает сохранению. */
+    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой поиска дублей не мешает сохранению.
+    private suspend fun loadContacts(): List<ContactDetails> =
+        try {
+            getContactsUseCase()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logw(EDITOR_TAG, "load contacts for duplicates failed", e)
+            emptyList()
+        }
 
     /** Новый контакт: сразу показываем локальный аккаунт, затем подгружаем доступные. */
     private fun startNewContact() {
@@ -539,27 +558,67 @@ class ContactEditorViewModel(
     fun onSave() {
         val id = state.value.contactId
         val form = state.value.toForm()
+        val fieldErrors = validateContactFields(form)
+        // Неразобранная дата (из провайдера) — подсказка, а не повод отказать в сохранении.
+        val blocking = fieldErrors.filterKeys { it != FormField.EVENT }
+        if (blocking.isNotEmpty()) {
+            // Показываем проблему у конкретного поля и не идём в провайдер.
+            state.update { it.copy(fieldErrors = fieldErrors) }
+            return
+        }
+        if (fieldErrors.isNotEmpty()) {
+            state.update { it.copy(fieldErrors = fieldErrors) }
+        }
         viewModelScope.launch {
-            state.update { it.copy(isBusy = true, errorMessage = null) }
-            try {
-                val result =
-                    if (id == null) {
-                        createContactUseCase(form, state.value.selectedAccount ?: ContactAccount.Local)
-                    } else {
-                        updateContactUseCase(id, form)
-                    }
-                when (result) {
-                    is SaveResult.Saved -> state.update { it.copy(closeScreen = true) }
-                    is SaveResult.Invalid -> state.update { it.copy(formError = result.error) }
+            if (id == null) {
+                // Новый контакт: предупреждаем, если такой уже есть.
+                val similar = findSimilarContacts(form, loadContacts())
+                if (similar.isNotEmpty()) {
+                    state.update { it.copy(similarContacts = similar) }
+                    return@launch
                 }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logw(EDITOR_TAG, "save contact failed", e)
-                state.update { it.copy(errorMessage = e.message) }
-            } finally {
-                state.update { it.copy(isBusy = false) }
             }
+            save(id, form)
+        }
+    }
+
+    /** Пользователь подтвердил сохранение несмотря на похожие контакты. */
+    fun onSaveConfirmed() {
+        val id = state.value.contactId
+        val form = state.value.toForm()
+        state.update { it.copy(similarContacts = emptyList()) }
+        viewModelScope.launch { save(id, form) }
+    }
+
+    /** Пользователь отказался от сохранения. */
+    fun onSaveDismissed() {
+        state.update { it.copy(similarContacts = emptyList()) }
+    }
+
+    @Suppress("TooGenericExceptionCaught") // Осознанно: ошибка сохранения показывается в поле формы.
+    private suspend fun save(
+        id: Long?,
+        form: ContactForm,
+    ) {
+        state.update { it.copy(isBusy = true, errorMessage = null, fieldErrors = emptyMap()) }
+        try {
+            val result =
+                if (id == null) {
+                    createContactUseCase(form, state.value.selectedAccount ?: ContactAccount.Local)
+                } else {
+                    updateContactUseCase(id, form)
+                }
+            when (result) {
+                is SaveResult.Saved -> state.update { it.copy(closeScreen = true) }
+                is SaveResult.Invalid -> state.update { it.copy(formError = result.error) }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logw(EDITOR_TAG, "save contact failed", e)
+            state.update { it.copy(errorMessage = e.message) }
+        } finally {
+            state.update { it.copy(isBusy = false) }
         }
     }
 

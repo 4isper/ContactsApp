@@ -32,6 +32,7 @@ import com.m4isper.contactsapp.ui.theme.LocalSpacing
 @Composable
 internal fun PhoneEditorRow(
     row: EditorRow<EditablePhone>,
+    error: String? = null,
     canRemove: Boolean,
     canMoveUp: Boolean,
     canMoveDown: Boolean,
@@ -67,6 +68,8 @@ internal fun PhoneEditorRow(
                             keyboardType = KeyboardType.Phone,
                             imeAction = ImeAction.Next,
                         ),
+                    isError = error != null,
+                    supportingText = error?.let { { Text(it) } },
                     modifier =
                         Modifier
                             .weight(1f)

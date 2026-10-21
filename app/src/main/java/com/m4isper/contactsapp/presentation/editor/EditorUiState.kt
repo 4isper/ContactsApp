@@ -1,6 +1,7 @@
 package com.m4isper.contactsapp.presentation.editor
 
 import com.m4isper.contactsapp.domain.model.ContactAccount
+import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.EditableAddress
@@ -17,6 +18,7 @@ import com.m4isper.contactsapp.domain.model.EditableRelation
 import com.m4isper.contactsapp.domain.model.EditableSipAddress
 import com.m4isper.contactsapp.domain.model.EditableWebsite
 import com.m4isper.contactsapp.domain.model.FormError
+import com.m4isper.contactsapp.domain.model.FormField
 import com.m4isper.contactsapp.domain.model.NameMode
 import com.m4isper.contactsapp.domain.model.composeDisplayName
 import com.m4isper.contactsapp.domain.model.normalized
@@ -63,6 +65,10 @@ internal data class EditorUiState(
     val photoChanged: Boolean = false,
     val isBusy: Boolean = false,
     val formError: FormError? = null,
+    /** Ошибки конкретных полей: показываем проблему рядом с полем. */
+    val fieldErrors: Map<FormField, FormError> = emptyMap(),
+    /** Похожие контакты: предупреждаем о вероятном дубле перед сохранением. */
+    val similarContacts: List<ContactDetails> = emptyList(),
     val errorMessage: String? = null,
     /** Удаление не удалось: экран не закрывается, форма остаётся доступной. */
     val deleteFailed: Boolean = false,

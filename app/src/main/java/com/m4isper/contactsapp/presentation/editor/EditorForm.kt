@@ -1,9 +1,11 @@
 package com.m4isper.contactsapp.presentation.editor
 
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,23 +16,27 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.FormError
 import com.m4isper.contactsapp.presentation.common.groups.GroupPickerDialog
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
@@ -47,10 +53,27 @@ internal fun EditorForm(
     var showGroupPicker by remember { mutableStateOf(false) }
     var showAccountPicker by remember { mutableStateOf(false) }
     var eventPickerRowId by remember { mutableStateOf<Long?>(null) }
-    val photoPicker =
-        rememberLauncherForActivityResult(contract = ActivityResultContracts.PickVisualMedia()) { uri ->
-            uri?.let { viewModel.onPhotoPicked(it.toString()) }
-        }
+    val context = LocalContext.current
+    var cropSource by remember { mutableStateOf<Uri?>(null) }
+
+    cropSource?.let { source ->
+        CropPhotoDialog(
+            source = source,
+            onConfirm = { cropped ->
+                cropSource = null
+                viewModel.onPhotoPicked(cropped.toString())
+            },
+            onDismiss = { cropSource = null },
+        )
+    }
+
+    if (uiState.similarContacts.isNotEmpty()) {
+        SimilarContactsDialog(
+            contacts = uiState.similarContacts,
+            onConfirm = viewModel::onSaveConfirmed,
+            onDismiss = viewModel::onSaveDismissed,
+        )
+    }
 
     LazyColumn(
         modifier =
@@ -60,14 +83,11 @@ internal fun EditorForm(
                 .testTag("editor_form"),
     ) {
         item(key = "photo") {
-            PhotoEditor(
+            EditorPhotoSection(
                 name = uiState.effectiveName,
                 photoUri = uiState.photoUri,
-                onPick = {
-                    photoPicker.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
-                    )
-                },
+                context = context,
+                onCrop = { cropSource = it },
                 onRemove = viewModel::onPhotoRemoved,
             )
         }
@@ -245,6 +265,112 @@ private fun LazyListScope.accountItems(
         }
     }
 }
+
+/**
+ * Фото контакта: галерея, камера и обрезка. Снимок камеры и выбранный файл
+ * попадают в один редактор обрезки.
+ */
+@Composable
+private fun EditorPhotoSection(
+    name: String,
+    photoUri: String?,
+    context: android.content.Context,
+    onCrop: (Uri) -> Unit,
+    onRemove: () -> Unit,
+) {
+    val photoPicker =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.PickVisualMedia()) { uri ->
+            uri?.let { onCrop(it) }
+        }
+    var cameraUri by remember { mutableStateOf<Uri?>(null) }
+    val cameraLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.TakePicture()) { saved ->
+            if (saved) cameraUri?.let { onCrop(it) }
+        }
+    PhotoEditor(
+        name = name,
+        photoUri = photoUri,
+        onPick = {
+            photoPicker.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+            )
+        },
+        onTakePhoto = {
+            val uri = cameraOutputUri(context)
+            cameraUri = uri
+            cameraLauncher.launch(uri)
+        },
+        onRemove = onRemove,
+    )
+}
+
+/**
+ * Предупреждение о дубле: похожие контакты и выбор — сохранить всё равно или отменить.
+ */
+@Composable
+private fun SimilarContactsDialog(
+    contacts: List<ContactDetails>,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val spacing = LocalSpacing.current
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.editor_duplicate_title)) },
+        text = {
+            Column {
+                Text(
+                    text = stringResource(R.string.editor_duplicate_message),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                contacts.forEach { contact ->
+                    Text(
+                        text = contact.name,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(top = spacing.s),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                modifier = Modifier.testTag("editor_duplicate_confirm"),
+            ) {
+                Text(stringResource(R.string.editor_duplicate_save_anyway))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.action_cancel))
+            }
+        },
+        modifier = Modifier.testTag("editor_duplicate_dialog"),
+    )
+}
+
+/** Файл для снимка камеры: провайдеру отдаём URI через FileProvider. */
+private fun cameraOutputUri(context: android.content.Context): Uri {
+    val file = java.io.File(context.cacheDir, "camera_${System.currentTimeMillis()}.jpg")
+    return androidx.core.content.FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.fileprovider",
+        file,
+    )
+}
+
+/** Текст ошибки поля: показываем проблему рядом с полем. */
+@Composable
+internal fun FormError.fieldMessage(): String =
+    stringResource(
+        when (this) {
+            FormError.EMPTY_FORM -> R.string.form_error_empty
+            FormError.INVALID_PHONE -> R.string.form_error_phone
+            FormError.INVALID_EMAIL -> R.string.form_error_email
+            FormError.INVALID_URL -> R.string.form_error_url
+            FormError.INVALID_DATE -> R.string.form_error_date
+        },
+    )
 
 /** Текст ошибки формы: удаление, валидация или сообщение исключения. */
 @Composable

@@ -32,6 +32,7 @@ import com.m4isper.contactsapp.ui.theme.LocalSpacing
 @Composable
 internal fun WebsiteEditorRow(
     row: EditorRow<EditableWebsite>,
+    error: String? = null,
     onWebsiteChange: (Long, String) -> Unit,
     onKindChange: (Long, WebsiteKind) -> Unit,
     onCustomLabelChange: (Long, String) -> Unit,
@@ -61,6 +62,8 @@ internal fun WebsiteEditorRow(
                             keyboardType = KeyboardType.Uri,
                             imeAction = ImeAction.Next,
                         ),
+                    isError = error != null,
+                    supportingText = error?.let { { Text(it) } },
                     modifier =
                         Modifier
                             .weight(1f)

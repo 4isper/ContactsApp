@@ -106,6 +106,7 @@
     <string name="action_send_email">Написать</string>
     <string name="action_open_map">Карта</string>
     <string name="action_open_website">Открыть</string>
+    <string name="action_open_messenger">Открыть в мессенджере</string>
     <string name="action_copy">Копировать</string>
     <string name="fast_scroller_desc">Быстрая навигация по буквам</string>
     <string name="permission_write_rationale">Приложению нужно разрешение на изменение контактов</string>
@@ -145,6 +146,13 @@
     <string name="editor_discard_message">Несохранённые изменения будут потеряны</string>
     <string name="action_discard">Не сохранять</string>
     <string name="action_edit">Редактировать</string>
+    <string name="form_error_phone">Проверьте номер телефона</string>
+    <string name="form_error_email">Проверьте адрес почты</string>
+    <string name="form_error_url">Проверьте адрес сайта</string>
+    <string name="form_error_date">Проверьте дату</string>
+    <string name="editor_duplicate_title">Такой контакт уже есть</string>
+    <string name="editor_duplicate_message">Контакт с таким же телефоном или почтой уже есть:</string>
+    <string name="editor_duplicate_save_anyway">Всё равно сохранить</string>
     <string name="form_error_empty">Заполните хотя бы одно поле</string>
     <string name="contact_select_prompt">Выберите контакт из списка</string>
     <string name="filter_favorites">Избранное</string>
@@ -243,6 +251,21 @@
     <string name="groups_empty">Групп пока нет</string>
     <string name="group_name_label">Название группы</string>
     <string name="group_label">Группа</string>
+    <string name="group_add_members">Добавить контакты</string>
+    <string name="group_add_members_action">Добавить</string>
+    <string name="group_remove_member">Убрать из группы</string>
+    <string name="group_members_empty">В группе нет контактов</string>
+    <string name="group_not_found">Группа не найдена</string>
+    <string name="group_merge">Объединить группу</string>
+    <string name="group_merge_message">Перенести контакты в другую группу:</string>
+    <string name="group_delete_with_members">Группа и её контакты (%1$d) будут удалены. Сразу после этого удаление можно отменить.</string>
+    <string name="group_deleted">Группа удалена</string>
+    <string name="group_undo_delete">Отменить</string>
+    <string name="group_restored">Группа восстановлена</string>
+    <string name="group_merged">Группы объединены</string>
+    <string name="group_renamed">Группа переименована</string>
+    <string name="group_member_removed">Контакт убран из группы</string>
+    <string name="group_members_added">Контакты добавлены в группу</string>
     <string name="group_rename">Переименовать группу</string>
     <string name="action_delete_group">Удалить группу</string>
     <string name="group_delete_title">Удалить группу?</string>
@@ -253,6 +276,9 @@
     <string name="action_done">Готово</string>
     <string name="groups_action_failed">Не удалось обновить группы</string>
 
+    <string name="editor_take_photo">Камера</string>
+    <string name="editor_photo_crop">Обрезать</string>
+    <string name="editor_photo_crop_failed">Не удалось открыть фото</string>
     <string name="editor_add_photo">Добавить фото</string>
     <string name="editor_change_photo">Изменить фото</string>
     <string name="editor_remove_photo">Удалить фото</string>

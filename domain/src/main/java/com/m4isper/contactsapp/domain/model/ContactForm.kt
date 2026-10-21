@@ -262,6 +262,18 @@ private fun <T> List<T>.singlePrimary(
 
 enum class FormError {
     EMPTY_FORM,
+
+    /** Телефон не похож на номер. */
+    INVALID_PHONE,
+
+    /** Адрес почты не похож на адрес. */
+    INVALID_EMAIL,
+
+    /** Адрес сайта не похож на ссылку. */
+    INVALID_URL,
+
+    /** Дата не разобралась. */
+    INVALID_DATE,
 }
 
 fun validateContactForm(form: ContactForm): FormError? = FormError.EMPTY_FORM.takeIf { form.isEffectivelyEmpty() }

@@ -23,6 +23,7 @@ internal fun PhotoEditor(
     name: String,
     photoUri: String?,
     onPick: () -> Unit,
+    onTakePhoto: () -> Unit,
     onRemove: () -> Unit,
 ) {
     val spacing = LocalSpacing.current
@@ -42,6 +43,12 @@ internal fun PhotoEditor(
         )
         Spacer(modifier = Modifier.height(spacing.xs))
         Row {
+            TextButton(
+                onClick = onTakePhoto,
+                modifier = Modifier.testTag("editor_photo_camera"),
+            ) {
+                Text(stringResource(R.string.editor_take_photo))
+            }
             TextButton(
                 onClick = onPick,
                 modifier = Modifier.testTag("editor_photo_pick"),

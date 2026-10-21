@@ -34,6 +34,7 @@ import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactFormUseCase
+import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetDefaultContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.SetLastContactAccountUseCase
@@ -66,8 +67,9 @@ private class FakeEditorRepository :
     val deleted = mutableListOf<Long>()
     var deleteFails = false
     var formToLoad: ContactForm? = null
+    var existingContacts: List<com.m4isper.contactsapp.domain.model.ContactDetails> = emptyList()
 
-    override suspend fun getContacts() = emptyList<com.m4isper.contactsapp.domain.model.ContactDetails>()
+    override suspend fun getContacts() = existingContacts
 
     override suspend fun getContactDetails(contactId: Long) = null
 
@@ -150,6 +152,7 @@ class ContactEditorViewModelTest {
                 GetContactAccountsUseCase(repository),
                 GetContactAccountUseCase(repository),
                 GetDefaultContactAccountUseCase(settings),
+                GetContactsUseCase(repository),
                 SetLastContactAccountUseCase(settings),
             )
         backgroundScope.launch { viewModel.uiState.collect { } }
@@ -511,6 +514,74 @@ class ContactEditorViewModelTest {
             assertEquals("Platform", form.organization.department)
             assertEquals("Leads engineering", form.organization.jobDescription)
             assertEquals("London", form.organization.officeLocation)
+        }
+
+    @Test
+    fun `new contact warns about a similar contact before saving`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeEditorRepository().apply {
+                    existingContacts =
+                        listOf(
+                            com.m4isper.contactsapp.domain.model.ContactDetails(
+                                contactId = 7,
+                                name = "Anna",
+                                phones =
+                                    listOf(
+                                        com.m4isper.contactsapp.domain.model.PhoneNumber(
+                                            "+79161234567",
+                                            com.m4isper.contactsapp.domain.model.PhoneKind.MOBILE,
+                                        ),
+                                    ),
+                            ),
+                        )
+                }
+            val viewModel = viewModel(repository)
+            viewModel.load(null)
+            advanceUntilIdle()
+            val phoneRowId =
+                viewModel.uiState.value.phones
+                    .single()
+                    .rowId
+            viewModel.onPhoneChange(phoneRowId, "+79161234567")
+
+            viewModel.onSave()
+            advanceUntilIdle()
+
+            assertEquals(1, viewModel.uiState.value.similarContacts.size)
+            assertTrue(repository.created.isEmpty())
+
+            viewModel.onSaveConfirmed()
+            advanceUntilIdle()
+
+            assertEquals(1, repository.created.size)
+        }
+
+    @Test
+    fun `invalid email blocks saving and shows the field error`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeEditorRepository()
+            val viewModel = viewModel(repository)
+            viewModel.load(null)
+            advanceUntilIdle()
+            viewModel.onAddEmail()
+            advanceUntilIdle()
+            val emailRowId =
+                viewModel.uiState.value.emails
+                    .single()
+                    .rowId
+            viewModel.onEmailChange(emailRowId, "not-an-email")
+
+            viewModel.onSave()
+            advanceUntilIdle()
+
+            assertEquals(
+                com.m4isper.contactsapp.domain.model.FormError.INVALID_EMAIL,
+                viewModel.uiState.value.fieldErrors[com.m4isper.contactsapp.domain.model.FormField.EMAIL],
+            )
+            assertTrue(repository.created.isEmpty())
         }
 
     @Test

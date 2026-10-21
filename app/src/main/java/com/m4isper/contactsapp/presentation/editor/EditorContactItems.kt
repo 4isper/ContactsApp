@@ -4,6 +4,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.domain.model.FormField
 
 /** Строки каналов связи: телефоны, почта, мессенджеры, SIP, адреса и сайты. */
 internal fun LazyListScope.editorContactItems(
@@ -36,6 +37,7 @@ private fun LazyListScope.phoneItems(
     ) { index, row ->
         PhoneEditorRow(
             row = row,
+            error = uiState.fieldErrors[FormField.PHONE]?.fieldMessage(),
             canRemove = uiState.phones.size > 1,
             canMoveUp = index > 0,
             canMoveDown = index < uiState.phones.lastIndex,
@@ -68,6 +70,7 @@ private fun LazyListScope.emailItems(
     ) { index, row ->
         EmailEditorRow(
             row = row,
+            error = uiState.fieldErrors[FormField.EMAIL]?.fieldMessage(),
             canMoveUp = index > 0,
             canMoveDown = index < uiState.emails.lastIndex,
             onEmailChange = viewModel::onEmailChange,
@@ -183,6 +186,7 @@ private fun LazyListScope.websiteItems(
     ) { row ->
         WebsiteEditorRow(
             row = row,
+            error = uiState.fieldErrors[FormField.WEBSITE]?.fieldMessage(),
             onWebsiteChange = viewModel::onWebsiteChange,
             onKindChange = viewModel::onWebsiteKindChange,
             onCustomLabelChange = viewModel::onWebsiteCustomLabelChange,

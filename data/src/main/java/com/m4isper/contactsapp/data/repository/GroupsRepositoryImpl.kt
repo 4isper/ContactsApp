@@ -43,4 +43,14 @@ class GroupsRepositoryImpl(
         groupId: Long,
         contactIds: List<Long>,
     ) = dataSource.addContactsToGroup(groupId, contactIds)
+
+    override suspend fun removeContactsFromGroup(
+        groupId: Long,
+        contactIds: List<Long>,
+    ) = dataSource.removeContactsFromGroup(groupId, contactIds)
+
+    override suspend fun mergeGroups(
+        sourceGroupId: Long,
+        targetGroupId: Long,
+    ) = dataSource.mergeGroups(sourceGroupId, targetGroupId)
 }

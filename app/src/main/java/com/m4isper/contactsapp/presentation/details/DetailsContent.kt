@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.LocationOn
@@ -28,6 +29,7 @@ import com.m4isper.contactsapp.presentation.common.format.relationLabel
 import com.m4isper.contactsapp.presentation.common.format.sipKindLabel
 import com.m4isper.contactsapp.presentation.common.format.websiteKindLabel
 import com.m4isper.contactsapp.presentation.common.share.openEmail
+import com.m4isper.contactsapp.presentation.common.share.openInstantMessage
 import com.m4isper.contactsapp.presentation.common.share.openMap
 import com.m4isper.contactsapp.presentation.common.share.openWebsite
 
@@ -138,6 +140,13 @@ internal fun DetailsContent(
                 secondary = instantMessageLabel(im),
                 actions =
                     listOf(
+                        RowAction(
+                            Icons.Filled.Chat,
+                            stringResource(R.string.action_open_messenger),
+                        ) {
+                            // Нет приложения для протокола — копируем адрес, как раньше.
+                            if (!openInstantMessage(context, im)) onCopyClick(im.address)
+                        },
                         RowAction(
                             Icons.Filled.ContentCopy,
                             stringResource(R.string.action_copy),

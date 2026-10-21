@@ -33,4 +33,16 @@ interface GroupsRepository {
         groupId: Long,
         contactIds: List<Long>,
     )
+
+    /** Убирает контакты из группы. */
+    suspend fun removeContactsFromGroup(
+        groupId: Long,
+        contactIds: List<Long>,
+    )
+
+    /** Переносит участников в другую группу и удаляет исходную. */
+    suspend fun mergeGroups(
+        sourceGroupId: Long,
+        targetGroupId: Long,
+    )
 }

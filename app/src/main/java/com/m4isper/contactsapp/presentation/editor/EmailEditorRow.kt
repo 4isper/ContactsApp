@@ -32,6 +32,7 @@ import com.m4isper.contactsapp.ui.theme.LocalSpacing
 @Composable
 internal fun EmailEditorRow(
     row: EditorRow<EditableEmail>,
+    error: String? = null,
     canMoveUp: Boolean,
     canMoveDown: Boolean,
     onEmailChange: (Long, String) -> Unit,
@@ -66,6 +67,8 @@ internal fun EmailEditorRow(
                             keyboardType = KeyboardType.Email,
                             imeAction = ImeAction.Next,
                         ),
+                    isError = error != null,
+                    supportingText = error?.let { { Text(it) } },
                     modifier =
                         Modifier
                             .weight(1f)

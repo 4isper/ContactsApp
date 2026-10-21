@@ -31,6 +31,7 @@ import com.m4isper.contactsapp.presentation.contacts.ContactsScreen
 import com.m4isper.contactsapp.presentation.details.ContactDetailsScreen
 import com.m4isper.contactsapp.presentation.duplicates.DuplicatesScreen
 import com.m4isper.contactsapp.presentation.editor.ContactEditorScreen
+import com.m4isper.contactsapp.presentation.groups.GroupDetailScreen
 import com.m4isper.contactsapp.presentation.groups.GroupsScreen
 import com.m4isper.contactsapp.presentation.import.ImportPreviewScreen
 import com.m4isper.contactsapp.presentation.import.ImportPreviewViewModel
@@ -58,6 +59,11 @@ data object SettingsKey : NavKey
 
 @Serializable
 data object ImportPreviewKey : NavKey
+
+@Serializable
+data class GroupDetailKey(
+    val groupId: Long,
+) : NavKey
 
 @Serializable
 data class ContactDetailsKey(
@@ -188,6 +194,14 @@ fun ContactsNavHost(
                     entry<GroupsKey> {
                         GroupsScreen(
                             onBack = dropUnlessResumed { backStack.removeLastOrNull() },
+                            onGroupClick = { groupId -> backStack.add(GroupDetailKey(groupId)) },
+                        )
+                    }
+                    entry<GroupDetailKey> { key ->
+                        GroupDetailScreen(
+                            groupId = key.groupId,
+                            onBack = dropUnlessResumed { backStack.removeLastOrNull() },
+                            onContactClick = { contactId -> navigateToDetails(backStack, contactId) },
                         )
                     }
                     entry<DuplicatesKey> {
