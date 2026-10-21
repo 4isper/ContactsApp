@@ -20,6 +20,8 @@ import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.ImportContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
+import com.m4isper.contactsapp.domain.usecase.RemoveFavoriteUseCase
+import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
 import com.m4isper.contactsapp.domain.vcard.VCardCodec
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.logw
@@ -53,6 +55,7 @@ data class ContactsUiState(
     val selectedAccount: ContactAccount? = null,
     val sortOrder: ContactSortOrder = ContactSortOrder.BY_NAME,
     val listDensity: ListDensity = ListDensity.COMFORTABLE,
+    val pinFavorites: Boolean = false,
     val event: ContactsEvent? = null,
 ) {
     val isSearching: Boolean
@@ -149,6 +152,28 @@ private data class ContactsMiddle(
     val selectedAccount: ContactAccount?,
 )
 
+private fun contactsContent(
+    load: ContactsLoad,
+    visible: List<ContactDetails>,
+): Loadable<List<ContactDetails>> =
+    when {
+        load.failure != null -> Loadable.Error(load.failure.message)
+        load.loading && visible.isEmpty() -> Loadable.Loading
+        visible.isEmpty() -> Loadable.Empty
+        else -> Loadable.Content(visible)
+    }
+
+private fun shouldPinFavorites(
+    load: ContactsLoad,
+    middle: ContactsMiddle,
+    settings: AppSettings,
+): Boolean =
+    settings.favoritesFirst &&
+        !middle.favoritesOnly &&
+        load.query.isBlank() &&
+        middle.selectedGroupId == null &&
+        middle.selectedAccount == null
+
 @Inject
 @ViewModelKey
 @ContributesIntoMap(AppScope::class)
@@ -168,6 +193,8 @@ class ContactsViewModel(
     private val getGroupMembershipUseCase: GetGroupMembershipUseCase,
     private val createGroupUseCase: CreateGroupUseCase,
     private val addContactsToGroupUseCase: AddContactsToGroupUseCase,
+    private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
+    private val removeFavoriteUseCase: RemoveFavoriteUseCase,
     private val vCardCodec: VCardCodec,
     private val contactsChangeSource: ContactsChangeSource,
 ) : ViewModel() {
@@ -268,13 +295,7 @@ class ContactsViewModel(
                 groups = middle.groups,
                 selectedAccount = middle.selectedAccount,
             ).filterNot { it.contactId in pending }
-        val content =
-            when {
-                load.failure != null -> Loadable.Error(load.failure.message)
-                load.loading && visible.isEmpty() -> Loadable.Loading
-                visible.isEmpty() -> Loadable.Empty
-                else -> Loadable.Content(visible)
-            }
+        val content = contactsContent(load, visible)
         return ContactsUiState(
             searchQuery = load.query,
             showFavoritesOnly = middle.favoritesOnly,
@@ -290,6 +311,7 @@ class ContactsViewModel(
             selectedAccount = middle.selectedAccount,
             sortOrder = settings.sortOrder,
             listDensity = settings.listDensity,
+            pinFavorites = shouldPinFavorites(load, middle, settings),
             event = middle.event,
         )
     }
@@ -367,6 +389,44 @@ class ContactsViewModel(
 
     fun onClearSelection() {
         selectionFlow.value = emptySet()
+    }
+
+    /** Быстрое избранное из строки списка. */
+    @Suppress("TooGenericExceptionCaught")
+    fun onToggleFavorite(contactId: Long) {
+        viewModelScope.launch {
+            try {
+                toggleFavoriteUseCase(contactId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logw(LIST_TAG, "toggle favorite failed", e)
+            }
+        }
+    }
+
+    /**
+     * Пакетное избранное: если выбраны только избранные — снимаем отметку,
+     * иначе добавляем все ещё не избранные контакты.
+     */
+    @Suppress("TooGenericExceptionCaught")
+    fun onToggleSelectedFavorite() {
+        val ids = selectionFlow.value
+        if (ids.isEmpty()) return
+        val favorites = favoritesFlow.value
+        val allFavorite = ids.all { it in favorites }
+        val toRemove = if (allFavorite) ids else emptySet()
+        val toAdd = if (allFavorite) emptySet() else ids - favorites
+        viewModelScope.launch {
+            try {
+                toRemove.forEach { removeFavoriteUseCase(it) }
+                toAdd.forEach { toggleFavoriteUseCase(it) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logw(LIST_TAG, "batch favorite update failed", e)
+            }
+        }
     }
 
     /** Повторный вызов «выбрать все» снимает выделение. */

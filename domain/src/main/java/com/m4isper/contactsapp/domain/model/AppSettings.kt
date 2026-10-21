@@ -27,6 +27,8 @@ data class AppSettings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val sortOrder: ContactSortOrder = ContactSortOrder.BY_NAME,
     val listDensity: ListDensity = ListDensity.COMFORTABLE,
+    /** Показывать избранные контакты отдельной закреплённой секцией сверху списка. */
+    val favoritesFirst: Boolean = true,
     /** Последний аккаунт, выбранный при создании контакта. */
     val lastContactAccount: ContactAccount = ContactAccount.Local,
 )

@@ -7,6 +7,7 @@ import com.m4isper.contactsapp.domain.model.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.ListDensity
 import com.m4isper.contactsapp.domain.model.ThemeMode
 import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
+import com.m4isper.contactsapp.domain.usecase.SetFavoritesFirstUseCase
 import com.m4isper.contactsapp.domain.usecase.SetListDensityUseCase
 import com.m4isper.contactsapp.domain.usecase.SetSortOrderUseCase
 import com.m4isper.contactsapp.domain.usecase.SetThemeModeUseCase
@@ -37,6 +38,7 @@ class SettingsViewModel(
     private val setThemeModeUseCase: SetThemeModeUseCase,
     private val setSortOrderUseCase: SetSortOrderUseCase,
     private val setListDensityUseCase: SetListDensityUseCase,
+    private val setFavoritesFirstUseCase: SetFavoritesFirstUseCase,
 ) : ViewModel() {
     val uiState: StateFlow<SettingsUiState> =
         observeSettingsUseCase()
@@ -52,6 +54,8 @@ class SettingsViewModel(
     fun onSortOrderSelected(order: ContactSortOrder) = update { setSortOrderUseCase(order) }
 
     fun onListDensitySelected(density: ListDensity) = update { setListDensityUseCase(density) }
+
+    fun onFavoritesFirstChanged(enabled: Boolean) = update { setFavoritesFirstUseCase(enabled) }
 
     // Catch-all осознанный: ошибка записи настроек не должна ронять экран.
     @Suppress("TooGenericExceptionCaught")

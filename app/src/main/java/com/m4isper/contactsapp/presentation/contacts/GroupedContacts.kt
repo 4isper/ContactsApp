@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -21,6 +22,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactDetails
@@ -39,10 +41,18 @@ internal fun GroupedContacts(
     onContactLongClick: (Long) -> Unit,
     sortOrder: ContactSortOrder = ContactSortOrder.BY_NAME,
     density: ListDensity = ListDensity.COMFORTABLE,
+    pinFavorites: Boolean = false,
+    onCall: ((ContactDetails) -> Unit)? = null,
+    onSms: ((ContactDetails) -> Unit)? = null,
+    onToggleFavorite: ((Long) -> Unit)? = null,
 ) {
     val spacing = LocalSpacing.current
-    val grouped = groupContactsByFirstLetter(contacts, sortOrder)
+    val grouped =
+        remember(contacts, favorites, sortOrder, pinFavorites) {
+            groupContactsWithPinnedFavorites(contacts, favorites, sortOrder, pinFavorites)
+        }
     val showLetterHeaders = sortOrder != ContactSortOrder.RECENTLY_ADDED
+    val letters = remember(grouped) { grouped.keys.filter { it.isLetter() } }
     val indices = remember(grouped) { letterIndices(grouped) }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
@@ -69,42 +79,25 @@ internal fun GroupedContacts(
                         .fillMaxSize(),
             ) {
                 grouped.forEach { (letter, group) ->
-                    if (showLetterHeaders) {
-                        stickyHeader {
-                            Text(
-                                text = letter.toString(),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .background(MaterialTheme.colorScheme.surface)
-                                        .padding(
-                                            horizontal = spacing.m,
-                                            vertical = spacing.s,
-                                        ),
-                            )
-                        }
-                    }
-                    items(
-                        items = group,
-                        key = { it.contactId },
-                    ) { contact ->
-                        ContactCard(
-                            contact = contact,
-                            isFavorite = contact.contactId in favorites,
-                            selected = contact.contactId in selection,
-                            isSelectionMode = isSelectionMode,
-                            onClick = { onContactClick(contact.contactId) },
-                            onLongClick = { onContactLongClick(contact.contactId) },
-                            density = density,
-                        )
-                    }
+                    contactGroup(
+                        letter = letter,
+                        group = group,
+                        showHeader = showLetterHeaders || letter == FAVORITES_GROUP,
+                        favorites = favorites,
+                        selection = selection,
+                        isSelectionMode = isSelectionMode,
+                        density = density,
+                        onContactClick = onContactClick,
+                        onContactLongClick = onContactLongClick,
+                        onCall = onCall,
+                        onSms = onSms,
+                        onToggleFavorite = onToggleFavorite,
+                    )
                 }
             }
-            if (showLetterHeaders && grouped.size > 1) {
+            if (shouldShowFastScroller(showLetterHeaders, letters)) {
                 FastScroller(
-                    letters = grouped.keys.toList(),
+                    letters = letters,
                     activeLetter = activeLetter,
                     barDescription = stringResource(R.string.fast_scroller_desc),
                     onLetter = ::jumpTo,
@@ -131,4 +124,75 @@ internal fun GroupedContacts(
             }
         }
     }
+}
+
+private fun shouldShowFastScroller(
+    showLetterHeaders: Boolean,
+    letters: List<Char>,
+): Boolean = showLetterHeaders && letters.size > 1
+
+private fun LazyListScope.contactGroup(
+    letter: Char,
+    group: List<ContactDetails>,
+    showHeader: Boolean,
+    favorites: Set<Long>,
+    selection: Set<Long>,
+    isSelectionMode: Boolean,
+    density: ListDensity,
+    onContactClick: (Long) -> Unit,
+    onContactLongClick: (Long) -> Unit,
+    onCall: ((ContactDetails) -> Unit)?,
+    onSms: ((ContactDetails) -> Unit)?,
+    onToggleFavorite: ((Long) -> Unit)?,
+) {
+    if (showHeader) {
+        stickyHeader { ContactGroupHeader(letter) }
+    }
+    items(
+        items = group,
+        key = { it.contactId },
+    ) { contact ->
+        ContactCard(
+            contact = contact,
+            isFavorite = contact.contactId in favorites,
+            selected = contact.contactId in selection,
+            isSelectionMode = isSelectionMode,
+            onClick = { onContactClick(contact.contactId) },
+            onLongClick = { onContactLongClick(contact.contactId) },
+            density = density,
+            onCall = onCall?.let { action -> { action(contact) } },
+            onSms = onSms?.let { action -> { action(contact) } },
+            onToggleFavorite = onToggleFavorite?.let { action -> { action(contact.contactId) } },
+        )
+    }
+}
+
+@Composable
+private fun ContactGroupHeader(letter: Char) {
+    val spacing = LocalSpacing.current
+    val isFavorites = letter == FAVORITES_GROUP
+    Text(
+        text =
+            if (isFavorites) {
+                stringResource(R.string.filter_favorites)
+            } else {
+                letter.toString()
+            },
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(
+                    horizontal = spacing.m,
+                    vertical = spacing.s,
+                ).then(
+                    if (isFavorites) {
+                        Modifier.testTag("favorites_section_header")
+                    } else {
+                        Modifier
+                    },
+                ),
+    )
 }

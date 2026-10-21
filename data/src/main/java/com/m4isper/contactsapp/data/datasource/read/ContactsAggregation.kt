@@ -29,6 +29,8 @@ internal fun buildContactDetails(
         nameParts = namePartsOf(rows),
         account = account,
         lastUpdated = header.lastUpdated,
+        lastContacted = header.lastContacted,
+        timesContacted = header.timesContacted,
     )
 
 /**
@@ -60,6 +62,8 @@ internal fun aggregateContacts(
             nickname = nicknameOf(contactRows),
             account = accounts[header.contactId] ?: ContactAccount.Local,
             lastUpdated = header.lastUpdated,
+            lastContacted = header.lastContacted,
+            timesContacted = header.timesContacted,
         )
     }
 }

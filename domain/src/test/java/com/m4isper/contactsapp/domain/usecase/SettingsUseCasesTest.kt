@@ -21,6 +21,7 @@ private class StubSettingsRepository(
     val themeModes = mutableListOf<ThemeMode>()
     val sortOrders = mutableListOf<ContactSortOrder>()
     val densities = mutableListOf<ListDensity>()
+    val favoritesFirstValues = mutableListOf<Boolean>()
     val lastContactAccounts = mutableListOf<ContactAccount>()
 
     override fun observeSettings(): Flow<AppSettings> = state
@@ -38,6 +39,11 @@ private class StubSettingsRepository(
     override suspend fun setListDensity(density: ListDensity) {
         densities += density
         state.value = state.value.copy(listDensity = density)
+    }
+
+    override suspend fun setFavoritesFirst(enabled: Boolean) {
+        favoritesFirstValues += enabled
+        state.value = state.value.copy(favoritesFirst = enabled)
     }
 
     override suspend fun setLastContactAccount(account: ContactAccount) {
@@ -89,6 +95,16 @@ class SettingsUseCasesTest {
             SetListDensityUseCase(repository)(ListDensity.COMPACT)
 
             assertEquals(listOf(ListDensity.COMPACT), repository.densities)
+        }
+
+    @Test
+    fun `set favorites first delegates to repository`() =
+        runTest {
+            val repository = StubSettingsRepository()
+
+            SetFavoritesFirstUseCase(repository)(false)
+
+            assertEquals(listOf(false), repository.favoritesFirstValues)
         }
 
     @Test

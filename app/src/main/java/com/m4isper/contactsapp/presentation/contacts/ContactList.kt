@@ -24,10 +24,21 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactAccount
+import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactGroup
+import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.presentation.common.Loadable
+import com.m4isper.contactsapp.presentation.common.call.ConfirmCallDialog
+import com.m4isper.contactsapp.presentation.common.call.rememberCallHandler
+import com.m4isper.contactsapp.presentation.common.format.phoneText
 import com.m4isper.contactsapp.presentation.common.groups.GroupPickerDialog
+import com.m4isper.contactsapp.presentation.common.share.openSms
 import com.m4isper.contactsapp.ui.components.ConfirmDialog
+
+private data class QuickCallTarget(
+    val name: String,
+    val phone: PhoneNumber,
+)
 
 @Composable
 internal fun ContactList(
@@ -57,14 +68,19 @@ internal fun ContactList(
     onManageGroupsClick: () -> Unit = {},
     onAddSelectedToGroup: (Set<Long>) -> Unit = {},
     onDuplicatesClick: () -> Unit = {},
+    onRecentsClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
+    onToggleFavorite: (Long) -> Unit = {},
+    onToggleFavoriteSelected: () -> Unit = {},
 ) {
     val context = LocalContext.current
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showGroupPicker by remember { mutableStateOf(false) }
     var pendingGroupIds by remember { mutableStateOf(emptySet<Long>()) }
     var pendingExportUri by remember { mutableStateOf<Uri?>(null) }
+    var pendingQuickCall by remember { mutableStateOf<QuickCallTarget?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
+    val requestCall = rememberCallHandler()
 
     val vCardLaunchers =
         rememberVCardLaunchers(
@@ -99,6 +115,8 @@ internal fun ContactList(
 
     val visibleIds = (uiState.content as? Loadable.Content)?.data?.map { it.contactId }.orEmpty()
     val allSelected = visibleIds.isNotEmpty() && uiState.selection.containsAll(visibleIds)
+    val allFavorite =
+        uiState.selection.isNotEmpty() && uiState.selection.all { it in uiState.favorites }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -113,8 +131,10 @@ internal fun ContactList(
                 SelectionTopBar(
                     count = uiState.selection.size,
                     allSelected = allSelected,
+                    allFavorite = allFavorite,
                     onClose = onClearSelection,
                     onSelectAll = { onSelectAll(visibleIds) },
+                    onToggleFavorite = onToggleFavoriteSelected,
                     onAddToGroup = {
                         pendingGroupIds = emptySet()
                         showGroupPicker = true
@@ -161,6 +181,7 @@ internal fun ContactList(
                     onCreateGroup = onCreateGroup,
                     onManageGroupsClick = onManageGroupsClick,
                     onDuplicatesClick = onDuplicatesClick,
+                    onRecentsClick = onRecentsClick,
                     onSettingsClick = onSettingsClick,
                 )
             }
@@ -176,27 +197,82 @@ internal fun ContactList(
                 onContactLongClick = onContactSelected,
                 onRetry = onRetry,
                 onRefresh = onRefresh,
+                onCallContact = { contact -> pendingQuickCall = contact.toQuickCallTarget() },
+                onSmsContact = { contact ->
+                    contact.phones.firstOrNull()?.let { openSms(context, it.number) }
+                },
+                onToggleFavorite = onToggleFavorite,
             )
         }
     }
 
+    ContactListDialogs(
+        showDeleteDialog = showDeleteDialog,
+        selectionSize = uiState.selection.size,
+        onDismissDelete = { showDeleteDialog = false },
+        onConfirmDelete = {
+            showDeleteDialog = false
+            onDeleteSelected()
+        },
+        pendingQuickCall = pendingQuickCall,
+        onDismissQuickCall = { pendingQuickCall = null },
+        onConfirmQuickCall = { phone ->
+            pendingQuickCall = null
+            requestCall(phone.number)
+        },
+        showGroupPicker = showGroupPicker,
+        groups = groups,
+        pendingGroupIds = pendingGroupIds,
+        onToggleGroup = { groupId -> pendingGroupIds = pendingGroupIds.toggle(groupId) },
+        onCreateGroup = onCreateGroup,
+        onConfirmGroups = {
+            showGroupPicker = false
+            onAddSelectedToGroup(pendingGroupIds)
+        },
+        onDismissGroups = { showGroupPicker = false },
+    )
+}
+
+@Composable
+private fun ContactListDialogs(
+    showDeleteDialog: Boolean,
+    selectionSize: Int,
+    onDismissDelete: () -> Unit,
+    onConfirmDelete: () -> Unit,
+    pendingQuickCall: QuickCallTarget?,
+    onDismissQuickCall: () -> Unit,
+    onConfirmQuickCall: (PhoneNumber) -> Unit,
+    showGroupPicker: Boolean,
+    groups: List<ContactGroup>,
+    pendingGroupIds: Set<Long>,
+    onToggleGroup: (Long) -> Unit,
+    onCreateGroup: (String) -> Unit,
+    onConfirmGroups: () -> Unit,
+    onDismissGroups: () -> Unit,
+) {
     if (showDeleteDialog) {
         ConfirmDialog(
             title =
                 pluralStringResource(
                     R.plurals.batch_delete_title,
-                    uiState.selection.size,
-                    uiState.selection.size,
+                    selectionSize,
+                    selectionSize,
                 ),
             text = stringResource(R.string.editor_delete_message),
             confirmLabel = stringResource(R.string.action_delete),
-            onConfirm = {
-                showDeleteDialog = false
-                onDeleteSelected()
-            },
-            onDismiss = { showDeleteDialog = false },
+            onConfirm = onConfirmDelete,
+            onDismiss = onDismissDelete,
             danger = true,
             confirmTestTag = "confirm_batch_delete",
+        )
+    }
+
+    pendingQuickCall?.let { target ->
+        ConfirmCallDialog(
+            contactName = target.name,
+            phoneText = phoneText(target.phone),
+            onConfirm = { onConfirmQuickCall(target.phone) },
+            onDismiss = onDismissQuickCall,
         )
     }
 
@@ -206,16 +282,15 @@ internal fun ContactList(
             groups = groups,
             selectedIds = pendingGroupIds,
             confirmLabel = stringResource(R.string.action_add),
-            onToggle = { groupId ->
-                pendingGroupIds =
-                    if (groupId in pendingGroupIds) pendingGroupIds - groupId else pendingGroupIds + groupId
-            },
+            onToggle = onToggleGroup,
             onCreateGroup = onCreateGroup,
-            onConfirm = {
-                showGroupPicker = false
-                onAddSelectedToGroup(pendingGroupIds)
-            },
-            onDismiss = { showGroupPicker = false },
+            onConfirm = onConfirmGroups,
+            onDismiss = onDismissGroups,
         )
     }
 }
+
+private fun Set<Long>.toggle(groupId: Long): Set<Long> = if (groupId in this) this - groupId else this + groupId
+
+private fun ContactDetails.toQuickCallTarget(): QuickCallTarget? =
+    phones.firstOrNull()?.let { QuickCallTarget(name = name, phone = it) }

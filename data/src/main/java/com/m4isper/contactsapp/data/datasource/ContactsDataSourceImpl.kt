@@ -36,6 +36,8 @@ private val CONTACT_PROJECTION =
         ContactsContract.Contacts.DISPLAY_NAME,
         ContactsContract.Contacts.PHOTO_THUMBNAIL_URI,
         ContactsContract.Contacts.CONTACT_LAST_UPDATED_TIMESTAMP,
+        ContactsContract.Contacts.LAST_TIME_CONTACTED,
+        ContactsContract.Contacts.TIMES_CONTACTED,
     )
 
 private const val CONTACT_SORT_ORDER =
@@ -221,6 +223,8 @@ class ContactsDataSourceImpl(
             val nameIndex = it.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME)
             val photoIndex = it.getColumnIndexOrThrow(ContactsContract.Contacts.PHOTO_THUMBNAIL_URI)
             val updatedIndex = it.getColumnIndexOrThrow(ContactsContract.Contacts.CONTACT_LAST_UPDATED_TIMESTAMP)
+            val lastContactedIndex = it.getColumnIndexOrThrow(ContactsContract.Contacts.LAST_TIME_CONTACTED)
+            val timesContactedIndex = it.getColumnIndexOrThrow(ContactsContract.Contacts.TIMES_CONTACTED)
             while (it.moveToNext()) {
                 headers +=
                     ContactHeaderRow(
@@ -228,6 +232,9 @@ class ContactsDataSourceImpl(
                         name = it.getString(nameIndex)?.trim().orEmpty(),
                         photoUri = it.getString(photoIndex),
                         lastUpdated = if (it.isNull(updatedIndex)) null else it.getLong(updatedIndex),
+                        lastContacted =
+                            if (it.isNull(lastContactedIndex)) null else it.getLong(lastContactedIndex),
+                        timesContacted = it.getInt(timesContactedIndex),
                     )
             }
         }

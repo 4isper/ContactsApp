@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Merge
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Settings
@@ -68,6 +69,7 @@ internal fun FilterHeader(
     onCreateGroup: (String) -> Unit = {},
     onManageGroupsClick: () -> Unit = {},
     onDuplicatesClick: () -> Unit = {},
+    onRecentsClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
 ) {
     val spacing = LocalSpacing.current
@@ -147,6 +149,20 @@ internal fun FilterHeader(
                     expanded = menuOpen,
                     onDismissRequest = { menuOpen = false },
                 ) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.recents_title)) },
+                        onClick = {
+                            menuOpen = false
+                            onRecentsClick()
+                        },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Filled.History,
+                                contentDescription = null,
+                            )
+                        },
+                        modifier = Modifier.testTag("recents_menu_item"),
+                    )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.action_import)) },
                         onClick = {

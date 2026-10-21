@@ -23,7 +23,7 @@ import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.call.ConfirmCallDialog
 import com.m4isper.contactsapp.presentation.common.call.rememberCallHandler
-import com.m4isper.contactsapp.presentation.common.format.phoneKindLabel
+import com.m4isper.contactsapp.presentation.common.format.phoneText
 import com.m4isper.contactsapp.presentation.common.share.copyToClipboard
 import com.m4isper.contactsapp.presentation.common.share.openSms
 import com.m4isper.contactsapp.presentation.common.share.shareContact
@@ -132,11 +132,3 @@ fun ContactDetailsScreen(
         )
     }
 }
-
-@Composable
-private fun phoneText(phone: PhoneNumber): String =
-    stringResource(
-        R.string.phone_with_kind,
-        phone.number,
-        phone.customLabel ?: phoneKindLabel(phone.kind),
-    )

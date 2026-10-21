@@ -14,5 +14,7 @@ interface SettingsDataSource {
 
     suspend fun setListDensity(density: String)
 
+    suspend fun setFavoritesFirst(enabled: Boolean)
+
     suspend fun setLastContactAccount(account: ContactAccount)
 }

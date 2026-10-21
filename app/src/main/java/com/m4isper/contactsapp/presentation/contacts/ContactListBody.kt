@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.ui.components.EmptyState
 import com.m4isper.contactsapp.ui.components.ErrorState
@@ -24,6 +25,9 @@ internal fun ContactListBody(
     onRetry: () -> Unit,
     onRefresh: () -> Unit,
     modifier: Modifier = Modifier,
+    onCallContact: ((ContactDetails) -> Unit)? = null,
+    onSmsContact: ((ContactDetails) -> Unit)? = null,
+    onToggleFavorite: ((Long) -> Unit)? = null,
 ) {
     val pullState = rememberPullToRefreshState()
     PullToRefreshBox(
@@ -54,6 +58,10 @@ internal fun ContactListBody(
                     onContactLongClick = onContactLongClick,
                     sortOrder = uiState.sortOrder,
                     density = uiState.listDensity,
+                    pinFavorites = uiState.pinFavorites,
+                    onCall = onCallContact,
+                    onSms = onSmsContact,
+                    onToggleFavorite = onToggleFavorite,
                 )
         }
     }

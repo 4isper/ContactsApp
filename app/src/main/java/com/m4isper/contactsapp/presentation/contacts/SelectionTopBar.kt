@@ -5,11 +5,14 @@ import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Deselect
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -27,8 +30,10 @@ import com.m4isper.contactsapp.R
 internal fun SelectionTopBar(
     count: Int,
     allSelected: Boolean,
+    allFavorite: Boolean,
     onClose: () -> Unit,
     onSelectAll: () -> Unit,
+    onToggleFavorite: () -> Unit,
     onAddToGroup: () -> Unit,
     onShare: () -> Unit,
     onDelete: () -> Unit,
@@ -51,6 +56,19 @@ internal fun SelectionTopBar(
             }
         },
         actions = {
+            IconButton(
+                onClick = onToggleFavorite,
+                modifier = Modifier.testTag("favorite_selected_button"),
+            ) {
+                Icon(
+                    imageVector = if (allFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                    contentDescription =
+                        stringResource(
+                            if (allFavorite) R.string.action_remove_favorite else R.string.action_add_favorite,
+                        ),
+                    tint = if (allFavorite) MaterialTheme.colorScheme.tertiary else LocalContentColor.current,
+                )
+            }
             IconButton(
                 onClick = onSelectAll,
                 modifier = Modifier.testTag("select_all_button"),

@@ -21,6 +21,7 @@ private class FakeSettingsDataSource(
     val themeModes = mutableListOf<String>()
     val sortOrders = mutableListOf<String>()
     val densities = mutableListOf<String>()
+    val favoritesFirstValues = mutableListOf<Boolean>()
     val lastContactAccounts = mutableListOf<ContactAccount>()
 
     override val settings: Flow<AppSettings> = state
@@ -35,6 +36,10 @@ private class FakeSettingsDataSource(
 
     override suspend fun setListDensity(density: String) {
         densities += density
+    }
+
+    override suspend fun setFavoritesFirst(enabled: Boolean) {
+        favoritesFirstValues += enabled
     }
 
     override suspend fun setLastContactAccount(account: ContactAccount) {
@@ -85,6 +90,16 @@ class SettingsRepositoryImplTest {
             SettingsRepositoryImpl(dataSource).setListDensity(ListDensity.COMPACT)
 
             assertEquals(listOf("COMPACT"), dataSource.densities)
+        }
+
+    @Test
+    fun `set favorites first delegates to data source`() =
+        runBlocking {
+            val dataSource = FakeSettingsDataSource()
+
+            SettingsRepositoryImpl(dataSource).setFavoritesFirst(false)
+
+            assertEquals(listOf(false), dataSource.favoritesFirstValues)
         }
 
     @Test

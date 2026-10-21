@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp.presentation.settings
 
+import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -11,6 +12,7 @@ import com.m4isper.contactsapp.domain.model.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.ListDensity
 import com.m4isper.contactsapp.domain.model.ThemeMode
 import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
+import com.m4isper.contactsapp.domain.usecase.SetFavoritesFirstUseCase
 import com.m4isper.contactsapp.domain.usecase.SetListDensityUseCase
 import com.m4isper.contactsapp.domain.usecase.SetSortOrderUseCase
 import com.m4isper.contactsapp.domain.usecase.SetThemeModeUseCase
@@ -31,6 +33,7 @@ class SettingsUiTest {
             SetThemeModeUseCase(repository),
             SetSortOrderUseCase(repository),
             SetListDensityUseCase(repository),
+            SetFavoritesFirstUseCase(repository),
         )
 
     @Test
@@ -41,6 +44,7 @@ class SettingsUiTest {
                     themeMode = ThemeMode.DARK,
                     sortOrder = ContactSortOrder.BY_FAMILY,
                     listDensity = ListDensity.COMPACT,
+                    favoritesFirst = false,
                 ),
             )
         compose.setContent {
@@ -50,6 +54,7 @@ class SettingsUiTest {
         compose.onNodeWithTag("theme_DARK").assertIsSelected()
         compose.onNodeWithTag("sort_BY_FAMILY").assertIsSelected()
         compose.onNodeWithTag("density_COMPACT").assertIsSelected()
+        compose.onNodeWithTag("favorites_first_switch").assertIsOff()
     }
 
     @Test
@@ -62,15 +67,18 @@ class SettingsUiTest {
         compose.onNodeWithTag("theme_LIGHT").performClick()
         compose.onNodeWithTag("sort_BY_FAMILY").performClick()
         compose.onNodeWithTag("density_COMPACT").performClick()
+        compose.onNodeWithTag("favorites_first_switch").performClick()
 
         compose.waitUntil(timeoutMillis = 5_000) {
             repository.themeModes.isNotEmpty() &&
                 repository.sortOrders.isNotEmpty() &&
-                repository.densities.isNotEmpty()
+                repository.densities.isNotEmpty() &&
+                repository.favoritesFirstValues.isNotEmpty()
         }
         assertEquals(listOf(ThemeMode.LIGHT), repository.themeModes)
         assertEquals(listOf(ContactSortOrder.BY_FAMILY), repository.sortOrders)
         assertEquals(listOf(ListDensity.COMPACT), repository.densities)
+        assertEquals(listOf(false), repository.favoritesFirstValues)
     }
 
     @Test

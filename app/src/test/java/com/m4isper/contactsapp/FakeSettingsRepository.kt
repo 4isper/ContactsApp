@@ -21,6 +21,7 @@ class FakeSettingsRepository(
     val themeModes = mutableListOf<ThemeMode>()
     val sortOrders = mutableListOf<ContactSortOrder>()
     val densities = mutableListOf<ListDensity>()
+    val favoritesFirstValues = mutableListOf<Boolean>()
     val lastContactAccounts = mutableListOf<ContactAccount>()
 
     override fun observeSettings(): StateFlow<AppSettings> = state
@@ -38,6 +39,11 @@ class FakeSettingsRepository(
     override suspend fun setListDensity(density: ListDensity) {
         densities += density
         state.value = state.value.copy(listDensity = density)
+    }
+
+    override suspend fun setFavoritesFirst(enabled: Boolean) {
+        favoritesFirstValues += enabled
+        state.value = state.value.copy(favoritesFirst = enabled)
     }
 
     override suspend fun setLastContactAccount(account: ContactAccount) {

@@ -27,5 +27,7 @@ class SettingsRepositoryImpl(
 
     override suspend fun setListDensity(density: ListDensity) = dataSource.setListDensity(density.name)
 
+    override suspend fun setFavoritesFirst(enabled: Boolean) = dataSource.setFavoritesFirst(enabled)
+
     override suspend fun setLastContactAccount(account: ContactAccount) = dataSource.setLastContactAccount(account)
 }

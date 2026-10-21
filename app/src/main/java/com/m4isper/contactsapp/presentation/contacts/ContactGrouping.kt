@@ -6,6 +6,9 @@ import java.util.Locale
 
 private const val RECENTLY_ADDED_GROUP = '#'
 
+/** Синтетический ключ закреплённой секции избранного; не буква, поэтому не попадает в fast scroller. */
+internal const val FAVORITES_GROUP = '★'
+
 /**
  * Ключ сортировки: полное имя, фамилия или компания. Для недавних контактов
  * ключ не важен, поэтому используется имя — как безопасный fallback.
@@ -76,6 +79,28 @@ internal fun groupContactsByFirstLetter(
                     }
                 }
     }
+}
+
+/**
+ * Группирует список, при необходимости вынося избранные контакты в отдельную
+ * секцию сверху. Остальные контакты сохраняют обычную буквенную группировку.
+ */
+internal fun groupContactsWithPinnedFavorites(
+    contacts: List<ContactDetails>,
+    favorites: Set<Long>,
+    sortOrder: ContactSortOrder,
+    pinFavorites: Boolean,
+): Map<Char, List<ContactDetails>> {
+    if (!pinFavorites) return groupContactsByFirstLetter(contacts, sortOrder)
+    val named = contacts.filter { it.name.isNotBlank() }
+    val favoriteContacts = named.filter { it.contactId in favorites }
+    val otherContacts = named.filterNot { it.contactId in favorites }
+    val grouped = linkedMapOf<Char, List<ContactDetails>>()
+    if (favoriteContacts.isNotEmpty()) {
+        grouped[FAVORITES_GROUP] = sortContacts(favoriteContacts, sortOrder)
+    }
+    grouped.putAll(groupContactsByFirstLetter(otherContacts, sortOrder))
+    return grouped
 }
 
 /** Индекс первого элемента (sticky-заголовка) каждой буквы в LazyColumn. */

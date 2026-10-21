@@ -33,6 +33,8 @@ import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.ImportContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
+import com.m4isper.contactsapp.domain.usecase.RemoveFavoriteUseCase
+import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -168,6 +170,8 @@ class ContactsViewModelTest {
         GetGroupMembershipUseCase(groups),
         CreateGroupUseCase(groups),
         AddContactsToGroupUseCase(groups),
+        ToggleFavoriteUseCase(repository),
+        RemoveFavoriteUseCase(repository),
         codec,
         changes,
     )
@@ -606,6 +610,98 @@ class ContactsViewModelTest {
             val state = viewModel.uiState.value
             assertTrue(state.content is Loadable.Empty)
             assertEquals(false, state.isSearching)
+        }
+
+    @Test
+    fun `quick favorite toggles contact in state`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            viewModel.onToggleFavorite(1)
+            advanceUntilIdle()
+            assertEquals(setOf(1L), viewModel.uiState.value.favorites)
+
+            viewModel.onToggleFavorite(1)
+            advanceUntilIdle()
+            assertEquals(emptySet<Long>(), viewModel.uiState.value.favorites)
+        }
+
+    @Test
+    fun `batch favorite adds selected and removes when all are favorites`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(
+                    listOf(
+                        details(1, "Anna", "111"),
+                        details(2, "Bob", "222"),
+                    ),
+                )
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+            viewModel.onContactSelected(1)
+            viewModel.onContactSelected(2)
+
+            viewModel.onToggleSelectedFavorite()
+            advanceUntilIdle()
+            assertEquals(setOf(1L, 2L), viewModel.uiState.value.favorites)
+
+            viewModel.onToggleSelectedFavorite()
+            advanceUntilIdle()
+            assertEquals(emptySet<Long>(), viewModel.uiState.value.favorites)
+        }
+
+    @Test
+    fun `pinned favorites are disabled by search or filters`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val settings = FakeSettingsRepository()
+            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val viewModel = viewModel(repository, settings = settings)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+            assertTrue(viewModel.uiState.value.pinFavorites)
+
+            viewModel.onSearchQueryChange("Anna")
+            advanceUntilIdle()
+            assertEquals(false, viewModel.uiState.value.pinFavorites)
+
+            viewModel.onSearchQueryChange("")
+            viewModel.onToggleFavoritesOnly()
+            advanceUntilIdle()
+            assertEquals(false, viewModel.uiState.value.pinFavorites)
+
+            viewModel.onToggleFavoritesOnly()
+            viewModel.onGroupSelected(42)
+            advanceUntilIdle()
+            assertEquals(false, viewModel.uiState.value.pinFavorites)
+
+            viewModel.onGroupSelected(null)
+            viewModel.onAccountSelected(ContactAccount(name = "Work", type = "com.example"))
+            advanceUntilIdle()
+            assertEquals(false, viewModel.uiState.value.pinFavorites)
+        }
+
+    @Test
+    fun `favorites first setting disables pinned section`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val settings = FakeSettingsRepository(AppSettings(favoritesFirst = false))
+            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val viewModel = viewModel(repository, settings = settings)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            assertEquals(false, viewModel.uiState.value.pinFavorites)
         }
 
     @Test

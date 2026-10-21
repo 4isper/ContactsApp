@@ -17,5 +17,7 @@ interface SettingsRepository {
 
     suspend fun setListDensity(density: ListDensity)
 
+    suspend fun setFavoritesFirst(enabled: Boolean)
+
     suspend fun setLastContactAccount(account: ContactAccount)
 }

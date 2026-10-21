@@ -31,6 +31,8 @@ import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.ImportContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
+import com.m4isper.contactsapp.domain.usecase.RemoveFavoriteUseCase
+import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.testDetails
 import org.junit.Assert.assertEquals
@@ -64,6 +66,8 @@ class ContactListUiTest {
         GetGroupMembershipUseCase(groups),
         CreateGroupUseCase(groups),
         AddContactsToGroupUseCase(groups),
+        ToggleFavoriteUseCase(repository),
+        RemoveFavoriteUseCase(repository),
         FakeVCardCodec(),
         FakeContactsChangeSource(),
     )
@@ -466,9 +470,233 @@ class ContactListUiTest {
 
         compose.onNodeWithTag("more_actions_button").performClick()
 
+        compose.onNodeWithTag("recents_menu_item").assertIsDisplayed()
         compose.onNodeWithTag("import_menu_item").assertIsDisplayed()
         compose.onNodeWithTag("export_menu_item").assertIsDisplayed()
         compose.onNodeWithTag("duplicates_menu_item").assertIsDisplayed()
         compose.onNodeWithTag("settings_menu_item").assertIsDisplayed()
+    }
+
+    @Test
+    fun quickActionsShowCallAndSmsForContactWithPhone() {
+        compose.setContent {
+            ContactList(
+                uiState = ContactsUiState(content = Loadable.Content(listOf(anna))),
+                onSearchQueryChange = {},
+                onFavoritesOnlyChange = {},
+                onContactClick = {},
+                onAddClick = {},
+                onRetry = {},
+                onRefresh = {},
+                onContactSelected = {},
+                onClearSelection = {},
+                onSelectAll = {},
+                onDeleteSelected = {},
+                onUndoDelete = {},
+                onDeleteWindowClosed = {},
+                onShareSelected = {},
+                onImportText = {},
+                onExportRequested = {},
+                onEventHandled = {},
+            )
+        }
+
+        compose.onNodeWithTag("quick_actions_1").performClick()
+
+        compose.onNodeWithTag("quick_call_1").assertIsDisplayed()
+        compose.onNodeWithTag("quick_sms_1").assertIsDisplayed()
+    }
+
+    @Test
+    fun quickCallShowsExistingConfirmationDialog() {
+        compose.setContent {
+            ContactList(
+                uiState = ContactsUiState(content = Loadable.Content(listOf(anna))),
+                onSearchQueryChange = {},
+                onFavoritesOnlyChange = {},
+                onContactClick = {},
+                onAddClick = {},
+                onRetry = {},
+                onRefresh = {},
+                onContactSelected = {},
+                onClearSelection = {},
+                onSelectAll = {},
+                onDeleteSelected = {},
+                onUndoDelete = {},
+                onDeleteWindowClosed = {},
+                onShareSelected = {},
+                onImportText = {},
+                onExportRequested = {},
+                onEventHandled = {},
+            )
+        }
+
+        compose.onNodeWithTag("quick_actions_1").performClick()
+        compose.onNodeWithTag("quick_call_1").performClick()
+
+        compose.onNodeWithTag("confirm_call_button").assertIsDisplayed()
+    }
+
+    @Test
+    fun contactWithoutPhoneHasNoCallOrSmsActions() {
+        val noPhone = testDetails(3, "Cara")
+        compose.setContent {
+            ContactList(
+                uiState = ContactsUiState(content = Loadable.Content(listOf(noPhone))),
+                onSearchQueryChange = {},
+                onFavoritesOnlyChange = {},
+                onContactClick = {},
+                onAddClick = {},
+                onRetry = {},
+                onRefresh = {},
+                onContactSelected = {},
+                onClearSelection = {},
+                onSelectAll = {},
+                onDeleteSelected = {},
+                onUndoDelete = {},
+                onDeleteWindowClosed = {},
+                onShareSelected = {},
+                onImportText = {},
+                onExportRequested = {},
+                onEventHandled = {},
+            )
+        }
+
+        compose.onNodeWithTag("quick_actions_3").assertDoesNotExist()
+        compose.onNodeWithTag("quick_favorite_3").assertIsDisplayed()
+    }
+
+    @Test
+    fun quickFavoriteTogglesWithoutOpeningDetails() {
+        val repository = FakeAndroidRepository(listOf(anna))
+        val viewModel = viewModel(repository)
+        compose.setContent {
+            val uiState by viewModel.uiState.collectAsState()
+            ContactList(
+                uiState = uiState,
+                onSearchQueryChange = viewModel::onSearchQueryChange,
+                onFavoritesOnlyChange = viewModel::onToggleFavoritesOnly,
+                onContactClick = {},
+                onAddClick = {},
+                onRetry = viewModel::refresh,
+                onRefresh = viewModel::refresh,
+                onContactSelected = viewModel::onContactSelected,
+                onClearSelection = viewModel::onClearSelection,
+                onSelectAll = viewModel::onSelectAll,
+                onDeleteSelected = viewModel::onDeleteSelected,
+                onUndoDelete = viewModel::onUndoDelete,
+                onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
+                onShareSelected = viewModel::onShareSelected,
+                onImportText = viewModel.files::onImportText,
+                onExportRequested = viewModel.files::onExportRequested,
+                onEventHandled = viewModel::onEventHandled,
+                onToggleFavorite = viewModel::onToggleFavorite,
+                onToggleFavoriteSelected = viewModel::onToggleSelectedFavorite,
+            )
+        }
+        viewModel.refresh()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.content is Loadable.Content
+        }
+
+        compose.onNodeWithTag("quick_favorite_1").performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.favorites == setOf(1L)
+        }
+        compose.onNodeWithTag("quick_favorite_1").assertIsDisplayed()
+    }
+
+    @Test
+    fun batchFavoriteTogglesAllSelectedContacts() {
+        val repository = FakeAndroidRepository(listOf(anna, bob))
+        val viewModel = viewModel(repository)
+        compose.setContent {
+            val uiState by viewModel.uiState.collectAsState()
+            ContactList(
+                uiState = uiState,
+                onSearchQueryChange = viewModel::onSearchQueryChange,
+                onFavoritesOnlyChange = viewModel::onToggleFavoritesOnly,
+                onContactClick = {},
+                onAddClick = {},
+                onRetry = viewModel::refresh,
+                onRefresh = viewModel::refresh,
+                onContactSelected = viewModel::onContactSelected,
+                onClearSelection = viewModel::onClearSelection,
+                onSelectAll = viewModel::onSelectAll,
+                onDeleteSelected = viewModel::onDeleteSelected,
+                onUndoDelete = viewModel::onUndoDelete,
+                onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
+                onShareSelected = viewModel::onShareSelected,
+                onImportText = viewModel.files::onImportText,
+                onExportRequested = viewModel.files::onExportRequested,
+                onEventHandled = viewModel::onEventHandled,
+                onToggleFavorite = viewModel::onToggleFavorite,
+                onToggleFavoriteSelected = viewModel::onToggleSelectedFavorite,
+            )
+        }
+        viewModel.refresh()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.content is Loadable.Content
+        }
+
+        compose.onNodeWithTag("contact_row_1").performTouchInput { longClick() }
+        compose.onNodeWithTag("contact_row_2").performClick()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.selection == setOf(1L, 2L)
+        }
+
+        compose.onNodeWithTag("favorite_selected_button").performClick()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.favorites == setOf(1L, 2L)
+        }
+
+        compose.onNodeWithTag("favorite_selected_button").performClick()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.favorites == emptySet<Long>()
+        }
+    }
+
+    @Test
+    fun favoritesArePinnedWithoutFilterAndHiddenWhileSearching() {
+        val repository = FakeAndroidRepository(listOf(anna, bob), initialFavorites = setOf(1))
+        val viewModel = viewModel(repository)
+        compose.setContent {
+            val uiState by viewModel.uiState.collectAsState()
+            ContactList(
+                uiState = uiState,
+                onSearchQueryChange = viewModel::onSearchQueryChange,
+                onFavoritesOnlyChange = viewModel::onToggleFavoritesOnly,
+                onContactClick = {},
+                onAddClick = {},
+                onRetry = viewModel::refresh,
+                onRefresh = viewModel::refresh,
+                onContactSelected = viewModel::onContactSelected,
+                onClearSelection = viewModel::onClearSelection,
+                onSelectAll = viewModel::onSelectAll,
+                onDeleteSelected = viewModel::onDeleteSelected,
+                onUndoDelete = viewModel::onUndoDelete,
+                onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
+                onShareSelected = viewModel::onShareSelected,
+                onImportText = viewModel.files::onImportText,
+                onExportRequested = viewModel.files::onExportRequested,
+                onEventHandled = viewModel::onEventHandled,
+                onToggleFavorite = viewModel::onToggleFavorite,
+                onToggleFavoriteSelected = viewModel::onToggleSelectedFavorite,
+            )
+        }
+        viewModel.refresh()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.content is Loadable.Content &&
+                viewModel.uiState.value.favorites == setOf(1L)
+        }
+
+        compose.onNodeWithTag("favorites_section_header").assertIsDisplayed()
+
+        compose.onNodeWithTag("search_field").performTextInput("Bob")
+        compose.waitUntil(timeoutMillis = 5_000) {
+            !viewModel.uiState.value.pinFavorites
+        }
+        compose.onNodeWithTag("favorites_section_header").assertDoesNotExist()
     }
 }

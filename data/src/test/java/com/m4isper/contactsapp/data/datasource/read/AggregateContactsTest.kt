@@ -174,6 +174,16 @@ class AggregateContactsTest {
     }
 
     @Test
+    fun `includes device last contacted fields`() {
+        val headers = listOf(header(1, "Anna", lastContacted = 1_700_000_000_000L, timesContacted = 7))
+
+        val details = aggregateContacts(headers, emptyList()).single()
+
+        assertEquals(1_700_000_000_000L, details.lastContacted)
+        assertEquals(7, details.timesContacted)
+    }
+
+    @Test
     fun `includes nickname and relations for search`() {
         val headers = listOf(header(1, "Anna"))
         val rows =

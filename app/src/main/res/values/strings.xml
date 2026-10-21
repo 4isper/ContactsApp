@@ -132,6 +132,10 @@
     <string name="export_empty">Nothing to export</string>
     <string name="export_failed">Couldn\'t export contacts</string>
 
+    <string name="recents_title">Recents</string>
+    <string name="recents_device_wide">Calls and messages on this device</string>
+    <string name="recents_empty">No recent contacts</string>
+
     <string name="duplicates_title">Duplicates</string>
     <string name="duplicates_menu">Find duplicates</string>
     <string name="duplicates_empty">No duplicates found</string>
@@ -156,6 +160,9 @@
     <string name="settings_list_density">List density</string>
     <string name="settings_density_comfortable">Comfortable</string>
     <string name="settings_density_compact">Compact</string>
+    <string name="settings_favorites">Favorites</string>
+    <string name="settings_favorites_first">Favorites first</string>
+    <string name="settings_favorites_first_desc">Pin favorites to the top when no filter is active</string>
 
     <string name="filter_groups">Groups</string>
     <string name="groups_all">All contacts</string>

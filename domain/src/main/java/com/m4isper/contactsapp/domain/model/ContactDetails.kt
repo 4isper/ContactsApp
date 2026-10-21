@@ -153,4 +153,8 @@ data class ContactDetails(
     val account: ContactAccount = ContactAccount.Local,
     /** Время последнего изменения контакта в провайдере, мс; null, если провайдер не сообщил. */
     val lastUpdated: Long? = null,
+    /** Время последнего контакта с этим человеком по данным устройства, мс; null, если его не было. */
+    val lastContacted: Long? = null,
+    /** Сколько раз контакт был использован для звонка/сообщения по данным устройства. */
+    val timesContacted: Int = 0,
 )

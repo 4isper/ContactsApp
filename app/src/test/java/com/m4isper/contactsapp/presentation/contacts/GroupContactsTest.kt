@@ -1,6 +1,7 @@
 package com.m4isper.contactsapp.presentation.contacts
 
 import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import org.junit.Assert.assertEquals
@@ -64,6 +65,64 @@ class GroupContactsTest {
     @Test
     fun `empty list returns empty map`() {
         assertTrue(groupContactsByFirstLetter(emptyList()).isEmpty())
+    }
+
+    @Test
+    fun `pinned favorites go first without duplicating alphabetical groups`() {
+        val contacts =
+            listOf(
+                details(1, "Anna", "1"),
+                details(2, "Bob", "2"),
+                details(3, "Cara", "3"),
+            )
+
+        val grouped =
+            groupContactsWithPinnedFavorites(
+                contacts = contacts,
+                favorites = setOf(3),
+                sortOrder = ContactSortOrder.BY_NAME,
+                pinFavorites = true,
+            )
+
+        assertEquals(listOf(FAVORITES_GROUP, 'A', 'B'), grouped.keys.toList())
+        assertEquals(listOf(3L), grouped.getValue(FAVORITES_GROUP).map { it.contactId })
+        assertEquals(listOf(1L), grouped.getValue('A').map { it.contactId })
+        assertEquals(listOf(2L), grouped.getValue('B').map { it.contactId })
+    }
+
+    @Test
+    fun `pinned section is skipped when disabled`() {
+        val contacts = listOf(details(1, "Anna", "1"), details(2, "Bob", "2"))
+
+        val grouped =
+            groupContactsWithPinnedFavorites(
+                contacts = contacts,
+                favorites = setOf(2),
+                sortOrder = ContactSortOrder.BY_NAME,
+                pinFavorites = false,
+            )
+
+        assertEquals(listOf('A', 'B'), grouped.keys.toList())
+    }
+
+    @Test
+    fun `pinned favorites keep recently added section flat`() {
+        val contacts =
+            listOf(
+                ContactDetails(contactId = 1, name = "Anna", lastUpdated = 100),
+                ContactDetails(contactId = 2, name = "Bob", lastUpdated = 300),
+            )
+
+        val grouped =
+            groupContactsWithPinnedFavorites(
+                contacts = contacts,
+                favorites = setOf(1),
+                sortOrder = ContactSortOrder.RECENTLY_ADDED,
+                pinFavorites = true,
+            )
+
+        assertEquals(listOf(FAVORITES_GROUP, '#'), grouped.keys.toList())
+        assertEquals(listOf(2L), grouped.getValue('#').map { it.contactId })
     }
 
     @Test

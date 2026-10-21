@@ -6,6 +6,7 @@ import com.m4isper.contactsapp.domain.model.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.ListDensity
 import com.m4isper.contactsapp.domain.model.ThemeMode
 import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
+import com.m4isper.contactsapp.domain.usecase.SetFavoritesFirstUseCase
 import com.m4isper.contactsapp.domain.usecase.SetListDensityUseCase
 import com.m4isper.contactsapp.domain.usecase.SetSortOrderUseCase
 import com.m4isper.contactsapp.domain.usecase.SetThemeModeUseCase
@@ -34,6 +35,7 @@ class SettingsViewModelTest {
             SetThemeModeUseCase(repository),
             SetSortOrderUseCase(repository),
             SetListDensityUseCase(repository),
+            SetFavoritesFirstUseCase(repository),
         )
 
     @Test
@@ -95,6 +97,22 @@ class SettingsViewModelTest {
 
             assertEquals(listOf(ListDensity.COMPACT), repository.densities)
             assertEquals(ListDensity.COMPACT, viewModel.uiState.value.settings.listDensity)
+        }
+
+    @Test
+    fun `favorites first selection persists and lands in state`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeSettingsRepository()
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            advanceUntilIdle()
+
+            viewModel.onFavoritesFirstChanged(false)
+            advanceUntilIdle()
+
+            assertEquals(listOf(false), repository.favoritesFirstValues)
+            assertEquals(false, viewModel.uiState.value.settings.favoritesFirst)
         }
 }
 
