@@ -23,15 +23,15 @@ import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.usecase.AddContactsToGroupUseCase
-import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.ExportContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
-import com.m4isper.contactsapp.domain.usecase.ImportContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.LoadContactPhotoUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
 import com.m4isper.contactsapp.domain.usecase.RemoveFavoriteUseCase
@@ -64,14 +64,19 @@ class ContactListUiTest {
         ObserveSettingsUseCase(settings),
         GetContactDetailsUseCase(repository),
         DeleteContactsUseCase(repository, repository),
-        ImportContactsUseCase(CreateContactUseCase(repository)),
+        ExportContactsUseCase(
+            getContactDetails = GetContactDetailsUseCase(repository),
+            loadContactPhoto = LoadContactPhotoUseCase(repository),
+            getGroups = GetGroupsUseCase(groups),
+            getGroupMembership = GetGroupMembershipUseCase(groups),
+            codec = FakeVCardCodec(),
+        ),
         GetGroupsUseCase(groups),
         GetGroupMembershipUseCase(groups),
         CreateGroupUseCase(groups),
         AddContactsToGroupUseCase(groups),
         ToggleFavoriteUseCase(repository),
         RemoveFavoriteUseCase(repository),
-        FakeVCardCodec(),
         FakeContactsChangeSource(),
     )
 
@@ -95,6 +100,7 @@ class ContactListUiTest {
                 onShareSelected = {},
                 onImportText = {},
                 onExportRequested = {},
+                onExportSelectionRequested = {},
                 onEventHandled = {},
             )
         }
@@ -133,6 +139,7 @@ class ContactListUiTest {
                 onShareSelected = {},
                 onImportText = {},
                 onExportRequested = {},
+                onExportSelectionRequested = {},
                 onEventHandled = {},
             )
         }
@@ -161,6 +168,7 @@ class ContactListUiTest {
                 onShareSelected = {},
                 onImportText = {},
                 onExportRequested = {},
+                onExportSelectionRequested = {},
                 onEventHandled = {},
             )
         }
@@ -191,6 +199,7 @@ class ContactListUiTest {
                 onShareSelected = {},
                 onImportText = {},
                 onExportRequested = {},
+                onExportSelectionRequested = {},
                 onEventHandled = {},
             )
         }
@@ -221,8 +230,9 @@ class ContactListUiTest {
                 onUndoDelete = viewModel::onUndoDelete,
                 onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
                 onShareSelected = viewModel::onShareSelected,
-                onImportText = viewModel.files::onImportText,
+                onImportText = {},
                 onExportRequested = viewModel.files::onExportRequested,
+                onExportSelectionRequested = viewModel::onExportSelection,
                 onEventHandled = viewModel::onEventHandled,
             )
         }
@@ -263,6 +273,7 @@ class ContactListUiTest {
                 onShareSelected = {},
                 onImportText = {},
                 onExportRequested = {},
+                onExportSelectionRequested = {},
                 onEventHandled = {},
             )
         }
@@ -293,8 +304,9 @@ class ContactListUiTest {
                 onUndoDelete = viewModel::onUndoDelete,
                 onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
                 onShareSelected = viewModel::onShareSelected,
-                onImportText = viewModel.files::onImportText,
+                onImportText = {},
                 onExportRequested = viewModel.files::onExportRequested,
+                onExportSelectionRequested = viewModel::onExportSelection,
                 onEventHandled = viewModel::onEventHandled,
             )
         }
@@ -345,8 +357,9 @@ class ContactListUiTest {
                 onUndoDelete = viewModel::onUndoDelete,
                 onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
                 onShareSelected = viewModel::onShareSelected,
-                onImportText = viewModel.files::onImportText,
+                onImportText = {},
                 onExportRequested = viewModel.files::onExportRequested,
+                onExportSelectionRequested = viewModel::onExportSelection,
                 onEventHandled = viewModel::onEventHandled,
                 groups = uiState.groups,
                 onGroupSelected = viewModel::onGroupSelected,
@@ -397,8 +410,9 @@ class ContactListUiTest {
                 onUndoDelete = viewModel::onUndoDelete,
                 onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
                 onShareSelected = viewModel::onShareSelected,
-                onImportText = viewModel.files::onImportText,
+                onImportText = {},
                 onExportRequested = viewModel.files::onExportRequested,
+                onExportSelectionRequested = viewModel::onExportSelection,
                 onEventHandled = viewModel::onEventHandled,
             )
         }
@@ -456,8 +470,9 @@ class ContactListUiTest {
                 onUndoDelete = viewModel::onUndoDelete,
                 onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
                 onShareSelected = viewModel::onShareSelected,
-                onImportText = viewModel.files::onImportText,
+                onImportText = {},
                 onExportRequested = viewModel.files::onExportRequested,
+                onExportSelectionRequested = viewModel::onExportSelection,
                 onEventHandled = viewModel::onEventHandled,
             )
         }
@@ -504,6 +519,7 @@ class ContactListUiTest {
                 onShareSelected = {},
                 onImportText = {},
                 onExportRequested = {},
+                onExportSelectionRequested = {},
                 onEventHandled = {},
             )
         }
@@ -537,6 +553,7 @@ class ContactListUiTest {
                 onShareSelected = {},
                 onImportText = {},
                 onExportRequested = {},
+                onExportSelectionRequested = {},
                 onEventHandled = {},
             )
         }
@@ -567,6 +584,7 @@ class ContactListUiTest {
                 onShareSelected = {},
                 onImportText = {},
                 onExportRequested = {},
+                onExportSelectionRequested = {},
                 onEventHandled = {},
             )
         }
@@ -598,6 +616,7 @@ class ContactListUiTest {
                 onShareSelected = {},
                 onImportText = {},
                 onExportRequested = {},
+                onExportSelectionRequested = {},
                 onEventHandled = {},
             )
         }
@@ -627,8 +646,9 @@ class ContactListUiTest {
                 onUndoDelete = viewModel::onUndoDelete,
                 onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
                 onShareSelected = viewModel::onShareSelected,
-                onImportText = viewModel.files::onImportText,
+                onImportText = {},
                 onExportRequested = viewModel.files::onExportRequested,
+                onExportSelectionRequested = viewModel::onExportSelection,
                 onEventHandled = viewModel::onEventHandled,
                 onToggleFavorite = viewModel::onToggleFavorite,
                 onToggleFavoriteSelected = viewModel::onToggleSelectedFavorite,
@@ -668,8 +688,9 @@ class ContactListUiTest {
                 onUndoDelete = viewModel::onUndoDelete,
                 onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
                 onShareSelected = viewModel::onShareSelected,
-                onImportText = viewModel.files::onImportText,
+                onImportText = {},
                 onExportRequested = viewModel.files::onExportRequested,
+                onExportSelectionRequested = viewModel::onExportSelection,
                 onEventHandled = viewModel::onEventHandled,
                 onToggleFavorite = viewModel::onToggleFavorite,
                 onToggleFavoriteSelected = viewModel::onToggleSelectedFavorite,
@@ -718,8 +739,9 @@ class ContactListUiTest {
                 onUndoDelete = viewModel::onUndoDelete,
                 onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
                 onShareSelected = viewModel::onShareSelected,
-                onImportText = viewModel.files::onImportText,
+                onImportText = {},
                 onExportRequested = viewModel.files::onExportRequested,
+                onExportSelectionRequested = viewModel::onExportSelection,
                 onEventHandled = viewModel::onEventHandled,
                 onToggleFavorite = viewModel::onToggleFavorite,
                 onToggleFavoriteSelected = viewModel::onToggleSelectedFavorite,

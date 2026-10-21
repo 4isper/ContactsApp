@@ -11,7 +11,6 @@ import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.ContactRelation
 import com.m4isper.contactsapp.domain.model.ContactSortOrder
-import com.m4isper.contactsapp.domain.model.EditableName
 import com.m4isper.contactsapp.domain.model.EmailAddress
 import com.m4isper.contactsapp.domain.model.EmailKind
 import com.m4isper.contactsapp.domain.model.ListDensity
@@ -22,15 +21,15 @@ import com.m4isper.contactsapp.domain.model.RelationKind
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import com.m4isper.contactsapp.domain.usecase.AddContactsToGroupUseCase
-import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.ExportContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
-import com.m4isper.contactsapp.domain.usecase.ImportContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.LoadContactPhotoUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
 import com.m4isper.contactsapp.domain.usecase.RemoveFavoriteUseCase
@@ -114,13 +113,19 @@ private class FakeContactsRepository(
         favoritesFlow.value = favoritesFlow.value - contactId
     }
 
-    override suspend fun createContact(form: ContactForm) {
+    override suspend fun createContact(form: ContactForm): Long {
         failure?.let { throw it }
         created += form
         val newId = (contacts.maxOfOrNull { it.contactId } ?: 0L) + 1
         val name = form.name.display.ifBlank { form.name.composed }
         contacts = contacts + ContactDetails(contactId = newId, name = name)
+        return newId
     }
+
+    override suspend fun setContactPhoto(
+        contactId: Long,
+        photo: ByteArray,
+    ) = Unit
 
     override suspend fun updateContact(
         contactId: Long,
@@ -165,14 +170,19 @@ class ContactsViewModelTest {
         ObserveSettingsUseCase(settings),
         GetContactDetailsUseCase(repository),
         DeleteContactsUseCase(repository, repository),
-        ImportContactsUseCase(CreateContactUseCase(repository)),
+        ExportContactsUseCase(
+            getContactDetails = GetContactDetailsUseCase(repository),
+            loadContactPhoto = LoadContactPhotoUseCase(repository),
+            getGroups = GetGroupsUseCase(groups),
+            getGroupMembership = GetGroupMembershipUseCase(groups),
+            codec = codec,
+        ),
         GetGroupsUseCase(groups),
         GetGroupMembershipUseCase(groups),
         CreateGroupUseCase(groups),
         AddContactsToGroupUseCase(groups),
         ToggleFavoriteUseCase(repository),
         RemoveFavoriteUseCase(repository),
-        codec,
         changes,
     )
 
@@ -1060,76 +1070,11 @@ class ContactsViewModelTest {
             assertTrue(event is ContactsEvent.Share)
             assertEquals("shared-vcard", (event as ContactsEvent.Share).content)
             // Шарится только выделенный контакт: детали остальных в порт не уходят.
-            assertEquals(listOf(2L), codec.encodedContacts.single().map { it.contactId })
+            assertEquals(listOf(2L), codec.encodedContacts.single().map { it.details.contactId })
 
             viewModel.onEventHandled()
             advanceUntilIdle()
             assertEquals(null, viewModel.uiState.value.event)
-        }
-
-    @Test
-    fun `import creates contacts and emits finished event`() =
-        runTest {
-            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-            val repository = FakeContactsRepository()
-            val codec = FakeVCardCodec(forms = listOf(ContactForm(name = EditableName(display = "Anna"))))
-            val viewModel = viewModel(repository, codec = codec)
-            backgroundScope.launch { viewModel.uiState.collect { } }
-            viewModel.refresh()
-            advanceUntilIdle()
-
-            val text =
-                """
-                BEGIN:VCARD
-                VERSION:3.0
-                FN:Anna
-                TEL;TYPE=CELL:+71112223344
-                END:VCARD
-                """.trimIndent()
-            viewModel.files.onImportText(text)
-            advanceUntilIdle()
-
-            // Текст без изменений уходит в порт, создаётся каждая разобранная форма.
-            assertEquals(listOf(text), codec.parsedTexts)
-            assertEquals(1, repository.created.size)
-            val state = viewModel.uiState.value
-            assertEquals(ContactsEvent.ImportFinished(1), state.event)
-            assertTrue(state.content is Loadable.Content)
-        }
-
-    @Test
-    fun `import without vcards emits empty event`() =
-        runTest {
-            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-            val repository = FakeContactsRepository()
-            val viewModel = viewModel(repository)
-            backgroundScope.launch { viewModel.uiState.collect { } }
-
-            viewModel.files.onImportText("plain text without vcards")
-            advanceUntilIdle()
-
-            assertEquals(ContactsEvent.ImportEmpty, viewModel.uiState.value.event)
-            assertTrue(repository.created.isEmpty())
-        }
-
-    @Test
-    fun `import failure emits failed event`() =
-        runTest {
-            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-            val repository = FakeContactsRepository(failure = RuntimeException("boom"))
-            val viewModel = viewModel(repository, codec = FakeVCardCodec(forms = listOf(ContactForm())))
-            backgroundScope.launch { viewModel.uiState.collect { } }
-
-            viewModel.files.onImportText(
-                """
-                BEGIN:VCARD
-                FN:Anna
-                END:VCARD
-                """.trimIndent(),
-            )
-            advanceUntilIdle()
-
-            assertEquals(ContactsEvent.ImportFailed, viewModel.uiState.value.event)
         }
 
     @Test
@@ -1158,7 +1103,37 @@ class ContactsViewModelTest {
             assertEquals(2, ready.count)
             assertEquals("exported-vcard", ready.content)
             // В порт уходят полные детали всех контактов списка.
-            assertEquals(listOf(1L, 2L), codec.encodedContacts.single().map { it.contactId })
+            assertEquals(listOf(1L, 2L), codec.encodedContacts.single().map { it.details.contactId })
+        }
+
+    @Test
+    fun `export selection emits vcard for selected contacts only`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(
+                    listOf(
+                        details(1, "Anna", "111"),
+                        details(2, "Bob", "222"),
+                    ),
+                )
+            val codec = FakeVCardCodec(encoded = "selected-vcard")
+            val viewModel = viewModel(repository, codec = codec)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+            viewModel.onContactSelected(2)
+            advanceUntilIdle()
+
+            viewModel.onExportSelection()
+            advanceUntilIdle()
+
+            val event = viewModel.uiState.value.event
+            assertTrue(event is ContactsEvent.ExportReady)
+            val ready = event as ContactsEvent.ExportReady
+            assertEquals(1, ready.count)
+            assertEquals("selected-vcard", ready.content)
+            assertEquals(listOf(2L), codec.encodedContacts.single().map { it.details.contactId })
         }
 
     @Test

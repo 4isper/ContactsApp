@@ -37,16 +37,15 @@ private class RecordingRepository :
 
     override suspend fun getContactForm(contactId: Long): ContactForm? = null
 
-    override suspend fun createContact(form: ContactForm) {
-        createContact(form, ContactAccount.Local)
-    }
+    override suspend fun createContact(form: ContactForm): Long = createContact(form, ContactAccount.Local)
 
     override suspend fun createContact(
         form: ContactForm,
         account: ContactAccount,
-    ) {
+    ): Long {
         created += form
         createdAccounts += account
+        return created.size.toLong()
     }
 
     override suspend fun updateContact(
@@ -55,6 +54,11 @@ private class RecordingRepository :
     ) {
         updated += contactId to form
     }
+
+    override suspend fun setContactPhoto(
+        contactId: Long,
+        photo: ByteArray,
+    ) = Unit
 
     override suspend fun deleteContact(contactId: Long) {
         deleted += contactId
@@ -91,7 +95,7 @@ class EditorUseCasesTest {
 
             val result = CreateContactUseCase(repository)(form)
 
-            assertEquals(SaveResult.Saved, result)
+            assertEquals(SaveResult.Saved(1L), result)
             assertEquals(listOf(form), repository.created)
             assertEquals(listOf(ContactAccount.Local), repository.createdAccounts)
         }
@@ -112,7 +116,7 @@ class EditorUseCasesTest {
 
             val result = CreateContactUseCase(repository)(form)
 
-            assertEquals(SaveResult.Saved, result)
+            assertEquals(SaveResult.Saved(1L), result)
             assertEquals(listOf(EditablePhone(number = "111", customLabel = null)), repository.created.single().phones)
         }
 
@@ -125,7 +129,7 @@ class EditorUseCasesTest {
 
             val result = CreateContactUseCase(repository)(form, account)
 
-            assertEquals(SaveResult.Saved, result)
+            assertEquals(SaveResult.Saved(1L), result)
             assertEquals(listOf(account), repository.createdAccounts)
         }
 
@@ -148,7 +152,7 @@ class EditorUseCasesTest {
 
             val result = UpdateContactUseCase(repository)(7, form)
 
-            assertEquals(SaveResult.Saved, result)
+            assertEquals(SaveResult.Saved(7L), result)
             assertEquals(listOf(7L to form), repository.updated)
         }
 

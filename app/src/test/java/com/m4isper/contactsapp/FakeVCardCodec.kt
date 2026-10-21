@@ -1,8 +1,10 @@
 package com.m4isper.contactsapp
 
-import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.vcard.VCardCodec
+import com.m4isper.contactsapp.domain.vcard.VCardContact
+import com.m4isper.contactsapp.domain.vcard.VCardExportContact
+import com.m4isper.contactsapp.domain.vcard.VCardParseResult
 
 /**
  * Фейк порта vCard: презентационные тесты не зависят от формата .vcf —
@@ -12,16 +14,18 @@ import com.m4isper.contactsapp.domain.vcard.VCardCodec
 internal class FakeVCardCodec(
     var forms: List<ContactForm> = emptyList(),
     var encoded: String = "VCARD",
+    var failure: Throwable? = null,
 ) : VCardCodec {
     val parsedTexts = mutableListOf<String>()
-    val encodedContacts = mutableListOf<List<ContactDetails>>()
+    val encodedContacts = mutableListOf<List<VCardExportContact>>()
 
-    override suspend fun parse(text: String): List<ContactForm> {
+    override suspend fun parse(text: String): VCardParseResult {
         parsedTexts += text
-        return forms
+        failure?.let { throw it }
+        return VCardParseResult(contacts = forms.map { VCardContact(form = it) })
     }
 
-    override suspend fun encode(contacts: List<ContactDetails>): String {
+    override suspend fun encode(contacts: List<VCardExportContact>): String {
         encodedContacts += contacts
         return encoded
     }

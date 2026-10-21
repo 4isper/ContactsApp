@@ -20,9 +20,17 @@ import com.m4isper.contactsapp.domain.model.SipAddress
 import com.m4isper.contactsapp.domain.model.SipKind
 import com.m4isper.contactsapp.domain.model.Website
 import com.m4isper.contactsapp.domain.model.WebsiteKind
+import com.m4isper.contactsapp.domain.vcard.VCardExportContact
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+
+/** Контакт для экспорта: детали без фото и групп. */
+private fun vcard(details: ContactDetails): String = buildVCard(VCardExportContact(details = details))
+
+/** Поток .vcf из контактов без фото и групп. */
+private fun vcards(details: List<ContactDetails>): String =
+    buildVCards(details.map { VCardExportContact(details = it) })
 
 class VCardBuilderTest {
     @Test
@@ -40,7 +48,7 @@ class VCardBuilderTest {
                     ),
             )
 
-        val vcard = buildVCard(details)
+        val vcard = vcard(details)
 
         assertEquals(
             "BEGIN:VCARD\n" +
@@ -64,7 +72,7 @@ class VCardBuilderTest {
                 phones = listOf(PhoneNumber("111", PhoneKind.MOBILE)),
             )
 
-        val vcard = buildVCard(details)
+        val vcard = vcard(details)
 
         assertEquals(
             "FN:Doe\\, John\\; Jr\\n III\\\\Sr",
@@ -98,7 +106,7 @@ class VCardBuilderTest {
                 birthday = Birthday(day = 24, month = 5, year = 1990),
             )
 
-        val vcard = buildVCard(details)
+        val vcard = vcard(details)
 
         assertEquals(
             listOf(
@@ -128,7 +136,7 @@ class VCardBuilderTest {
                 birthday = Birthday(day = 24, month = 5, year = null),
             )
 
-        val vcard = buildVCard(details)
+        val vcard = vcard(details)
 
         assertEquals(
             listOf("BDAY:--05-24"),
@@ -154,7 +162,7 @@ class VCardBuilderTest {
                     ),
             )
 
-        val vcard = buildVCard(details)
+        val vcard = vcard(details)
 
         val lines = vcard.trim().lines()
         assertEquals("IMPP;X-SERVICE-TYPE=Skype:skype_anna", lines[3])
@@ -171,7 +179,7 @@ class VCardBuilderTest {
                 ContactDetails(contactId = 2, name = "Bob"),
             )
 
-        val vcards = buildVCards(contacts)
+        val vcards = vcards(contacts)
 
         assertEquals(2, Regex("BEGIN:VCARD").findAll(vcards).count())
         assertEquals(2, Regex("END:VCARD").findAll(vcards).count())
@@ -205,7 +213,7 @@ class VCardBuilderTest {
                     ),
             )
 
-        val vcard = buildVCard(details)
+        val vcard = vcard(details)
 
         assertEquals(
             "N:Петров;Иван;Петрович;г-н;Jr.",
@@ -222,7 +230,7 @@ class VCardBuilderTest {
                 nameParts = NameParts(given = "John;Jr", family = "Doe, Sr"),
             )
 
-        val vcard = buildVCard(details)
+        val vcard = vcard(details)
 
         assertEquals(
             "N:Doe\\, Sr;John\\;Jr;;;",
@@ -234,7 +242,7 @@ class VCardBuilderTest {
     fun `omits N line without structured name parts`() {
         val details = ContactDetails(contactId = 7, name = "Anna")
 
-        val vcard = buildVCard(details)
+        val vcard = vcard(details)
 
         assertEquals(false, vcard.lines().any { it.startsWith("N:") })
     }
@@ -265,7 +273,7 @@ class VCardBuilderTest {
                     ),
             )
 
-        val vcard = buildVCard(details)
+        val vcard = vcard(details)
 
         assertEquals(
             listOf(
@@ -296,7 +304,7 @@ class VCardBuilderTest {
                 addresses = listOf(PostalAddress("Moscow 1", AddressKind.OTHER, customLabel = "Дача")),
             )
 
-        val vcard = buildVCard(details)
+        val vcard = vcard(details)
 
         assertEquals(
             listOf(
@@ -359,7 +367,7 @@ class VCardBuilderTest {
                     ),
             )
 
-        val vcard = buildVCard(details)
+        val vcard = vcard(details)
 
         assertEquals(
             listOf(
@@ -404,9 +412,41 @@ class VCardBuilderTest {
                 websites = listOf(Website("https://x.dev/a,b")),
             )
 
-        val vcard = buildVCard(details)
+        val vcard = vcard(details)
 
         assertEquals("FN:line1\\nline2\\nline3", vcard.lines().first { it.startsWith("FN:") })
         assertEquals("URL:https://x.dev/a\\,b", vcard.lines().first { it.startsWith("URL:") })
+    }
+
+    @Test
+    fun `writes photo and categories`() {
+        val details = ContactDetails(contactId = 1, name = "Anna")
+
+        val vcard =
+            buildVCard(
+                VCardExportContact(
+                    details = details,
+                    photo = byteArrayOf(1, 2, 3),
+                    groups = listOf("Friends", "Work, Home"),
+                ),
+            )
+
+        assertEquals(
+            "PHOTO;ENCODING=b;TYPE=JPEG:AQID",
+            vcard.lines().first { it.startsWith("PHOTO") },
+        )
+        assertEquals(
+            "CATEGORIES:Friends,Work\\, Home",
+            vcard.lines().first { it.startsWith("CATEGORIES:") },
+        )
+    }
+
+    @Test
+    fun `photo without bytes is not written`() {
+        val details = ContactDetails(contactId = 1, name = "Anna")
+
+        val vcard = buildVCard(VCardExportContact(details = details, photo = byteArrayOf()))
+
+        assertTrue(vcard.lines().none { it.startsWith("PHOTO") })
     }
 }

@@ -10,6 +10,7 @@ import com.m4isper.contactsapp.domain.model.EmailKind
 import com.m4isper.contactsapp.domain.model.EventKind
 import com.m4isper.contactsapp.domain.model.ImProtocol
 import com.m4isper.contactsapp.domain.model.InstantMessage
+import com.m4isper.contactsapp.domain.model.Organization
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.model.PostalAddress
@@ -18,6 +19,7 @@ import com.m4isper.contactsapp.domain.model.SipAddress
 import com.m4isper.contactsapp.domain.model.SipKind
 import com.m4isper.contactsapp.domain.model.Website
 import com.m4isper.contactsapp.domain.model.WebsiteKind
+import com.m4isper.contactsapp.domain.vcard.VCardExportContact
 
 /** Сборка vCard 3.0 из контактов: обратная сторона [parseVCards]. */
 
@@ -94,12 +96,16 @@ internal fun escapeVCard(value: String): String =
 /**
  * Пишет строки одного vCard: подписи, которые не выражаются TYPE,
  * выносятся в группу itemN (формат Apple/Android) — itemN.NAME + itemN.X-ABLabel.
+ *
+ * Подавление осознанное: писатель держит по маленькому методу на тип свойства.
  */
+@Suppress("TooManyFunctions")
 private class VCardWriter {
     private val lines = mutableListOf<String>()
     private var group = 0
 
-    fun write(details: ContactDetails): String {
+    fun write(contact: VCardExportContact): String {
+        val details = contact.details
         lines += "BEGIN:VCARD"
         lines += "VERSION:3.0"
         writeName(details)
@@ -111,26 +117,9 @@ private class VCardWriter {
         details.sipAddresses.forEach(::writeSip)
         details.addresses.forEach(::writeAddress)
         details.websites.forEach(::writeWebsite)
-        details.organization?.let { organization ->
-            if (organization.company.isNotBlank() || organization.department.isNotBlank()) {
-                val value =
-                    if (organization.department.isBlank()) {
-                        escapeVCard(organization.company)
-                    } else {
-                        "${escapeVCard(organization.company)};${escapeVCard(organization.department)}"
-                    }
-                writeProperty("ORG", value)
-            }
-            if (organization.title.isNotBlank()) {
-                writeProperty("TITLE", escapeVCard(organization.title))
-            }
-            if (organization.jobDescription.isNotBlank()) {
-                writeProperty("ROLE", escapeVCard(organization.jobDescription))
-            }
-            if (organization.officeLocation.isNotBlank()) {
-                writeProperty("X-OFFICE-LOCATION", escapeVCard(organization.officeLocation))
-            }
-        }
+        contact.photo?.takeIf { it.isNotEmpty() }?.let { writePhoto(it) }
+        writeCategories(contact.groups)
+        details.organization?.let(::writeOrganization)
         details.note?.let { writeProperty("NOTE", escapeVCard(it)) }
         details.birthday?.let { writeProperty("BDAY", birthdayToString(it)) }
         details.nickname?.let { writeProperty("NICKNAME", escapeVCard(it)) }
@@ -138,6 +127,28 @@ private class VCardWriter {
         details.events.forEach(::writeEvent)
         lines += "END:VCARD"
         return lines.joinToString(separator = "\n", postfix = "\n")
+    }
+
+    /** Организация: ORG (компания и отдел), TITLE, ROLE и место в офисе. */
+    private fun writeOrganization(organization: Organization) {
+        if (organization.company.isNotBlank() || organization.department.isNotBlank()) {
+            val value =
+                if (organization.department.isBlank()) {
+                    escapeVCard(organization.company)
+                } else {
+                    "${escapeVCard(organization.company)};${escapeVCard(organization.department)}"
+                }
+            writeProperty("ORG", value)
+        }
+        if (organization.title.isNotBlank()) {
+            writeProperty("TITLE", escapeVCard(organization.title))
+        }
+        if (organization.jobDescription.isNotBlank()) {
+            writeProperty("ROLE", escapeVCard(organization.jobDescription))
+        }
+        if (organization.officeLocation.isNotBlank()) {
+            writeProperty("X-OFFICE-LOCATION", escapeVCard(organization.officeLocation))
+        }
     }
 
     private fun writeName(details: ContactDetails) {
@@ -202,6 +213,19 @@ private class VCardWriter {
         )
     }
 
+    /** Фото контакта: base64 в свойстве PHOTO, длинная строка сворачивается. */
+    private fun writePhoto(bytes: ByteArray) {
+        lines += "PHOTO;ENCODING=b;TYPE=JPEG:${encodePhoto(bytes)}"
+    }
+
+    /** Группы контакта: список категорий через запятую. */
+    private fun writeCategories(groups: List<String>) {
+        val value = groups.filter { it.isNotBlank() }.joinToString(",") { escapeVCard(it) }
+        if (value.isNotBlank()) {
+            writeProperty("CATEGORIES", value)
+        }
+    }
+
     private fun writeRelation(relation: ContactRelation) {
         writeProperty(
             "RELATED;TYPE=${vcardRelationType(relation.kind)}",
@@ -234,8 +258,8 @@ private class VCardWriter {
     }
 }
 
-internal fun buildVCard(details: ContactDetails): String = VCardWriter().write(details)
+internal fun buildVCard(contact: VCardExportContact): String = VCardWriter().write(contact)
 
 /** Склеенный поток из нескольких vCard: валидный формат для файла .vcf с несколькими контактами. */
-internal fun buildVCards(contacts: List<ContactDetails>): String =
+internal fun buildVCards(contacts: List<VCardExportContact>): String =
     contacts.joinToString(separator = "") { buildVCard(it) }

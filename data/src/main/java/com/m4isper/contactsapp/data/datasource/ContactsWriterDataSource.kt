@@ -6,10 +6,11 @@ import com.m4isper.contactsapp.domain.model.ContactForm
 
 /** Запись контактов и чтение сырых строк для diff при обновлении. */
 interface ContactsWriterDataSource {
+    /** Создаёт контакт. @return id созданного контакта. */
     suspend fun createContact(
         form: ContactForm,
         account: ContactAccount,
-    )
+    ): Long
 
     suspend fun updateContact(
         rawContactId: Long,
@@ -22,4 +23,10 @@ interface ContactsWriterDataSource {
     suspend fun loadRawContactId(contactId: Long): Long?
 
     suspend fun deleteContact(contactId: Long)
+
+    /** Заменяет фото контакта готовыми байтами. */
+    suspend fun setContactPhoto(
+        contactId: Long,
+        photo: ByteArray,
+    )
 }

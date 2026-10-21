@@ -14,4 +14,7 @@ interface ContactsDataSource {
 
     /** Аккаунты, в которые можно сохранить контакт; локальный есть всегда. */
     suspend fun getContactAccounts(): List<ContactAccount> = listOf(ContactAccount.Local)
+
+    /** Фото контакта для экспорта; null, если фото нет. */
+    suspend fun loadContactPhoto(contactId: Long): ByteArray? = null
 }

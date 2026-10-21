@@ -12,17 +12,16 @@ import com.m4isper.contactsapp.domain.repository.ContactsChangeSource
 import com.m4isper.contactsapp.domain.usecase.AddContactsToGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.ExportContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
-import com.m4isper.contactsapp.domain.usecase.ImportContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
 import com.m4isper.contactsapp.domain.usecase.RemoveFavoriteUseCase
 import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
-import com.m4isper.contactsapp.domain.vcard.VCardCodec
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.logw
 import dev.zacsweers.metro.AppScope
@@ -77,17 +76,6 @@ sealed interface ContactsEvent {
 
     /** Не удалось удалить выделенные контакты. */
     data object DeleteFailed : ContactsEvent
-
-    /** Импорт: в файле не нашлось ни одной vCard. */
-    data object ImportEmpty : ContactsEvent
-
-    /** Импорт: создано [count] контактов. */
-    data class ImportFinished(
-        val count: Int,
-    ) : ContactsEvent
-
-    /** Импорт: ни один контакт не создан из-за ошибок. */
-    data object ImportFailed : ContactsEvent
 
     /** В группу добавлены выделенные контакты. */
     data class GroupAddFinished(
@@ -188,14 +176,13 @@ class ContactsViewModel(
     observeSettingsUseCase: ObserveSettingsUseCase,
     private val getContactDetailsUseCase: GetContactDetailsUseCase,
     deleteContactsUseCase: DeleteContactsUseCase,
-    importContactsUseCase: ImportContactsUseCase,
+    private val exportContactsUseCase: ExportContactsUseCase,
     private val getGroupsUseCase: GetGroupsUseCase,
     private val getGroupMembershipUseCase: GetGroupMembershipUseCase,
     private val createGroupUseCase: CreateGroupUseCase,
     private val addContactsToGroupUseCase: AddContactsToGroupUseCase,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
     private val removeFavoriteUseCase: RemoveFavoriteUseCase,
-    private val vCardCodec: VCardCodec,
     private val contactsChangeSource: ContactsChangeSource,
 ) : ViewModel() {
     private val allContacts = MutableStateFlow<List<ContactDetails>>(emptyList())
@@ -320,16 +307,13 @@ class ContactsViewModel(
         observeDeleteOutcome()
     }
 
-    /** Импорт и экспорт .vcf: сценарии вынесены в [ContactsFileActions]. */
+    /** Экспорт .vcf: сценарии вынесены в [ContactsFileActions]. */
     internal val files =
         ContactsFileActions(
             scope = viewModelScope,
             events = eventFlow,
+            exportContacts = exportContactsUseCase,
             getContacts = { getContactsUseCase() },
-            getContactDetails = { getContactDetailsUseCase(it) },
-            importContacts = importContactsUseCase,
-            vCardCodec = vCardCodec,
-            refresh = ::refresh,
         )
 
     /**
@@ -452,9 +436,10 @@ class ContactsViewModel(
         deletes.windowClosed()
     }
 
-    fun onImportText(text: String) = files.onImportText(text)
-
     fun onExportRequested() = files.onExportRequested()
+
+    /** Экспорт выделенных контактов в .vcf. */
+    fun onExportSelection() = files.onExportSelection(selectionFlow.value.toList())
 
     /** Догружает полные детали выделенных контактов: в списке они облегчённые, для vCard этого мало. */
     @Suppress("TooGenericExceptionCaught")
@@ -462,16 +447,18 @@ class ContactsViewModel(
         val ids = selectionFlow.value.toList()
         if (ids.isEmpty()) return
         viewModelScope.launch {
-            val contacts =
+            val content =
                 try {
-                    ids.mapNotNull { getContactDetailsUseCase(it) }
+                    exportContactsUseCase(ids)
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
                     logw(LIST_TAG, "share vCard encode failed", e)
-                    emptyList()
+                    null
                 }
-            eventFlow.value = ContactsEvent.Share(vCardCodec.encode(contacts))
+            if (content != null) {
+                eventFlow.value = ContactsEvent.Share(content)
+            }
         }
     }
 

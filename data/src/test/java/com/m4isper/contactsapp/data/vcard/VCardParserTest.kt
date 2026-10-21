@@ -4,6 +4,7 @@ import com.m4isper.contactsapp.domain.model.AddressKind
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactEvent
+import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.ContactRelation
 import com.m4isper.contactsapp.domain.model.EmailAddress
 import com.m4isper.contactsapp.domain.model.EmailKind
@@ -21,8 +22,16 @@ import com.m4isper.contactsapp.domain.model.SipAddress
 import com.m4isper.contactsapp.domain.model.SipKind
 import com.m4isper.contactsapp.domain.model.Website
 import com.m4isper.contactsapp.domain.model.WebsiteKind
+import com.m4isper.contactsapp.domain.vcard.VCardExportContact
+import com.m4isper.contactsapp.domain.vcard.VCardIssue
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.Base64
+
+/** Разобранные формы контактов: неразобранные блоки возвращаются отдельно. */
+private fun parseForms(text: String): List<ContactForm> = parseVCards(text).contacts.map { it.form }
 
 class VCardParserTest {
     @Test
@@ -46,7 +55,7 @@ class VCardParserTest {
                 nameParts = NameParts(given = "Anna", family = "Ivanova"),
             )
 
-        val forms = parseVCards(buildVCards(listOf(details)))
+        val forms = parseForms(buildVCards(listOf(VCardExportContact(details = details))))
 
         assertEquals(1, forms.size)
         val form = forms.single()
@@ -94,7 +103,7 @@ class VCardParserTest {
                     ),
             )
 
-        val form = parseVCards(buildVCards(listOf(details))).single()
+        val form = parseForms(buildVCards(listOf(VCardExportContact(details = details)))).single()
 
         assertEquals("Нюша", form.nickname.nickname)
         assertEquals(listOf("Bob", "Михалыч"), form.relations.map { it.name })
@@ -114,7 +123,7 @@ class VCardParserTest {
 
     @Test
     fun `parses display name only`() {
-        val form = parseVCards("BEGIN:VCARD\nVERSION:3.0\nFN:Bob\nEND:VCARD").single()
+        val form = parseForms("BEGIN:VCARD\nVERSION:3.0\nFN:Bob\nEND:VCARD").single()
 
         assertEquals(NameMode.DISPLAY, form.name.mode)
         assertEquals("Bob", form.name.display)
@@ -123,7 +132,7 @@ class VCardParserTest {
     @Test
     fun `parses vcard 4 point 0 lowercase types`() {
         val form =
-            parseVCards(
+            parseForms(
                 """
                 begin:vcard
                 version:4.0
@@ -140,7 +149,7 @@ class VCardParserTest {
 
     @Test
     fun `joins folded lines`() {
-        val form = parseVCards("BEGIN:VCARD\nFN:Bob\nNOTE:first\n part\nEND:VCARD").single()
+        val form = parseForms("BEGIN:VCARD\nFN:Bob\nNOTE:first\n part\nEND:VCARD").single()
 
         assertEquals("firstpart", form.note.note)
     }
@@ -148,7 +157,7 @@ class VCardParserTest {
     @Test
     fun `parses several cards and skips empty ones`() {
         val forms =
-            parseVCards(
+            parseForms(
                 """
                 BEGIN:VCARD
                 VERSION:3.0
@@ -171,7 +180,7 @@ class VCardParserTest {
     @Test
     fun `strips group prefixes and tel uri scheme`() {
         val form =
-            parseVCards(
+            parseForms(
                 """
                 BEGIN:VCARD
                 FN:Dave
@@ -190,7 +199,7 @@ class VCardParserTest {
     fun `unwraps android wrapped standard labels`() {
         val wrappedWork = "_" + '$' + "!<Work>!" + '$' + "_"
         val form =
-            parseVCards(
+            parseForms(
                 "BEGIN:VCARD\nFN:Kate\nitem1.TEL:111\nitem1.X-ABLabel:$wrappedWork\nEND:VCARD",
             ).single()
 
@@ -201,7 +210,7 @@ class VCardParserTest {
     @Test
     fun `applies ablabel to its own group only`() {
         val form =
-            parseVCards(
+            parseForms(
                 """
                 BEGIN:VCARD
                 FN:Max
@@ -218,7 +227,7 @@ class VCardParserTest {
     @Test
     fun `parses event labels from ablabel groups`() {
         val form =
-            parseVCards(
+            parseForms(
                 """
                 BEGIN:VCARD
                 FN:Lena
@@ -245,7 +254,7 @@ class VCardParserTest {
                 emails = listOf(EmailAddress("a@x.com", EmailKind.OTHER, customLabel = "Личная")),
             )
 
-        val form = parseVCards(buildVCards(listOf(details))).single()
+        val form = parseForms(buildVCards(listOf(VCardExportContact(details = details)))).single()
 
         assertEquals("Рабочий", form.phones.single().customLabel)
         assertEquals("Личная", form.emails.single().customLabel)
@@ -254,7 +263,7 @@ class VCardParserTest {
     @Test
     fun `keeps card cut by repeated begin`() {
         val forms =
-            parseVCards(
+            parseForms(
                 """
                 BEGIN:VCARD
                 FN:First
@@ -269,17 +278,17 @@ class VCardParserTest {
 
     @Test
     fun `parses birthday variants`() {
-        val yearless = parseVCards("BEGIN:VCARD\nFN:A\nBDAY:--04-05\nEND:VCARD").single()
+        val yearless = parseForms("BEGIN:VCARD\nFN:A\nBDAY:--04-05\nEND:VCARD").single()
         assertEquals(Birthday(day = 5, month = 4, year = null), yearless.birthday.value)
 
-        val full = parseVCards("BEGIN:VCARD\nFN:B\nBDAY:1990-04-05T00:00:00Z\nEND:VCARD").single()
+        val full = parseForms("BEGIN:VCARD\nFN:B\nBDAY:1990-04-05T00:00:00Z\nEND:VCARD").single()
         assertEquals(Birthday(day = 5, month = 4, year = 1990), full.birthday.value)
     }
 
     @Test
     fun `parses instant messengers with service types`() {
         val form =
-            parseVCards(
+            parseForms(
                 """
                 BEGIN:VCARD
                 FN:Eve
@@ -297,7 +306,7 @@ class VCardParserTest {
     @Test
     fun `parses address components and organization`() {
         val form =
-            parseVCards(
+            parseForms(
                 """
                 BEGIN:VCARD
                 FN:Frank
@@ -317,7 +326,7 @@ class VCardParserTest {
     @Test
     fun `parses relations events and nickname`() {
         val form =
-            parseVCards(
+            parseForms(
                 """
                 BEGIN:VCARD
                 FN:Gina
@@ -383,7 +392,7 @@ class VCardParserTest {
                     ),
             )
 
-        val form = parseVCards(buildVCards(listOf(details))).single()
+        val form = parseForms(buildVCards(listOf(VCardExportContact(details = details)))).single()
 
         assertEquals(true, form.phones[0].isPrimary)
         assertEquals(PhoneKind.MOBILE, form.phones[0].kind)
@@ -408,7 +417,7 @@ class VCardParserTest {
     @Test
     fun `parses primary pref and sip imp without service type`() {
         val form =
-            parseVCards(
+            parseForms(
                 """
                 BEGIN:VCARD
                 FN:Kate
@@ -424,5 +433,130 @@ class VCardParserTest {
         assertEquals(true, form.emails.single().isPrimary)
         assertEquals("sip:kate@example.com", form.sipAddresses.single().address)
         assertEquals(WebsiteKind.OTHER, form.websites.single().kind)
+    }
+
+    @Test
+    fun `parses photo and categories`() {
+        val photo = byteArrayOf(1, 2, 3, 4, 5)
+
+        val result =
+            parseVCards(
+                """
+                BEGIN:VCARD
+                VERSION:3.0
+                FN:Anna
+                PHOTO;ENCODING=b;TYPE=JPEG:${Base64.getEncoder().encodeToString(photo)}
+                CATEGORIES:Friends,Work\, Home
+                END:VCARD
+                """.trimIndent(),
+            )
+
+        val contact = result.contacts.single()
+        assertArrayEquals(photo, contact.photo)
+        assertEquals(listOf("Friends", "Work, Home"), contact.categories)
+        assertTrue(result.invalid.isEmpty())
+    }
+
+    @Test
+    fun `parses photo from data uri`() {
+        val photo = byteArrayOf(9, 8, 7)
+
+        val result =
+            parseVCards(
+                """
+                BEGIN:VCARD
+                FN:Anna
+                PHOTO:data:image/jpeg;base64,${Base64.getEncoder().encodeToString(photo)}
+                END:VCARD
+                """.trimIndent(),
+            )
+
+        assertArrayEquals(photo, result.contacts.single().photo)
+    }
+
+    @Test
+    fun `skips photo that is over the size limit`() {
+        val huge = ByteArray(MAX_PHOTO_BYTES + 16)
+
+        val result =
+            parseVCards(
+                """
+                BEGIN:VCARD
+                FN:Anna
+                PHOTO;ENCODING=b:${Base64.getEncoder().encodeToString(huge)}
+                END:VCARD
+                """.trimIndent(),
+            )
+
+        val contact = result.contacts.single()
+        assertEquals(null, contact.photo)
+        assertTrue(contact.photoSkipped)
+    }
+
+    @Test
+    fun `reports blocks without supported fields`() {
+        val result =
+            parseVCards(
+                """
+                BEGIN:VCARD
+                X-UNKNOWN:1
+                END:VCARD
+                BEGIN:VCARD
+                NOTE:
+                END:VCARD
+                """.trimIndent(),
+            )
+
+        assertTrue(result.contacts.isEmpty())
+        assertEquals(2, result.invalid.size)
+        assertEquals(VCardIssue.UNSUPPORTED, result.invalid[0].issue)
+        assertEquals(VCardIssue.EMPTY, result.invalid[1].issue)
+    }
+
+    @Test
+    fun `parses google and apple style vcards`() {
+        val google =
+            parseVCards(
+                """
+                BEGIN:VCARD
+                VERSION:3.0
+                N:Иванова;Анна;;;
+                FN:Анна Иванова
+                TEL;TYPE=CELL;VOICE:+79161234567
+                EMAIL;TYPE=INTERNET;PREF:anna@example.com
+                ORG:ACME;QA
+                END:VCARD
+                """.trimIndent(),
+            ).contacts.single()
+        assertEquals(
+            "+79161234567",
+            google.form.phones
+                .single()
+                .number,
+        )
+        assertEquals(
+            true,
+            google.form.emails
+                .single()
+                .isPrimary,
+        )
+
+        val apple =
+            parseVCards(
+                """
+                BEGIN:VCARD
+                VERSION:3.0
+                FN:Анна Иванова
+                item1.TEL:+79161234567
+                item1.X-ABLabel:Рабочий
+                END:VCARD
+                """.trimIndent(),
+            ).contacts.single()
+        assertEquals(
+            "Рабочий",
+            apple.form.phones
+                .single()
+                .customLabel,
+        )
     }
 }

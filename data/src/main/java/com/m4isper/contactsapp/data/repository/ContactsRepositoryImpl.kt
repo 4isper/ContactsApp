@@ -91,12 +91,12 @@ class ContactsRepositoryImpl(
 
     override suspend fun getContactAccounts(): List<ContactAccount> = dataSource.getContactAccounts()
 
-    override suspend fun createContact(form: ContactForm) = writer.createContact(form, ContactAccount.Local)
+    override suspend fun createContact(form: ContactForm): Long = writer.createContact(form, ContactAccount.Local)
 
     override suspend fun createContact(
         form: ContactForm,
         account: ContactAccount,
-    ) = writer.createContact(form, account)
+    ): Long = writer.createContact(form, account)
 
     override suspend fun updateContact(
         contactId: Long,
@@ -111,6 +111,13 @@ class ContactsRepositoryImpl(
     }
 
     override suspend fun deleteContact(contactId: Long) = writer.deleteContact(contactId)
+
+    override suspend fun setContactPhoto(
+        contactId: Long,
+        photo: ByteArray,
+    ) = writer.setContactPhoto(contactId, photo)
+
+    override suspend fun loadContactPhoto(contactId: Long): ByteArray? = dataSource.loadContactPhoto(contactId)
 
     override suspend fun mergeContacts(
         targetId: Long,

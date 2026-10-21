@@ -388,9 +388,10 @@ private class FakeWriter(
     override suspend fun createContact(
         form: ContactForm,
         account: ContactAccount,
-    ) {
+    ): Long {
         created += form
         createdAccounts += account
+        return created.size.toLong()
     }
 
     override suspend fun updateContact(
@@ -404,6 +405,11 @@ private class FakeWriter(
     override suspend fun loadContactRows(contactId: Long): ContactRows = rowsByContact[contactId] ?: rows
 
     override suspend fun loadRawContactId(contactId: Long): Long? = rawContactIdsByContact[contactId] ?: rawContactId
+
+    override suspend fun setContactPhoto(
+        contactId: Long,
+        photo: ByteArray,
+    ) = Unit
 
     override suspend fun deleteContact(contactId: Long) {
         deleted += contactId

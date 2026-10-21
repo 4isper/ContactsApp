@@ -77,16 +77,15 @@ private class FakeEditorRepository :
 
     override suspend fun getContactAccounts(): List<ContactAccount> = accounts
 
-    override suspend fun createContact(form: ContactForm) {
-        createContact(form, ContactAccount.Local)
-    }
+    override suspend fun createContact(form: ContactForm): Long = createContact(form, ContactAccount.Local)
 
     override suspend fun createContact(
         form: ContactForm,
         account: ContactAccount,
-    ) {
+    ): Long {
         created += form
         createdAccounts += account
+        return created.size.toLong()
     }
 
     override suspend fun updateContact(
@@ -95,6 +94,11 @@ private class FakeEditorRepository :
     ) {
         updated += contactId to form
     }
+
+    override suspend fun setContactPhoto(
+        contactId: Long,
+        photo: ByteArray,
+    ) = Unit
 
     override suspend fun deleteContact(contactId: Long) {
         deleted += contactId

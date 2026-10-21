@@ -5,6 +5,7 @@ import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Deselect
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.SelectAll
@@ -24,7 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import com.m4isper.contactsapp.R
 
-/** Контекстная панель режима выделения: счётчик, «выбрать все», добавление в группу, шаринг и удаление. */
+/** Контекстная панель режима выделения: счётчик, «выбрать все», добавление в группу, шаринг, экспорт и удаление. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun SelectionTopBar(
@@ -36,6 +37,7 @@ internal fun SelectionTopBar(
     onToggleFavorite: () -> Unit,
     onAddToGroup: () -> Unit,
     onShare: () -> Unit,
+    onExport: () -> Unit,
     onDelete: () -> Unit,
 ) {
     TopAppBar(
@@ -97,6 +99,15 @@ internal fun SelectionTopBar(
                 Icon(
                     Icons.Filled.Share,
                     contentDescription = stringResource(R.string.action_share),
+                )
+            }
+            IconButton(
+                onClick = onExport,
+                modifier = Modifier.testTag("export_selected_button"),
+            ) {
+                Icon(
+                    Icons.Filled.Download,
+                    contentDescription = stringResource(R.string.action_export),
                 )
             }
             IconButton(

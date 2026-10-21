@@ -1,3 +1,6 @@
+// Подавление осознанное: план записи разбит по типам строк контакта.
+@file:Suppress("TooManyFunctions")
+
 package com.m4isper.contactsapp.data.datasource.write
 
 import android.content.ContentProviderOperation
@@ -168,6 +171,14 @@ private fun photoOperations(
     photo: ByteArray?,
 ): List<ContentProviderOperation> {
     if (!photoChanged) return emptyList()
+    return photoWriteOperations(rawContactId, photo)
+}
+
+/** Замена фото контакта: удаляем прежнее и записываем новое. */
+internal fun photoWriteOperations(
+    rawContactId: Long,
+    photo: ByteArray?,
+): List<ContentProviderOperation> {
     val ops = mutableListOf<ContentProviderOperation>()
     ops +=
         ContentProviderOperation

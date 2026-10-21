@@ -9,11 +9,14 @@ import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
+import com.m4isper.contactsapp.domain.usecase.ExportContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactGroupsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
+import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
+import com.m4isper.contactsapp.domain.usecase.LoadContactPhotoUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
-import com.m4isper.contactsapp.domain.vcard.VCardCodec
 import com.m4isper.contactsapp.presentation.common.Loadable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -67,11 +70,16 @@ private class FakeDetailsRepository(
         favoritesFlow.value = favoritesFlow.value - contactId
     }
 
-    override suspend fun createContact(form: ContactForm) = Unit
+    override suspend fun createContact(form: ContactForm): Long = 1L
 
     override suspend fun updateContact(
         contactId: Long,
         form: ContactForm,
+    ) = Unit
+
+    override suspend fun setContactPhoto(
+        contactId: Long,
+        photo: ByteArray,
     ) = Unit
 
     override suspend fun deleteContact(contactId: Long) = Unit
@@ -92,13 +100,19 @@ class ContactDetailsViewModelTest {
     private fun viewModel(
         repository: FakeDetailsRepository,
         groups: FakeGroupsRepository = FakeGroupsRepository(),
-        codec: VCardCodec = FakeVCardCodec(),
+        codec: FakeVCardCodec = FakeVCardCodec(),
     ) = ContactDetailsViewModel(
         GetContactDetailsUseCase(repository),
         GetContactGroupsUseCase(groups),
         ToggleFavoriteUseCase(repository),
         ObserveFavoritesUseCase(repository),
-        codec,
+        ExportContactsUseCase(
+            getContactDetails = GetContactDetailsUseCase(repository),
+            loadContactPhoto = LoadContactPhotoUseCase(repository),
+            getGroups = GetGroupsUseCase(groups),
+            getGroupMembership = GetGroupMembershipUseCase(groups),
+            codec = codec,
+        ),
     )
 
     @Test
@@ -177,7 +191,12 @@ class ContactDetailsViewModelTest {
 
                     override suspend fun removeFavorite(contactId: Long) = Unit
 
-                    override suspend fun createContact(form: ContactForm) = Unit
+                    override suspend fun createContact(form: ContactForm): Long = 1L
+
+                    override suspend fun setContactPhoto(
+                        contactId: Long,
+                        photo: ByteArray,
+                    ) = Unit
 
                     override suspend fun updateContact(
                         contactId: Long,
@@ -197,7 +216,13 @@ class ContactDetailsViewModelTest {
                     GetContactGroupsUseCase(FakeGroupsRepository()),
                     ToggleFavoriteUseCase(repository),
                     ObserveFavoritesUseCase(repository),
-                    FakeVCardCodec(),
+                    ExportContactsUseCase(
+                        getContactDetails = GetContactDetailsUseCase(repository),
+                        loadContactPhoto = LoadContactPhotoUseCase(repository),
+                        getGroups = GetGroupsUseCase(FakeGroupsRepository()),
+                        getGroupMembership = GetGroupMembershipUseCase(FakeGroupsRepository()),
+                        codec = FakeVCardCodec(),
+                    ),
                 )
             backgroundScope.launch { viewModel.uiState.collect { } }
 
@@ -264,7 +289,7 @@ class ContactDetailsViewModelTest {
             advanceUntilIdle()
 
             assertEquals("CARD", viewModel.vCardText())
-            assertEquals(listOf(7L), codec.encodedContacts.single().map { it.contactId })
+            assertEquals(listOf(7L), codec.encodedContacts.single().map { it.details.contactId })
         }
 
     @Test

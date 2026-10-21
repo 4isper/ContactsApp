@@ -19,6 +19,8 @@ import kotlinx.coroutines.withContext
 
 private const val EXPORT_FILE_NAME = "contacts.vcf"
 
+private const val EXPORT_SELECTION_FILE_NAME = "selected-contacts.vcf"
+
 private const val IMPORT_TAG = "ContactsImport"
 
 /** MIME-типы, под которыми файловые менеджеры отдают .vcf. */
@@ -35,6 +37,7 @@ private val VCARD_IMPORT_MIME_TYPES =
 internal class ContactsLaunchers(
     private val import: ManagedActivityResultLauncher<Array<String>, Uri?>,
     private val export: ManagedActivityResultLauncher<String, Uri?>,
+    private val exportSelection: ManagedActivityResultLauncher<String, Uri?>,
     private val requestWritePermission: ManagedActivityResultLauncher<String, Boolean>,
 ) {
     /** Открывает выбор .vcf; без разрешения на запись сначала запрашивает его. */
@@ -46,9 +49,14 @@ internal class ContactsLaunchers(
         }
     }
 
-    /** Открывает диалог сохранения .vcf. */
+    /** Открывает диалог сохранения .vcf всех контактов. */
     fun startExport() {
         export.launch(EXPORT_FILE_NAME)
+    }
+
+    /** Открывает диалог сохранения .vcf выделенных контактов. */
+    fun startExportSelection() {
+        exportSelection.launch(EXPORT_SELECTION_FILE_NAME)
     }
 }
 
@@ -56,6 +64,7 @@ internal class ContactsLaunchers(
 internal fun rememberVCardLaunchers(
     onImportText: (String) -> Unit,
     onExportSelected: (Uri) -> Unit,
+    onExportSelectionSelected: (Uri) -> Unit,
 ): ContactsLaunchers {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -91,6 +100,13 @@ internal fun rememberVCardLaunchers(
             uri?.let(onExportSelected)
         }
 
+    val exportSelectionLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.CreateDocument("text/vcard"),
+        ) { uri ->
+            uri?.let(onExportSelectionSelected)
+        }
+
     val writePermissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) {
@@ -103,6 +119,7 @@ internal fun rememberVCardLaunchers(
     return ContactsLaunchers(
         import = importLauncher,
         export = exportLauncher,
+        exportSelection = exportSelectionLauncher,
         requestWritePermission = writePermissionLauncher,
     )
 }

@@ -22,6 +22,7 @@ import com.m4isper.contactsapp.data.datasource.read.DataColumns
 import com.m4isper.contactsapp.data.datasource.read.DataRow
 import com.m4isper.contactsapp.data.datasource.read.aggregateContacts
 import com.m4isper.contactsapp.data.datasource.read.buildContactDetails
+import com.m4isper.contactsapp.data.datasource.write.readContactPhotoBytes
 import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import dev.zacsweers.metro.AppScope
@@ -99,6 +100,11 @@ class ContactsDataSourceImpl(
     override suspend fun loadContactAccount(contactId: Long): ContactAccount =
         withContext(Dispatchers.IO) {
             queryContactAccount(context, contactId)
+        }
+
+    override suspend fun loadContactPhoto(contactId: Long): ByteArray? =
+        withContext(Dispatchers.IO) {
+            readContactPhotoBytes(context.contentResolver, contactId)
         }
 
     override suspend fun getContactAccounts(): List<ContactAccount> =

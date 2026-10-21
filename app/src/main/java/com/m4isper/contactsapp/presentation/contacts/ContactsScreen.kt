@@ -16,6 +16,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.presentation.common.permissions.PermissionRequest
 import com.m4isper.contactsapp.presentation.common.permissions.hasPermission
 import com.m4isper.contactsapp.presentation.common.permissions.openAppSettings
+import com.m4isper.contactsapp.presentation.import.ImportPreviewViewModel
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
 @Composable
@@ -26,11 +27,13 @@ fun ContactsScreen(
     onDuplicatesClick: () -> Unit,
     onRecentsClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    onImportPreviewReady: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ContactsViewModel = metroViewModel(),
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val importViewModel: ImportPreviewViewModel = metroViewModel()
 
     var hasReadPermission by remember {
         mutableStateOf(hasPermission(context, Manifest.permission.READ_CONTACTS))
@@ -88,8 +91,12 @@ fun ContactsScreen(
             onUndoDelete = viewModel::onUndoDelete,
             onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
             onShareSelected = viewModel::onShareSelected,
-            onImportText = viewModel::onImportText,
+            onImportText = { text ->
+                importViewModel.prepare(text)
+                onImportPreviewReady()
+            },
             onExportRequested = viewModel::onExportRequested,
+            onExportSelectionRequested = viewModel::onExportSelection,
             onEventHandled = viewModel::onEventHandled,
             groups = uiState.groups,
             onGroupSelected = viewModel::onGroupSelected,

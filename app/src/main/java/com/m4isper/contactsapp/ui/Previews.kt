@@ -96,6 +96,7 @@ private fun ContactListContent(selection: Set<Long> = emptySet()) {
         onShareSelected = {},
         onImportText = {},
         onExportRequested = {},
+        onExportSelectionRequested = {},
         onEventHandled = {},
     )
 }

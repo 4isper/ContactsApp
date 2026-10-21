@@ -24,37 +24,89 @@ import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.RelationKind
 import com.m4isper.contactsapp.domain.model.SipKind
 import com.m4isper.contactsapp.domain.model.WebsiteKind
+import com.m4isper.contactsapp.domain.vcard.VCardContact
+import com.m4isper.contactsapp.domain.vcard.VCardInvalidContact
+import com.m4isper.contactsapp.domain.vcard.VCardIssue
+import com.m4isper.contactsapp.domain.vcard.VCardParseResult
 import java.util.Locale
 
 private const val TEL_URI_PREFIX = "tel:"
 
+/** Свойства, которые накопитель умеет читать: по ним решаем, пустой ли блок. */
+private val SUPPORTED_PROPERTIES =
+    setOf(
+        "FN",
+        "N",
+        "ORG",
+        "TITLE",
+        "ROLE",
+        "NOTE",
+        "BDAY",
+        "NICKNAME",
+        "X-OFFICE-LOCATION",
+        "TEL",
+        "EMAIL",
+        "ADR",
+        "URL",
+        "IMPP",
+        "ANNIVERSARY",
+        "X-ABDATE",
+        "RELATED",
+        "X-ABRELATEDNAMES",
+        "PHOTO",
+        "CATEGORIES",
+    )
+
 /**
  * Минимальный vCard-импортёр (2.1–4.0): BEGIN/END-блоки, folded-строки, экранирование,
- * групповые префиксы (item1.TEL). Base64/PHOTO и quoted-printable не поддерживаются.
+ * групповые префиксы (item1.TEL), фото в base64 и категории (CATEGORIES).
+ * quoted-printable не поддерживается.
  */
-internal fun parseVCards(text: String): List<ContactForm> {
-    val forms = mutableListOf<ContactForm>()
+internal fun parseVCards(text: String): VCardParseResult {
+    val contacts = mutableListOf<VCardContact>()
+    val invalid = mutableListOf<VCardInvalidContact>()
     var cardLines: MutableList<String>? = null
+
+    fun flush(container: MutableList<String>?) {
+        container ?: return
+        when (val result = parseVCardBlock(container)) {
+            is VCardBlock.Parsed -> contacts += result.contact
+            is VCardBlock.Skipped -> invalid += VCardInvalidContact(result.name, result.issue)
+        }
+    }
     unfoldVCardLines(text.removePrefix("\uFEFF")).forEach { line ->
         val marker = line.trim().uppercase(Locale.ROOT)
         val container = cardLines
         when {
             marker == "BEGIN:VCARD" -> {
                 // Незакрытый блок (битый файл) не теряем: разбираем его до нового BEGIN.
-                container?.let { parseVCardBlock(it)?.let(forms::add) }
+                flush(container)
                 cardLines = mutableListOf()
             }
             marker == "END:VCARD" -> {
-                container?.let { parseVCardBlock(it)?.let(forms::add) }
+                flush(container)
                 cardLines = null
             }
             container != null -> container += line
         }
     }
-    return forms
+    flush(cardLines)
+    return VCardParseResult(contacts = contacts, invalid = invalid)
 }
 
-private fun parseVCardBlock(lines: List<String>): ContactForm? {
+/** Итог разбора одного блока vCard. */
+private sealed interface VCardBlock {
+    data class Parsed(
+        val contact: VCardContact,
+    ) : VCardBlock
+
+    data class Skipped(
+        val name: String,
+        val issue: VCardIssue,
+    ) : VCardBlock
+}
+
+private fun parseVCardBlock(lines: List<String>): VCardBlock {
     val builder = VCardAccumulator()
     lines.forEach(builder::apply)
     return builder.build()
@@ -150,6 +202,12 @@ private class VCardAccumulator {
     private var note = ""
     private var nickname = ""
     private var birthday: Birthday? = null
+    private var photo: ByteArray? = null
+    private var photoSkipped = false
+    private val categories = mutableListOf<String>()
+
+    /** Было ли в блоке хотя бы одно поддерживаемое свойство. */
+    private var sawProperty = false
 
     /** Подписи itemN.X-ABLabel применяются к последнему элементу группы itemN. */
     private val groupLabelAppliers = mutableMapOf<String, (String) -> Unit>()
@@ -161,12 +219,38 @@ private class VCardAccumulator {
             return
         }
         val value = unescapeVCard(property.value)
+        if (property.name in SUPPORTED_PROPERTIES) sawProperty = true
         when (property.name) {
             "FN", "N", "ORG", "TITLE", "NOTE", "BDAY", "NICKNAME" -> applyIdentityProperty(property, value)
             "ROLE", "X-OFFICE-LOCATION" -> applyIdentityProperty(property, value)
             "TEL", "EMAIL", "ADR", "URL", "IMPP" -> applyCommunicationProperty(property, value)
             "ANNIVERSARY", "X-ABDATE", "RELATED", "X-ABRELATEDNAMES" -> applyExtraProperty(property, value)
+            "PHOTO" -> applyPhoto(property)
+            "CATEGORIES" -> applyCategories(property.value)
         }
+    }
+
+    /** Фото: base64 в свойстве PHOTO. Слишком большое и неподдерживаемое — контакт без фото. */
+    private fun applyPhoto(property: VCardProperty) {
+        if (property.params["VALUE"].equals("uri", ignoreCase = true)) return
+        val payload = decodePhoto(property.value)
+        when (payload.status) {
+            PhotoStatus.OK -> photo = payload.bytes
+            PhotoStatus.TOO_LARGE -> photoSkipped = true
+            PhotoStatus.NONE,
+            PhotoStatus.UNSUPPORTED,
+            -> Unit
+        }
+    }
+
+    /** Категории (названия групп): список через запятую. Значение приходит сырым, экранирование снимается по частям. */
+    private fun applyCategories(raw: String) {
+        splitVCardList(raw)
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .forEach { category ->
+                if (category !in categories) categories += category
+            }
     }
 
     private fun applyGroupLabel(property: VCardProperty) {
@@ -390,7 +474,7 @@ private class VCardAccumulator {
         }
     }
 
-    fun build(): ContactForm? {
+    fun build(): VCardBlock {
         val form =
             ContactForm(
                 name = buildName(),
@@ -407,7 +491,18 @@ private class VCardAccumulator {
                 nickname = EditableNickname(nickname = nickname),
                 birthday = EditableBirthday(value = birthday),
             )
-        return form.takeUnless(::isEmptyForImport)
+        if (isEmptyForImport(form)) {
+            val issue = if (sawProperty) VCardIssue.EMPTY else VCardIssue.UNSUPPORTED
+            return VCardBlock.Skipped(displayName, issue)
+        }
+        return VCardBlock.Parsed(
+            VCardContact(
+                form = form,
+                photo = photo,
+                categories = categories.toList(),
+                photoSkipped = photoSkipped,
+            ),
+        )
     }
 
     private fun buildName(): EditableName {

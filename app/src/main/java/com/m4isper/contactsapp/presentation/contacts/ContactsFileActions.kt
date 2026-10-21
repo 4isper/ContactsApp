@@ -1,8 +1,7 @@
 package com.m4isper.contactsapp.presentation.contacts
 
 import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.usecase.ImportContactsUseCase
-import com.m4isper.contactsapp.domain.vcard.VCardCodec
+import com.m4isper.contactsapp.domain.usecase.ExportContactsUseCase
 import com.m4isper.contactsapp.presentation.common.logw
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -12,53 +11,22 @@ import kotlinx.coroutines.launch
 private const val FILES_TAG = "ContactsFiles"
 
 /**
- * Сценарии импорта и экспорта .vcf. Вынесены из ViewModel отдельным объектом,
- * чтобы её API и лимит функций на файл оставались компактными.
+ * Экспорт .vcf: всех контактов или только выделенных. Сборку файла делает UI.
+ * Импорт живёт отдельно: [com.m4isper.contactsapp.presentation.import.ImportPreviewViewModel].
  */
 internal class ContactsFileActions(
     private val scope: CoroutineScope,
     private val events: MutableStateFlow<ContactsEvent?>,
+    private val exportContacts: ExportContactsUseCase,
     private val getContacts: suspend () -> List<ContactDetails>,
-    private val getContactDetails: suspend (Long) -> ContactDetails?,
-    private val importContacts: ImportContactsUseCase,
-    private val vCardCodec: VCardCodec,
-    private val refresh: () -> Unit,
 ) {
-    /** Разбирает текст .vcf, создаёт контакты и сообщает результат одноразовым событием. */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: битый .vcf не должен ронять экран.
-    fun onImportText(text: String) {
-        scope.launch {
-            val forms =
-                try {
-                    vCardCodec.parse(text)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    logw(FILES_TAG, "vCard parse failed", e)
-                    null
-                }
-            if (forms == null) {
-                events.value = ContactsEvent.ImportFailed
-                return@launch
-            }
-            val imported = importContacts(forms)
-            events.value =
-                when {
-                    imported > 0 -> ContactsEvent.ImportFinished(imported)
-                    forms.isEmpty() -> ContactsEvent.ImportEmpty
-                    else -> ContactsEvent.ImportFailed
-                }
-            if (imported > 0) refresh()
-        }
-    }
-
     /** Собирает .vcf всех контактов; запись в файл — на стороне UI. */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: ошибки сбора превращаем в одноразовые события.
+    @Suppress("TooGenericExceptionCaught") // Осознанно: любая ошибка загрузки превращается в ExportFailed.
     fun onExportRequested() {
         scope.launch {
-            val contacts =
+            val ids =
                 try {
-                    getContacts()
+                    getContacts().map { it.contactId }
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
@@ -67,28 +35,39 @@ internal class ContactsFileActions(
                 }
             events.value =
                 when {
-                    contacts == null -> ContactsEvent.ExportFailed
-                    contacts.isEmpty() -> ContactsEvent.ExportEmpty
-                    else -> exportReady(contacts)
+                    ids == null -> ContactsEvent.ExportFailed
+                    ids.isEmpty() -> ContactsEvent.ExportEmpty
+                    else -> exportReady(ids)
                 }
         }
     }
 
-    @Suppress("TooGenericExceptionCaught") // Осознанно: любую ошибку детализации показываем как ExportFailed.
-    private suspend fun exportReady(contacts: List<ContactDetails>): ContactsEvent {
-        val details =
+    /** Собирает .vcf выделенных контактов. */
+    fun onExportSelection(contactIds: List<Long>) {
+        scope.launch {
+            events.value =
+                when {
+                    contactIds.isEmpty() -> ContactsEvent.ExportEmpty
+                    else -> exportReady(contactIds)
+                }
+        }
+    }
+
+    @Suppress("TooGenericExceptionCaught") // Осознанно: любую ошибку сборки показываем как ExportFailed.
+    private suspend fun exportReady(contactIds: List<Long>): ContactsEvent {
+        val content =
             try {
-                contacts.mapNotNull { getContactDetails(it.contactId) }
+                exportContacts(contactIds)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                logw(FILES_TAG, "export contact details failed", e)
-                emptyList()
+                logw(FILES_TAG, "export vcard encode failed", e)
+                null
             }
-        return if (details.isEmpty()) {
+        return if (content.isNullOrEmpty()) {
             ContactsEvent.ExportFailed
         } else {
-            ContactsEvent.ExportReady(content = vCardCodec.encode(details), count = details.size)
+            ContactsEvent.ExportReady(content = content, count = contactIds.size)
         }
     }
 }

@@ -17,6 +17,6 @@ class UpdateContactUseCase(
         val normalized = form.normalized()
         validateContactForm(normalized)?.let { return SaveResult.Invalid(it) }
         repository.updateContact(contactId, normalized)
-        return SaveResult.Saved
+        return SaveResult.Saved(contactId)
     }
 }

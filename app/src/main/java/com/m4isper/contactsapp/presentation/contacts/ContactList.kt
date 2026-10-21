@@ -58,6 +58,7 @@ internal fun ContactList(
     onShareSelected: () -> Unit,
     onImportText: (String) -> Unit,
     onExportRequested: () -> Unit,
+    onExportSelectionRequested: () -> Unit,
     onEventHandled: () -> Unit,
     modifier: Modifier = Modifier,
     groups: List<ContactGroup> = emptyList(),
@@ -88,6 +89,10 @@ internal fun ContactList(
             onExportSelected = { uri ->
                 pendingExportUri = uri
                 onExportRequested()
+            },
+            onExportSelectionSelected = { uri ->
+                pendingExportUri = uri
+                onExportSelectionRequested()
             },
         )
 
@@ -140,6 +145,7 @@ internal fun ContactList(
                         showGroupPicker = true
                     },
                     onShare = onShareSelected,
+                    onExport = { vCardLaunchers.startExportSelection() },
                     onDelete = { showDeleteDialog = true },
                 )
             }

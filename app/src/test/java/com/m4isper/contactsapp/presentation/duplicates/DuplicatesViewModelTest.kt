@@ -50,11 +50,16 @@ private class FakeDuplicatesRepository(
 
     override suspend fun getContactForm(contactId: Long): ContactForm? = null
 
-    override suspend fun createContact(form: ContactForm) = Unit
+    override suspend fun createContact(form: ContactForm): Long = 1L
 
     override suspend fun updateContact(
         contactId: Long,
         form: ContactForm,
+    ) = Unit
+
+    override suspend fun setContactPhoto(
+        contactId: Long,
+        photo: ByteArray,
     ) = Unit
 
     override suspend fun deleteContact(contactId: Long) = Unit

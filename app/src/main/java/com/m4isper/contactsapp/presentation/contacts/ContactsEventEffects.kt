@@ -19,9 +19,6 @@ internal suspend fun handleContactsEvent(
     when (event) {
         is ContactsEvent.Share -> shareContacts(context, event.content)
         ContactsEvent.DeleteFailed -> toast(R.string.batch_delete_failed)
-        ContactsEvent.ImportEmpty -> toast(R.string.import_empty)
-        is ContactsEvent.ImportFinished -> showPluralToast(context, R.plurals.import_success, event.count)
-        ContactsEvent.ImportFailed -> toast(R.string.import_failed)
         is ContactsEvent.GroupAddFinished,
         ContactsEvent.GroupActionFailed,
         -> handleGroupEvent(context, event, toast)

@@ -1,3 +1,6 @@
+// Подавление осознанное: по одной маленькой функции на правило формата.
+@file:Suppress("TooManyFunctions")
+
 package com.m4isper.contactsapp.data.vcard
 
 import com.m4isper.contactsapp.domain.model.AddressKind
@@ -30,7 +33,15 @@ internal fun unescapeVCard(raw: String): String {
 }
 
 /** Разбиение структурированного значения (N, ADR, ORG) по незаэкранированным ';'. */
-internal fun splitVCardParts(raw: String): List<String> {
+internal fun splitVCardParts(raw: String): List<String> = splitEscaped(raw, ';')
+
+/** Разбиение списка значений (CATEGORIES) по незаэкранированной запятой. */
+internal fun splitVCardList(raw: String): List<String> = splitEscaped(raw, ',')
+
+private fun splitEscaped(
+    raw: String,
+    separator: Char,
+): List<String> {
     val parts = mutableListOf<String>()
     val current = StringBuilder()
     var i = 0
@@ -41,7 +52,7 @@ internal fun splitVCardParts(raw: String): List<String> {
                 current.append(char).append(raw[i + 1])
                 i += 2
             }
-            char == ';' -> {
+            char == separator -> {
                 parts += unescapeVCard(current.toString())
                 current.clear()
                 i += 1

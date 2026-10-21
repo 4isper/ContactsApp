@@ -9,7 +9,10 @@ import com.m4isper.contactsapp.domain.repository.ContactsRepository
 import dev.zacsweers.metro.Inject
 
 sealed interface SaveResult {
-    data object Saved : SaveResult
+    /** Контакт сохранён; [contactId] — id созданного контакта. */
+    data class Saved(
+        val contactId: Long,
+    ) : SaveResult
 
     data class Invalid(
         val error: FormError,
@@ -26,7 +29,7 @@ class CreateContactUseCase(
     ): SaveResult {
         val normalized = form.normalized()
         validateContactForm(normalized)?.let { return SaveResult.Invalid(it) }
-        repository.createContact(normalized, account)
-        return SaveResult.Saved
+        val contactId = repository.createContact(normalized, account)
+        return SaveResult.Saved(contactId)
     }
 }

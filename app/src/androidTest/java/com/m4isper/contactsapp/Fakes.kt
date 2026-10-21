@@ -24,6 +24,9 @@ import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import com.m4isper.contactsapp.domain.repository.GroupsRepository
 import com.m4isper.contactsapp.domain.repository.SettingsRepository
 import com.m4isper.contactsapp.domain.vcard.VCardCodec
+import com.m4isper.contactsapp.domain.vcard.VCardContact
+import com.m4isper.contactsapp.domain.vcard.VCardExportContact
+import com.m4isper.contactsapp.domain.vcard.VCardParseResult
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -96,17 +99,16 @@ internal class FakeAndroidRepository(
     override suspend fun getContactAccount(contactId: Long): ContactAccount =
         contacts.firstOrNull { it.contactId == contactId }?.account ?: ContactAccount.Local
 
-    override suspend fun createContact(form: ContactForm) {
-        createContact(form, ContactAccount.Local)
-    }
+    override suspend fun createContact(form: ContactForm): Long = createContact(form, ContactAccount.Local)
 
     override suspend fun createContact(
         form: ContactForm,
         account: ContactAccount,
-    ) {
+    ): Long {
         failure?.let { throw it }
         created += form
         createdAccounts += account
+        return created.size.toLong()
     }
 
     override suspend fun getContactAccounts(): List<ContactAccount> = accounts
@@ -118,6 +120,11 @@ internal class FakeAndroidRepository(
         failure?.let { throw it }
         updated += contactId to form
     }
+
+    override suspend fun setContactPhoto(
+        contactId: Long,
+        photo: ByteArray,
+    ) = Unit
 
     override suspend fun deleteContact(contactId: Long) {
         failure?.let { throw it }
@@ -240,14 +247,14 @@ internal class FakeVCardCodec(
     var encoded: String = "VCARD",
 ) : VCardCodec {
     val parsedTexts = mutableListOf<String>()
-    val encodedContacts = mutableListOf<List<ContactDetails>>()
+    val encodedContacts = mutableListOf<List<VCardExportContact>>()
 
-    override suspend fun parse(text: String): List<ContactForm> {
+    override suspend fun parse(text: String): VCardParseResult {
         parsedTexts += text
-        return forms
+        return VCardParseResult(contacts = forms.map { VCardContact(form = it) })
     }
 
-    override suspend fun encode(contacts: List<ContactDetails>): String {
+    override suspend fun encode(contacts: List<VCardExportContact>): String {
         encodedContacts += contacts
         return encoded
     }

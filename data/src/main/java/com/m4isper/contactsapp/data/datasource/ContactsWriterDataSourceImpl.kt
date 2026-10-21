@@ -9,6 +9,7 @@ import com.m4isper.contactsapp.data.datasource.read.ContactRows
 import com.m4isper.contactsapp.data.datasource.read.parseContactRows
 import com.m4isper.contactsapp.data.datasource.write.buildCreateOperations
 import com.m4isper.contactsapp.data.datasource.write.buildUpdateOperations
+import com.m4isper.contactsapp.data.datasource.write.photoWriteOperations
 import com.m4isper.contactsapp.data.datasource.write.readDownscaledPhoto
 import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactForm
@@ -28,12 +29,15 @@ class ContactsWriterDataSourceImpl(
     override suspend fun createContact(
         form: ContactForm,
         account: ContactAccount,
-    ): Unit =
+    ): Long =
         withContext(Dispatchers.IO) {
-            context.contentResolver.applyBatch(
-                ContactsContract.AUTHORITY,
-                buildCreateOperations(form, photo = preparePhoto(form), account = account),
-            )
+            val results =
+                context.contentResolver.applyBatch(
+                    ContactsContract.AUTHORITY,
+                    buildCreateOperations(form, photo = preparePhoto(form), account = account),
+                )
+            val rawUri = results.firstOrNull()?.uri ?: error("raw contact not created")
+            contactIdOfRawContact(ContentUris.parseId(rawUri))
         }
 
     override suspend fun updateContact(
@@ -79,6 +83,39 @@ class ContactsWriterDataSourceImpl(
                 }
             }
         }
+
+    override suspend fun setContactPhoto(
+        contactId: Long,
+        photo: ByteArray,
+    ): Unit =
+        withContext(Dispatchers.IO) {
+            val rawContactId =
+                loadRawContactId(contactId) ?: error("no raw contact for id=$contactId")
+            context.contentResolver.applyBatch(
+                ContactsContract.AUTHORITY,
+                ArrayList(photoWriteOperations(rawContactId, photo)),
+            )
+            Unit
+        }
+
+    /** id агрегированного контакта по id его raw contact. */
+    private fun contactIdOfRawContact(rawContactId: Long): Long {
+        val cursor =
+            context.contentResolver.query(
+                ContactsContract.RawContacts.CONTENT_URI,
+                arrayOf(ContactsContract.RawContacts.CONTACT_ID),
+                "${ContactsContract.RawContacts._ID}=?",
+                arrayOf(rawContactId.toString()),
+                null,
+            )
+        return cursor?.use {
+            if (it.moveToFirst()) {
+                it.getLong(it.getColumnIndexOrThrow(ContactsContract.RawContacts.CONTACT_ID))
+            } else {
+                error("no contact for raw id=$rawContactId")
+            }
+        } ?: error("no contact for raw id=$rawContactId")
+    }
 
     override suspend fun deleteContact(contactId: Long): Unit =
         withContext(Dispatchers.IO) {

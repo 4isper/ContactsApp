@@ -4,11 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactGroup
+import com.m4isper.contactsapp.domain.usecase.ExportContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
-import com.m4isper.contactsapp.domain.vcard.VCardCodec
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.logw
 import com.m4isper.contactsapp.presentation.contacts.SUBSCRIBE_TIMEOUT_MILLIS
@@ -40,7 +40,7 @@ class ContactDetailsViewModel(
     private val getContactGroupsUseCase: GetContactGroupsUseCase,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
     observeFavoritesUseCase: ObserveFavoritesUseCase,
-    private val vCardCodec: VCardCodec,
+    private val exportContacts: ExportContactsUseCase,
 ) : ViewModel() {
     private val selectedContactId = MutableStateFlow<Long?>(null)
     private val loadedDetails = MutableStateFlow<ContactDetails?>(null)
@@ -109,7 +109,10 @@ class ContactDetailsViewModel(
      * Готовый vCard-текст загруженного контакта для share-интента; null, пока контакт не загружен.
      * suspend: сборка текста уходит на фоновый диспетчер.
      */
-    suspend fun vCardText(): String? = loadedDetails.value?.let { vCardCodec.encode(listOf(it)) }
+    suspend fun vCardText(): String? {
+        val contactId = selectedContactId.value ?: return null
+        return exportContacts(listOf(contactId)).takeIf { it.isNotEmpty() }
+    }
 
     // Catch-all осознанный: любая ошибка загрузки превращается в Error-стейт.
     @Suppress("TooGenericExceptionCaught")

@@ -4,6 +4,7 @@ import android.content.ContentResolver
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.provider.ContactsContract
 import java.io.ByteArrayOutputStream
 
 private const val MAX_PHOTO_PX = 720
@@ -14,19 +15,39 @@ internal fun readDownscaledPhoto(
     resolver: ContentResolver,
     uri: Uri,
 ): ByteArray {
+    val bytes =
+        resolver.openInputStream(uri)?.use { it.readBytes() }
+            ?: throw IllegalArgumentException("Can't read image: $uri")
+    return compressPhoto(bytes)
+}
+
+/** Фото контакта из провайдера: уменьшенное и сжатое в JPEG. null, если фото нет. */
+@Suppress("DEPRECATION") // openContactPhotoInputStream — единственный публичный способ прочитать фото контакта.
+internal fun readContactPhotoBytes(
+    resolver: ContentResolver,
+    contactId: Long,
+): ByteArray? {
+    val contactUri = Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_URI, contactId.toString())
+    val stream =
+        runCatching {
+            ContactsContract.Contacts.openContactPhotoInputStream(resolver, contactUri, true)
+        }.getOrNull() ?: return null
+    return runCatching { stream.use { compressPhoto(it.readBytes()) } }.getOrNull()
+}
+
+/** Уменьшает картинку до [MAX_PHOTO_PX] и сжимает в JPEG. */
+internal fun compressPhoto(bytes: ByteArray): ByteArray {
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-    resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+    BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
     if (bounds.outWidth <= 0 || bounds.outHeight <= 0) {
-        throw IllegalArgumentException("Unsupported image: $uri")
+        throw IllegalArgumentException("Unsupported image")
     }
     val options =
         BitmapFactory.Options().apply {
             inSampleSize = sampleSize(bounds.outWidth, bounds.outHeight, MAX_PHOTO_PX)
         }
-    val decoded =
-        resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, options) }
-            ?: throw IllegalArgumentException("Can't read image: $uri")
-    val scaled = scaleDown(decoded, MAX_PHOTO_PX)
+    val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
+    val scaled = scaleDown(decoded ?: throw IllegalArgumentException("Can't decode image"), MAX_PHOTO_PX)
     return try {
         ByteArrayOutputStream().use { out ->
             scaled.compress(Bitmap.CompressFormat.JPEG, PHOTO_QUALITY, out)
@@ -34,7 +55,7 @@ internal fun readDownscaledPhoto(
         }
     } finally {
         scaled.recycle()
-        if (scaled !== decoded) decoded.recycle()
+        if (scaled !== decoded) decoded?.recycle()
     }
 }
 
