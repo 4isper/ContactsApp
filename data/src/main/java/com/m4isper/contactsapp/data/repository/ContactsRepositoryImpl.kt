@@ -61,6 +61,11 @@ class ContactsRepositoryImpl(
 ) : ContactsRepository {
     override suspend fun getContacts(): List<ContactDetails> = dataSource.loadContacts()
 
+    override suspend fun getContactsPage(
+        offset: Int,
+        limit: Int,
+    ): List<ContactDetails> = dataSource.loadContactsPage(offset, limit)
+
     override suspend fun getContactDetails(contactId: Long): ContactDetails? = dataSource.loadContact(contactId)
 
     override suspend fun getContactAccount(contactId: Long): ContactAccount = dataSource.loadContactAccount(contactId)

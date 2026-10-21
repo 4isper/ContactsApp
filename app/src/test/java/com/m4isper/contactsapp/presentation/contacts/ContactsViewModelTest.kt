@@ -26,6 +26,7 @@ import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.ExportContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetContactsPageUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
@@ -85,6 +86,14 @@ private class FakeContactsRepository(
     override suspend fun getContacts(): List<ContactDetails> {
         failure?.let { throw it }
         return contacts
+    }
+
+    override suspend fun getContactsPage(
+        offset: Int,
+        limit: Int,
+    ): List<ContactDetails> {
+        failure?.let { throw it }
+        return contacts.drop(offset).take(limit)
     }
 
     override suspend fun getContactForm(contactId: Long): ContactForm? = null
@@ -181,6 +190,7 @@ class ContactsViewModelTest {
         changes: FakeContactsChangeSource = FakeContactsChangeSource(),
     ) = ContactsViewModel(
         GetContactsUseCase(repository),
+        GetContactsPageUseCase(repository),
         GetContactAccountsUseCase(repository),
         ObserveFavoritesUseCase(repository),
         ObserveSettingsUseCase(settings),
@@ -203,6 +213,29 @@ class ContactsViewModelTest {
         GetProfileContactIdUseCase(repository),
         changes,
     )
+
+    @Test
+    fun `contacts are loaded page by page`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(
+                    listOf(
+                        details(1, "Anna", "111"),
+                        details(2, "Bob", "222"),
+                        details(3, "Cara", "333"),
+                    ),
+                )
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            val content = viewModel.uiState.value.content
+            assertTrue(content is Loadable.Content)
+            assertEquals(3, (content as Loadable.Content).data.size)
+        }
 
     @Test
     fun `refresh emits loaded contacts`() =

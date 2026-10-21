@@ -82,6 +82,39 @@ class ContactsDataSourceImpl(
             aggregateContacts(headers, rows, queryContactAccounts())
         }
 
+    override suspend fun loadContactsPage(
+        offset: Int,
+        limit: Int,
+    ): List<ContactDetails> =
+        withContext(Dispatchers.IO) {
+            val headers =
+                queryHeaders(
+                    selection = null,
+                    args = null,
+                    sortOrder = pageSortOrder(offset, limit),
+                )
+            if (headers.isEmpty()) return@withContext emptyList()
+            val visibleIds = headers.mapTo(mutableSetOf()) { it.contactId }
+            val rows =
+                queryData(
+                    selection = "${ContactsContract.Data.MIMETYPE} IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    args =
+                        arrayOf(
+                            Phone.CONTENT_ITEM_TYPE,
+                            Email.CONTENT_ITEM_TYPE,
+                            StructuredName.CONTENT_ITEM_TYPE,
+                            Nickname.CONTENT_ITEM_TYPE,
+                            Relation.CONTENT_ITEM_TYPE,
+                            Organization.CONTENT_ITEM_TYPE,
+                            StructuredPostal.CONTENT_ITEM_TYPE,
+                            Website.CONTENT_ITEM_TYPE,
+                            Note.CONTENT_ITEM_TYPE,
+                            SipAddress.CONTENT_ITEM_TYPE,
+                        ),
+                ).filter { it.contactId in visibleIds }
+            aggregateContacts(headers, rows, queryContactAccounts())
+        }
+
     override suspend fun loadContact(contactId: Long): ContactDetails? =
         withContext(Dispatchers.IO) {
             val header =
@@ -229,9 +262,24 @@ class ContactsDataSourceImpl(
         result.putIfAbsent("$type\u0000$name", ContactAccount(name = name, type = type))
     }
 
+    /**
+     * Порядок и разбор страницы. Провайдер понимает «LIMIT n OFFSET m» в sortOrder,
+     * но пустой OFFSET отбрасывает выборку — указываем его только со второго раза.
+     */
+    private fun pageSortOrder(
+        offset: Int,
+        limit: Int,
+    ): String =
+        if (offset > 0) {
+            "$CONTACT_SORT_ORDER LIMIT $limit OFFSET $offset"
+        } else {
+            "$CONTACT_SORT_ORDER LIMIT $limit"
+        }
+
     private fun queryHeaders(
         selection: String?,
         args: Array<String>?,
+        sortOrder: String = CONTACT_SORT_ORDER,
     ): List<ContactHeaderRow> {
         val headers = mutableListOf<ContactHeaderRow>()
         val cursor =
@@ -240,7 +288,7 @@ class ContactsDataSourceImpl(
                 CONTACT_PROJECTION,
                 selection,
                 args,
-                CONTACT_SORT_ORDER,
+                sortOrder,
             )
         cursor?.use {
             val idIndex = it.getColumnIndexOrThrow(ContactsContract.Contacts._ID)

@@ -28,6 +28,7 @@ import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.ExportContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetContactsPageUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
@@ -61,6 +62,7 @@ class ContactListUiTest {
         settings: FakeSettingsRepository = FakeSettingsRepository(),
     ) = ContactsViewModel(
         GetContactsUseCase(repository),
+        GetContactsPageUseCase(repository),
         GetContactAccountsUseCase(repository),
         ObserveFavoritesUseCase(repository),
         ObserveSettingsUseCase(settings),

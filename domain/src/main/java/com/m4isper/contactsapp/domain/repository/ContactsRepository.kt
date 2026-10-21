@@ -11,6 +11,12 @@ import com.m4isper.contactsapp.domain.model.ContactLink
 interface ContactsRepository {
     suspend fun getContacts(): List<ContactDetails>
 
+    /** Страница контактов: список появляется по мере загрузки. */
+    suspend fun getContactsPage(
+        offset: Int,
+        limit: Int,
+    ): List<ContactDetails> = getContacts().drop(offset).take(limit)
+
     suspend fun getContactDetails(contactId: Long): ContactDetails?
 
     suspend fun getContactForm(contactId: Long): ContactForm?

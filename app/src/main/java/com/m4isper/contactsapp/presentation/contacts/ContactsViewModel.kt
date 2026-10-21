@@ -15,6 +15,7 @@ import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.ExportContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetContactsPageUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
@@ -108,6 +109,9 @@ internal const val CONTACTS_CHANGE_DEBOUNCE_MILLIS = 500L
 
 private const val LIST_TAG = "ContactsList"
 
+/** Размер страницы контактов: столько грузим за один запрос к провайдеру. */
+private const val CONTACTS_PAGE_SIZE = 200
+
 private data class ContactsLoad(
     val all: List<ContactDetails>,
     val loading: Boolean,
@@ -188,9 +192,10 @@ private fun shouldPinFavorites(
 // Подавление осознанное: фасад сценариев списка — тонкие делегаты в координаторы
 // (удаление, файлы); декомпозиция по файлам не даёт выгоды, а лимит функций уже
 // перешагнут законченными сценариями (поиск, выделение, избранное, обновление).
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "LargeClass")
 class ContactsViewModel(
     private val getContactsUseCase: GetContactsUseCase,
+    private val getContactsPageUseCase: GetContactsPageUseCase,
     private val getContactAccountsUseCase: GetContactAccountsUseCase,
     observeFavoritesUseCase: ObserveFavoritesUseCase,
     observeSettingsUseCase: ObserveSettingsUseCase,
@@ -602,6 +607,24 @@ class ContactsViewModel(
     }
 
     /**
+     * Контакты грузятся страницами: первая страница показывается сразу,
+     * остальные добавляются следом. Список остаётся отзывчивым на больших базах.
+     */
+    private suspend fun loadContactsByPages() {
+        var offset = 0
+        var first = true
+        var hasMore = true
+        while (hasMore) {
+            val page = getContactsPageUseCase(offset, CONTACTS_PAGE_SIZE)
+            allContacts.value = if (first) page else allContacts.value + page
+            first = false
+            offset += page.size
+            hasMore = page.size == CONTACTS_PAGE_SIZE
+        }
+        if (first) allContacts.value = emptyList()
+    }
+
+    /**
      * Подписка на изменения провайдера. Вызывается со стороны экрана и живёт
      * только пока список видим, чтобы не держать ContentObserver в фоне.
      */
@@ -649,7 +672,7 @@ class ContactsViewModel(
         loadFailure.value = null
         if (clearSelection) selectionFlow.value = emptySet()
         try {
-            allContacts.value = getContactsUseCase()
+            loadContactsByPages()
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

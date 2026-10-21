@@ -20,4 +20,13 @@ interface ContactsDataSource {
 
     /** id контакта «Мой профиль» из провайдера; null, если профиля нет. */
     suspend fun loadProfileContactId(): Long? = null
+
+    /**
+     * Страница контактов: столько контактов, начиная с [offset].
+     * Страницы грузятся по очереди, чтобы список появлялся сразу.
+     */
+    suspend fun loadContactsPage(
+        offset: Int,
+        limit: Int,
+    ): List<ContactDetails>
 }

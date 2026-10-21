@@ -405,6 +405,11 @@ private class FakeReader(
         byId[contactId] ?: details?.takeIf { it.contactId == contactId }
 
     override suspend fun loadContactAccount(contactId: Long): ContactAccount = account
+
+    override suspend fun loadContactsPage(
+        offset: Int,
+        limit: Int,
+    ): List<ContactDetails> = emptyList()
 }
 
 private class FakeWriter(
