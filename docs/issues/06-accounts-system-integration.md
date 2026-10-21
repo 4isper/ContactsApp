@@ -24,12 +24,16 @@
 
 ## Acceptance criteria
 
-- [ ] A contact can be copied or moved to another account.
-- [ ] New contacts use the configured default account.
-- [ ] Favorites match `STARRED` and survive sync; old DataStore favorites migrate.
-- [ ] The app appears in "Open with"/"Share" for contacts and vCards.
-- [ ] Merge shows what will change and can be undone or safely cancelled.
-- [ ] Manual link/unlink is available for raw contacts.
+- [x] A contact can be copied or moved to another account.
+- [x] New contacts use the configured default account.
+- [x] Favorites match `STARRED` and survive sync; old DataStore favorites migrate.
+- [x] The app appears in "Open with"/"Share" for contacts and vCards.
+- [x] Merge shows what will change and can be undone or safely cancelled.
+- [x] Manual link/unlink is available for raw contacts.
+
+## Status
+
+Done. A contact can be copied or moved to another account, new contacts use the configured default account, and the favorites live in the `STARRED` rows of the provider (the old DataStore favorites are migrated once). The app registers itself for "Open with" and "Share" for contacts and vCards. Merging links the raw contacts instead of deleting the sources, so it can be undone from a snackbar; the manual link and unlink live in the duplicates screen. Covered by unit tests and by an instrumentation test for the merge.
 
 ## Technical notes
 

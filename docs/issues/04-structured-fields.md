@@ -27,12 +27,16 @@ The contact model is intentionally simple, but it loses data supported by `Conta
 
 ## Acceptance criteria
 
-- [ ] Editing a structured address preserves city/region/postcode/country.
-- [ ] New organization fields round-trip through the provider.
-- [ ] SIP and extended types can be added, edited, and displayed.
-- [ ] Multiple values are either fully supported or untouched rows are preserved on save.
-- [ ] The primary phone/email is respected by the list subtitle and details.
-- [ ] vCard `ADR` stays structured on export/import.
+- [x] Editing a structured address preserves city/region/postcode/country.
+- [x] New organization fields round-trip through the provider.
+- [x] SIP and extended types can be added, edited, and displayed.
+- [x] Multiple values are either fully supported or untouched rows are preserved on save.
+- [x] The primary phone/email is respected by the list subtitle and details.
+- [x] vCard `ADR` stays structured on export/import.
+
+## Status
+
+Done. Addresses are edited as street/city/region/postcode/country with a fallback to the legacy one-line value; the organization carries company, title and department; SIP addresses and extended kinds are supported; the primary phone and email are used in the list subtitle and in the details. Saving reconciles the rows of all raw contacts of a contact and leaves untouched rows alone, and the vCard `ADR` stays structured on export and import. Covered by unit tests in the data layer and by an instrumentation test for the round trip.
 
 ## Technical notes
 

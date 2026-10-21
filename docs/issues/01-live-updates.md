@@ -18,11 +18,15 @@ The contact list is loaded only by `ContactsViewModel.refresh()` on screen resum
 
 ## Acceptance criteria
 
-- [ ] A contact edited in the system Contacts app appears in the list within ~1 second without pull-to-refresh.
-- [ ] Creating or deleting a contact updates the list automatically.
-- [ ] Search/filter/selection state is not unexpectedly cleared by a background update.
-- [ ] The observer is unregistered when the screen is not active; no leaked callbacks.
-- [ ] Unit/UI tests cover the update path.
+- [x] A contact edited in the system Contacts app appears in the list within ~1 second without pull-to-refresh.
+- [x] Creating or deleting a contact updates the list automatically.
+- [x] Search/filter/selection state is not unexpectedly cleared by a background update.
+- [x] The observer is unregistered when the screen is not active; no leaked callbacks.
+- [x] Unit/UI tests cover the update path.
+
+## Status
+
+Done. The list observes the provider (`ContactsChangeSource` on the contacts and data URIs) with a 500 ms debounce; the observer is registered only while the list is on screen and only when `READ_CONTACTS` is granted, so nothing leaks in the background. A background update keeps the search query, the group/account/favorites filters and the selection. Covered by unit tests for the change source and by an instrumentation test that edits a contact and waits for the list to update.
 
 ## Technical notes
 

@@ -20,13 +20,17 @@ Groups can be created, renamed, deleted, and assigned from the contact editor or
 
 ## Acceptance criteria
 
-- [ ] A group screen shows members and allows removing them.
-- [ ] Two groups can be merged without losing memberships.
-- [ ] Group deletion can be undone or is clearly confirmed with the member count.
-- [ ] A photo can be taken with the camera and cropped.
-- [ ] Invalid email/URL/date blocks saving with a clear message.
-- [ ] Creating a likely duplicate shows a warning and a path to merge.
-- [ ] The IM action opens a messenger/chooser when possible.
+- [x] A group screen shows members and allows removing them.
+- [x] Two groups can be merged without losing memberships.
+- [x] Group deletion can be undone or is clearly confirmed with the member count.
+- [x] A photo can be taken with the camera and cropped.
+- [x] Invalid email/URL/date blocks saving with a clear message.
+- [x] Creating a likely duplicate shows a warning and a path to merge.
+- [x] The IM action opens a messenger/chooser when possible.
+
+## Status
+
+Done. The group screen shows the members and removes them, two groups can be merged without losing memberships, and the deletion confirmation names the member count. The photo can be taken with the camera, cropped and written back to the provider as a round image. Invalid email, URL and date block the save with a clear message, a likely duplicate shows a warning with a path to the merge, and the IM action opens the messenger by its scheme (Telegram, Skype, XMPP, custom) and copies the address when no app is installed.
 
 ## Technical notes
 

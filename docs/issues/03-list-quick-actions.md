@@ -18,11 +18,15 @@ The list row only supports click (open details) and long-press (selection). Call
 
 ## Acceptance criteria
 
-- [ ] A user can call, SMS, or favorite a contact without opening details.
-- [ ] Favorites are visible without applying the filter (pinned section or dedicated screen).
-- [ ] Batch favorite/unfavorite works in selection mode.
-- [ ] Recents shows recently contacted contacts and handles the empty state.
-- [ ] Actions respect the existing call confirmation and permission handling.
+- [x] A user can call, SMS, or favorite a contact without opening details.
+- [x] Favorites are visible without applying the filter (pinned section or dedicated screen).
+- [x] Batch favorite/unfavorite works in selection mode.
+- [x] Recents shows recently contacted contacts and handles the empty state.
+- [x] Actions respect the existing call confirmation and permission handling.
+
+## Status
+
+Done. The list card has quick actions (call, SMS, favorite), favorites stay visible without the filter (a pinned section), selection mode supports batch favorite/unfavorite, and the filter chip menu opens a "recents" list with its own empty state. The quick call keeps the existing confirmation dialog and the permission handling, including the dialer fallback.
 
 ## Technical notes
 

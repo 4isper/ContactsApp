@@ -27,12 +27,16 @@ The vCard codec covers names, phones, emails, IM, addresses, websites, organizat
 
 ## Acceptance criteria
 
-- [ ] Exported vCard includes photo and categories when present.
-- [ ] Importing a vCard with photo/categories preserves them (or clearly reports what was skipped).
-- [ ] Structured addresses survive export/import.
-- [ ] Import preview shows duplicates/invalid entries before writing.
-- [ ] Selected contacts can be exported to a file.
-- [ ] Tests cover round-trip fidelity.
+- [x] Exported vCard includes photo and categories when present.
+- [x] Importing a vCard with photo/categories preserves them (or clearly reports what was skipped).
+- [x] Structured addresses survive export/import.
+- [x] Import preview shows duplicates/invalid entries before writing.
+- [x] Selected contacts can be exported to a file.
+- [x] Tests cover round-trip fidelity.
+
+## Status
+
+Done. The exported card carries the photo and the categories, the importer keeps both and reports what it could not read, structured addresses survive the round trip, and values in quoted-printable are decoded. Import shows a preview with the duplicates and the invalid entries before anything is written, and the selected contacts can be exported to a file. Round-trip fidelity is covered by unit tests.
 
 ## Technical notes
 

@@ -8,12 +8,13 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
+import android.provider.ContactsContract
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.m4isper.contactsapp.ContactsApp
-import com.m4isper.contactsapp.MainActivity
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
@@ -65,11 +66,12 @@ class BirthdayReminderReceiver : BroadcastReceiver() {
                 upcoming.size,
             )
         val text = upcoming.joinToString("\n") { occasion -> occasion.line(context) }
+        // Нажатие открывает карточку контакта из уведомления.
         val open =
             PendingIntent.getActivity(
                 context,
                 0,
-                Intent(context, MainActivity::class.java),
+                openContactIntent(context, upcoming.first().contactId),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
         return NotificationCompat
@@ -82,6 +84,19 @@ class BirthdayReminderReceiver : BroadcastReceiver() {
             .setAutoCancel(true)
             .build()
     }
+
+    /** Запрос на открытие карточки контакта. */
+    private fun openContactIntent(
+        context: Context,
+        contactId: Long,
+    ): Intent =
+        Intent(
+            Intent.ACTION_VIEW,
+            Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_URI, contactId.toString()),
+        ).apply {
+            setPackage(context.packageName)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
 
     private fun canPostNotifications(context: Context): Boolean =
         Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||

@@ -18,11 +18,15 @@
 
 ## Acceptance criteria
 
-- [ ] `999123` finds `+7 (999) 123-45-67` (and reasonable country-code variants).
-- [ ] Searching by company, address, website, note, or group name returns matching contacts.
-- [ ] The account filter limits the list and shows an empty state when nothing matches.
-- [ ] The sort choice survives an app restart.
-- [ ] Unit tests cover search, filter, and sort logic.
+- [x] `999123` finds `+7 (999) 123-45-67` (and reasonable country-code variants).
+- [x] Searching by company, address, website, note, or group name returns matching contacts.
+- [x] The account filter limits the list and shows an empty state when nothing matches.
+- [x] The sort choice survives an app restart.
+- [x] Unit tests cover search, filter, and sort logic.
+
+## Status
+
+Done. Search covers the display name and its structured components (given/family/middle/prefix/suffix plus the phonetic variants), phones compared by digits (so `999123` finds `+7 (999) 123-45-67`), email, nickname, relation names, company, address, website, note and group names. Filters: group (label), account and favorites, each with an empty state. Sorting by full name or last name is persisted in DataStore and drives the letter sections. Covered by unit tests for the search, the filters and the sorting.
 
 ## Technical notes
 
