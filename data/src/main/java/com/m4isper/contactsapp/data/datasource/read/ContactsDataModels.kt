@@ -5,6 +5,7 @@ internal data class ContactHeaderRow(
     val contactId: Long,
     val name: String,
     val photoUri: String? = null,
+    val lastUpdated: Long? = null,
 )
 
 /** Сырая data-строка: одна на любой элемент контакта (номер, email, адрес...). */

@@ -42,6 +42,7 @@ internal fun GroupedContacts(
 ) {
     val spacing = LocalSpacing.current
     val grouped = groupContactsByFirstLetter(contacts, sortOrder)
+    val showLetterHeaders = sortOrder != ContactSortOrder.RECENTLY_ADDED
     val indices = remember(grouped) { letterIndices(grouped) }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
@@ -68,20 +69,22 @@ internal fun GroupedContacts(
                         .fillMaxSize(),
             ) {
                 grouped.forEach { (letter, group) ->
-                    stickyHeader {
-                        Text(
-                            text = letter.toString(),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .background(MaterialTheme.colorScheme.surface)
-                                    .padding(
-                                        horizontal = spacing.m,
-                                        vertical = spacing.s,
-                                    ),
-                        )
+                    if (showLetterHeaders) {
+                        stickyHeader {
+                            Text(
+                                text = letter.toString(),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .background(MaterialTheme.colorScheme.surface)
+                                        .padding(
+                                            horizontal = spacing.m,
+                                            vertical = spacing.s,
+                                        ),
+                            )
+                        }
                     }
                     items(
                         items = group,
@@ -99,7 +102,7 @@ internal fun GroupedContacts(
                     }
                 }
             }
-            if (grouped.size > 1) {
+            if (showLetterHeaders && grouped.size > 1) {
                 FastScroller(
                     letters = grouped.keys.toList(),
                     activeLetter = activeLetter,

@@ -5,6 +5,7 @@ import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.FakeSettingsRepository
 import com.m4isper.contactsapp.FakeVCardCodec
 import com.m4isper.contactsapp.domain.model.AppSettings
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.ContactGroup
@@ -24,6 +25,7 @@ import com.m4isper.contactsapp.domain.usecase.AddContactsToGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
@@ -67,6 +69,7 @@ private class FakeContactsRepository(
     var contacts: List<ContactDetails> = emptyList(),
     var failure: Throwable? = null,
     initialFavorites: Set<Long> = emptySet(),
+    var accounts: List<ContactAccount> = listOf(ContactAccount.Local),
 ) : ContactsRepository,
     FavoritesRepository {
     private val favoritesFlow = MutableStateFlow(initialFavorites)
@@ -86,6 +89,11 @@ private class FakeContactsRepository(
     override suspend fun getContactDetails(contactId: Long): ContactDetails? {
         failure?.let { throw it }
         return contacts.firstOrNull { it.contactId == contactId }
+    }
+
+    override suspend fun getContactAccounts(): List<ContactAccount> {
+        failure?.let { throw it }
+        return accounts
     }
 
     override fun observeFavorites(): Flow<Set<Long>> = favoritesFlow.asStateFlow()
@@ -150,6 +158,7 @@ class ContactsViewModelTest {
         changes: FakeContactsChangeSource = FakeContactsChangeSource(),
     ) = ContactsViewModel(
         GetContactsUseCase(repository),
+        GetContactAccountsUseCase(repository),
         ObserveFavoritesUseCase(repository),
         ObserveSettingsUseCase(settings),
         GetContactDetailsUseCase(repository),
@@ -1145,6 +1154,48 @@ class ContactsViewModelTest {
             assertEquals(listOf("Anna"), (filtered.content as Loadable.Content).data.map { it.name })
 
             viewModel.onGroupSelected(null)
+            advanceUntilIdle()
+
+            assertEquals(2, (viewModel.uiState.value.content as Loadable.Content).data.size)
+        }
+
+    @Test
+    fun `refresh loads accounts and account filter limits list`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val google = ContactAccount(name = "user@gmail.com", type = "com.google")
+            val emptyAccount = ContactAccount(name = "empty@example.com", type = "com.google")
+            val repository =
+                FakeContactsRepository(
+                    contacts =
+                        listOf(
+                            details(1, "Anna", "111"),
+                            details(2, "Bob", "222").copy(account = google),
+                        ),
+                    accounts = listOf(ContactAccount.Local, google, emptyAccount),
+                )
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            val loaded = viewModel.uiState.value
+            assertEquals(listOf(ContactAccount.Local, google, emptyAccount), loaded.accounts)
+            assertEquals(2, (loaded.content as Loadable.Content).data.size)
+
+            viewModel.onAccountSelected(google)
+            advanceUntilIdle()
+
+            val filtered = viewModel.uiState.value
+            assertEquals(google, filtered.selectedAccount)
+            assertEquals(listOf("Bob"), (filtered.content as Loadable.Content).data.map { it.name })
+
+            viewModel.onAccountSelected(emptyAccount)
+            advanceUntilIdle()
+
+            assertTrue(viewModel.uiState.value.content is Loadable.Empty)
+
+            viewModel.onAccountSelected(null)
             advanceUntilIdle()
 
             assertEquals(2, (viewModel.uiState.value.content as Loadable.Content).data.size)

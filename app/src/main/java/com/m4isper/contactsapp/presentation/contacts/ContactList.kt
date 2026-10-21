@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.groups.GroupPickerDialog
@@ -50,6 +51,8 @@ internal fun ContactList(
     modifier: Modifier = Modifier,
     groups: List<ContactGroup> = emptyList(),
     onGroupSelected: (Long?) -> Unit = {},
+    accounts: List<ContactAccount> = emptyList(),
+    onAccountSelected: (ContactAccount?) -> Unit = {},
     onCreateGroup: (String) -> Unit = {},
     onManageGroupsClick: () -> Unit = {},
     onAddSelectedToGroup: (Set<Long>) -> Unit = {},
@@ -152,6 +155,9 @@ internal fun ContactList(
                     groups = groups,
                     selectedGroupId = uiState.selectedGroupId,
                     onGroupSelected = onGroupSelected,
+                    accounts = accounts,
+                    selectedAccount = uiState.selectedAccount,
+                    onAccountSelected = onAccountSelected,
                     onCreateGroup = onCreateGroup,
                     onManageGroupsClick = onManageGroupsClick,
                     onDuplicatesClick = onDuplicatesClick,

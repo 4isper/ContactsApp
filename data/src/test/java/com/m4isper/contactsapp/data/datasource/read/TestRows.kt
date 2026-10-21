@@ -16,7 +16,8 @@ internal fun header(
     id: Long,
     name: String,
     photoUri: String? = null,
-) = ContactHeaderRow(contactId = id, name = name, photoUri = photoUri)
+    lastUpdated: Long? = null,
+) = ContactHeaderRow(contactId = id, name = name, photoUri = photoUri, lastUpdated = lastUpdated)
 
 internal fun phoneRow(
     contactId: Long,

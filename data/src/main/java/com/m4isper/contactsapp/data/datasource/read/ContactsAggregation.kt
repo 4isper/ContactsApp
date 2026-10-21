@@ -28,16 +28,18 @@ internal fun buildContactDetails(
         photoUri = header.photoUri,
         nameParts = namePartsOf(rows),
         account = account,
+        lastUpdated = header.lastUpdated,
     )
 
 /**
  * Лёгкая агрегация для списка: контакты без телефона и email тоже попадают
- * в список (имена и фото берутся из таблицы Contacts). Никнейм и связи
- * нужны поиску, остальные поля деталей не читаются.
+ * в список (имена и фото берутся из таблицы Contacts). Для поиска читаются
+ * также организация, адреса, сайты, заметки, никнейм и связи.
  */
 internal fun aggregateContacts(
     headers: List<ContactHeaderRow>,
     rows: List<DataRow>,
+    accounts: Map<Long, ContactAccount> = emptyMap(),
 ): List<ContactDetails> {
     val rowsByContact = rows.groupBy { it.contactId }
     return headers.mapNotNull { header ->
@@ -48,10 +50,16 @@ internal fun aggregateContacts(
             name = header.name,
             phones = phoneNumbersOf(contactRows),
             emails = emailAddressesOf(contactRows),
+            addresses = postalAddressesOf(contactRows),
+            websites = websitesOf(contactRows),
+            organization = organizationOf(contactRows),
+            note = noteOf(contactRows),
             photoUri = header.photoUri,
             nameParts = namePartsOf(contactRows),
             relations = relationsOf(contactRows),
             nickname = nicknameOf(contactRows),
+            account = accounts[header.contactId] ?: ContactAccount.Local,
+            lastUpdated = header.lastUpdated,
         )
     }
 }

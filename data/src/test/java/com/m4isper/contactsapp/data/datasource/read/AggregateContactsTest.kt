@@ -3,6 +3,7 @@ package com.m4isper.contactsapp.data.datasource.read
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.Relation
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.RelationKind
 import org.junit.Assert.assertEquals
@@ -147,6 +148,29 @@ class AggregateContactsTest {
     @Test
     fun `empty input returns empty list`() {
         assertTrue(aggregateContacts(emptyList(), emptyList()).isEmpty())
+    }
+
+    @Test
+    fun `includes extended search fields account and last update`() {
+        val google = ContactAccount(name = "user@gmail.com", type = "com.google")
+        val headers = listOf(header(1, "Anna", lastUpdated = 123L))
+        val rows =
+            listOf(
+                organizationRow(1, "ACME", "CTO"),
+                addressRow(1, "Moscow, Tverskaya 1"),
+                websiteRow(1, "https://example.com"),
+                noteRow(1, "Important"),
+            )
+
+        val details = aggregateContacts(headers, rows, mapOf(1L to google)).single()
+
+        assertEquals("ACME", details.organization?.company)
+        assertEquals("CTO", details.organization?.title)
+        assertEquals(listOf("Moscow, Tverskaya 1"), details.addresses.map { it.address })
+        assertEquals(listOf("https://example.com"), details.websites.map { it.url })
+        assertEquals("Important", details.note)
+        assertEquals(google, details.account)
+        assertEquals(123L, details.lastUpdated)
     }
 
     @Test

@@ -151,4 +151,6 @@ data class ContactDetails(
     val nameParts: NameParts? = null,
     /** Аккаунт целевого raw contact; локальный контакт — [ContactAccount.Local]. */
     val account: ContactAccount = ContactAccount.Local,
+    /** Время последнего изменения контакта в провайдере, мс; null, если провайдер не сообщил. */
+    val lastUpdated: Long? = null,
 )

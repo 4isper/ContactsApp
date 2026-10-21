@@ -7,10 +7,13 @@ enum class ThemeMode {
     DARK,
 }
 
-/** Сортировка списка контактов: по полному имени или по фамилии. */
+/** Сортировка списка контактов: имя, фамилия, компания или недавние изменения. */
 enum class ContactSortOrder {
     BY_NAME,
+    BY_NAME_DESC,
     BY_FAMILY,
+    BY_COMPANY,
+    RECENTLY_ADDED,
 }
 
 /** Плотность списка: обычные карточки или компактные. */

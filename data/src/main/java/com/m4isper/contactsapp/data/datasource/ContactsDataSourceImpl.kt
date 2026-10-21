@@ -8,9 +8,13 @@ import android.net.Uri
 import android.provider.ContactsContract
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Nickname
+import android.provider.ContactsContract.CommonDataKinds.Note
+import android.provider.ContactsContract.CommonDataKinds.Organization
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.Relation
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
+import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
+import android.provider.ContactsContract.CommonDataKinds.Website
 import com.m4isper.contactsapp.data.datasource.read.CONTACT_DATA_PROJECTION
 import com.m4isper.contactsapp.data.datasource.read.ContactHeaderRow
 import com.m4isper.contactsapp.data.datasource.read.DataColumns
@@ -31,6 +35,7 @@ private val CONTACT_PROJECTION =
         ContactsContract.Contacts._ID,
         ContactsContract.Contacts.DISPLAY_NAME,
         ContactsContract.Contacts.PHOTO_THUMBNAIL_URI,
+        ContactsContract.Contacts.CONTACT_LAST_UPDATED_TIMESTAMP,
     )
 
 private const val CONTACT_SORT_ORDER =
@@ -41,6 +46,7 @@ private const val CONTACT_SORT_ORDER =
  * Список читается по таблице Contacts (видны и контакты без номера),
  * детали — по data-строкам контакта.
  */
+@Suppress("TooManyFunctions")
 @Inject
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
@@ -53,7 +59,7 @@ class ContactsDataSourceImpl(
             val visibleIds = headers.mapTo(mutableSetOf()) { it.contactId }
             val rows =
                 queryData(
-                    selection = "${ContactsContract.Data.MIMETYPE} IN (?, ?, ?, ?, ?)",
+                    selection = "${ContactsContract.Data.MIMETYPE} IN (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     args =
                         arrayOf(
                             Phone.CONTENT_ITEM_TYPE,
@@ -61,9 +67,13 @@ class ContactsDataSourceImpl(
                             StructuredName.CONTENT_ITEM_TYPE,
                             Nickname.CONTENT_ITEM_TYPE,
                             Relation.CONTENT_ITEM_TYPE,
+                            Organization.CONTENT_ITEM_TYPE,
+                            StructuredPostal.CONTENT_ITEM_TYPE,
+                            Website.CONTENT_ITEM_TYPE,
+                            Note.CONTENT_ITEM_TYPE,
                         ),
                 ).filter { it.contactId in visibleIds }
-            aggregateContacts(headers, rows)
+            aggregateContacts(headers, rows, queryContactAccounts())
         }
 
     override suspend fun loadContact(contactId: Long): ContactDetails? =
@@ -210,12 +220,14 @@ class ContactsDataSourceImpl(
             val idIndex = it.getColumnIndexOrThrow(ContactsContract.Contacts._ID)
             val nameIndex = it.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME)
             val photoIndex = it.getColumnIndexOrThrow(ContactsContract.Contacts.PHOTO_THUMBNAIL_URI)
+            val updatedIndex = it.getColumnIndexOrThrow(ContactsContract.Contacts.CONTACT_LAST_UPDATED_TIMESTAMP)
             while (it.moveToNext()) {
                 headers +=
                     ContactHeaderRow(
                         contactId = it.getLong(idIndex),
                         name = it.getString(nameIndex)?.trim().orEmpty(),
                         photoUri = it.getString(photoIndex),
+                        lastUpdated = if (it.isNull(updatedIndex)) null else it.getLong(updatedIndex),
                     )
             }
         }
@@ -255,6 +267,37 @@ class ContactsDataSourceImpl(
             }
         }
         return rows
+    }
+
+    /** Аккаунт первого raw contact для каждого контакта — для фильтра по аккаунтам в списке. */
+    private fun queryContactAccounts(): Map<Long, ContactAccount> {
+        val accounts = mutableMapOf<Long, ContactAccount>()
+        context.contentResolver
+            .query(
+                ContactsContract.RawContacts.CONTENT_URI,
+                arrayOf(
+                    ContactsContract.RawContacts.CONTACT_ID,
+                    ContactsContract.RawContacts.ACCOUNT_NAME,
+                    ContactsContract.RawContacts.ACCOUNT_TYPE,
+                ),
+                "${ContactsContract.RawContacts.DELETED} = 0",
+                null,
+                "${ContactsContract.RawContacts.CONTACT_ID} ASC, ${ContactsContract.RawContacts._ID} ASC",
+            )?.use { cursor ->
+                val contactIndex = cursor.getColumnIndexOrThrow(ContactsContract.RawContacts.CONTACT_ID)
+                val nameIndex = cursor.getColumnIndexOrThrow(ContactsContract.RawContacts.ACCOUNT_NAME)
+                val typeIndex = cursor.getColumnIndexOrThrow(ContactsContract.RawContacts.ACCOUNT_TYPE)
+                while (cursor.moveToNext()) {
+                    val contactId = cursor.getLong(contactIndex)
+                    if (contactId <= 0 || contactId in accounts) continue
+                    accounts[contactId] =
+                        ContactAccount(
+                            name = cursor.getString(nameIndex),
+                            type = cursor.getString(typeIndex),
+                        )
+                }
+            }
+        return accounts
     }
 }
 

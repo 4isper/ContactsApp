@@ -3,6 +3,7 @@ package com.m4isper.contactsapp.presentation.contacts
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.m4isper.contactsapp.domain.model.AppSettings
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.ContactSortOrder
@@ -11,6 +12,7 @@ import com.m4isper.contactsapp.domain.repository.ContactsChangeSource
 import com.m4isper.contactsapp.domain.usecase.AddContactsToGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
@@ -47,6 +49,8 @@ data class ContactsUiState(
     val deleteClosing: Boolean = false,
     val groups: List<ContactGroup> = emptyList(),
     val selectedGroupId: Long? = null,
+    val accounts: List<ContactAccount> = emptyList(),
+    val selectedAccount: ContactAccount? = null,
     val sortOrder: ContactSortOrder = ContactSortOrder.BY_NAME,
     val listDensity: ListDensity = ListDensity.COMFORTABLE,
     val event: ContactsEvent? = null,
@@ -128,6 +132,8 @@ private data class ContactsGroupsMiddle(
     val groups: List<ContactGroup>,
     val selectedGroupId: Long?,
     val membership: Map<Long, Set<Long>>,
+    val accounts: List<ContactAccount>,
+    val selectedAccount: ContactAccount?,
 )
 
 private data class ContactsMiddle(
@@ -139,6 +145,8 @@ private data class ContactsMiddle(
     val groups: List<ContactGroup>,
     val selectedGroupId: Long?,
     val membership: Map<Long, Set<Long>>,
+    val accounts: List<ContactAccount>,
+    val selectedAccount: ContactAccount?,
 )
 
 @Inject
@@ -150,6 +158,7 @@ private data class ContactsMiddle(
 @Suppress("TooManyFunctions")
 class ContactsViewModel(
     private val getContactsUseCase: GetContactsUseCase,
+    private val getContactAccountsUseCase: GetContactAccountsUseCase,
     observeFavoritesUseCase: ObserveFavoritesUseCase,
     observeSettingsUseCase: ObserveSettingsUseCase,
     private val getContactDetailsUseCase: GetContactDetailsUseCase,
@@ -172,6 +181,8 @@ class ContactsViewModel(
     private val groupsFlow = MutableStateFlow<List<ContactGroup>>(emptyList())
     private val selectedGroupFlow = MutableStateFlow<Long?>(null)
     private val membershipFlow = MutableStateFlow<Map<Long, Set<Long>>>(emptyMap())
+    private val accountsFlow = MutableStateFlow<List<ContactAccount>>(emptyList())
+    private val selectedAccountFlow = MutableStateFlow<ContactAccount?>(null)
     private var changesJob: Job? = null
     private var pendingProviderRefresh = false
 
@@ -210,7 +221,14 @@ class ContactsViewModel(
                     eventFlow,
                     ::ContactsMiddleBase,
                 ),
-                combine(groupsFlow, selectedGroupFlow, membershipFlow, ::ContactsGroupsMiddle),
+                combine(
+                    groupsFlow,
+                    selectedGroupFlow,
+                    membershipFlow,
+                    accountsFlow,
+                    selectedAccountFlow,
+                    ::ContactsGroupsMiddle,
+                ),
             ) { base, groups ->
                 ContactsMiddle(
                     favorites = base.favorites,
@@ -221,6 +239,8 @@ class ContactsViewModel(
                     groups = groups.groups,
                     selectedGroupId = groups.selectedGroupId,
                     membership = groups.membership,
+                    accounts = groups.accounts,
+                    selectedAccount = groups.selectedAccount,
                 )
             },
             settingsFlow,
@@ -245,6 +265,8 @@ class ContactsViewModel(
                 favorites = middle.favorites,
                 selectedGroupId = middle.selectedGroupId,
                 membership = middle.membership,
+                groups = middle.groups,
+                selectedAccount = middle.selectedAccount,
             ).filterNot { it.contactId in pending }
         val content =
             when {
@@ -264,6 +286,8 @@ class ContactsViewModel(
             deleteClosing = middle.window?.closing == true,
             groups = middle.groups,
             selectedGroupId = middle.selectedGroupId,
+            accounts = middle.accounts,
+            selectedAccount = middle.selectedAccount,
             sortOrder = settings.sortOrder,
             listDensity = settings.listDensity,
             event = middle.event,
@@ -327,6 +351,12 @@ class ContactsViewModel(
     fun onGroupSelected(groupId: Long?) {
         selectionFlow.value = emptySet()
         selectedGroupFlow.value = groupId
+    }
+
+    /** Фильтр по аккаунту; null — показать контакты всех аккаунтов. */
+    fun onAccountSelected(account: ContactAccount?) {
+        selectionFlow.value = emptySet()
+        selectedAccountFlow.value = account
     }
 
     /** Тап по карточке в режиме выделения и long-press в любом режиме переключают выделение. */
@@ -446,6 +476,24 @@ class ContactsViewModel(
         }
     }
 
+    @Suppress("TooGenericExceptionCaught")
+    private fun refreshAccounts() {
+        viewModelScope.launch {
+            try {
+                val accounts = getContactAccountsUseCase()
+                accountsFlow.value = accounts
+                // Удалённый аккаунт не должен оставаться активным фильтром.
+                if (selectedAccountFlow.value?.let { selected -> selected !in accounts } == true) {
+                    selectedAccountFlow.value = null
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logw(LIST_TAG, "refresh accounts failed", e)
+            }
+        }
+    }
+
     /**
      * Подписка на изменения провайдера. Вызывается со стороны экрана и живёт
      * только пока список видим, чтобы не держать ContentObserver в фоне.
@@ -504,6 +552,7 @@ class ContactsViewModel(
             isLoading.value = false
         }
         refreshGroups()
+        refreshAccounts()
         if (pendingProviderRefresh) {
             pendingProviderRefresh = false
             launchLoad(clearSelection = false)
@@ -519,5 +568,7 @@ class ContactsViewModel(
         groupsFlow.value = emptyList()
         membershipFlow.value = emptyMap()
         selectedGroupFlow.value = null
+        accountsFlow.value = emptyList()
+        selectedAccountFlow.value = null
     }
 }

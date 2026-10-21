@@ -46,12 +46,18 @@ class BuildContactDetailsTest {
     }
 
     @Test
-    fun `keeps contact account`() {
+    fun `keeps contact account and last update`() {
         val google = ContactAccount(name = "user@gmail.com", type = "com.google")
 
-        val details = buildContactDetails(header(1, "Anna"), emptyList(), account = google)
+        val details =
+            buildContactDetails(
+                header(1, "Anna", lastUpdated = 123L),
+                emptyList(),
+                account = google,
+            )
 
         assertEquals(google, details.account)
+        assertEquals(123L, details.lastUpdated)
     }
 
     @Test

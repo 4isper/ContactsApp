@@ -181,7 +181,10 @@ private fun ThemeMode.labelRes(): Int =
 private fun ContactSortOrder.labelRes(): Int =
     when (this) {
         ContactSortOrder.BY_NAME -> R.string.settings_sort_by_name
+        ContactSortOrder.BY_NAME_DESC -> R.string.settings_sort_by_name_desc
         ContactSortOrder.BY_FAMILY -> R.string.settings_sort_by_family
+        ContactSortOrder.BY_COMPANY -> R.string.settings_sort_by_company
+        ContactSortOrder.RECENTLY_ADDED -> R.string.settings_sort_recently_added
     }
 
 private fun ListDensity.labelRes(): Int =

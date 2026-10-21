@@ -92,6 +92,8 @@ fun ContactsScreen(
             onEventHandled = viewModel::onEventHandled,
             groups = uiState.groups,
             onGroupSelected = viewModel::onGroupSelected,
+            accounts = uiState.accounts,
+            onAccountSelected = viewModel::onAccountSelected,
             onCreateGroup = viewModel::onCreateGroup,
             onManageGroupsClick = onGroupsClick,
             onAddSelectedToGroup = viewModel::onAddSelectedToGroup,
