@@ -3,6 +3,7 @@ package com.m4isper.contactsapp.di
 import android.app.Application
 import android.content.Context
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
+import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import com.m4isper.contactsapp.domain.repository.SettingsRepository
 import com.m4isper.contactsapp.presentation.reminders.BirthdayReminderScheduler
 import com.m4isper.contactsapp.presentation.reminders.ReminderScheduler
@@ -18,6 +19,7 @@ interface AppGraph : ViewModelGraph {
     /** Репозитории для фоновых задач: напоминания читают контакты и настройки. */
     val contactsRepository: ContactsRepository
     val settingsRepository: SettingsRepository
+    val favoritesRepository: FavoritesRepository
 
     @Provides
     fun provideContext(application: Application): Context = application.applicationContext

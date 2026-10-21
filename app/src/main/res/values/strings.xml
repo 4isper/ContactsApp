@@ -264,6 +264,9 @@
     <string name="calendar_event_title">%1$s — event</string>
     <string name="share_contact_text">Share as text</string>
     <string name="share_contact_qr">Share as QR code</string>
+    <string name="widget_title">Favorites</string>
+    <string name="widget_empty">Mark a contact as favorite to see it here</string>
+    <string name="widget_description">Favorites on the home screen</string>
     <string name="settings_title">Settings</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_theme_system">System</string>

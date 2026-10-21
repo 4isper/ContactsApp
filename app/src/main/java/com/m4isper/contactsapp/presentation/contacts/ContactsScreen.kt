@@ -18,6 +18,7 @@ import com.m4isper.contactsapp.presentation.common.permissions.PermissionRequest
 import com.m4isper.contactsapp.presentation.common.permissions.hasPermission
 import com.m4isper.contactsapp.presentation.common.permissions.openAppSettings
 import com.m4isper.contactsapp.presentation.import.ImportPreviewViewModel
+import com.m4isper.contactsapp.presentation.widget.ContactsWidgetProvider
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
 @Composable
@@ -116,8 +117,14 @@ fun ContactsScreen(
             onDuplicatesClick = onDuplicatesClick,
             onRecentsClick = onRecentsClick,
             onSettingsClick = onSettingsClick,
-            onToggleFavorite = viewModel::onToggleFavorite,
-            onToggleFavoriteSelected = viewModel::onToggleSelectedFavorite,
+            onToggleFavorite = { contactId ->
+                viewModel.onToggleFavorite(contactId)
+                ContactsWidgetProvider.refresh(context)
+            },
+            onToggleFavoriteSelected = {
+                viewModel.onToggleSelectedFavorite()
+                ContactsWidgetProvider.refresh(context)
+            },
             profileContactId = uiState.profileContactId,
             onProfileClick = { contactId -> onProfileClick(contactId) },
             modifier = modifier,

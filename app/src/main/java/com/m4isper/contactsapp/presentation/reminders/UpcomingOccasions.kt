@@ -2,8 +2,8 @@ package com.m4isper.contactsapp.presentation.reminders
 
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.EventKind
+import com.m4isper.contactsapp.presentation.common.calendar.nextOccurrence
 import java.time.LocalDate
-import java.time.MonthDay
 import java.time.temporal.ChronoUnit
 
 /** Тип повода, о котором напоминаем. */
@@ -47,21 +47,6 @@ fun upcomingOccasions(
         }
     }
     return occasions.sortedWith(compareBy({ it.daysLeft }, { it.contactName }))
-}
-
-/** Ближайшая дата с указанным днём и месяцем: в этом году или в следующем. */
-private fun nextOccurrence(
-    day: Int,
-    month: Int,
-    today: LocalDate,
-): LocalDate? {
-    val monthDay = runCatching { MonthDay.of(month, day) }.getOrNull() ?: return null
-    val thisYear = runCatching { monthDay.atYear(today.year) }.getOrNull()
-    return when {
-        thisYear == null -> null
-        !thisYear.isBefore(today) -> thisYear
-        else -> runCatching { monthDay.atYear(today.year + 1) }.getOrNull()
-    }
 }
 
 private fun addIfSoon(
