@@ -377,12 +377,11 @@ private fun SwipeActionBackground(
 @Composable
 internal fun contactSubtitle(contact: ContactDetails): String =
     if (contact.phones.isEmpty()) {
-        contact.emails
-            .firstOrNull()
+        contact.primaryEmail
             ?.address
             .orEmpty()
     } else {
-        val primary = contact.phones.first().number
+        val primary = contact.primaryPhone?.number.orEmpty()
         if (contact.phones.size <= 1) {
             primary
         } else {

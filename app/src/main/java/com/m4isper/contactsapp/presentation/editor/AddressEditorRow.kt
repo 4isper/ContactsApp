@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -31,7 +33,13 @@ import com.m4isper.contactsapp.ui.theme.LocalSpacing
 @Composable
 internal fun AddressEditorRow(
     row: EditorRow<EditableAddress>,
-    onAddressChange: (Long, String) -> Unit,
+    onStreetChange: (Long, String) -> Unit,
+    onPoBoxChange: (Long, String) -> Unit,
+    onNeighborhoodChange: (Long, String) -> Unit,
+    onCityChange: (Long, String) -> Unit,
+    onRegionChange: (Long, String) -> Unit,
+    onPostcodeChange: (Long, String) -> Unit,
+    onCountryChange: (Long, String) -> Unit,
     onKindChange: (Long, AddressKind) -> Unit,
     onCustomLabelChange: (Long, String) -> Unit,
     onRemove: (Long) -> Unit,
@@ -49,16 +57,97 @@ internal fun AddressEditorRow(
     ) {
         Column(modifier = Modifier.padding(spacing.m)) {
             OutlinedTextField(
-                value = row.value.address,
-                onValueChange = { onAddressChange(row.rowId, it) },
-                label = { Text(stringResource(R.string.editor_address_label)) },
-                minLines = 2,
+                value = row.value.streetLine,
+                onValueChange = { onStreetChange(row.rowId, it) },
+                label = { Text(stringResource(R.string.editor_address_street)) },
+                singleLine = true,
                 shape = MaterialTheme.shapes.medium,
+                keyboardOptions =
+                    KeyboardOptions(
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Next,
+                    ),
                 modifier =
                     Modifier
                         .fillMaxWidth()
                         .testTag("editor_address_field"),
             )
+            Spacer(modifier = Modifier.height(spacing.s))
+            OutlinedTextField(
+                value = row.value.poBox,
+                onValueChange = { onPoBoxChange(row.rowId, it) },
+                label = { Text(stringResource(R.string.editor_address_po_box)) },
+                singleLine = true,
+                shape = MaterialTheme.shapes.medium,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .testTag("editor_address_po_box_field"),
+            )
+            Spacer(modifier = Modifier.height(spacing.s))
+            OutlinedTextField(
+                value = row.value.neighborhood,
+                onValueChange = { onNeighborhoodChange(row.rowId, it) },
+                label = { Text(stringResource(R.string.editor_address_neighborhood)) },
+                singleLine = true,
+                shape = MaterialTheme.shapes.medium,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .testTag("editor_address_neighborhood_field"),
+            )
+            Spacer(modifier = Modifier.height(spacing.s))
+            Row {
+                OutlinedTextField(
+                    value = row.value.city,
+                    onValueChange = { onCityChange(row.rowId, it) },
+                    label = { Text(stringResource(R.string.editor_address_city)) },
+                    singleLine = true,
+                    shape = MaterialTheme.shapes.medium,
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .testTag("editor_address_city_field"),
+                )
+                Spacer(modifier = Modifier.width(spacing.xs))
+                OutlinedTextField(
+                    value = row.value.region,
+                    onValueChange = { onRegionChange(row.rowId, it) },
+                    label = { Text(stringResource(R.string.editor_address_region)) },
+                    singleLine = true,
+                    shape = MaterialTheme.shapes.medium,
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .testTag("editor_address_region_field"),
+                )
+            }
+            Spacer(modifier = Modifier.height(spacing.s))
+            Row {
+                OutlinedTextField(
+                    value = row.value.postcode,
+                    onValueChange = { onPostcodeChange(row.rowId, it) },
+                    label = { Text(stringResource(R.string.editor_address_postcode)) },
+                    singleLine = true,
+                    shape = MaterialTheme.shapes.medium,
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .testTag("editor_address_postcode_field"),
+                )
+                Spacer(modifier = Modifier.width(spacing.xs))
+                OutlinedTextField(
+                    value = row.value.country,
+                    onValueChange = { onCountryChange(row.rowId, it) },
+                    label = { Text(stringResource(R.string.editor_address_country)) },
+                    singleLine = true,
+                    shape = MaterialTheme.shapes.medium,
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .testTag("editor_address_country_field"),
+                )
+            }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 KindMenu(
                     current = row.value.kind,

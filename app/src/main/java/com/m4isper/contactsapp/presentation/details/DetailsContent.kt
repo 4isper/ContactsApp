@@ -25,6 +25,8 @@ import com.m4isper.contactsapp.presentation.common.format.contactEventLabel
 import com.m4isper.contactsapp.presentation.common.format.emailKindLabel
 import com.m4isper.contactsapp.presentation.common.format.instantMessageLabel
 import com.m4isper.contactsapp.presentation.common.format.relationLabel
+import com.m4isper.contactsapp.presentation.common.format.sipKindLabel
+import com.m4isper.contactsapp.presentation.common.format.websiteKindLabel
 import com.m4isper.contactsapp.presentation.common.share.openEmail
 import com.m4isper.contactsapp.presentation.common.share.openMap
 import com.m4isper.contactsapp.presentation.common.share.openWebsite
@@ -49,10 +51,10 @@ internal fun DetailsContent(
             DetailsHeader(
                 details = details,
                 onCallPrimary = {
-                    details.phones.firstOrNull()?.let(onCallClick)
+                    details.primaryPhone?.let(onCallClick)
                 },
                 onSmsPrimary = {
-                    details.phones.firstOrNull()?.let(onSmsClick)
+                    details.primaryPhone?.let(onSmsClick)
                 },
             )
         }
@@ -96,7 +98,7 @@ internal fun DetailsContent(
             )
         }
         items(
-            items = details.phones,
+            items = details.phones.sortedByDescending { it.isPrimary },
             key = { "phone_${it.number}" },
         ) { phone ->
             PhoneRow(
@@ -107,12 +109,12 @@ internal fun DetailsContent(
             )
         }
         items(
-            items = details.emails,
+            items = details.emails.sortedByDescending { it.isPrimary },
             key = { "email_${it.address}" },
         ) { email ->
             DataRow(
                 primary = email.address,
-                secondary = email.customLabel ?: emailKindLabel(email.kind),
+                secondary = valueKindLabel(email.customLabel ?: emailKindLabel(email.kind), email.isPrimary),
                 actions =
                     listOf(
                         RowAction(
@@ -145,24 +147,41 @@ internal fun DetailsContent(
             )
         }
         items(
+            items = details.sipAddresses,
+            key = { "sip_${it.address}" },
+        ) { sip ->
+            DataRow(
+                primary = sip.address,
+                secondary = sip.customLabel ?: sipKindLabel(sip.kind),
+                actions =
+                    listOf(
+                        RowAction(
+                            Icons.Filled.ContentCopy,
+                            stringResource(R.string.action_copy),
+                        ) { onCopyClick(sip.address) },
+                    ),
+                modifier = Modifier.testTag("sip_row_${sip.address}"),
+            )
+        }
+        items(
             items = details.addresses,
-            key = { "address_${it.address}" },
+            key = { "address_${it.displayAddress}" },
         ) { address ->
             DataRow(
-                primary = address.address,
+                primary = address.displayAddress,
                 secondary = address.customLabel ?: addressKindLabel(address.kind),
                 actions =
                     listOf(
                         RowAction(
                             Icons.Filled.LocationOn,
                             stringResource(R.string.action_open_map),
-                        ) { openMap(context, address.address) },
+                        ) { openMap(context, address.displayAddress) },
                         RowAction(
                             Icons.Filled.ContentCopy,
                             stringResource(R.string.action_copy),
-                        ) { onCopyClick(address.address) },
+                        ) { onCopyClick(address.displayAddress) },
                     ),
-                modifier = Modifier.testTag("address_row_${address.address}"),
+                modifier = Modifier.testTag("address_row_${address.displayAddress}"),
             )
         }
         items(
@@ -171,7 +190,7 @@ internal fun DetailsContent(
         ) { website ->
             DataRow(
                 primary = website.url,
-                secondary = null,
+                secondary = website.customLabel ?: websiteKindLabel(website.kind),
                 actions =
                     listOf(
                         RowAction(
@@ -188,9 +207,26 @@ internal fun DetailsContent(
         }
         details.organization?.let { organization ->
             item(key = "organization") {
+                val primary =
+                    listOf(
+                        organization.company,
+                        organization.title,
+                        organization.department,
+                        organization.officeLocation,
+                    ).firstOrNull { it.isNotBlank() }.orEmpty()
+                val secondary =
+                    listOf(
+                        organization.title.takeIf { organization.company.isNotBlank() },
+                        organization.department,
+                        organization.jobDescription,
+                        organization.officeLocation,
+                    ).filterNotNull()
+                        .filter { it.isNotBlank() && it != primary }
+                        .joinToString(" · ")
+                        .takeIf { it.isNotBlank() }
                 DataRow(
-                    primary = organization.company.ifBlank { organization.title },
-                    secondary = organization.title.takeIf { organization.company.isNotBlank() },
+                    primary = primary,
+                    secondary = secondary,
                     actions = emptyList(),
                     modifier = Modifier.testTag("organization_row"),
                 )
@@ -246,6 +282,12 @@ internal fun DetailsContent(
         }
     }
 }
+
+@Composable
+private fun valueKindLabel(
+    label: String,
+    isPrimary: Boolean,
+): String = if (isPrimary) "$label · ${stringResource(R.string.primary_value)}" else label
 
 /** Ключ строки события для списка и testTag; формат не связан с форматом хранения. */
 private fun birthdayKey(date: Birthday): String =

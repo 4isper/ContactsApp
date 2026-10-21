@@ -23,15 +23,34 @@
     <string name="phone_type_mobile">Мобильный</string>
     <string name="phone_type_home">Домашний</string>
     <string name="phone_type_work">Рабочий</string>
+    <string name="phone_type_work_mobile">Рабочий мобильный</string>
+    <string name="phone_type_fax">Факс</string>
+    <string name="phone_type_pager">Пейджер</string>
+    <string name="phone_type_callback">Обратный звонок</string>
+    <string name="phone_type_company_main">Главный офис</string>
     <string name="phone_type_other">Другой</string>
 
     <string name="email_type_home">Домашний</string>
     <string name="email_type_work">Рабочий</string>
+    <string name="email_type_mobile">Мобильный</string>
     <string name="email_type_other">Другой</string>
 
     <string name="address_type_home">Домашний</string>
     <string name="address_type_work">Рабочий</string>
     <string name="address_type_other">Другой</string>
+
+    <string name="website_type_homepage">Домашняя страница</string>
+    <string name="website_type_home">Домашний</string>
+    <string name="website_type_work">Рабочий</string>
+    <string name="website_type_blog">Блог</string>
+    <string name="website_type_profile">Профиль</string>
+    <string name="website_type_ftp">FTP</string>
+    <string name="website_type_other">Другой</string>
+
+    <string name="sip_type_home">Домашний</string>
+    <string name="sip_type_work">Рабочий</string>
+    <string name="sip_type_other">Другой</string>
+    <string name="primary_value">Основной</string>
 
     <string name="im_protocol_aim">AIM</string>
     <string name="im_protocol_msn">MSN</string>
@@ -99,8 +118,11 @@
     <string name="action_delete_phone">Удалить номер</string>
     <string name="action_delete_email">Удалить email</string>
     <string name="action_delete_im">Удалить мессенджер</string>
+    <string name="action_delete_sip">Удалить SIP-адрес</string>
     <string name="action_delete_address">Удалить адрес</string>
     <string name="action_delete_website">Удалить сайт</string>
+    <string name="action_move_up">Переместить выше</string>
+    <string name="action_move_down">Переместить ниже</string>
     <string name="action_delete_event">Удалить событие</string>
     <string name="action_delete_relation">Удалить связь</string>
     <string name="action_undo">Отменить</string>
@@ -197,6 +219,7 @@
     <string name="account_with_type">%1$s (%2$s)</string>
     <string name="editor_section_emails">Email</string>
     <string name="editor_section_instant_messages">Мессенджеры</string>
+    <string name="editor_section_sip">SIP</string>
     <string name="editor_section_addresses">Адреса</string>
     <string name="editor_section_websites">Сайты</string>
     <string name="editor_section_organization">Организация</string>
@@ -208,6 +231,7 @@
     <string name="editor_section_note">Заметка</string>
     <string name="editor_add_email">Добавить email</string>
     <string name="editor_add_im">Добавить мессенджер</string>
+    <string name="editor_add_sip">Добавить SIP-адрес</string>
     <string name="editor_add_address">Добавить адрес</string>
     <string name="editor_add_website">Добавить сайт</string>
     <string name="editor_add_event">Добавить событие</string>
@@ -215,10 +239,23 @@
     <string name="editor_email_label">Email</string>
     <string name="editor_im_label">Аккаунт</string>
     <string name="editor_im_service">Сервис</string>
+    <string name="editor_sip_label">SIP-адрес</string>
     <string name="editor_address_label">Адрес</string>
+    <string name="editor_address_street">Улица</string>
+    <string name="editor_address_po_box">Абонентский ящик</string>
+    <string name="editor_address_neighborhood">Район</string>
+    <string name="editor_address_city">Город</string>
+    <string name="editor_address_region">Регион</string>
+    <string name="editor_address_postcode">Почтовый индекс</string>
+    <string name="editor_address_country">Страна</string>
     <string name="editor_website_label">Сайт</string>
     <string name="editor_organization_company">Компания</string>
     <string name="editor_organization_title">Должность</string>
+    <string name="editor_organization_department">Отдел</string>
+    <string name="editor_organization_job_description">Описание работы</string>
+    <string name="editor_organization_office_location">Офис</string>
+    <string name="editor_primary_value">Основной</string>
+    <string name="editor_make_primary">Сделать основным</string>
     <string name="editor_note_label">Заметка</string>
     <string name="editor_nickname_label">Никнейм</string>
     <string name="editor_relation_label">Имя</string>

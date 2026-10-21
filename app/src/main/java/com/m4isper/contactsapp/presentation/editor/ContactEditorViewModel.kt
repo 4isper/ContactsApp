@@ -12,12 +12,15 @@ import com.m4isper.contactsapp.domain.model.EditableEvent
 import com.m4isper.contactsapp.domain.model.EditableInstantMessage
 import com.m4isper.contactsapp.domain.model.EditablePhone
 import com.m4isper.contactsapp.domain.model.EditableRelation
+import com.m4isper.contactsapp.domain.model.EditableSipAddress
 import com.m4isper.contactsapp.domain.model.EditableWebsite
 import com.m4isper.contactsapp.domain.model.EmailKind
 import com.m4isper.contactsapp.domain.model.EventKind
 import com.m4isper.contactsapp.domain.model.ImProtocol
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.RelationKind
+import com.m4isper.contactsapp.domain.model.SipKind
+import com.m4isper.contactsapp.domain.model.WebsiteKind
 import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
@@ -47,7 +50,7 @@ private const val EDITOR_TAG = "ContactEditor"
 @ViewModelKey
 @ContributesIntoMap(AppScope::class)
 // Подавление осознанное: фасад формы, тонкие сеттеры на каждое поле; декомпозиция не даёт выгоды.
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "LargeClass")
 class ContactEditorViewModel(
     private val getContactFormUseCase: GetContactFormUseCase,
     private val createContactUseCase: CreateContactUseCase,
@@ -176,6 +179,21 @@ class ContactEditorViewModel(
 
     fun onAddPhone() = updateData { it.copy(phones = it.phones + newRow(EditablePhone(number = ""))) }
 
+    fun onSetPrimaryPhone(rowId: Long) =
+        updateData {
+            it.copy(
+                phones =
+                    it.phones.map { row ->
+                        row.copy(value = row.value.copy(isPrimary = row.rowId == rowId))
+                    },
+            )
+        }
+
+    fun onMovePhone(
+        rowId: Long,
+        offset: Int,
+    ) = updateData { it.copy(phones = it.phones.moved(rowId, offset)) }
+
     fun onRemovePhone(rowId: Long) =
         updateData {
             val remaining = it.phones.filterNot { row -> row.rowId == rowId }
@@ -199,6 +217,21 @@ class ContactEditorViewModel(
 
     fun onAddEmail() = updateData { it.copy(emails = it.emails + newRow(EditableEmail(address = ""))) }
 
+    fun onSetPrimaryEmail(rowId: Long) =
+        updateData {
+            it.copy(
+                emails =
+                    it.emails.map { row ->
+                        row.copy(value = row.value.copy(isPrimary = row.rowId == rowId))
+                    },
+            )
+        }
+
+    fun onMoveEmail(
+        rowId: Long,
+        offset: Int,
+    ) = updateData { it.copy(emails = it.emails.moved(rowId, offset)) }
+
     fun onRemoveEmail(rowId: Long) =
         updateData { editor ->
             editor.copy(emails = editor.emails.filterNot { row -> row.rowId == rowId })
@@ -209,6 +242,60 @@ class ContactEditorViewModel(
         value: String,
     ) = updateData {
         it.copy(addresses = it.addresses.withRow(rowId) { address -> address.copy(address = value) })
+    }
+
+    fun onAddressStreetChange(
+        rowId: Long,
+        value: String,
+    ) = updateData {
+        it.copy(
+            addresses =
+                it.addresses.withRow(rowId) { address ->
+                    address.copy(street = value, address = "")
+                },
+        )
+    }
+
+    fun onAddressPoBoxChange(
+        rowId: Long,
+        value: String,
+    ) = updateData {
+        it.copy(addresses = it.addresses.withRow(rowId) { address -> address.copy(poBox = value) })
+    }
+
+    fun onAddressNeighborhoodChange(
+        rowId: Long,
+        value: String,
+    ) = updateData {
+        it.copy(addresses = it.addresses.withRow(rowId) { address -> address.copy(neighborhood = value) })
+    }
+
+    fun onAddressCityChange(
+        rowId: Long,
+        value: String,
+    ) = updateData {
+        it.copy(addresses = it.addresses.withRow(rowId) { address -> address.copy(city = value) })
+    }
+
+    fun onAddressRegionChange(
+        rowId: Long,
+        value: String,
+    ) = updateData {
+        it.copy(addresses = it.addresses.withRow(rowId) { address -> address.copy(region = value) })
+    }
+
+    fun onAddressPostcodeChange(
+        rowId: Long,
+        value: String,
+    ) = updateData {
+        it.copy(addresses = it.addresses.withRow(rowId) { address -> address.copy(postcode = value) })
+    }
+
+    fun onAddressCountryChange(
+        rowId: Long,
+        value: String,
+    ) = updateData {
+        it.copy(addresses = it.addresses.withRow(rowId) { address -> address.copy(country = value) })
     }
 
     fun onAddressKindChange(
@@ -234,6 +321,20 @@ class ContactEditorViewModel(
         rowId: Long,
         value: String,
     ) = updateData { it.copy(websites = it.websites.withRow(rowId) { website -> website.copy(url = value) }) }
+
+    fun onWebsiteKindChange(
+        rowId: Long,
+        kind: WebsiteKind,
+    ) = updateData {
+        it.copy(websites = it.websites.withRow(rowId) { website -> website.copy(kind = kind) })
+    }
+
+    fun onWebsiteCustomLabelChange(
+        rowId: Long,
+        value: String,
+    ) = updateData {
+        it.copy(websites = it.websites.withRow(rowId) { website -> website.copy(customLabel = value) })
+    }
 
     fun onAddWebsite() = updateData { it.copy(websites = it.websites + newRow(EditableWebsite(url = ""))) }
 
@@ -271,6 +372,37 @@ class ContactEditorViewModel(
     fun onRemoveIm(rowId: Long) =
         updateData { editor ->
             editor.copy(instantMessages = editor.instantMessages.filterNot { row -> row.rowId == rowId })
+        }
+
+    fun onSipChange(
+        rowId: Long,
+        value: String,
+    ) = updateData {
+        it.copy(sipAddresses = it.sipAddresses.withRow(rowId) { sip -> sip.copy(address = value) })
+    }
+
+    fun onSipKindChange(
+        rowId: Long,
+        kind: SipKind,
+    ) = updateData {
+        it.copy(sipAddresses = it.sipAddresses.withRow(rowId) { sip -> sip.copy(kind = kind) })
+    }
+
+    fun onSipCustomLabelChange(
+        rowId: Long,
+        value: String,
+    ) = updateData {
+        it.copy(sipAddresses = it.sipAddresses.withRow(rowId) { sip -> sip.copy(customLabel = value) })
+    }
+
+    fun onAddSip() =
+        updateData {
+            it.copy(sipAddresses = it.sipAddresses + newRow(EditableSipAddress(address = "")))
+        }
+
+    fun onRemoveSip(rowId: Long) =
+        updateData { editor ->
+            editor.copy(sipAddresses = editor.sipAddresses.filterNot { row -> row.rowId == rowId })
         }
 
     fun onNicknameChange(value: String) = updateData { it.copy(nickname = it.nickname.copy(nickname = value)) }
@@ -382,6 +514,15 @@ class ContactEditorViewModel(
 
     fun onOrganizationTitleChange(value: String) =
         updateData { it.copy(organization = it.organization.copy(title = value)) }
+
+    fun onOrganizationDepartmentChange(value: String) =
+        updateData { it.copy(organization = it.organization.copy(department = value)) }
+
+    fun onOrganizationJobDescriptionChange(value: String) =
+        updateData { it.copy(organization = it.organization.copy(jobDescription = value)) }
+
+    fun onOrganizationOfficeLocationChange(value: String) =
+        updateData { it.copy(organization = it.organization.copy(officeLocation = value)) }
 
     fun onNoteChange(value: String) = updateData { it.copy(note = it.note.copy(note = value)) }
 
@@ -515,4 +656,20 @@ class ContactEditorViewModel(
 
     /** Новая строка со стабильным ключом: счётчик живёт в пределах экрана. */
     private fun <T> newRow(value: T) = EditorRow(rowId = ++nextRowId, value = value)
+}
+
+/** Перемещает строку на [offset] позиций; выход за границы списка игнорируется. */
+internal fun <T> List<EditorRow<T>>.moved(
+    rowId: Long,
+    offset: Int,
+): List<EditorRow<T>> {
+    val from = indexOfFirst { it.rowId == rowId }
+    val to = from + offset
+    return if (offset == 0 || from < 0 || to !in indices) {
+        this
+    } else {
+        toMutableList().apply {
+            add(to, removeAt(from))
+        }
+    }
 }

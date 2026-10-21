@@ -5,6 +5,8 @@ import com.m4isper.contactsapp.domain.model.EmailKind
 import com.m4isper.contactsapp.domain.model.EventKind
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.RelationKind
+import com.m4isper.contactsapp.domain.model.SipKind
+import com.m4isper.contactsapp.domain.model.WebsiteKind
 import java.util.Locale
 
 /** TYPE связи: отдельного стандарта нет, используем имена RelationKind. */
@@ -31,6 +33,11 @@ internal fun phoneKindOfVCardLabel(label: String): PhoneKind? =
         "mobile", "cell" -> PhoneKind.MOBILE
         "home" -> PhoneKind.HOME
         "work" -> PhoneKind.WORK
+        "work mobile", "work cell" -> PhoneKind.WORK_MOBILE
+        "fax" -> PhoneKind.FAX
+        "pager" -> PhoneKind.PAGER
+        "callback" -> PhoneKind.CALLBACK
+        "company main" -> PhoneKind.COMPANY_MAIN
         else -> null
     }
 
@@ -38,6 +45,7 @@ internal fun emailKindOfVCardLabel(label: String): EmailKind? =
     when (label.trim().lowercase(Locale.ROOT)) {
         "home" -> EmailKind.HOME
         "work" -> EmailKind.WORK
+        "mobile", "cell" -> EmailKind.MOBILE
         else -> null
     }
 
@@ -45,6 +53,24 @@ internal fun addressKindOfVCardLabel(label: String): AddressKind? =
     when (label.trim().lowercase(Locale.ROOT)) {
         "home" -> AddressKind.HOME
         "work" -> AddressKind.WORK
+        else -> null
+    }
+
+internal fun websiteKindOfVCardLabel(label: String): WebsiteKind? =
+    when (label.trim().lowercase(Locale.ROOT)) {
+        "home" -> WebsiteKind.HOME
+        "work" -> WebsiteKind.WORK
+        "homepage" -> WebsiteKind.HOMEPAGE
+        "blog" -> WebsiteKind.BLOG
+        "profile" -> WebsiteKind.PROFILE
+        "ftp" -> WebsiteKind.FTP
+        else -> null
+    }
+
+internal fun sipKindOfVCardLabel(label: String): SipKind? =
+    when (label.trim().lowercase(Locale.ROOT)) {
+        "home" -> SipKind.HOME
+        "work" -> SipKind.WORK
         else -> null
     }
 

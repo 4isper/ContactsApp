@@ -5,9 +5,13 @@ import android.provider.ContactsContract.CommonDataKinds.Event
 import android.provider.ContactsContract.CommonDataKinds.Im
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.Relation
+import android.provider.ContactsContract.CommonDataKinds.SipAddress
+import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
+import android.provider.ContactsContract.CommonDataKinds.Website
 import com.m4isper.contactsapp.data.datasource.ContactsDataSource
 import com.m4isper.contactsapp.data.datasource.ContactsWriterDataSource
 import com.m4isper.contactsapp.data.datasource.read.ContactRows
+import com.m4isper.contactsapp.data.datasource.read.ExistingAddress
 import com.m4isper.contactsapp.data.datasource.read.ExistingBirthday
 import com.m4isper.contactsapp.data.datasource.read.ExistingEmail
 import com.m4isper.contactsapp.data.datasource.read.ExistingEvent
@@ -19,7 +23,9 @@ import com.m4isper.contactsapp.data.datasource.read.ExistingNote
 import com.m4isper.contactsapp.data.datasource.read.ExistingOrganization
 import com.m4isper.contactsapp.data.datasource.read.ExistingPhone
 import com.m4isper.contactsapp.data.datasource.read.ExistingRelation
+import com.m4isper.contactsapp.data.datasource.read.ExistingSipAddress
 import com.m4isper.contactsapp.data.datasource.read.ExistingWebsite
+import com.m4isper.contactsapp.domain.model.AddressKind
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
@@ -33,6 +39,8 @@ import com.m4isper.contactsapp.domain.model.NameMode
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.model.RelationKind
+import com.m4isper.contactsapp.domain.model.SipKind
+import com.m4isper.contactsapp.domain.model.WebsiteKind
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -72,9 +80,30 @@ class ContactsRepositoryImplTest {
                             family = "Petrova",
                         ),
                     ),
-                phones = listOf(ExistingPhone(2, 10, "+71112223344", Phone.TYPE_MOBILE, null)),
-                emails = listOf(ExistingEmail(3, 10, "a@x.com", Email.TYPE_CUSTOM, "Рабочая")),
-                websites = listOf(ExistingWebsite(4, 10, "https://x.dev")),
+                phones =
+                    listOf(
+                        ExistingPhone(2, 10, "+71112223344", Phone.TYPE_MOBILE, null, isPrimary = true),
+                    ),
+                emails =
+                    listOf(
+                        ExistingEmail(3, 10, "a@x.com", Email.TYPE_CUSTOM, "Рабочая", isPrimary = true),
+                    ),
+                addresses =
+                    listOf(
+                        ExistingAddress(
+                            dataId = 14,
+                            rawContactId = 10,
+                            address = "Lenina 1, Moscow",
+                            type = StructuredPostal.TYPE_WORK,
+                            label = null,
+                            street = "Lenina 1",
+                            city = "Moscow",
+                            region = "MO",
+                            postcode = "101000",
+                            country = "Russia",
+                        ),
+                    ),
+                websites = listOf(ExistingWebsite(4, 10, "https://x.dev", Website.TYPE_BLOG, null)),
                 instantMessages =
                     listOf(
                         ExistingInstantMessage(
@@ -86,11 +115,24 @@ class ContactsRepositoryImplTest {
                             customProtocol = null,
                         ),
                     ),
+                sipAddresses =
+                    listOf(
+                        ExistingSipAddress(15, 10, "sip:anna@example.com", SipAddress.TYPE_WORK, null),
+                    ),
                 events = listOf(ExistingEvent(6, 10, "2020-09-10", Event.TYPE_CUSTOM, "Свадьба")),
                 birthday = ExistingBirthday(7, 10, "--05-06"),
                 nickname = ExistingNickname(8, 10, "Нюша"),
                 note = ExistingNote(9, 10, "заметка"),
-                organization = ExistingOrganization(10, 10, "ACME", "CTO"),
+                organization =
+                    ExistingOrganization(
+                        dataId = 10,
+                        rawContactId = 10,
+                        company = "ACME",
+                        title = "CTO",
+                        department = "Platform",
+                        jobDescription = "Leads engineering",
+                        officeLocation = "London",
+                    ),
                 relations = listOf(ExistingRelation(11, 10, "Bob", Relation.TYPE_FRIEND, null)),
                 groupMemberships =
                     listOf(
@@ -107,9 +149,20 @@ class ContactsRepositoryImplTest {
         assertEquals("Anna", form.name.given)
         assertEquals(PhoneKind.MOBILE, form.phones.single().kind)
         assertEquals("+71112223344", form.phones.single().number)
+        assertEquals(true, form.phones.single().isPrimary)
         assertEquals(EmailKind.OTHER, form.emails.single().kind)
         assertEquals("Рабочая", form.emails.single().customLabel)
+        assertEquals(true, form.emails.single().isPrimary)
+        assertEquals("Lenina 1", form.addresses.single().street)
+        assertEquals("Moscow", form.addresses.single().city)
+        assertEquals("MO", form.addresses.single().region)
+        assertEquals("101000", form.addresses.single().postcode)
+        assertEquals("Russia", form.addresses.single().country)
+        assertEquals(AddressKind.WORK, form.addresses.single().kind)
         assertEquals("https://x.dev", form.websites.single().url)
+        assertEquals(WebsiteKind.BLOG, form.websites.single().kind)
+        assertEquals("sip:anna@example.com", form.sipAddresses.single().address)
+        assertEquals(SipKind.WORK, form.sipAddresses.single().kind)
         assertEquals(ImProtocol.SKYPE, form.instantMessages.single().protocol)
         assertNull(form.instantMessages.single().customProtocol)
         assertEquals(EventKind.OTHER, form.events.single().kind)
@@ -119,6 +172,9 @@ class ContactsRepositoryImplTest {
         assertEquals("заметка", form.note.note)
         assertEquals("ACME", form.organization.company)
         assertEquals("CTO", form.organization.title)
+        assertEquals("Platform", form.organization.department)
+        assertEquals("Leads engineering", form.organization.jobDescription)
+        assertEquals("London", form.organization.officeLocation)
         assertEquals(RelationKind.FRIEND, form.relations.single().kind)
         assertEquals(listOf(100L, 200L), form.groups)
         assertEquals(false, form.photoChanged)

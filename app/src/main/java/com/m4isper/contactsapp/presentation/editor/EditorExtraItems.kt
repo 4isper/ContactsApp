@@ -11,6 +11,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -41,38 +42,77 @@ private fun LazyListScope.organizationItems(
         SectionHeader(titleRes = R.string.editor_section_organization)
     }
     item(key = "organization") {
-        val spacing = LocalSpacing.current
-        Column(modifier = Modifier.padding(horizontal = spacing.m)) {
-            OutlinedTextField(
-                value = uiState.organization.company,
-                onValueChange = viewModel::onOrganizationCompanyChange,
-                label = { Text(stringResource(R.string.editor_organization_company)) },
-                singleLine = true,
-                shape = MaterialTheme.shapes.medium,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .testTag("editor_company_field"),
-            )
-            Spacer(modifier = Modifier.height(spacing.s))
-            OutlinedTextField(
-                value = uiState.organization.title,
-                onValueChange = viewModel::onOrganizationTitleChange,
-                label = { Text(stringResource(R.string.editor_organization_title)) },
-                singleLine = true,
-                shape = MaterialTheme.shapes.medium,
-                keyboardOptions =
-                    KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Next,
-                    ),
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .testTag("editor_title_field"),
-            )
-        }
+        OrganizationFields(uiState, viewModel)
     }
+}
+
+@Composable
+private fun OrganizationFields(
+    uiState: EditorUiState,
+    viewModel: ContactEditorViewModel,
+) {
+    val spacing = LocalSpacing.current
+    Column(modifier = Modifier.padding(horizontal = spacing.m)) {
+        OrganizationField(
+            value = uiState.organization.company,
+            onValueChange = viewModel::onOrganizationCompanyChange,
+            labelRes = R.string.editor_organization_company,
+            testTag = "editor_company_field",
+        )
+        Spacer(modifier = Modifier.height(spacing.s))
+        OrganizationField(
+            value = uiState.organization.title,
+            onValueChange = viewModel::onOrganizationTitleChange,
+            labelRes = R.string.editor_organization_title,
+            testTag = "editor_title_field",
+        )
+        Spacer(modifier = Modifier.height(spacing.s))
+        OrganizationField(
+            value = uiState.organization.department,
+            onValueChange = viewModel::onOrganizationDepartmentChange,
+            labelRes = R.string.editor_organization_department,
+            testTag = "editor_department_field",
+        )
+        Spacer(modifier = Modifier.height(spacing.s))
+        OrganizationField(
+            value = uiState.organization.jobDescription,
+            onValueChange = viewModel::onOrganizationJobDescriptionChange,
+            labelRes = R.string.editor_organization_job_description,
+            testTag = "editor_job_description_field",
+        )
+        Spacer(modifier = Modifier.height(spacing.s))
+        OrganizationField(
+            value = uiState.organization.officeLocation,
+            onValueChange = viewModel::onOrganizationOfficeLocationChange,
+            labelRes = R.string.editor_organization_office_location,
+            testTag = "editor_office_location_field",
+        )
+    }
+}
+
+@Composable
+private fun OrganizationField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    labelRes: Int,
+    testTag: String,
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(stringResource(labelRes)) },
+        singleLine = true,
+        shape = MaterialTheme.shapes.medium,
+        keyboardOptions =
+            KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Next,
+            ),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .testTag(testTag),
+    )
 }
 
 private fun LazyListScope.birthdayItems(

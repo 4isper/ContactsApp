@@ -25,6 +25,8 @@ internal fun mergeContactForms(
         websites = mergeValues(target, sources, ContactForm::websites, ::websiteKey) { it.copy(rowId = null) },
         instantMessages =
             mergeValues(target, sources, ContactForm::instantMessages, ::imKey) { it.copy(rowId = null) },
+        sipAddresses =
+            mergeValues(target, sources, ContactForm::sipAddresses, ::sipKey) { it.copy(rowId = null) },
         events =
             mergeValues(target, sources, { form -> form.events.filter { it.date != null } }, ::eventKey) {
                 it.copy(rowId = null)

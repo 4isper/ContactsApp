@@ -2,6 +2,7 @@ package com.m4isper.contactsapp.data.datasource.write
 
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactForm
+import com.m4isper.contactsapp.domain.model.EditableAddress
 import com.m4isper.contactsapp.domain.model.EditableBirthday
 import com.m4isper.contactsapp.domain.model.EditableEmail
 import com.m4isper.contactsapp.domain.model.EditableEvent
@@ -10,6 +11,7 @@ import com.m4isper.contactsapp.domain.model.EditableNickname
 import com.m4isper.contactsapp.domain.model.EditableNote
 import com.m4isper.contactsapp.domain.model.EditableOrganization
 import com.m4isper.contactsapp.domain.model.EditablePhone
+import com.m4isper.contactsapp.domain.model.EditableSipAddress
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -149,5 +151,37 @@ class MergePlansTest {
 
         assertEquals(1, merged.events.size)
         assertEquals(1L, merged.events.single().rowId)
+    }
+
+    @Test
+    fun `structured addresses and sip addresses merge by value`() {
+        val target =
+            ContactForm(
+                addresses = listOf(EditableAddress(rowId = 1, address = "", street = "Lenina 1", city = "Moscow")),
+                sipAddresses = listOf(EditableSipAddress(rowId = 2, address = "sip:anna@example.com")),
+            )
+        val source =
+            ContactForm(
+                addresses =
+                    listOf(
+                        EditableAddress(rowId = 3, address = "", street = "Lenina 1", city = "Moscow"),
+                        EditableAddress(rowId = 4, address = "", street = "Tverskaya 2", city = "Moscow"),
+                    ),
+                sipAddresses =
+                    listOf(
+                        EditableSipAddress(rowId = 5, address = "sip:anna@example.com"),
+                        EditableSipAddress(rowId = 6, address = "sip:anna@work.example"),
+                    ),
+            )
+
+        val merged = mergeContactForms(target, listOf(source))
+
+        assertEquals(listOf("Lenina 1", "Tverskaya 2"), merged.addresses.map { it.street })
+        assertEquals(listOf(1L, null), merged.addresses.map { it.rowId })
+        assertEquals(
+            listOf("sip:anna@example.com", "sip:anna@work.example"),
+            merged.sipAddresses.map { it.address },
+        )
+        assertEquals(listOf(2L, null), merged.sipAddresses.map { it.rowId })
     }
 }

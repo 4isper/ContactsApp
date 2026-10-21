@@ -29,6 +29,8 @@ internal val CONTACT_DATA_PROJECTION =
         ContactsContract.Data.DATA7,
         ContactsContract.Data.DATA8,
         ContactsContract.Data.DATA9,
+        ContactsContract.Data.DATA10,
+        ContactsContract.Data.IS_PRIMARY,
     )
 
 /** Индексы колонок [CONTACT_DATA_PROJECTION]: считаются один раз на курсор. */
@@ -48,4 +50,6 @@ internal class DataColumns(
     val data7: Int = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA7)
     val data8: Int = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA8)
     val data9: Int = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA9)
+    val data10: Int = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA10)
+    val isPrimary: Int = cursor.getColumnIndexOrThrow(ContactsContract.Data.IS_PRIMARY)
 }

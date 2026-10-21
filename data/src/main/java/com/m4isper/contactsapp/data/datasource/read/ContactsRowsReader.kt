@@ -10,6 +10,7 @@ import android.provider.ContactsContract.CommonDataKinds.Note
 import android.provider.ContactsContract.CommonDataKinds.Organization
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.Relation
+import android.provider.ContactsContract.CommonDataKinds.SipAddress
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import android.provider.ContactsContract.CommonDataKinds.Website
@@ -32,6 +33,7 @@ private class ContactRowsAccumulator {
     private val addresses = mutableListOf<ExistingAddress>()
     private val websites = mutableListOf<ExistingWebsite>()
     private val instantMessages = mutableListOf<ExistingInstantMessage>()
+    private val sipAddresses = mutableListOf<ExistingSipAddress>()
     private val relations = mutableListOf<ExistingRelation>()
     private val events = mutableListOf<ExistingEvent>()
     private val groupMemberships = mutableListOf<ExistingGroupMembership>()
@@ -47,30 +49,16 @@ private class ContactRowsAccumulator {
         val dataId = cursor.getLong(columns.id)
         val rawId = cursor.getLong(columns.raw)
         val data1 = cursor.getString(columns.data1).orEmpty()
-        when (cursor.getString(columns.mime)) {
+        when (val mime = cursor.getString(columns.mime)) {
             StructuredName.CONTENT_ITEM_TYPE ->
                 names += existingName(cursor, columns, dataId, rawId)
-            Phone.CONTENT_ITEM_TYPE ->
-                phones +=
-                    ExistingPhone(dataId, rawId, data1, cursor.getInt(columns.data2), cursor.getString(columns.data3))
-            Email.CONTENT_ITEM_TYPE ->
-                emails +=
-                    ExistingEmail(dataId, rawId, data1, cursor.getInt(columns.data2), cursor.getString(columns.data3))
-            StructuredPostal.CONTENT_ITEM_TYPE ->
-                addresses +=
-                    ExistingAddress(dataId, rawId, data1, cursor.getInt(columns.data2), cursor.getString(columns.data3))
-            Website.CONTENT_ITEM_TYPE ->
-                websites += ExistingWebsite(dataId, rawId, data1)
-            Im.CONTENT_ITEM_TYPE ->
-                instantMessages +=
-                    ExistingInstantMessage(
-                        dataId = dataId,
-                        rawContactId = rawId,
-                        address = data1,
-                        type = cursor.getInt(columns.data2),
-                        protocol = cursor.getString(columns.data5)?.toIntOrNull(),
-                        customProtocol = cursor.getString(columns.data6),
-                    )
+            Phone.CONTENT_ITEM_TYPE,
+            Email.CONTENT_ITEM_TYPE,
+            StructuredPostal.CONTENT_ITEM_TYPE,
+            Website.CONTENT_ITEM_TYPE,
+            SipAddress.CONTENT_ITEM_TYPE,
+            -> addCommunicationRow(mime, cursor, columns, dataId, rawId, data1)
+            Im.CONTENT_ITEM_TYPE -> addInstantMessageRow(cursor, columns, dataId, rawId, data1)
             Relation.CONTENT_ITEM_TYPE -> relations += existingRelation(cursor, columns, dataId, rawId)
             Event.CONTENT_ITEM_TYPE -> addEventRow(cursor, columns, dataId, rawId, data1)
             GroupMembership.CONTENT_ITEM_TYPE ->
@@ -79,6 +67,111 @@ private class ContactRowsAccumulator {
                 }
             else -> addSingleRow(cursor, columns, dataId, rawId, data1)
         }
+    }
+
+    private fun addCommunicationRow(
+        mime: String,
+        cursor: Cursor,
+        columns: DataColumns,
+        dataId: Long,
+        rawId: Long,
+        data1: String,
+    ) {
+        when (mime) {
+            Phone.CONTENT_ITEM_TYPE -> addPhoneRow(cursor, columns, dataId, rawId, data1)
+            Email.CONTENT_ITEM_TYPE -> addEmailRow(cursor, columns, dataId, rawId, data1)
+            StructuredPostal.CONTENT_ITEM_TYPE -> addresses += existingAddress(cursor, columns, dataId, rawId)
+            Website.CONTENT_ITEM_TYPE -> addWebsiteRow(cursor, columns, dataId, rawId, data1)
+            SipAddress.CONTENT_ITEM_TYPE -> addSipRow(cursor, columns, dataId, rawId, data1)
+        }
+    }
+
+    private fun addPhoneRow(
+        cursor: Cursor,
+        columns: DataColumns,
+        dataId: Long,
+        rawId: Long,
+        data1: String,
+    ) {
+        phones +=
+            ExistingPhone(
+                dataId = dataId,
+                rawContactId = rawId,
+                number = data1,
+                type = cursor.getInt(columns.data2),
+                label = cursor.getString(columns.data3),
+                isPrimary = cursor.getInt(columns.isPrimary) == 1,
+            )
+    }
+
+    private fun addEmailRow(
+        cursor: Cursor,
+        columns: DataColumns,
+        dataId: Long,
+        rawId: Long,
+        data1: String,
+    ) {
+        emails +=
+            ExistingEmail(
+                dataId = dataId,
+                rawContactId = rawId,
+                address = data1,
+                type = cursor.getInt(columns.data2),
+                label = cursor.getString(columns.data3),
+                isPrimary = cursor.getInt(columns.isPrimary) == 1,
+            )
+    }
+
+    private fun addWebsiteRow(
+        cursor: Cursor,
+        columns: DataColumns,
+        dataId: Long,
+        rawId: Long,
+        data1: String,
+    ) {
+        websites +=
+            ExistingWebsite(
+                dataId = dataId,
+                rawContactId = rawId,
+                url = data1,
+                type = cursor.getInt(columns.data2),
+                label = cursor.getString(columns.data3),
+            )
+    }
+
+    private fun addSipRow(
+        cursor: Cursor,
+        columns: DataColumns,
+        dataId: Long,
+        rawId: Long,
+        data1: String,
+    ) {
+        sipAddresses +=
+            ExistingSipAddress(
+                dataId = dataId,
+                rawContactId = rawId,
+                address = data1,
+                type = cursor.getInt(columns.data2),
+                label = cursor.getString(columns.data3),
+            )
+    }
+
+    private fun addInstantMessageRow(
+        cursor: Cursor,
+        columns: DataColumns,
+        dataId: Long,
+        rawId: Long,
+        data1: String,
+    ) {
+        instantMessages +=
+            ExistingInstantMessage(
+                dataId = dataId,
+                rawContactId = rawId,
+                address = data1,
+                type = cursor.getInt(columns.data2),
+                protocol = cursor.getString(columns.data5)?.toIntOrNull(),
+                customProtocol = cursor.getString(columns.data6),
+            )
     }
 
     /** Одиночные поля: организация, заметка и никнейм — храним первую строку. */
@@ -107,6 +200,7 @@ private class ContactRowsAccumulator {
             addresses = addresses,
             websites = websites,
             instantMessages = instantMessages,
+            sipAddresses = sipAddresses,
             relations = relations,
             events = events,
             organization = organization,
@@ -164,6 +258,30 @@ private fun existingOrganization(
         rawContactId = rawContactId,
         company = cursor.getString(columns.data1).orEmpty(),
         title = cursor.getString(columns.data4).orEmpty(),
+        department = cursor.getString(columns.data5).orEmpty(),
+        jobDescription = cursor.getString(columns.data6).orEmpty(),
+        officeLocation = cursor.getString(columns.data7).orEmpty(),
+    )
+
+private fun existingAddress(
+    cursor: Cursor,
+    columns: DataColumns,
+    dataId: Long,
+    rawContactId: Long,
+): ExistingAddress =
+    ExistingAddress(
+        dataId = dataId,
+        rawContactId = rawContactId,
+        address = cursor.getString(columns.data1).orEmpty(),
+        type = cursor.getInt(columns.data2),
+        label = cursor.getString(columns.data3),
+        street = cursor.getString(columns.data4).orEmpty(),
+        poBox = cursor.getString(columns.data5).orEmpty(),
+        neighborhood = cursor.getString(columns.data6).orEmpty(),
+        city = cursor.getString(columns.data7).orEmpty(),
+        region = cursor.getString(columns.data8).orEmpty(),
+        postcode = cursor.getString(columns.data9).orEmpty(),
+        country = cursor.getString(columns.data10).orEmpty(),
     )
 
 private fun existingRelation(

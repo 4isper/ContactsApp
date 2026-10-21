@@ -16,7 +16,10 @@ import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.model.PostalAddress
 import com.m4isper.contactsapp.domain.model.RelationKind
+import com.m4isper.contactsapp.domain.model.SipAddress
+import com.m4isper.contactsapp.domain.model.SipKind
 import com.m4isper.contactsapp.domain.model.Website
+import com.m4isper.contactsapp.domain.model.WebsiteKind
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -310,6 +313,86 @@ class VCardBuilderTest {
                 .drop(3)
                 .dropLast(1),
         )
+    }
+
+    @Test
+    fun `writes structured address primary flags sip and extended kinds`() {
+        val details =
+            ContactDetails(
+                contactId = 7,
+                name = "Anna",
+                phones =
+                    listOf(
+                        PhoneNumber("111", PhoneKind.MOBILE, isPrimary = true),
+                        PhoneNumber("222", PhoneKind.COMPANY_MAIN),
+                    ),
+                emails =
+                    listOf(
+                        EmailAddress("anna@example.com", EmailKind.MOBILE, isPrimary = true),
+                    ),
+                sipAddresses =
+                    listOf(
+                        SipAddress("sip:anna@example.com", SipKind.WORK),
+                    ),
+                addresses =
+                    listOf(
+                        PostalAddress(
+                            address = "Lenina 1, Moscow",
+                            kind = AddressKind.WORK,
+                            poBox = "PO 5",
+                            neighborhood = "Center",
+                            street = "Lenina 1",
+                            city = "Moscow",
+                            region = "MO",
+                            postcode = "101000",
+                            country = "Russia",
+                        ),
+                    ),
+                websites = listOf(Website("https://blog.example", WebsiteKind.BLOG)),
+                organization =
+                    Organization(
+                        company = "ACME",
+                        title = "CTO",
+                        department = "Platform",
+                        jobDescription = "Leads engineering",
+                        officeLocation = "London",
+                    ),
+            )
+
+        val vcard = buildVCard(details)
+
+        assertEquals(
+            listOf(
+                "TEL;TYPE=CELL,PREF:111",
+                "TEL;TYPE=COMPANY_MAIN:222",
+                "EMAIL;TYPE=CELL,PREF:anna@example.com",
+                "IMPP;X-SERVICE-TYPE=SIP;TYPE=WORK:sip:anna@example.com",
+                "ADR;TYPE=WORK:PO 5;Center;Lenina 1;Moscow;MO;101000;Russia",
+                "URL;TYPE=BLOG:https://blog.example",
+                "ORG:ACME;Platform",
+                "TITLE:CTO",
+                "ROLE:Leads engineering",
+                "X-OFFICE-LOCATION:London",
+            ),
+            vcard
+                .trim()
+                .lines()
+                .drop(3)
+                .dropLast(1),
+        )
+    }
+
+    @Test
+    fun `maps extended kinds to vcard types`() {
+        assertEquals("COMPANY_MAIN", vcardType(PhoneKind.COMPANY_MAIN))
+        assertEquals("FAX", vcardType(PhoneKind.FAX))
+        assertEquals("PAGER", vcardType(PhoneKind.PAGER))
+        assertEquals("CALLBACK", vcardType(PhoneKind.CALLBACK))
+        assertEquals("WORK,CELL", vcardType(PhoneKind.WORK_MOBILE))
+        assertEquals("CELL", vcardEmailType(EmailKind.MOBILE))
+        assertEquals("BLOG", vcardWebsiteType(WebsiteKind.BLOG))
+        assertEquals(null, vcardWebsiteType(WebsiteKind.HOMEPAGE))
+        assertEquals("WORK", vcardSipType(SipKind.WORK))
     }
 
     @Test

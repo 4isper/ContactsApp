@@ -7,6 +7,7 @@ import com.m4isper.contactsapp.domain.model.EditableEvent
 import com.m4isper.contactsapp.domain.model.EditableInstantMessage
 import com.m4isper.contactsapp.domain.model.EditablePhone
 import com.m4isper.contactsapp.domain.model.EditableRelation
+import com.m4isper.contactsapp.domain.model.EditableSipAddress
 import com.m4isper.contactsapp.domain.model.EditableWebsite
 import java.util.Locale
 
@@ -18,11 +19,24 @@ internal fun phoneKey(phone: EditablePhone): String? = phone.number.filter(Char:
 /** Ключ почты для сравнения дубликатов: без регистра и лишних пробелов. */
 internal fun emailKey(email: EditableEmail): String? = normalizedText(email.address)
 
-internal fun addressKey(address: EditableAddress): String? = normalizedText(address.address)
+internal fun addressKey(address: EditableAddress): String? =
+    normalizedText(
+        listOf(
+            address.streetLine,
+            address.poBox,
+            address.neighborhood,
+            address.city,
+            address.region,
+            address.postcode,
+            address.country,
+        ).joinToString("|"),
+    )
 
 internal fun websiteKey(website: EditableWebsite): String? = normalizedText(website.url)
 
 internal fun imKey(im: EditableInstantMessage): String? = normalizedText(im.address)
+
+internal fun sipKey(sip: EditableSipAddress): String? = normalizedText(sip.address)
 
 internal fun relationKey(relation: EditableRelation): String? = normalizedText(relation.name)
 

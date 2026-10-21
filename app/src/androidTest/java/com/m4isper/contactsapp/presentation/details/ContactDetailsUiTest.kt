@@ -13,6 +13,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.m4isper.contactsapp.FakeAndroidRepository
 import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.FakeVCardCodec
+import com.m4isper.contactsapp.domain.model.AddressKind
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactEvent
@@ -21,7 +22,13 @@ import com.m4isper.contactsapp.domain.model.ContactRelation
 import com.m4isper.contactsapp.domain.model.EventKind
 import com.m4isper.contactsapp.domain.model.ImProtocol
 import com.m4isper.contactsapp.domain.model.InstantMessage
+import com.m4isper.contactsapp.domain.model.Organization
+import com.m4isper.contactsapp.domain.model.PostalAddress
 import com.m4isper.contactsapp.domain.model.RelationKind
+import com.m4isper.contactsapp.domain.model.SipAddress
+import com.m4isper.contactsapp.domain.model.SipKind
+import com.m4isper.contactsapp.domain.model.Website
+import com.m4isper.contactsapp.domain.model.WebsiteKind
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
@@ -68,6 +75,54 @@ class ContactDetailsUiTest {
         compose.onAllNodesWithText("Anna").assertCountEquals(2)
         compose.onNodeWithText("111").assertIsDisplayed()
         compose.onNodeWithText("112").assertIsDisplayed()
+    }
+
+    @Test
+    fun showsStructuredAddressOrganizationWebsiteAndSip() {
+        val address =
+            PostalAddress(
+                address = "",
+                kind = AddressKind.WORK,
+                poBox = "PO 5",
+                street = "Lenina 1",
+                city = "Moscow",
+                region = "MO",
+                postcode = "101000",
+                country = "Russia",
+            )
+        val details =
+            testDetails(7, "Anna", "111").copy(
+                addresses = listOf(address),
+                websites = listOf(Website("https://blog.example", WebsiteKind.BLOG)),
+                sipAddresses = listOf(SipAddress("sip:anna@example.com", SipKind.WORK)),
+                organization =
+                    Organization(
+                        company = "ACME",
+                        title = "CTO",
+                        department = "Platform",
+                        jobDescription = "Leads engineering",
+                        officeLocation = "London",
+                    ),
+            )
+        val viewModel = viewModel(FakeAndroidRepository(listOf(details)))
+        compose.setContent {
+            ContactDetailsScreen(contactId = 7, onBack = {}, onEdit = {}, viewModel = viewModel)
+        }
+        awaitContent(viewModel)
+
+        val addressTag = "address_row_${address.displayAddress}"
+        compose.onNodeWithTag("details_list").performScrollToNode(hasTestTag(addressTag))
+        compose.onNodeWithTag(addressTag).assertIsDisplayed()
+        compose.onNodeWithText(address.displayAddress).assertIsDisplayed()
+        compose.onNodeWithTag("details_list").performScrollToNode(hasTestTag("sip_row_sip:anna@example.com"))
+        compose.onNodeWithTag("sip_row_sip:anna@example.com").assertIsDisplayed()
+        compose.onNodeWithTag("details_list").performScrollToNode(hasTestTag("website_row_https://blog.example"))
+        compose.onNodeWithTag("website_row_https://blog.example").assertIsDisplayed()
+        compose.onNodeWithTag("details_list").performScrollToNode(hasTestTag("organization_row"))
+        compose.onNodeWithTag("organization_row").assertIsDisplayed()
+        compose.onAllNodesWithText("Platform", substring = true).assertCountEquals(1)
+        compose.onAllNodesWithText("Leads engineering", substring = true).assertCountEquals(1)
+        compose.onAllNodesWithText("London", substring = true).assertCountEquals(1)
     }
 
     @Test

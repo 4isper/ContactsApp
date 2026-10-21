@@ -1,14 +1,23 @@
+// Подавление осознанное: мелкие mapping-функции держим рядом с репозиторием.
+@file:Suppress("TooManyFunctions")
+
 package com.m4isper.contactsapp.data.repository
 
 import android.provider.ContactsContract
 import com.m4isper.contactsapp.data.datasource.ContactsDataSource
 import com.m4isper.contactsapp.data.datasource.ContactsWriterDataSource
 import com.m4isper.contactsapp.data.datasource.read.ExistingAddress
+import com.m4isper.contactsapp.data.datasource.read.ExistingBirthday
 import com.m4isper.contactsapp.data.datasource.read.ExistingEmail
 import com.m4isper.contactsapp.data.datasource.read.ExistingInstantMessage
 import com.m4isper.contactsapp.data.datasource.read.ExistingName
+import com.m4isper.contactsapp.data.datasource.read.ExistingNickname
+import com.m4isper.contactsapp.data.datasource.read.ExistingNote
+import com.m4isper.contactsapp.data.datasource.read.ExistingOrganization
 import com.m4isper.contactsapp.data.datasource.read.ExistingPhone
 import com.m4isper.contactsapp.data.datasource.read.ExistingRelation
+import com.m4isper.contactsapp.data.datasource.read.ExistingSipAddress
+import com.m4isper.contactsapp.data.datasource.read.ExistingWebsite
 import com.m4isper.contactsapp.data.datasource.read.customLabelOf
 import com.m4isper.contactsapp.data.datasource.read.editableEventOf
 import com.m4isper.contactsapp.data.datasource.read.mapAddressKind
@@ -16,6 +25,8 @@ import com.m4isper.contactsapp.data.datasource.read.mapEmailKind
 import com.m4isper.contactsapp.data.datasource.read.mapImProtocol
 import com.m4isper.contactsapp.data.datasource.read.mapPhoneKind
 import com.m4isper.contactsapp.data.datasource.read.mapRelationKind
+import com.m4isper.contactsapp.data.datasource.read.mapSipKind
+import com.m4isper.contactsapp.data.datasource.read.mapWebsiteKind
 import com.m4isper.contactsapp.data.datasource.write.mergeContactForms
 import com.m4isper.contactsapp.data.format.birthdayFromString
 import com.m4isper.contactsapp.domain.model.ContactAccount
@@ -31,6 +42,7 @@ import com.m4isper.contactsapp.domain.model.EditableNote
 import com.m4isper.contactsapp.domain.model.EditableOrganization
 import com.m4isper.contactsapp.domain.model.EditablePhone
 import com.m4isper.contactsapp.domain.model.EditableRelation
+import com.m4isper.contactsapp.domain.model.EditableSipAddress
 import com.m4isper.contactsapp.domain.model.EditableWebsite
 import com.m4isper.contactsapp.domain.model.ImProtocol
 import com.m4isper.contactsapp.domain.model.NameMode
@@ -62,21 +74,13 @@ class ContactsRepositoryImpl(
             phones = rows.phones.map { it.toEditable() },
             emails = rows.emails.map { it.toEditable() },
             addresses = rows.addresses.map { it.toEditable() },
-            websites = rows.websites.map { EditableWebsite(rowId = it.dataId, url = it.url) },
+            websites = rows.websites.map { it.toEditable() },
             instantMessages = rows.instantMessages.map { it.toEditable() },
-            organization =
-                rows.organization
-                    ?.let { EditableOrganization(rowId = it.dataId, company = it.company, title = it.title) }
-                    ?: EditableOrganization(),
-            note = rows.note?.let { EditableNote(rowId = it.dataId, note = it.note) } ?: EditableNote(),
-            birthday =
-                rows.birthday
-                    ?.let { EditableBirthday(rowId = it.dataId, value = birthdayFromString(it.raw)) }
-                    ?: EditableBirthday(),
-            nickname =
-                rows.nickname
-                    ?.let { EditableNickname(rowId = it.dataId, nickname = it.nickname) }
-                    ?: EditableNickname(),
+            sipAddresses = rows.sipAddresses.map { it.toEditable() },
+            organization = rows.organization?.toEditable() ?: EditableOrganization(),
+            note = rows.note?.toEditable() ?: EditableNote(),
+            birthday = rows.birthday?.toEditable() ?: EditableBirthday(),
+            nickname = rows.nickname?.toEditable() ?: EditableNickname(),
             relations = rows.relations.map { it.toEditable() },
             events = rows.events.map(::editableEventOf),
             groups = rows.groupMemberships.map { it.groupId },
@@ -158,12 +162,30 @@ private fun editableNameOf(
     }
 }
 
+private fun ExistingOrganization.toEditable(): EditableOrganization =
+    EditableOrganization(
+        rowId = dataId,
+        company = company,
+        title = title,
+        department = department,
+        jobDescription = jobDescription,
+        officeLocation = officeLocation,
+    )
+
+private fun ExistingNote.toEditable(): EditableNote = EditableNote(rowId = dataId, note = note)
+
+private fun ExistingBirthday.toEditable(): EditableBirthday =
+    EditableBirthday(rowId = dataId, value = birthdayFromString(raw))
+
+private fun ExistingNickname.toEditable(): EditableNickname = EditableNickname(rowId = dataId, nickname = nickname)
+
 private fun ExistingPhone.toEditable(): EditablePhone =
     EditablePhone(
         rowId = dataId,
         number = number,
         kind = mapPhoneKind(type),
         customLabel = customLabelOf(type, label, ContactsContract.CommonDataKinds.Phone.TYPE_CUSTOM),
+        isPrimary = isPrimary,
     )
 
 private fun ExistingEmail.toEditable(): EditableEmail =
@@ -172,6 +194,7 @@ private fun ExistingEmail.toEditable(): EditableEmail =
         address = address,
         kind = mapEmailKind(type),
         customLabel = customLabelOf(type, label, ContactsContract.CommonDataKinds.Email.TYPE_CUSTOM),
+        isPrimary = isPrimary,
     )
 
 private fun ExistingAddress.toEditable(): EditableAddress =
@@ -184,6 +207,39 @@ private fun ExistingAddress.toEditable(): EditableAddress =
                 type,
                 label,
                 ContactsContract.CommonDataKinds.StructuredPostal.TYPE_CUSTOM,
+            ),
+        street = street,
+        poBox = poBox,
+        neighborhood = neighborhood,
+        city = city,
+        region = region,
+        postcode = postcode,
+        country = country,
+    )
+
+private fun ExistingWebsite.toEditable(): EditableWebsite =
+    EditableWebsite(
+        rowId = dataId,
+        url = url,
+        kind = mapWebsiteKind(type),
+        customLabel =
+            customLabelOf(
+                type,
+                label,
+                ContactsContract.CommonDataKinds.Website.TYPE_CUSTOM,
+            ),
+    )
+
+private fun ExistingSipAddress.toEditable(): EditableSipAddress =
+    EditableSipAddress(
+        rowId = dataId,
+        address = address,
+        kind = mapSipKind(type),
+        customLabel =
+            customLabelOf(
+                type,
+                label,
+                ContactsContract.CommonDataKinds.SipAddress.TYPE_CUSTOM,
             ),
     )
 

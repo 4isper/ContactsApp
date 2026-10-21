@@ -2,9 +2,10 @@ package com.m4isper.contactsapp.presentation.editor
 
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import com.m4isper.contactsapp.R
 
-/** Строки каналов связи: телефоны, почта, мессенджеры, адреса и сайты. */
+/** Строки каналов связи: телефоны, почта, мессенджеры, SIP, адреса и сайты. */
 internal fun LazyListScope.editorContactItems(
     uiState: EditorUiState,
     viewModel: ContactEditorViewModel,
@@ -12,6 +13,7 @@ internal fun LazyListScope.editorContactItems(
     phoneItems(uiState, viewModel)
     emailItems(uiState, viewModel)
     instantMessageItems(uiState, viewModel)
+    sipItems(uiState, viewModel)
     addressItems(uiState, viewModel)
     websiteItems(uiState, viewModel)
 }
@@ -28,16 +30,21 @@ private fun LazyListScope.phoneItems(
             addTestTag = "editor_add_phone_button",
         )
     }
-    items(
+    itemsIndexed(
         items = uiState.phones,
-        key = { it.rowId },
-    ) { row ->
+        key = { _, row -> row.rowId },
+    ) { index, row ->
         PhoneEditorRow(
             row = row,
             canRemove = uiState.phones.size > 1,
+            canMoveUp = index > 0,
+            canMoveDown = index < uiState.phones.lastIndex,
             onPhoneChange = viewModel::onPhoneChange,
             onKindChange = viewModel::onKindChange,
             onCustomLabelChange = viewModel::onCustomLabelChange,
+            onSetPrimary = viewModel::onSetPrimaryPhone,
+            onMoveUp = { viewModel.onMovePhone(it, -1) },
+            onMoveDown = { viewModel.onMovePhone(it, 1) },
             onRemove = viewModel::onRemovePhone,
         )
     }
@@ -55,15 +62,20 @@ private fun LazyListScope.emailItems(
             addTestTag = "editor_add_email_button",
         )
     }
-    items(
+    itemsIndexed(
         items = uiState.emails,
-        key = { it.rowId },
-    ) { row ->
+        key = { _, row -> row.rowId },
+    ) { index, row ->
         EmailEditorRow(
             row = row,
+            canMoveUp = index > 0,
+            canMoveDown = index < uiState.emails.lastIndex,
             onEmailChange = viewModel::onEmailChange,
             onKindChange = viewModel::onEmailKindChange,
             onCustomLabelChange = viewModel::onEmailCustomLabelChange,
+            onSetPrimary = viewModel::onSetPrimaryEmail,
+            onMoveUp = { viewModel.onMoveEmail(it, -1) },
+            onMoveDown = { viewModel.onMoveEmail(it, 1) },
             onRemove = viewModel::onRemoveEmail,
         )
     }
@@ -95,6 +107,32 @@ private fun LazyListScope.instantMessageItems(
     }
 }
 
+private fun LazyListScope.sipItems(
+    uiState: EditorUiState,
+    viewModel: ContactEditorViewModel,
+) {
+    item(key = "sip-header") {
+        SectionHeader(
+            titleRes = R.string.editor_section_sip,
+            onAdd = viewModel::onAddSip,
+            addLabelRes = R.string.editor_add_sip,
+            addTestTag = "editor_add_sip_button",
+        )
+    }
+    items(
+        items = uiState.sipAddresses,
+        key = { it.rowId },
+    ) { row ->
+        SipEditorRow(
+            row = row,
+            onSipChange = viewModel::onSipChange,
+            onKindChange = viewModel::onSipKindChange,
+            onCustomLabelChange = viewModel::onSipCustomLabelChange,
+            onRemove = viewModel::onRemoveSip,
+        )
+    }
+}
+
 private fun LazyListScope.addressItems(
     uiState: EditorUiState,
     viewModel: ContactEditorViewModel,
@@ -113,7 +151,13 @@ private fun LazyListScope.addressItems(
     ) { row ->
         AddressEditorRow(
             row = row,
-            onAddressChange = viewModel::onAddressChange,
+            onStreetChange = viewModel::onAddressStreetChange,
+            onPoBoxChange = viewModel::onAddressPoBoxChange,
+            onNeighborhoodChange = viewModel::onAddressNeighborhoodChange,
+            onCityChange = viewModel::onAddressCityChange,
+            onRegionChange = viewModel::onAddressRegionChange,
+            onPostcodeChange = viewModel::onAddressPostcodeChange,
+            onCountryChange = viewModel::onAddressCountryChange,
             onKindChange = viewModel::onAddressKindChange,
             onCustomLabelChange = viewModel::onAddressCustomLabelChange,
             onRemove = viewModel::onRemoveAddress,
@@ -140,6 +184,8 @@ private fun LazyListScope.websiteItems(
         WebsiteEditorRow(
             row = row,
             onWebsiteChange = viewModel::onWebsiteChange,
+            onKindChange = viewModel::onWebsiteKindChange,
+            onCustomLabelChange = viewModel::onWebsiteCustomLabelChange,
             onRemove = viewModel::onRemoveWebsite,
         )
     }

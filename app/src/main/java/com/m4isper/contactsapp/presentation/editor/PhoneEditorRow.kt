@@ -33,9 +33,14 @@ import com.m4isper.contactsapp.ui.theme.LocalSpacing
 internal fun PhoneEditorRow(
     row: EditorRow<EditablePhone>,
     canRemove: Boolean,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
     onPhoneChange: (Long, String) -> Unit,
     onKindChange: (Long, PhoneKind) -> Unit,
     onCustomLabelChange: (Long, String) -> Unit,
+    onSetPrimary: (Long) -> Unit,
+    onMoveUp: (Long) -> Unit,
+    onMoveDown: (Long) -> Unit,
     onRemove: (Long) -> Unit,
 ) {
     val spacing = LocalSpacing.current
@@ -98,6 +103,17 @@ internal fun PhoneEditorRow(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
+            EditorRowToolbar(
+                isPrimary = row.value.isPrimary,
+                onSetPrimary = { onSetPrimary(row.rowId) },
+                canMoveUp = canMoveUp,
+                canMoveDown = canMoveDown,
+                onMoveUp = { onMoveUp(row.rowId) },
+                onMoveDown = { onMoveDown(row.rowId) },
+                primaryTestTag = "editor_phone_primary_${row.rowId}",
+                moveUpTestTag = "editor_phone_up_${row.rowId}",
+                moveDownTestTag = "editor_phone_down_${row.rowId}",
+            )
         }
     }
 }

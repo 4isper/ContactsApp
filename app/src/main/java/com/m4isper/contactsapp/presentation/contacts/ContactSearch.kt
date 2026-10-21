@@ -1,3 +1,6 @@
+// Подавление осознанное: файл разбит на маленькие предикаты поиска по разным полям.
+@file:Suppress("TooManyFunctions")
+
 package com.m4isper.contactsapp.presentation.contacts
 
 import com.m4isper.contactsapp.domain.model.ContactAccount
@@ -71,19 +74,36 @@ private fun ContactDetails.matchesPhone(
 ): Boolean = phones.any { it.matches(query, queryDigits) }
 
 private fun ContactDetails.matchesContactFields(query: String): Boolean =
-    emails.any { it.address.containsText(query) || it.customLabel.containsText(query) } ||
-        addresses.any { it.address.containsText(query) || it.customLabel.containsText(query) } ||
-        websites.any { it.url.containsText(query) } ||
-        organization?.let {
-            it.company.containsText(query) || it.title.containsText(query)
-        } == true ||
+    matchesEmails(query) ||
+        matchesAddresses(query) ||
+        matchesWebsites(query) ||
+        matchesOrganization(query) ||
         note.containsText(query) ||
         nickname.containsText(query)
+
+private fun ContactDetails.matchesEmails(query: String): Boolean =
+    emails.any { it.address.containsText(query) || it.customLabel.containsText(query) }
+
+private fun ContactDetails.matchesAddresses(query: String): Boolean =
+    addresses.any { it.displayAddress.containsText(query) || it.customLabel.containsText(query) }
+
+private fun ContactDetails.matchesWebsites(query: String): Boolean =
+    websites.any { it.url.containsText(query) || it.customLabel.containsText(query) }
+
+private fun ContactDetails.matchesOrganization(query: String): Boolean =
+    organization?.let {
+        it.company.containsText(query) ||
+            it.title.containsText(query) ||
+            it.department.containsText(query) ||
+            it.jobDescription.containsText(query) ||
+            it.officeLocation.containsText(query)
+    } == true
 
 private fun ContactDetails.matchesRelationsAndMessages(query: String): Boolean =
     relations.any { it.name.containsText(query) || it.customLabel.containsText(query) } ||
         events.any { it.customLabel.containsText(query) } ||
-        instantMessages.any { it.address.containsText(query) || it.customProtocol.containsText(query) }
+        instantMessages.any { it.address.containsText(query) || it.customProtocol.containsText(query) } ||
+        sipAddresses.any { it.address.containsText(query) || it.customLabel.containsText(query) }
 
 private fun ContactDetails.matchesGroup(
     query: String,

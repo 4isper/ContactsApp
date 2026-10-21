@@ -2,11 +2,13 @@ package com.m4isper.contactsapp.presentation.editor
 
 import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.FakeSettingsRepository
+import com.m4isper.contactsapp.domain.model.AddressKind
 import com.m4isper.contactsapp.domain.model.AppSettings
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.ContactGroup
+import com.m4isper.contactsapp.domain.model.EditableAddress
 import com.m4isper.contactsapp.domain.model.EditableBirthday
 import com.m4isper.contactsapp.domain.model.EditableEmail
 import com.m4isper.contactsapp.domain.model.EditableEvent
@@ -16,10 +18,14 @@ import com.m4isper.contactsapp.domain.model.EditableNickname
 import com.m4isper.contactsapp.domain.model.EditableNote
 import com.m4isper.contactsapp.domain.model.EditableOrganization
 import com.m4isper.contactsapp.domain.model.EditableRelation
+import com.m4isper.contactsapp.domain.model.EmailKind
 import com.m4isper.contactsapp.domain.model.EventKind
 import com.m4isper.contactsapp.domain.model.ImProtocol
 import com.m4isper.contactsapp.domain.model.NameMode
+import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.RelationKind
+import com.m4isper.contactsapp.domain.model.SipKind
+import com.m4isper.contactsapp.domain.model.WebsiteKind
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
@@ -407,6 +413,90 @@ class ContactEditorViewModelTest {
             assertEquals(Birthday(day = 24, month = 5, year = 1990), form.birthday.value)
             assertEquals("content://photo/1", form.photoUri)
             assertEquals(true, form.photoChanged)
+        }
+
+    @Test
+    fun `saves structured fields extended kinds sip and primary values`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeEditorRepository()
+            val viewModel = viewModel(repository)
+            viewModel.load(null)
+            advanceUntilIdle()
+
+            viewModel.onDisplayNameChange("Anna")
+            viewModel.onAddPhone()
+            viewModel.onAddPhone()
+            advanceUntilIdle()
+            val firstPhone = viewModel.uiState.value.phones[0]
+            val secondPhone = viewModel.uiState.value.phones[1]
+            viewModel.onPhoneChange(firstPhone.rowId, "111")
+            viewModel.onPhoneChange(secondPhone.rowId, "222")
+            viewModel.onKindChange(secondPhone.rowId, PhoneKind.WORK_MOBILE)
+            viewModel.onMovePhone(secondPhone.rowId, -1)
+            viewModel.onSetPrimaryPhone(secondPhone.rowId)
+
+            viewModel.onAddEmail()
+            advanceUntilIdle()
+            val email = viewModel.uiState.value.emails[0]
+            viewModel.onEmailChange(email.rowId, "anna@example.com")
+            viewModel.onEmailKindChange(email.rowId, EmailKind.MOBILE)
+            viewModel.onSetPrimaryEmail(email.rowId)
+
+            viewModel.onAddAddress()
+            advanceUntilIdle()
+            val address = viewModel.uiState.value.addresses[0]
+            viewModel.onAddressStreetChange(address.rowId, "Lenina 1")
+            viewModel.onAddressCityChange(address.rowId, "Moscow")
+            viewModel.onAddressRegionChange(address.rowId, "MO")
+            viewModel.onAddressPostcodeChange(address.rowId, "101000")
+            viewModel.onAddressCountryChange(address.rowId, "Russia")
+            viewModel.onAddressKindChange(address.rowId, AddressKind.WORK)
+
+            viewModel.onAddSip()
+            advanceUntilIdle()
+            val sip = viewModel.uiState.value.sipAddresses[0]
+            viewModel.onSipChange(sip.rowId, "sip:anna@example.com")
+            viewModel.onSipKindChange(sip.rowId, SipKind.WORK)
+
+            viewModel.onAddWebsite()
+            advanceUntilIdle()
+            val website = viewModel.uiState.value.websites[0]
+            viewModel.onWebsiteChange(website.rowId, "https://blog.example")
+            viewModel.onWebsiteKindChange(website.rowId, WebsiteKind.BLOG)
+
+            viewModel.onOrganizationCompanyChange("ACME")
+            viewModel.onOrganizationDepartmentChange("Platform")
+            viewModel.onOrganizationJobDescriptionChange("Leads engineering")
+            viewModel.onOrganizationOfficeLocationChange("London")
+            viewModel.onSave()
+            advanceUntilIdle()
+
+            val form = repository.created.single()
+            assertEquals(listOf("222", "111"), form.phones.map { it.number })
+            assertEquals(PhoneKind.WORK_MOBILE, form.phones.first().kind)
+            assertEquals(listOf(true, false), form.phones.map { it.isPrimary })
+            assertEquals(EmailKind.MOBILE, form.emails.single().kind)
+            assertEquals(true, form.emails.single().isPrimary)
+            assertEquals(
+                EditableAddress(
+                    rowId = address.rowId,
+                    address = "",
+                    kind = AddressKind.WORK,
+                    street = "Lenina 1",
+                    city = "Moscow",
+                    region = "MO",
+                    postcode = "101000",
+                    country = "Russia",
+                ).copy(rowId = form.addresses.single().rowId),
+                form.addresses.single(),
+            )
+            assertEquals("sip:anna@example.com", form.sipAddresses.single().address)
+            assertEquals(SipKind.WORK, form.sipAddresses.single().kind)
+            assertEquals(WebsiteKind.BLOG, form.websites.single().kind)
+            assertEquals("Platform", form.organization.department)
+            assertEquals("Leads engineering", form.organization.jobDescription)
+            assertEquals("London", form.organization.officeLocation)
         }
 
     @Test

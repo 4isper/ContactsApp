@@ -18,7 +18,10 @@ import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.FakeSettingsRepository
 import com.m4isper.contactsapp.FakeVCardCodec
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactGroup
+import com.m4isper.contactsapp.domain.model.PhoneKind
+import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.usecase.AddContactsToGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
@@ -98,6 +101,43 @@ class ContactListUiTest {
 
         compose.onNodeWithText("Anna").assertIsDisplayed()
         compose.onNodeWithText("Bob").assertIsDisplayed()
+    }
+
+    @Test
+    fun contactRowShowsExplicitPrimaryPhone() {
+        val contact =
+            ContactDetails(
+                contactId = 3,
+                name = "Kate",
+                phones =
+                    listOf(
+                        PhoneNumber("111", PhoneKind.MOBILE),
+                        PhoneNumber("222", PhoneKind.WORK, isPrimary = true),
+                    ),
+            )
+        compose.setContent {
+            ContactList(
+                uiState = ContactsUiState(content = Loadable.Content(listOf(contact))),
+                onSearchQueryChange = {},
+                onFavoritesOnlyChange = {},
+                onContactClick = {},
+                onAddClick = {},
+                onRetry = {},
+                onRefresh = {},
+                onContactSelected = {},
+                onClearSelection = {},
+                onSelectAll = {},
+                onDeleteSelected = {},
+                onUndoDelete = {},
+                onDeleteWindowClosed = {},
+                onShareSelected = {},
+                onImportText = {},
+                onExportRequested = {},
+                onEventHandled = {},
+            )
+        }
+
+        compose.onNodeWithText("222", substring = true).assertIsDisplayed()
     }
 
     @Test

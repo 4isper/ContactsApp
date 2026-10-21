@@ -23,15 +23,34 @@
     <string name="phone_type_mobile">Mobile</string>
     <string name="phone_type_home">Home</string>
     <string name="phone_type_work">Work</string>
+    <string name="phone_type_work_mobile">Work mobile</string>
+    <string name="phone_type_fax">Fax</string>
+    <string name="phone_type_pager">Pager</string>
+    <string name="phone_type_callback">Callback</string>
+    <string name="phone_type_company_main">Company main</string>
     <string name="phone_type_other">Other</string>
 
     <string name="email_type_home">Home</string>
     <string name="email_type_work">Work</string>
+    <string name="email_type_mobile">Mobile</string>
     <string name="email_type_other">Other</string>
 
     <string name="address_type_home">Home</string>
     <string name="address_type_work">Work</string>
     <string name="address_type_other">Other</string>
+
+    <string name="website_type_homepage">Homepage</string>
+    <string name="website_type_home">Home</string>
+    <string name="website_type_work">Work</string>
+    <string name="website_type_blog">Blog</string>
+    <string name="website_type_profile">Profile</string>
+    <string name="website_type_ftp">FTP</string>
+    <string name="website_type_other">Other</string>
+
+    <string name="sip_type_home">Home</string>
+    <string name="sip_type_work">Work</string>
+    <string name="sip_type_other">Other</string>
+    <string name="primary_value">Primary</string>
 
     <string name="im_protocol_aim">AIM</string>
     <string name="im_protocol_msn">MSN</string>
@@ -99,8 +118,11 @@
     <string name="action_delete_phone">Delete phone number</string>
     <string name="action_delete_email">Delete email</string>
     <string name="action_delete_im">Delete messenger</string>
+    <string name="action_delete_sip">Delete SIP address</string>
     <string name="action_delete_address">Delete address</string>
     <string name="action_delete_website">Delete website</string>
+    <string name="action_move_up">Move up</string>
+    <string name="action_move_down">Move down</string>
     <string name="action_delete_event">Delete event</string>
     <string name="action_delete_relation">Delete relation</string>
     <string name="action_undo">Undo</string>
@@ -197,6 +219,7 @@
     <string name="account_with_type">%1$s (%2$s)</string>
     <string name="editor_section_emails">Email</string>
     <string name="editor_section_instant_messages">Instant messaging</string>
+    <string name="editor_section_sip">SIP</string>
     <string name="editor_section_addresses">Addresses</string>
     <string name="editor_section_websites">Websites</string>
     <string name="editor_section_organization">Organization</string>
@@ -208,6 +231,7 @@
     <string name="editor_section_note">Note</string>
     <string name="editor_add_email">Add email</string>
     <string name="editor_add_im">Add messenger</string>
+    <string name="editor_add_sip">Add SIP address</string>
     <string name="editor_add_address">Add address</string>
     <string name="editor_add_website">Add website</string>
     <string name="editor_add_event">Add event</string>
@@ -215,10 +239,23 @@
     <string name="editor_email_label">Email</string>
     <string name="editor_im_label">Account</string>
     <string name="editor_im_service">Service</string>
+    <string name="editor_sip_label">SIP address</string>
     <string name="editor_address_label">Address</string>
+    <string name="editor_address_street">Street</string>
+    <string name="editor_address_po_box">PO box</string>
+    <string name="editor_address_neighborhood">Neighborhood</string>
+    <string name="editor_address_city">City</string>
+    <string name="editor_address_region">Region</string>
+    <string name="editor_address_postcode">Postal code</string>
+    <string name="editor_address_country">Country</string>
     <string name="editor_website_label">Website</string>
     <string name="editor_organization_company">Company</string>
     <string name="editor_organization_title">Job title</string>
+    <string name="editor_organization_department">Department</string>
+    <string name="editor_organization_job_description">Job description</string>
+    <string name="editor_organization_office_location">Office location</string>
+    <string name="editor_primary_value">Primary</string>
+    <string name="editor_make_primary">Make primary</string>
     <string name="editor_note_label">Note</string>
     <string name="editor_nickname_label">Nickname</string>
     <string name="editor_relation_label">Name</string>

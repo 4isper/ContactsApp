@@ -3,6 +3,7 @@ package com.m4isper.contactsapp.data.datasource.write
 import android.content.ContentProviderOperation
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Phone
+import android.provider.ContactsContract.CommonDataKinds.SipAddress
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import android.provider.ContactsContract.CommonDataKinds.Website
 import com.m4isper.contactsapp.data.datasource.read.ContactRows
@@ -49,7 +50,7 @@ internal fun addressListOperations(
     form: ContactForm,
 ): List<ContentProviderOperation> =
     diffListOperations(
-        newItems = form.addresses.filter { it.address.isNotBlank() },
+        newItems = form.addresses.filter { it.hasValue },
         existingIds = rows.addresses.mapTo(mutableSetOf()) { it.dataId },
         dataIdOf = { it.rowId },
         insert = { address ->
@@ -74,4 +75,21 @@ internal fun websiteListOperations(
                 .withValues(websiteValues(website))
         },
         update = { dataId, website -> dataUpdate(dataId).withValues(websiteValues(website)) },
+    )
+
+/** SIP-адреса: diff формы и существующих строк. */
+internal fun sipListOperations(
+    rawContactId: Long,
+    rows: ContactRows,
+    form: ContactForm,
+): List<ContentProviderOperation> =
+    diffListOperations(
+        newItems = form.sipAddresses.filter { it.address.isNotBlank() },
+        existingIds = rows.sipAddresses.mapTo(mutableSetOf()) { it.dataId },
+        dataIdOf = { it.rowId },
+        insert = { sip ->
+            dataInsert(SipAddress.CONTENT_ITEM_TYPE, rawContactId = rawContactId)
+                .withValues(sipValues(sip))
+        },
+        update = { dataId, sip -> dataUpdate(dataId).withValues(sipValues(sip)) },
     )

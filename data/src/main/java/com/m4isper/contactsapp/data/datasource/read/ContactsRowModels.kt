@@ -7,6 +7,7 @@ data class ExistingPhone(
     val number: String,
     val type: Int,
     val label: String?,
+    val isPrimary: Boolean = false,
 )
 
 data class ExistingEmail(
@@ -15,21 +16,40 @@ data class ExistingEmail(
     val address: String,
     val type: Int,
     val label: String?,
+    val isPrimary: Boolean = false,
 )
 
-/** Адрес хранится одной строкой: читаем formatted-значение (data1). */
+/** Адрес: формула в data1, структурированные части — в data4..data10. */
 data class ExistingAddress(
     val dataId: Long,
     val rawContactId: Long,
     val address: String,
     val type: Int,
     val label: String?,
+    val street: String = "",
+    val poBox: String = "",
+    val neighborhood: String = "",
+    val city: String = "",
+    val region: String = "",
+    val postcode: String = "",
+    val country: String = "",
 )
 
 data class ExistingWebsite(
     val dataId: Long,
     val rawContactId: Long,
     val url: String,
+    val type: Int = 0,
+    val label: String? = null,
+)
+
+/** Существующая строка SIP-адреса: значение в data1, тип в data2, подпись в data3. */
+data class ExistingSipAddress(
+    val dataId: Long,
+    val rawContactId: Long,
+    val address: String,
+    val type: Int,
+    val label: String?,
 )
 
 /** Существующая строка мессенджера: протокол в data5, произвольный сервис в data6. */
@@ -47,6 +67,9 @@ data class ExistingOrganization(
     val rawContactId: Long,
     val company: String,
     val title: String,
+    val department: String = "",
+    val jobDescription: String = "",
+    val officeLocation: String = "",
 )
 
 /** Существующая строка связи: имя в data1, тип в data2, подпись в data3. */
@@ -127,6 +150,7 @@ data class ContactRows(
     val addresses: List<ExistingAddress> = emptyList(),
     val websites: List<ExistingWebsite> = emptyList(),
     val instantMessages: List<ExistingInstantMessage> = emptyList(),
+    val sipAddresses: List<ExistingSipAddress> = emptyList(),
     val relations: List<ExistingRelation> = emptyList(),
     val events: List<ExistingEvent> = emptyList(),
     val organization: ExistingOrganization? = null,

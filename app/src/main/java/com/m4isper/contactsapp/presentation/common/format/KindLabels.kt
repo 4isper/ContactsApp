@@ -12,6 +12,8 @@ import com.m4isper.contactsapp.domain.model.ImProtocol
 import com.m4isper.contactsapp.domain.model.InstantMessage
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.RelationKind
+import com.m4isper.contactsapp.domain.model.SipKind
+import com.m4isper.contactsapp.domain.model.WebsiteKind
 
 @Composable
 internal fun phoneKindLabel(kind: PhoneKind): String =
@@ -20,6 +22,11 @@ internal fun phoneKindLabel(kind: PhoneKind): String =
             PhoneKind.MOBILE -> R.string.phone_type_mobile
             PhoneKind.HOME -> R.string.phone_type_home
             PhoneKind.WORK -> R.string.phone_type_work
+            PhoneKind.WORK_MOBILE -> R.string.phone_type_work_mobile
+            PhoneKind.FAX -> R.string.phone_type_fax
+            PhoneKind.PAGER -> R.string.phone_type_pager
+            PhoneKind.CALLBACK -> R.string.phone_type_callback
+            PhoneKind.COMPANY_MAIN -> R.string.phone_type_company_main
             PhoneKind.OTHER -> R.string.phone_type_other
         },
     )
@@ -30,6 +37,7 @@ internal fun emailKindLabel(kind: EmailKind): String =
         when (kind) {
             EmailKind.HOME -> R.string.email_type_home
             EmailKind.WORK -> R.string.email_type_work
+            EmailKind.MOBILE -> R.string.email_type_mobile
             EmailKind.OTHER -> R.string.email_type_other
         },
     )
@@ -41,6 +49,30 @@ internal fun addressKindLabel(kind: AddressKind): String =
             AddressKind.HOME -> R.string.address_type_home
             AddressKind.WORK -> R.string.address_type_work
             AddressKind.OTHER -> R.string.address_type_other
+        },
+    )
+
+@Composable
+internal fun websiteKindLabel(kind: WebsiteKind): String =
+    stringResource(
+        when (kind) {
+            WebsiteKind.HOMEPAGE -> R.string.website_type_homepage
+            WebsiteKind.HOME -> R.string.website_type_home
+            WebsiteKind.WORK -> R.string.website_type_work
+            WebsiteKind.BLOG -> R.string.website_type_blog
+            WebsiteKind.PROFILE -> R.string.website_type_profile
+            WebsiteKind.FTP -> R.string.website_type_ftp
+            WebsiteKind.OTHER -> R.string.website_type_other
+        },
+    )
+
+@Composable
+internal fun sipKindLabel(kind: SipKind): String =
+    stringResource(
+        when (kind) {
+            SipKind.HOME -> R.string.sip_type_home
+            SipKind.WORK -> R.string.sip_type_work
+            SipKind.OTHER -> R.string.sip_type_other
         },
     )
 

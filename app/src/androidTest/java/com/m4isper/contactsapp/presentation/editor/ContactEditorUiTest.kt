@@ -24,6 +24,7 @@ import com.m4isper.contactsapp.domain.model.ContactEvent
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.EventKind
 import com.m4isper.contactsapp.domain.model.NameMode
+import com.m4isper.contactsapp.domain.model.WebsiteKind
 import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
@@ -67,6 +68,30 @@ class ContactEditorUiTest {
         SetLastContactAccountUseCase(settings),
     )
 
+    /**
+     * Ввод в поле формы: клавиатуру закрываем, поле прокручиваем в видимую часть.
+     * Иначе фокус вызывает перескролл списка, и узел поля успевает исчезнуть.
+     */
+    private fun typeInForm(
+        tag: String,
+        text: String,
+    ) {
+        Espresso.closeSoftKeyboard()
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag(tag))
+        compose.waitForIdle()
+        compose.onNodeWithTag(tag).performTextInput(text)
+    }
+
+    /** Ввод в поле вне списка формы, например в диалоге. */
+    private fun typeText(
+        tag: String,
+        text: String,
+    ) {
+        Espresso.closeSoftKeyboard()
+        compose.waitForIdle()
+        compose.onNodeWithTag(tag).performTextInput(text)
+    }
+
     @Test
     fun createMode_savesToSelectedAccount() {
         val google = ContactAccount(name = "user@gmail.com", type = "com.google")
@@ -87,8 +112,9 @@ class ContactEditorUiTest {
 
         compose.onNodeWithTag("editor_account_row").performClick()
         compose.onNodeWithTag("account_option_com.google/user@gmail.com").performClick()
-        compose.onNodeWithTag("editor_name_field").performTextInput("Anna")
-        compose.onAllNodesWithTag("editor_phone_field")[0].performTextInput("111")
+        typeInForm("editor_name_field", "Anna")
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_phone_field"))
+        typeInForm("editor_phone_field", "111")
         compose.onNodeWithTag("editor_save_button").performClick()
 
         compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
@@ -110,8 +136,9 @@ class ContactEditorUiTest {
             )
         }
 
-        compose.onNodeWithTag("editor_name_field").performTextInput("Anna")
-        compose.onAllNodesWithTag("editor_phone_field")[0].performTextInput("111")
+        typeInForm("editor_name_field", "Anna")
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_phone_field"))
+        typeInForm("editor_phone_field", "111")
         compose.onNodeWithTag("editor_save_button").performClick()
 
         compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
@@ -222,7 +249,7 @@ class ContactEditorUiTest {
         compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_add_email_button"))
         compose.onNodeWithTag("editor_add_email_button").performClick()
         compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_email_field"))
-        compose.onNodeWithTag("editor_email_field").performTextInput("anna@example.com")
+        typeInForm("editor_email_field", "anna@example.com")
         compose.onNodeWithTag("editor_save_button").performClick()
 
         compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
@@ -234,6 +261,76 @@ class ContactEditorUiTest {
                 .emails
                 .map { it.address },
         )
+    }
+
+    @Test
+    fun createMode_savesStructuredAddressOrganizationSipAndWebsiteKind() {
+        val repository = FakeAndroidRepository()
+        val viewModel = viewModel(repository)
+        compose.setContent {
+            ContactEditorScreen(
+                contactId = null,
+                onDone = {},
+                onBack = {},
+                viewModel = viewModel,
+            )
+        }
+
+        typeInForm("editor_name_field", "Anna")
+        typeInForm("editor_phone_field", "111")
+        val phoneRowId =
+            viewModel.uiState.value.phones[0]
+                .rowId
+        Espresso.closeSoftKeyboard()
+        compose
+            .onNodeWithTag("editor_form")
+            .performScrollToNode(hasTestTag("editor_phone_primary_$phoneRowId"))
+        compose.onNodeWithTag("editor_phone_primary_$phoneRowId").performClick()
+
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_add_address_button"))
+        compose.onNodeWithTag("editor_add_address_button").performClick()
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_address_field"))
+        typeInForm("editor_address_field", "Lenina 1")
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_address_city_field"))
+        typeInForm("editor_address_city_field", "Moscow")
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_address_country_field"))
+        typeInForm("editor_address_country_field", "Russia")
+
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_add_sip_button"))
+        compose.onNodeWithTag("editor_add_sip_button").performClick()
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_sip_field"))
+        typeInForm("editor_sip_field", "sip:anna@example.com")
+
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_add_website_button"))
+        compose.onNodeWithTag("editor_add_website_button").performClick()
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_website_field"))
+        typeInForm("editor_website_field", "https://blog.example")
+        compose.onNodeWithText("Homepage").performClick()
+        compose.onNodeWithText("Blog").performClick()
+
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_company_field"))
+        typeInForm("editor_company_field", "ACME")
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_department_field"))
+        typeInForm("editor_department_field", "Platform")
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_job_description_field"))
+        typeInForm("editor_job_description_field", "Leads engineering")
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_office_location_field"))
+        typeInForm("editor_office_location_field", "London")
+        compose.onNodeWithTag("editor_save_button").performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
+        compose.waitForIdle()
+        val form = repository.created.single()
+        assertEquals(true, form.phones.single().isPrimary)
+        assertEquals("Lenina 1", form.addresses.single().street)
+        assertEquals("Moscow", form.addresses.single().city)
+        assertEquals("Russia", form.addresses.single().country)
+        assertEquals("sip:anna@example.com", form.sipAddresses.single().address)
+        assertEquals(WebsiteKind.BLOG, form.websites.single().kind)
+        assertEquals("ACME", form.organization.company)
+        assertEquals("Platform", form.organization.department)
+        assertEquals("Leads engineering", form.organization.jobDescription)
+        assertEquals("London", form.organization.officeLocation)
     }
 
     @Test
@@ -252,9 +349,9 @@ class ContactEditorUiTest {
         compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_add_im_button"))
         compose.onNodeWithTag("editor_add_im_button").performClick()
         compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_im_field"))
-        compose.onNodeWithTag("editor_im_field").performTextInput("tg_anna")
+        typeInForm("editor_im_field", "tg_anna")
         compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_im_service_field"))
-        compose.onNodeWithTag("editor_im_service_field").performTextInput("Telegram")
+        typeInForm("editor_im_service_field", "Telegram")
         compose.onNodeWithTag("editor_save_button").performClick()
 
         compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
@@ -282,8 +379,8 @@ class ContactEditorUiTest {
         }
 
         compose.onNodeWithTag("editor_toggle_name_mode").performClick()
-        compose.onNodeWithTag("editor_name_given").performTextInput("Иван")
-        compose.onNodeWithTag("editor_name_family").performTextInput("Петров")
+        typeInForm("editor_name_given", "Иван")
+        typeInForm("editor_name_family", "Петров")
         compose.onNodeWithTag("editor_save_button").performClick()
 
         compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
@@ -308,10 +405,10 @@ class ContactEditorUiTest {
         }
 
         compose.onNodeWithTag("editor_toggle_name_mode").performClick()
-        compose.onNodeWithTag("editor_name_given").performTextInput("Иван")
+        typeInForm("editor_name_given", "Иван")
         compose.onNodeWithTag("editor_toggle_name_details").performClick()
         compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_name_phonetic_given"))
-        compose.onNodeWithTag("editor_name_phonetic_given").performTextInput("Ivan")
+        typeInForm("editor_name_phonetic_given", "Ivan")
         compose.onNodeWithTag("editor_save_button").performClick()
 
         compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
@@ -333,13 +430,13 @@ class ContactEditorUiTest {
             )
         }
 
-        compose.onNodeWithTag("editor_name_field").performTextInput("Anna")
+        typeInForm("editor_name_field", "Anna")
         compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_nickname_field"))
-        compose.onNodeWithTag("editor_nickname_field").performTextInput("Нюша")
+        typeInForm("editor_nickname_field", "Нюша")
         compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_add_relation_button"))
         compose.onNodeWithTag("editor_add_relation_button").performClick()
         compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_relation_field"))
-        compose.onNodeWithTag("editor_relation_field").performTextInput("Bob")
+        typeInForm("editor_relation_field", "Bob")
         compose.onNodeWithTag("editor_save_button").performClick()
 
         compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
@@ -538,7 +635,7 @@ class ContactEditorUiTest {
         compose.onNodeWithTag("account_option_com.google/user@gmail.com").performClick()
         compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_groups_row"))
         compose.onNodeWithTag("editor_groups_row").performClick()
-        compose.onNodeWithTag("new_group_field").performTextInput("Проект")
+        typeText("new_group_field", "Проект")
         compose.onNodeWithTag("new_group_confirm").performClick()
 
         compose.waitUntil(timeoutMillis = 5_000) { groups.groups.size == 1 }
@@ -564,7 +661,7 @@ class ContactEditorUiTest {
                 .isNotEmpty()
         }
 
-        compose.onNodeWithTag("editor_name_field").performTextInput("Anna")
+        typeInForm("editor_name_field", "Anna")
         compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_groups_row"))
         compose.onNodeWithTag("editor_groups_row").performClick()
         compose.onNodeWithTag("group_check_row_Семья").performClick()

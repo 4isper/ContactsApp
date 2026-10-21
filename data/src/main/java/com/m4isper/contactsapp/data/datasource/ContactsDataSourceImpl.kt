@@ -12,6 +12,7 @@ import android.provider.ContactsContract.CommonDataKinds.Note
 import android.provider.ContactsContract.CommonDataKinds.Organization
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.Relation
+import android.provider.ContactsContract.CommonDataKinds.SipAddress
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import android.provider.ContactsContract.CommonDataKinds.Website
@@ -61,7 +62,8 @@ class ContactsDataSourceImpl(
             val visibleIds = headers.mapTo(mutableSetOf()) { it.contactId }
             val rows =
                 queryData(
-                    selection = "${ContactsContract.Data.MIMETYPE} IN (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    selection =
+                        "${ContactsContract.Data.MIMETYPE} IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     args =
                         arrayOf(
                             Phone.CONTENT_ITEM_TYPE,
@@ -73,6 +75,7 @@ class ContactsDataSourceImpl(
                             StructuredPostal.CONTENT_ITEM_TYPE,
                             Website.CONTENT_ITEM_TYPE,
                             Note.CONTENT_ITEM_TYPE,
+                            SipAddress.CONTENT_ITEM_TYPE,
                         ),
                 ).filter { it.contactId in visibleIds }
             aggregateContacts(headers, rows, queryContactAccounts())
@@ -252,7 +255,7 @@ class ContactsDataSourceImpl(
                 CONTACT_DATA_PROJECTION,
                 selection,
                 args,
-                null,
+                "${ContactsContract.Data.CONTACT_ID} ASC, ${ContactsContract.Data._ID} ASC",
             )
         cursor?.use {
             val columns = DataColumns(it)
@@ -270,6 +273,8 @@ class ContactsDataSourceImpl(
                         data7 = it.getString(columns.data7),
                         data8 = it.getString(columns.data8),
                         data9 = it.getString(columns.data9),
+                        data10 = it.getString(columns.data10),
+                        isPrimary = it.getInt(columns.isPrimary) == 1,
                     )
             }
         }

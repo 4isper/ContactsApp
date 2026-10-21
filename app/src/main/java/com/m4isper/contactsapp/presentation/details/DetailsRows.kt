@@ -102,7 +102,13 @@ internal fun PhoneRow(
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
-                    text = phone.customLabel ?: phoneKindLabel(phone.kind),
+                    text =
+                        if (phone.isPrimary) {
+                            "${phone.customLabel ?: phoneKindLabel(phone.kind)} · " +
+                                stringResource(R.string.primary_value)
+                        } else {
+                            phone.customLabel ?: phoneKindLabel(phone.kind)
+                        },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

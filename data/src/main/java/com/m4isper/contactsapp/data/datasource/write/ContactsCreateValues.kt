@@ -11,6 +11,7 @@ import android.provider.ContactsContract.CommonDataKinds.Organization
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.Photo
 import android.provider.ContactsContract.CommonDataKinds.Relation
+import android.provider.ContactsContract.CommonDataKinds.SipAddress
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import android.provider.ContactsContract.CommonDataKinds.Website
 import com.m4isper.contactsapp.domain.model.ContactForm
@@ -32,8 +33,11 @@ private fun contactListValues(form: ContactForm): List<Pair<String, ContentValue
         form.instantMessages
             .filter { it.address.isNotBlank() }
             .forEach { add(Im.CONTENT_ITEM_TYPE to instantMessageValues(it)) }
-        form.addresses
+        form.sipAddresses
             .filter { it.address.isNotBlank() }
+            .forEach { add(SipAddress.CONTENT_ITEM_TYPE to sipValues(it)) }
+        form.addresses
+            .filter { it.hasValue }
             .forEach { add(StructuredPostal.CONTENT_ITEM_TYPE to addressValues(it)) }
         form.websites
             .filter { it.url.isNotBlank() }

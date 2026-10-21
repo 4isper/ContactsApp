@@ -14,6 +14,7 @@ import com.m4isper.contactsapp.domain.model.EditableNote
 import com.m4isper.contactsapp.domain.model.EditableOrganization
 import com.m4isper.contactsapp.domain.model.EditablePhone
 import com.m4isper.contactsapp.domain.model.EditableRelation
+import com.m4isper.contactsapp.domain.model.EditableSipAddress
 import com.m4isper.contactsapp.domain.model.EditableWebsite
 import com.m4isper.contactsapp.domain.model.FormError
 import com.m4isper.contactsapp.domain.model.NameMode
@@ -49,6 +50,7 @@ internal data class EditorUiState(
     val addresses: List<EditorRow<EditableAddress>> = emptyList(),
     val websites: List<EditorRow<EditableWebsite>> = emptyList(),
     val instantMessages: List<EditorRow<EditableInstantMessage>> = emptyList(),
+    val sipAddresses: List<EditorRow<EditableSipAddress>> = emptyList(),
     val organization: EditableOrganization = EditableOrganization(),
     val note: EditableNote = EditableNote(),
     val birthday: EditableBirthday = EditableBirthday(),
@@ -114,6 +116,7 @@ internal data class EditorUiState(
             addresses = addresses.map { it.value },
             websites = websites.map { it.value },
             instantMessages = instantMessages.map { it.value },
+            sipAddresses = sipAddresses.map { it.value },
             relations = relations.map { it.value },
             events = events.map { it.value },
             nickname = nickname,
@@ -166,6 +169,7 @@ internal fun editorStateFromForm(
         addresses = form.addresses.map(::row),
         websites = form.websites.map(::row),
         instantMessages = form.instantMessages.map(::row),
+        sipAddresses = form.sipAddresses.map(::row),
         relations = form.relations.map(::row),
         events = form.events.map(::row),
         organization = form.organization,

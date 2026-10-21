@@ -23,6 +23,8 @@ internal data class DataRow(
     val data7: String? = null,
     val data8: String? = null,
     val data9: String? = null,
+    val data10: String? = null,
+    val isPrimary: Boolean = false,
 ) {
     /** Числовое значение data2: тип телефона/email/адреса или тип события. */
     val data2Int: Int

@@ -8,6 +8,7 @@ import android.provider.ContactsContract.CommonDataKinds.Note
 import android.provider.ContactsContract.CommonDataKinds.Organization
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.Relation
+import android.provider.ContactsContract.CommonDataKinds.SipAddress
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import android.provider.ContactsContract.CommonDataKinds.Website
@@ -33,12 +34,14 @@ internal fun phoneRow(
     phone: String,
     type: Int = Phone.TYPE_MOBILE,
     label: String? = null,
+    isPrimary: Boolean = false,
 ) = DataRow(
     contactId = contactId,
     mimetype = Phone.CONTENT_ITEM_TYPE,
     data1 = phone,
     data2 = type.toString(),
     data3 = label,
+    isPrimary = isPrimary,
 )
 
 internal fun emailRow(
@@ -46,32 +49,67 @@ internal fun emailRow(
     address: String,
     type: Int = Email.TYPE_HOME,
     label: String? = null,
+    isPrimary: Boolean = false,
 ) = DataRow(
     contactId = contactId,
     mimetype = Email.CONTENT_ITEM_TYPE,
     data1 = address,
     data2 = type.toString(),
     data3 = label,
+    isPrimary = isPrimary,
 )
 
 internal fun addressRow(
     contactId: Long,
     address: String,
     type: Int = StructuredPostal.TYPE_HOME,
+    label: String? = null,
+    street: String? = null,
+    poBox: String? = null,
+    neighborhood: String? = null,
+    city: String? = null,
+    region: String? = null,
+    postcode: String? = null,
+    country: String? = null,
 ) = DataRow(
     contactId = contactId,
     mimetype = StructuredPostal.CONTENT_ITEM_TYPE,
     data1 = address,
     data2 = type.toString(),
+    data3 = label,
+    data4 = street,
+    data5 = poBox,
+    data6 = neighborhood,
+    data7 = city,
+    data8 = region,
+    data9 = postcode,
+    data10 = country,
 )
 
 internal fun websiteRow(
     contactId: Long,
     url: String,
+    type: Int = Website.TYPE_HOMEPAGE,
+    label: String? = null,
 ) = DataRow(
     contactId = contactId,
     mimetype = Website.CONTENT_ITEM_TYPE,
     data1 = url,
+    data2 = type.toString(),
+    data3 = label,
+)
+
+internal fun sipRow(
+    contactId: Long,
+    address: String,
+    type: Int = SipAddress.TYPE_OTHER,
+    label: String? = null,
+) = DataRow(
+    contactId = contactId,
+    mimetype = SipAddress.CONTENT_ITEM_TYPE,
+    data1 = address,
+    data2 = type.toString(),
+    data3 = label,
 )
 
 internal fun imRow(
@@ -92,11 +130,17 @@ internal fun organizationRow(
     contactId: Long,
     company: String,
     title: String,
+    department: String? = null,
+    jobDescription: String? = null,
+    officeLocation: String? = null,
 ) = DataRow(
     contactId = contactId,
     mimetype = Organization.CONTENT_ITEM_TYPE,
     data1 = company,
     data4 = title,
+    data5 = department,
+    data6 = jobDescription,
+    data7 = officeLocation,
 )
 
 internal fun noteRow(

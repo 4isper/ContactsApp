@@ -4,12 +4,18 @@ enum class PhoneKind {
     MOBILE,
     HOME,
     WORK,
+    WORK_MOBILE,
+    FAX,
+    PAGER,
+    CALLBACK,
+    COMPANY_MAIN,
     OTHER,
 }
 
 enum class EmailKind {
     HOME,
     WORK,
+    MOBILE,
     OTHER,
 }
 
@@ -19,27 +25,96 @@ enum class AddressKind {
     OTHER,
 }
 
+enum class WebsiteKind {
+    HOMEPAGE,
+    HOME,
+    WORK,
+    BLOG,
+    PROFILE,
+    FTP,
+    OTHER,
+}
+
+enum class SipKind {
+    HOME,
+    WORK,
+    OTHER,
+}
+
 data class PhoneNumber(
     val number: String,
     val kind: PhoneKind,
     val customLabel: String? = null,
+    val isPrimary: Boolean = false,
 )
 
 data class EmailAddress(
     val address: String,
     val kind: EmailKind,
     val customLabel: String? = null,
+    val isPrimary: Boolean = false,
 )
 
+/**
+ * Почтовый адрес в структурированном виде. [address] — legacy-представление
+ * одной строкой, которое сохраняется для старых контактов и как fallback.
+ */
 data class PostalAddress(
     val address: String,
     val kind: AddressKind,
     val customLabel: String? = null,
-)
+    val street: String = "",
+    val poBox: String = "",
+    val neighborhood: String = "",
+    val city: String = "",
+    val region: String = "",
+    val postcode: String = "",
+    val country: String = "",
+) {
+    /** Улица с fallback на старое однострочное значение. */
+    val streetLine: String
+        get() = street.ifBlank { address }
+
+    val hasStructuredParts: Boolean
+        get() =
+            street.isNotBlank() ||
+                poBox.isNotBlank() ||
+                neighborhood.isNotBlank() ||
+                city.isNotBlank() ||
+                region.isNotBlank() ||
+                postcode.isNotBlank() ||
+                country.isNotBlank()
+
+    /** Единая строка для отображения, поиска и карт. */
+    val displayAddress: String
+        get() = if (hasStructuredParts) composePostalAddress(this) else address
+}
 
 data class Website(
     val url: String,
+    val kind: WebsiteKind = WebsiteKind.HOMEPAGE,
+    val customLabel: String? = null,
 )
+
+data class SipAddress(
+    val address: String,
+    val kind: SipKind = SipKind.OTHER,
+    val customLabel: String? = null,
+)
+
+/** Склейка непустых частей структурированного адреса в читаемую строку. */
+fun composePostalAddress(address: PostalAddress): String =
+    listOf(
+        address.poBox,
+        address.streetLine,
+        address.neighborhood,
+        address.city,
+        address.region,
+        address.postcode,
+        address.country,
+    ).map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .joinToString(", ")
 
 /** Протокол мессенджера: набор из ContactsContract.CommonDataKinds.Im + произвольный. */
 enum class ImProtocol {
@@ -88,6 +163,9 @@ data class ContactRelation(
 data class Organization(
     val company: String,
     val title: String,
+    val department: String = "",
+    val jobDescription: String = "",
+    val officeLocation: String = "",
 )
 
 /** День рождения: год может отсутствовать (формат "--MM-dd" в ContactsContract). */
@@ -141,6 +219,7 @@ data class ContactDetails(
     val addresses: List<PostalAddress> = emptyList(),
     val websites: List<Website> = emptyList(),
     val instantMessages: List<InstantMessage> = emptyList(),
+    val sipAddresses: List<SipAddress> = emptyList(),
     val organization: Organization? = null,
     val note: String? = null,
     val birthday: Birthday? = null,
@@ -157,4 +236,12 @@ data class ContactDetails(
     val lastContacted: Long? = null,
     /** Сколько раз контакт был использован для звонка/сообщения по данным устройства. */
     val timesContacted: Int = 0,
-)
+) {
+    /** Основной телефон: явно помеченный или первый доступный. */
+    val primaryPhone: PhoneNumber?
+        get() = phones.firstOrNull { it.isPrimary } ?: phones.firstOrNull()
+
+    /** Основной email: явно помеченный или первый доступный. */
+    val primaryEmail: EmailAddress?
+        get() = emails.firstOrNull { it.isPrimary } ?: emails.firstOrNull()
+}

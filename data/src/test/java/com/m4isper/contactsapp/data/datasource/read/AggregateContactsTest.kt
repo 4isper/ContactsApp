@@ -3,9 +3,16 @@ package com.m4isper.contactsapp.data.datasource.read
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.Relation
+import android.provider.ContactsContract.CommonDataKinds.SipAddress
+import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
+import android.provider.ContactsContract.CommonDataKinds.Website
+import com.m4isper.contactsapp.domain.model.AddressKind
 import com.m4isper.contactsapp.domain.model.ContactAccount
+import com.m4isper.contactsapp.domain.model.EmailKind
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.RelationKind
+import com.m4isper.contactsapp.domain.model.SipKind
+import com.m4isper.contactsapp.domain.model.WebsiteKind
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -140,7 +147,7 @@ class AggregateContactsTest {
     @Test
     fun `maps work mobile type to work kind`() {
         assertEquals(
-            PhoneKind.WORK,
+            PhoneKind.WORK_MOBILE,
             mapPhoneKind(Phone.TYPE_WORK_MOBILE),
         )
     }
@@ -199,5 +206,119 @@ class AggregateContactsTest {
         assertEquals(listOf("Михалыч", "Bob"), details.relations.map { it.name })
         assertEquals(RelationKind.OTHER, details.relations[0].kind)
         assertEquals("Кум", details.relations[0].customLabel)
+    }
+
+    @Test
+    fun `uses explicitly primary phone and email`() {
+        val headers = listOf(header(1, "Anna"))
+        val rows =
+            listOf(
+                phoneRow(1, "111"),
+                phoneRow(1, "222", Phone.TYPE_WORK, isPrimary = true),
+                emailRow(1, "home@example.com"),
+                emailRow(1, "work@example.com", Email.TYPE_WORK, isPrimary = true),
+            )
+
+        val details = aggregateContacts(headers, rows).single()
+
+        assertEquals("222", details.primaryPhone?.number)
+        assertEquals(true, details.primaryPhone?.isPrimary)
+        assertEquals("work@example.com", details.primaryEmail?.address)
+        assertEquals(true, details.primaryEmail?.isPrimary)
+    }
+
+    @Test
+    fun `maps structured address parts and keeps legacy fallback`() {
+        val headers = listOf(header(1, "Anna"), header(2, "Bob"))
+        val rows =
+            listOf(
+                addressRow(
+                    contactId = 1,
+                    address = "PO 5, Lenina 1, Center, Moscow, MO, 101000, Russia",
+                    type = StructuredPostal.TYPE_WORK,
+                    label = null,
+                    street = "Lenina 1",
+                    poBox = "PO 5",
+                    neighborhood = "Center",
+                    city = "Moscow",
+                    region = "MO",
+                    postcode = "101000",
+                    country = "Russia",
+                ),
+                addressRow(2, "Old one-line address"),
+            )
+
+        val result = aggregateContacts(headers, rows)
+
+        val structured = result.first { it.contactId == 1L }.addresses.single()
+        assertEquals(AddressKind.WORK, structured.kind)
+        assertEquals("Lenina 1", structured.street)
+        assertEquals("PO 5", structured.poBox)
+        assertEquals("Center", structured.neighborhood)
+        assertEquals("Moscow", structured.city)
+        assertEquals("MO", structured.region)
+        assertEquals("101000", structured.postcode)
+        assertEquals("Russia", structured.country)
+        assertEquals(
+            "PO 5, Lenina 1, Center, Moscow, MO, 101000, Russia",
+            structured.displayAddress,
+        )
+
+        val legacy = result.first { it.contactId == 2L }.addresses.single()
+        assertEquals("Old one-line address", legacy.address)
+        assertEquals("Old one-line address", legacy.displayAddress)
+    }
+
+    @Test
+    fun `maps extended organization fields`() {
+        val headers = listOf(header(1, "Anna"))
+        val rows =
+            listOf(
+                organizationRow(
+                    contactId = 1,
+                    company = "ACME",
+                    title = "CTO",
+                    department = "Platform",
+                    jobDescription = "Leads engineering",
+                    officeLocation = "London",
+                ),
+            )
+
+        val organization = aggregateContacts(headers, rows).single().organization
+
+        assertEquals("ACME", organization?.company)
+        assertEquals("CTO", organization?.title)
+        assertEquals("Platform", organization?.department)
+        assertEquals("Leads engineering", organization?.jobDescription)
+        assertEquals("London", organization?.officeLocation)
+    }
+
+    @Test
+    fun `maps extended kinds websites and sip addresses`() {
+        val headers = listOf(header(1, "Anna"))
+        val rows =
+            listOf(
+                phoneRow(1, "111", Phone.TYPE_WORK_MOBILE),
+                phoneRow(1, "222", Phone.TYPE_FAX_HOME),
+                emailRow(1, "mobile@example.com", Email.TYPE_MOBILE),
+                websiteRow(1, "https://blog.example", Website.TYPE_BLOG),
+                sipRow(1, "sip:anna@example.com", type = SipAddress.TYPE_HOME),
+                sipRow(1, "sip:anna@work.example", type = SipAddress.TYPE_WORK, label = null),
+            )
+
+        val details = aggregateContacts(headers, rows).single()
+
+        assertEquals(
+            listOf(PhoneKind.WORK_MOBILE, PhoneKind.FAX),
+            details.phones.map { it.kind },
+        )
+        assertEquals(EmailKind.MOBILE, details.emails.single().kind)
+        assertEquals(WebsiteKind.BLOG, details.websites.single().kind)
+        assertEquals(
+            listOf("sip:anna@example.com", "sip:anna@work.example"),
+            details.sipAddresses.map { it.address },
+        )
+        assertEquals(SipKind.HOME, details.sipAddresses[0].kind)
+        assertEquals(SipKind.WORK, details.sipAddresses[1].kind)
     }
 }

@@ -10,6 +10,7 @@ data class EditablePhone(
     val number: String,
     val kind: PhoneKind = PhoneKind.MOBILE,
     val customLabel: String? = null,
+    val isPrimary: Boolean = false,
 )
 
 data class EditableEmail(
@@ -17,18 +18,45 @@ data class EditableEmail(
     val address: String,
     val kind: EmailKind = EmailKind.HOME,
     val customLabel: String? = null,
+    val isPrimary: Boolean = false,
 )
 
+/**
+ * Адрес формы: [address] — старое однострочное значение для совместимости,
+ * остальные поля — структурированные части провайдера.
+ */
 data class EditableAddress(
     val rowId: Long? = null,
     val address: String,
     val kind: AddressKind = AddressKind.HOME,
     val customLabel: String? = null,
-)
+    val street: String = "",
+    val poBox: String = "",
+    val neighborhood: String = "",
+    val city: String = "",
+    val region: String = "",
+    val postcode: String = "",
+    val country: String = "",
+) {
+    val streetLine: String
+        get() = street.ifBlank { address }
+
+    val hasValue: Boolean
+        get() =
+            streetLine.isNotBlank() ||
+                poBox.isNotBlank() ||
+                neighborhood.isNotBlank() ||
+                city.isNotBlank() ||
+                region.isNotBlank() ||
+                postcode.isNotBlank() ||
+                country.isNotBlank()
+}
 
 data class EditableWebsite(
     val rowId: Long? = null,
     val url: String,
+    val kind: WebsiteKind = WebsiteKind.HOMEPAGE,
+    val customLabel: String? = null,
 )
 
 data class EditableInstantMessage(
@@ -38,13 +66,28 @@ data class EditableInstantMessage(
     val customProtocol: String? = null,
 )
 
+data class EditableSipAddress(
+    val rowId: Long? = null,
+    val address: String,
+    val kind: SipKind = SipKind.OTHER,
+    val customLabel: String? = null,
+)
+
 data class EditableOrganization(
     val rowId: Long? = null,
     val company: String = "",
     val title: String = "",
+    val department: String = "",
+    val jobDescription: String = "",
+    val officeLocation: String = "",
 ) {
     val isEmpty: Boolean
-        get() = company.isBlank() && title.isBlank()
+        get() =
+            company.isBlank() &&
+                title.isBlank() &&
+                department.isBlank() &&
+                jobDescription.isBlank() &&
+                officeLocation.isBlank()
 }
 
 data class EditableNote(
@@ -138,6 +181,7 @@ data class ContactForm(
     val addresses: List<EditableAddress> = emptyList(),
     val websites: List<EditableWebsite> = emptyList(),
     val instantMessages: List<EditableInstantMessage> = emptyList(),
+    val sipAddresses: List<EditableSipAddress> = emptyList(),
     val organization: EditableOrganization = EditableOrganization(),
     val note: EditableNote = EditableNote(),
     val birthday: EditableBirthday = EditableBirthday(),
@@ -162,20 +206,29 @@ fun ContactForm.normalized(): ContactForm =
         phones =
             phones
                 .filter { it.number.isNotBlank() }
-                .map { it.copy(customLabel = it.customLabel.stripped()) },
+                .map { it.copy(customLabel = it.customLabel.stripped()) }
+                .singlePrimary({ it.isPrimary }) { it.copy(isPrimary = false) },
         emails =
             emails
                 .filter { it.address.isNotBlank() }
-                .map { it.copy(customLabel = it.customLabel.stripped()) },
+                .map { it.copy(customLabel = it.customLabel.stripped()) }
+                .singlePrimary({ it.isPrimary }) { it.copy(isPrimary = false) },
         addresses =
             addresses
-                .filter { it.address.isNotBlank() }
+                .filter { it.hasValue }
                 .map { it.copy(customLabel = it.customLabel.stripped()) },
-        websites = websites.filter { it.url.isNotBlank() },
+        websites =
+            websites
+                .filter { it.url.isNotBlank() }
+                .map { it.copy(customLabel = it.customLabel.stripped()) },
         instantMessages =
             instantMessages
                 .filter { it.address.isNotBlank() }
                 .map { it.copy(customProtocol = it.customProtocol.stripped()) },
+        sipAddresses =
+            sipAddresses
+                .filter { it.address.isNotBlank() }
+                .map { it.copy(customLabel = it.customLabel.stripped()) },
         relations =
             relations
                 .filter { it.name.isNotBlank() }
@@ -188,6 +241,24 @@ fun ContactForm.normalized(): ContactForm =
     )
 
 private fun String?.stripped(): String? = this?.takeIf { it.isNotBlank() }
+
+/** Оставляет основной только первую помеченную строку: провайдер ждёт один primary. */
+private fun <T> List<T>.singlePrimary(
+    isPrimary: (T) -> Boolean,
+    clearPrimary: (T) -> T,
+): List<T> {
+    var found = false
+    return map { item ->
+        when {
+            !isPrimary(item) -> item
+            !found -> {
+                found = true
+                item
+            }
+            else -> clearPrimary(item)
+        }
+    }
+}
 
 enum class FormError {
     EMPTY_FORM,
@@ -204,9 +275,10 @@ private fun ContactForm.isEffectivelyEmpty(): Boolean =
 private fun ContactForm.hasNoListFields(): Boolean =
     phones.none { it.number.isNotBlank() } &&
         emails.none { it.address.isNotBlank() } &&
-        addresses.none { it.address.isNotBlank() } &&
+        addresses.none { it.hasValue } &&
         websites.none { it.url.isNotBlank() } &&
         instantMessages.none { it.address.isNotBlank() } &&
+        sipAddresses.none { it.address.isNotBlank() } &&
         relations.none { it.name.isNotBlank() } &&
         events.none { it.date != null || it.unparsedDate != null }
 

@@ -14,6 +14,7 @@ import com.m4isper.contactsapp.domain.model.EditableNote
 import com.m4isper.contactsapp.domain.model.EditableOrganization
 import com.m4isper.contactsapp.domain.model.EditablePhone
 import com.m4isper.contactsapp.domain.model.EditableRelation
+import com.m4isper.contactsapp.domain.model.EditableSipAddress
 import com.m4isper.contactsapp.domain.model.EditableWebsite
 import com.m4isper.contactsapp.domain.model.EmailKind
 import com.m4isper.contactsapp.domain.model.EventKind
@@ -21,6 +22,8 @@ import com.m4isper.contactsapp.domain.model.NameMode
 import com.m4isper.contactsapp.domain.model.NameParts
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.RelationKind
+import com.m4isper.contactsapp.domain.model.SipKind
+import com.m4isper.contactsapp.domain.model.WebsiteKind
 import java.util.Locale
 
 private const val TEL_URI_PREFIX = "tel:"
@@ -126,6 +129,8 @@ private fun parseVCardProperty(line: String): VCardProperty? {
     }
 }
 
+// Подавление осознанное: накопитель держит по маленькому обработчику на тип свойства.
+@Suppress("TooManyFunctions")
 private class VCardAccumulator {
     private var displayName = ""
     private var parts: NameParts? = null
@@ -134,10 +139,14 @@ private class VCardAccumulator {
     private val addresses = mutableListOf<EditableAddress>()
     private val websites = mutableListOf<EditableWebsite>()
     private val instantMessages = mutableListOf<EditableInstantMessage>()
+    private val sipAddresses = mutableListOf<EditableSipAddress>()
     private val relations = mutableListOf<EditableRelation>()
     private val events = mutableListOf<EditableEvent>()
     private var company = ""
     private var title = ""
+    private var department = ""
+    private var jobDescription = ""
+    private var officeLocation = ""
     private var note = ""
     private var nickname = ""
     private var birthday: Birthday? = null
@@ -154,6 +163,7 @@ private class VCardAccumulator {
         val value = unescapeVCard(property.value)
         when (property.name) {
             "FN", "N", "ORG", "TITLE", "NOTE", "BDAY", "NICKNAME" -> applyIdentityProperty(property, value)
+            "ROLE", "X-OFFICE-LOCATION" -> applyIdentityProperty(property, value)
             "TEL", "EMAIL", "ADR", "URL", "IMPP" -> applyCommunicationProperty(property, value)
             "ANNIVERSARY", "X-ABDATE", "RELATED", "X-ABRELATEDNAMES" -> applyExtraProperty(property, value)
         }
@@ -209,8 +219,14 @@ private class VCardAccumulator {
         when (property.name) {
             "FN" -> displayName = value
             "N" -> parts = namePartsFromVCard(property.value)
-            "ORG" -> company = splitVCardParts(property.value).firstOrNull().orEmpty().trim()
+            "ORG" -> {
+                val orgParts = splitVCardParts(property.value)
+                company = orgParts.firstOrNull().orEmpty().trim()
+                department = orgParts.getOrNull(1).orEmpty().trim()
+            }
             "TITLE" -> title = value.trim()
+            "ROLE" -> jobDescription = value.trim()
+            "X-OFFICE-LOCATION" -> officeLocation = value.trim()
             "NOTE" -> note = value
             "BDAY" -> birthday = birthdayFromVCard(value)
             "NICKNAME" -> nickname = value.trim()
@@ -222,45 +238,119 @@ private class VCardAccumulator {
         value: String,
     ) {
         when (property.name) {
-            "TEL" -> {
-                val number = cleanPhoneNumber(value)
-                if (number.isNotBlank()) {
-                    phones += EditablePhone(number = number, kind = phoneKindOfVCard(property.types))
-                    rememberGroupLabel(property, phones, phones.lastIndex, ::phoneWithLabel)
-                }
-            }
-            "EMAIL" -> {
-                if (value.isNotBlank()) {
-                    emails += EditableEmail(address = value, kind = emailKindOfVCard(property.types))
-                    rememberGroupLabel(property, emails, emails.lastIndex, ::emailWithLabel)
-                }
-            }
+            "TEL" -> addPhoneProperty(property, value)
+            "EMAIL" -> addEmailProperty(property, value)
             "ADR" -> addAddressProperty(property)
-            "URL" -> {
-                if (value.isNotBlank()) {
-                    websites += EditableWebsite(url = value)
-                }
-            }
-            "IMPP" -> {
-                if (value.isNotBlank()) {
-                    instantMessages +=
-                        instantMessageFromVCard(
-                            service = property.params["X-SERVICE-TYPE"],
-                            address = value,
-                        )
-                }
-            }
+            "URL" -> addWebsiteProperty(property, value)
+            "IMPP" -> addImppProperty(property, value)
         }
     }
 
-    /** Адрес: непустые части ADR склеиваются в одну строку через запятую. */
+    private fun addPhoneProperty(
+        property: VCardProperty,
+        value: String,
+    ) {
+        val number = cleanPhoneNumber(value)
+        if (number.isBlank()) return
+        phones +=
+            EditablePhone(
+                number = number,
+                kind = phoneKindOfVCard(property.types),
+                isPrimary = "PREF" in property.types,
+            )
+        rememberGroupLabel(property, phones, phones.lastIndex, ::phoneWithLabel)
+    }
+
+    private fun addEmailProperty(
+        property: VCardProperty,
+        value: String,
+    ) {
+        if (value.isBlank()) return
+        emails +=
+            EditableEmail(
+                address = value,
+                kind = emailKindOfVCard(property.types),
+                isPrimary = "PREF" in property.types,
+            )
+        rememberGroupLabel(property, emails, emails.lastIndex, ::emailWithLabel)
+    }
+
+    private fun addWebsiteProperty(
+        property: VCardProperty,
+        value: String,
+    ) {
+        if (value.isBlank()) return
+        websites +=
+            EditableWebsite(
+                url = value,
+                kind = websiteKindOfVCard(property.types),
+                customLabel = vcardLabelOf(property.params),
+            )
+        rememberGroupLabel(property, websites, websites.lastIndex, ::websiteWithLabel)
+    }
+
+    private fun addImppProperty(
+        property: VCardProperty,
+        value: String,
+    ) {
+        if (value.isBlank()) return
+        val isSip =
+            property.params["X-SERVICE-TYPE"].equals("SIP", ignoreCase = true) ||
+                isSipAddress(value)
+        if (isSip) {
+            sipAddresses +=
+                EditableSipAddress(
+                    address = value,
+                    kind = sipKindOfVCard(property.types),
+                    customLabel = vcardLabelOf(property.params),
+                )
+            rememberGroupLabel(property, sipAddresses, sipAddresses.lastIndex, ::sipWithLabel)
+        } else {
+            instantMessages +=
+                instantMessageFromVCard(
+                    service = property.params["X-SERVICE-TYPE"],
+                    address = value,
+                )
+        }
+    }
+
+    /** Адрес: ADR-части сохраняются структурированно и дублируются в legacy-строку. */
     private fun addAddressProperty(property: VCardProperty) {
-        val joined = splitVCardParts(property.value).filter { it.isNotBlank() }.joinToString(", ")
+        val parts = splitVCardParts(property.value) + List(ADDRESS_PART_COUNT) { "" }
+        val joined = parts.filter { it.isNotBlank() }.joinToString(", ")
         if (joined.isNotBlank()) {
-            addresses += EditableAddress(address = joined, kind = addressKindOfVCard(property.types))
+            addresses +=
+                EditableAddress(
+                    address = joined,
+                    kind = addressKindOfVCard(property.types),
+                    poBox = parts[0].trim(),
+                    neighborhood = parts[1].trim(),
+                    street = parts[2].trim(),
+                    city = parts[3].trim(),
+                    region = parts[4].trim(),
+                    postcode = parts[5].trim(),
+                    country = parts[6].trim(),
+                )
             rememberGroupLabel(property, addresses, addresses.lastIndex, ::addressWithLabel)
         }
     }
+
+    private fun websiteWithLabel(
+        website: EditableWebsite,
+        label: String,
+    ): EditableWebsite =
+        websiteKindOfVCardLabel(label)?.let { website.copy(kind = it, customLabel = null) }
+            ?: website.copy(kind = WebsiteKind.OTHER, customLabel = label)
+
+    private fun sipWithLabel(
+        sip: EditableSipAddress,
+        label: String,
+    ): EditableSipAddress =
+        sipKindOfVCardLabel(label)?.let { sip.copy(kind = it, customLabel = null) }
+            ?: sip.copy(kind = SipKind.OTHER, customLabel = label)
+
+    private fun isSipAddress(value: String): Boolean =
+        value.substringBefore(':', missingDelimiterValue = "").lowercase(Locale.ROOT) in SIP_SCHEMES
 
     private fun applyExtraProperty(
         property: VCardProperty,
@@ -301,38 +391,50 @@ private class VCardAccumulator {
     }
 
     fun build(): ContactForm? {
-        val nameParts = parts
-        val name =
-            when {
-                nameParts != null && !nameParts.isEmpty ->
-                    EditableName(
-                        mode = NameMode.STRUCTURED,
-                        given = nameParts.given,
-                        family = nameParts.family,
-                        middle = nameParts.middle,
-                        prefix = nameParts.prefix,
-                        suffix = nameParts.suffix,
-                    )
-                displayName.isNotBlank() -> EditableName(display = displayName)
-                else -> EditableName()
-            }
         val form =
             ContactForm(
-                name = name,
+                name = buildName(),
                 phones = phones,
                 emails = emails,
                 addresses = addresses,
                 websites = websites,
                 instantMessages = instantMessages,
+                sipAddresses = sipAddresses,
                 relations = relations,
                 events = events,
-                organization = EditableOrganization(company = company, title = title),
+                organization = buildOrganization(),
                 note = EditableNote(note = note),
                 nickname = EditableNickname(nickname = nickname),
                 birthday = EditableBirthday(value = birthday),
             )
         return form.takeUnless(::isEmptyForImport)
     }
+
+    private fun buildName(): EditableName {
+        val nameParts = parts
+        return when {
+            nameParts != null && !nameParts.isEmpty ->
+                EditableName(
+                    mode = NameMode.STRUCTURED,
+                    given = nameParts.given,
+                    family = nameParts.family,
+                    middle = nameParts.middle,
+                    prefix = nameParts.prefix,
+                    suffix = nameParts.suffix,
+                )
+            displayName.isNotBlank() -> EditableName(display = displayName)
+            else -> EditableName()
+        }
+    }
+
+    private fun buildOrganization(): EditableOrganization =
+        EditableOrganization(
+            company = company,
+            title = title,
+            department = department,
+            jobDescription = jobDescription,
+            officeLocation = officeLocation,
+        )
 }
 
 private fun cleanPhoneNumber(raw: String): String {
@@ -344,16 +446,26 @@ private fun cleanPhoneNumber(raw: String): String {
     }
 }
 
-private fun isEmptyForImport(form: ContactForm): Boolean =
-    form.name.isEmpty &&
-        form.phones.isEmpty() &&
-        form.emails.isEmpty() &&
-        form.addresses.isEmpty() &&
-        form.websites.isEmpty() &&
-        form.instantMessages.isEmpty() &&
-        form.relations.isEmpty() &&
-        form.events.isEmpty() &&
+private fun isEmptyForImport(form: ContactForm): Boolean {
+    val lists =
+        listOf(
+            form.phones,
+            form.emails,
+            form.addresses,
+            form.websites,
+            form.instantMessages,
+            form.sipAddresses,
+            form.relations,
+            form.events,
+        )
+    return form.name.isEmpty &&
+        lists.all { it.isEmpty() } &&
         form.organization.isEmpty &&
         form.note.note.isBlank() &&
         form.nickname.nickname.isBlank() &&
         form.birthday.value == null
+}
+
+private const val ADDRESS_PART_COUNT = 7
+
+private val SIP_SCHEMES = setOf("sip", "sips")

@@ -124,6 +124,7 @@ private fun listOperations(
 ): List<ContentProviderOperation> =
     phoneListOperations(rawContactId, rows, form) +
         emailListOperations(rawContactId, rows, form) +
+        sipListOperations(rawContactId, rows, form) +
         addressListOperations(rawContactId, rows, form) +
         websiteListOperations(rawContactId, rows, form)
 

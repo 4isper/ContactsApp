@@ -56,6 +56,40 @@ class ContactFormNormalizationTest {
     }
 
     @Test
+    fun `at most one phone and one email stay primary`() {
+        val normalized =
+            ContactForm(
+                phones =
+                    listOf(
+                        EditablePhone(number = "111", isPrimary = true),
+                        EditablePhone(number = "222", isPrimary = true),
+                    ),
+                emails =
+                    listOf(
+                        EditableEmail(address = "a@x.com", isPrimary = true),
+                        EditableEmail(address = "b@x.com", isPrimary = true),
+                    ),
+            ).normalized()
+
+        assertEquals(listOf(true, false), normalized.phones.map { it.isPrimary })
+        assertEquals(listOf(true, false), normalized.emails.map { it.isPrimary })
+    }
+
+    @Test
+    fun `blank sip addresses are dropped`() {
+        val normalized =
+            ContactForm(
+                sipAddresses =
+                    listOf(
+                        EditableSipAddress(address = "sip:anna@example.com"),
+                        EditableSipAddress(address = "  "),
+                    ),
+            ).normalized()
+
+        assertEquals(listOf("sip:anna@example.com"), normalized.sipAddresses.map { it.address })
+    }
+
+    @Test
     fun `filled values are kept and groups are sorted`() {
         val form =
             ContactForm(

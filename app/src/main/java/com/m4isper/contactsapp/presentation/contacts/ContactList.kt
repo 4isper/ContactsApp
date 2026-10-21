@@ -199,7 +199,7 @@ internal fun ContactList(
                 onRefresh = onRefresh,
                 onCallContact = { contact -> pendingQuickCall = contact.toQuickCallTarget() },
                 onSmsContact = { contact ->
-                    contact.phones.firstOrNull()?.let { openSms(context, it.number) }
+                    contact.primaryPhone?.let { openSms(context, it.number) }
                 },
                 onToggleFavorite = onToggleFavorite,
             )
@@ -293,4 +293,4 @@ private fun ContactListDialogs(
 private fun Set<Long>.toggle(groupId: Long): Set<Long> = if (groupId in this) this - groupId else this + groupId
 
 private fun ContactDetails.toQuickCallTarget(): QuickCallTarget? =
-    phones.firstOrNull()?.let { QuickCallTarget(name = name, phone = it) }
+    primaryPhone?.let { QuickCallTarget(name = name, phone = it) }

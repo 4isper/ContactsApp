@@ -7,6 +7,8 @@ import com.m4isper.contactsapp.domain.model.EmailKind
 import com.m4isper.contactsapp.domain.model.ImProtocol
 import com.m4isper.contactsapp.domain.model.NameParts
 import com.m4isper.contactsapp.domain.model.PhoneKind
+import com.m4isper.contactsapp.domain.model.SipKind
+import com.m4isper.contactsapp.domain.model.WebsiteKind
 import java.util.Locale
 
 /** Разыменование vCard-экранирования: \n, \N и любой экранированный символ. */
@@ -66,18 +68,33 @@ internal fun namePartsFromVCard(raw: String): NameParts {
     )
 }
 
+private val PHONE_KIND_RULES =
+    listOf(
+        setOf("WORK", "CELL") to PhoneKind.WORK_MOBILE,
+        setOf("WORK", "MOBILE") to PhoneKind.WORK_MOBILE,
+        setOf("CELL") to PhoneKind.MOBILE,
+        setOf("MOBILE") to PhoneKind.MOBILE,
+        setOf("FAX") to PhoneKind.FAX,
+        setOf("FAX_HOME") to PhoneKind.FAX,
+        setOf("FAX_WORK") to PhoneKind.FAX,
+        setOf("PAGER") to PhoneKind.PAGER,
+        setOf("CALLBACK") to PhoneKind.CALLBACK,
+        setOf("COMPANY_MAIN") to PhoneKind.COMPANY_MAIN,
+        setOf("HOME") to PhoneKind.HOME,
+        setOf("WORK") to PhoneKind.WORK,
+    )
+
 internal fun phoneKindOfVCard(types: Set<String>): PhoneKind =
-    when {
-        types.any { it == "CELL" || it == "MOBILE" } -> PhoneKind.MOBILE
-        "HOME" in types -> PhoneKind.HOME
-        "WORK" in types -> PhoneKind.WORK
-        else -> PhoneKind.OTHER
-    }
+    PHONE_KIND_RULES
+        .firstOrNull { (required, _) -> required.all(types::contains) }
+        ?.second
+        ?: PhoneKind.OTHER
 
 internal fun emailKindOfVCard(types: Set<String>): EmailKind =
     when {
         "WORK" in types -> EmailKind.WORK
         "HOME" in types -> EmailKind.HOME
+        "CELL" in types || "MOBILE" in types -> EmailKind.MOBILE
         else -> EmailKind.OTHER
     }
 
@@ -86,6 +103,25 @@ internal fun addressKindOfVCard(types: Set<String>): AddressKind =
         "WORK" in types -> AddressKind.WORK
         "HOME" in types -> AddressKind.HOME
         else -> AddressKind.OTHER
+    }
+
+internal fun websiteKindOfVCard(types: Set<String>): WebsiteKind =
+    when {
+        "WORK" in types -> WebsiteKind.WORK
+        "HOME" in types -> WebsiteKind.HOME
+        "BLOG" in types -> WebsiteKind.BLOG
+        "PROFILE" in types -> WebsiteKind.PROFILE
+        "FTP" in types -> WebsiteKind.FTP
+        "HOMEPAGE" in types -> WebsiteKind.HOMEPAGE
+        "OTHER" in types || "CUSTOM" in types -> WebsiteKind.OTHER
+        else -> WebsiteKind.HOMEPAGE
+    }
+
+internal fun sipKindOfVCard(types: Set<String>): SipKind =
+    when {
+        "WORK" in types -> SipKind.WORK
+        "HOME" in types -> SipKind.HOME
+        else -> SipKind.OTHER
     }
 
 /** IMPP: протокол из X-SERVICE-TYPE или из схемы значения (skype:, xmpp: и т.п.). */

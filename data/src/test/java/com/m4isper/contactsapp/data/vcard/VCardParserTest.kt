@@ -17,7 +17,10 @@ import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.model.PostalAddress
 import com.m4isper.contactsapp.domain.model.RelationKind
+import com.m4isper.contactsapp.domain.model.SipAddress
+import com.m4isper.contactsapp.domain.model.SipKind
 import com.m4isper.contactsapp.domain.model.Website
+import com.m4isper.contactsapp.domain.model.WebsiteKind
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -337,5 +340,89 @@ class VCardParserTest {
         assertEquals(EventKind.OTHER, form.events[1].kind)
         assertEquals(Birthday(day = 10, month = 9, year = 2020), form.events[1].date)
         assertEquals("Свадьба", form.events[1].customLabel)
+    }
+
+    @Test
+    fun `round-trips structured fields primary flags sip and extended kinds`() {
+        val details =
+            ContactDetails(
+                contactId = 1,
+                name = "Anna",
+                phones =
+                    listOf(
+                        PhoneNumber("111", PhoneKind.MOBILE, isPrimary = true),
+                        PhoneNumber("222", PhoneKind.COMPANY_MAIN),
+                    ),
+                emails =
+                    listOf(
+                        EmailAddress("anna@example.com", EmailKind.MOBILE, isPrimary = true),
+                    ),
+                websites = listOf(Website("https://blog.example", WebsiteKind.BLOG)),
+                sipAddresses = listOf(SipAddress("sip:anna@example.com", SipKind.WORK)),
+                addresses =
+                    listOf(
+                        PostalAddress(
+                            address = "Lenina 1, Moscow",
+                            kind = AddressKind.WORK,
+                            poBox = "PO 5",
+                            neighborhood = "Center",
+                            street = "Lenina 1",
+                            city = "Moscow",
+                            region = "MO",
+                            postcode = "101000",
+                            country = "Russia",
+                        ),
+                    ),
+                organization =
+                    Organization(
+                        company = "ACME",
+                        title = "CTO",
+                        department = "Platform",
+                        jobDescription = "Leads engineering",
+                        officeLocation = "London",
+                    ),
+            )
+
+        val form = parseVCards(buildVCards(listOf(details))).single()
+
+        assertEquals(true, form.phones[0].isPrimary)
+        assertEquals(PhoneKind.MOBILE, form.phones[0].kind)
+        assertEquals(PhoneKind.COMPANY_MAIN, form.phones[1].kind)
+        assertEquals(true, form.emails.single().isPrimary)
+        assertEquals(EmailKind.MOBILE, form.emails.single().kind)
+        assertEquals(WebsiteKind.BLOG, form.websites.single().kind)
+        assertEquals(SipKind.WORK, form.sipAddresses.single().kind)
+        assertEquals("sip:anna@example.com", form.sipAddresses.single().address)
+        assertEquals("PO 5", form.addresses.single().poBox)
+        assertEquals("Center", form.addresses.single().neighborhood)
+        assertEquals("Lenina 1", form.addresses.single().street)
+        assertEquals("Moscow", form.addresses.single().city)
+        assertEquals("MO", form.addresses.single().region)
+        assertEquals("101000", form.addresses.single().postcode)
+        assertEquals("Russia", form.addresses.single().country)
+        assertEquals("Platform", form.organization.department)
+        assertEquals("Leads engineering", form.organization.jobDescription)
+        assertEquals("London", form.organization.officeLocation)
+    }
+
+    @Test
+    fun `parses primary pref and sip imp without service type`() {
+        val form =
+            parseVCards(
+                """
+                BEGIN:VCARD
+                FN:Kate
+                TEL;TYPE=CELL,PREF:111
+                EMAIL;TYPE=HOME,PREF:kate@example.com
+                IMPP:sip:kate@example.com
+                URL;TYPE=OTHER:https://example.com
+                END:VCARD
+                """.trimIndent(),
+            ).single()
+
+        assertEquals(true, form.phones.single().isPrimary)
+        assertEquals(true, form.emails.single().isPrimary)
+        assertEquals("sip:kate@example.com", form.sipAddresses.single().address)
+        assertEquals(WebsiteKind.OTHER, form.websites.single().kind)
     }
 }

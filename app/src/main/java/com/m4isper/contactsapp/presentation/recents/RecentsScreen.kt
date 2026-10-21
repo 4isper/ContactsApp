@@ -159,12 +159,12 @@ fun RecentsScreen(
                                 onClick = { onContactClick(contact.contactId) },
                                 onLongClick = {},
                                 onCall = {
-                                    contact.phones.firstOrNull()?.let {
+                                    contact.primaryPhone?.let {
                                         pendingCall = RecentsCallTarget(contact.name, it)
                                     }
                                 },
                                 onSms = {
-                                    contact.phones.firstOrNull()?.let { openSms(context, it.number) }
+                                    contact.primaryPhone?.let { openSms(context, it.number) }
                                 },
                                 onToggleFavorite = { viewModel.toggleFavorite(contact.contactId) },
                             )
