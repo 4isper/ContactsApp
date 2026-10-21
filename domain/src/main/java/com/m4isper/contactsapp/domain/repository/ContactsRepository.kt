@@ -6,6 +6,7 @@ package com.m4isper.contactsapp.domain.repository
 import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
+import com.m4isper.contactsapp.domain.model.ContactLink
 
 interface ContactsRepository {
     suspend fun getContacts(): List<ContactDetails>
@@ -45,9 +46,43 @@ interface ContactsRepository {
     /** Фото контакта для экспорта; null, если фото нет. */
     suspend fun loadContactPhoto(contactId: Long): ByteArray? = null
 
-    /** Слияние дубликатов: данные source-контактов переносятся в target, источники удаляются. */
+    /**
+     * Слияние дубликатов: источники связываются с целевым и становятся его частью.
+     * @return связь для отмены слияния.
+     */
     suspend fun mergeContacts(
         targetId: Long,
         sourceIds: List<Long>,
-    )
+    ): ContactLink?
+
+    /** Отменяет слияние: контакты снова видны отдельно. */
+    suspend fun unmergeContacts(link: ContactLink) = Unit
+
+    /** id контакта «Мой профиль»; null, если профиля нет. */
+    suspend fun getProfileContactId(): Long? = null
+
+    /**
+     * Копирует контакт в другой аккаунт: создаёт копию формы.
+     * @return id нового контакта.
+     */
+    suspend fun copyContact(
+        contactId: Long,
+        account: ContactAccount,
+    ): Long {
+        val form = getContactForm(contactId) ?: error("no contact form for id=$contactId")
+        return createContact(form, account)
+    }
+
+    /**
+     * Переносит контакт в другой аккаунт: создаёт копию и удаляет исходный.
+     * @return id нового контакта.
+     */
+    suspend fun moveContact(
+        contactId: Long,
+        account: ContactAccount,
+    ): Long {
+        val newId = copyContact(contactId, account)
+        deleteContact(contactId)
+        return newId
+    }
 }

@@ -5,7 +5,9 @@ import com.m4isper.contactsapp.domain.model.AppSettings
 import com.m4isper.contactsapp.domain.model.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.ListDensity
 import com.m4isper.contactsapp.domain.model.ThemeMode
+import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
+import com.m4isper.contactsapp.domain.usecase.SetDefaultContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.SetFavoritesFirstUseCase
 import com.m4isper.contactsapp.domain.usecase.SetListDensityUseCase
 import com.m4isper.contactsapp.domain.usecase.SetSortOrderUseCase
@@ -22,6 +24,34 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
+/** Аккаунты для выбора аккаунта по умолчанию: в тесте настроек важен только список. */
+private class SettingsFakeContactsRepository : com.m4isper.contactsapp.domain.repository.ContactsRepository {
+    override suspend fun getContacts(): List<com.m4isper.contactsapp.domain.model.ContactDetails> = emptyList()
+
+    override suspend fun getContactDetails(contactId: Long): com.m4isper.contactsapp.domain.model.ContactDetails? = null
+
+    override suspend fun getContactForm(contactId: Long): com.m4isper.contactsapp.domain.model.ContactForm? = null
+
+    override suspend fun createContact(form: com.m4isper.contactsapp.domain.model.ContactForm): Long = 1L
+
+    override suspend fun updateContact(
+        contactId: Long,
+        form: com.m4isper.contactsapp.domain.model.ContactForm,
+    ) = Unit
+
+    override suspend fun deleteContact(contactId: Long) = Unit
+
+    override suspend fun setContactPhoto(
+        contactId: Long,
+        photo: ByteArray,
+    ) = Unit
+
+    override suspend fun mergeContacts(
+        targetId: Long,
+        sourceIds: List<Long>,
+    ): com.m4isper.contactsapp.domain.model.ContactLink? = null
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingsViewModelTest {
     @After
@@ -36,6 +66,8 @@ class SettingsViewModelTest {
             SetSortOrderUseCase(repository),
             SetListDensityUseCase(repository),
             SetFavoritesFirstUseCase(repository),
+            SetDefaultContactAccountUseCase(repository),
+            GetContactAccountsUseCase(SettingsFakeContactsRepository()),
         )
 
     @Test

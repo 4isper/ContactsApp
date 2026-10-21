@@ -27,8 +27,8 @@ import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactFormUseCase
+import com.m4isper.contactsapp.domain.usecase.GetDefaultContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetLastContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.SaveResult
 import com.m4isper.contactsapp.domain.usecase.SetLastContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.UpdateContactUseCase
@@ -60,7 +60,7 @@ class ContactEditorViewModel(
     private val createGroupUseCase: CreateGroupUseCase,
     private val getContactAccountsUseCase: GetContactAccountsUseCase,
     private val getContactAccountUseCase: GetContactAccountUseCase,
-    private val getLastContactAccountUseCase: GetLastContactAccountUseCase,
+    private val getDefaultContactAccountUseCase: GetDefaultContactAccountUseCase,
     private val setLastContactAccountUseCase: SetLastContactAccountUseCase,
 ) : ViewModel() {
     private val state = MutableStateFlow(EditorUiState())
@@ -121,10 +121,10 @@ class ContactEditorViewModel(
         viewModelScope.launch {
             val accounts = loadAccounts()
             val groups = loadGroups()
-            val lastAccount = loadLastContactAccount()
+            val defaultAccount = loadDefaultAccount()
             state.update { current ->
                 val selected =
-                    lastAccount.takeIf { it in accounts }
+                    defaultAccount.takeIf { it in accounts }
                         ?: current.selectedAccount.takeIf { it in accounts }
                         ?: accounts.firstOrNull { it.isLocal }
                         ?: accounts.firstOrNull()
@@ -633,13 +633,13 @@ class ContactEditorViewModel(
 
     /** Последний выбранный аккаунт: сбой настроек не мешает созданию контакта. */
     @Suppress("TooGenericExceptionCaught")
-    private suspend fun loadLastContactAccount(): ContactAccount =
+    private suspend fun loadDefaultAccount(): ContactAccount =
         try {
-            getLastContactAccountUseCase()
+            getDefaultContactAccountUseCase()
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            logw(EDITOR_TAG, "load last contact account failed", e)
+            logw(EDITOR_TAG, "load default contact account failed", e)
             ContactAccount.Local
         }
 

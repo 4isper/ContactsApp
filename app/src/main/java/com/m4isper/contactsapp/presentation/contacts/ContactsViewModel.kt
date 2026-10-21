@@ -18,8 +18,10 @@ import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetProfileContactIdUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
+import com.m4isper.contactsapp.domain.usecase.RefreshFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.RemoveFavoriteUseCase
 import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
@@ -55,6 +57,8 @@ data class ContactsUiState(
     val sortOrder: ContactSortOrder = ContactSortOrder.BY_NAME,
     val listDensity: ListDensity = ListDensity.COMFORTABLE,
     val pinFavorites: Boolean = false,
+    /** id контакта «Мой профиль»; null, если профиля нет. */
+    val profileContactId: Long? = null,
     val event: ContactsEvent? = null,
 ) {
     val isSearching: Boolean
@@ -119,12 +123,27 @@ private data class ContactsMiddleBase(
     val event: ContactsEvent?,
 )
 
+/** Группы и членство: часть состояния списка. */
+private data class GroupsState(
+    val groups: List<ContactGroup>,
+    val selectedGroupId: Long?,
+    val membership: Map<Long, Set<Long>>,
+)
+
+/** Аккаунты и профиль: часть состояния списка. */
+private data class AccountsState(
+    val accounts: List<ContactAccount>,
+    val selectedAccount: ContactAccount?,
+    val profileContactId: Long?,
+)
+
 private data class ContactsGroupsMiddle(
     val groups: List<ContactGroup>,
     val selectedGroupId: Long?,
     val membership: Map<Long, Set<Long>>,
     val accounts: List<ContactAccount>,
     val selectedAccount: ContactAccount?,
+    val profileContactId: Long?,
 )
 
 private data class ContactsMiddle(
@@ -138,6 +157,7 @@ private data class ContactsMiddle(
     val membership: Map<Long, Set<Long>>,
     val accounts: List<ContactAccount>,
     val selectedAccount: ContactAccount?,
+    val profileContactId: Long?,
 )
 
 private fun contactsContent(
@@ -183,6 +203,8 @@ class ContactsViewModel(
     private val addContactsToGroupUseCase: AddContactsToGroupUseCase,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
     private val removeFavoriteUseCase: RemoveFavoriteUseCase,
+    private val refreshFavoritesUseCase: RefreshFavoritesUseCase,
+    private val getProfileContactIdUseCase: GetProfileContactIdUseCase,
     private val contactsChangeSource: ContactsChangeSource,
 ) : ViewModel() {
     private val allContacts = MutableStateFlow<List<ContactDetails>>(emptyList())
@@ -196,6 +218,7 @@ class ContactsViewModel(
     private val selectedGroupFlow = MutableStateFlow<Long?>(null)
     private val membershipFlow = MutableStateFlow<Map<Long, Set<Long>>>(emptyMap())
     private val accountsFlow = MutableStateFlow<List<ContactAccount>>(emptyList())
+    private val profileContactIdFlow = MutableStateFlow<Long?>(null)
     private val selectedAccountFlow = MutableStateFlow<ContactAccount?>(null)
     private var changesJob: Job? = null
     private var pendingProviderRefresh = false
@@ -236,13 +259,18 @@ class ContactsViewModel(
                     ::ContactsMiddleBase,
                 ),
                 combine(
-                    groupsFlow,
-                    selectedGroupFlow,
-                    membershipFlow,
-                    accountsFlow,
-                    selectedAccountFlow,
-                    ::ContactsGroupsMiddle,
-                ),
+                    combine(groupsFlow, selectedGroupFlow, membershipFlow, ::GroupsState),
+                    combine(accountsFlow, selectedAccountFlow, profileContactIdFlow, ::AccountsState),
+                ) { groups, accounts ->
+                    ContactsGroupsMiddle(
+                        groups = groups.groups,
+                        selectedGroupId = groups.selectedGroupId,
+                        membership = groups.membership,
+                        accounts = accounts.accounts,
+                        selectedAccount = accounts.selectedAccount,
+                        profileContactId = accounts.profileContactId,
+                    )
+                },
             ) { base, groups ->
                 ContactsMiddle(
                     favorites = base.favorites,
@@ -255,6 +283,7 @@ class ContactsViewModel(
                     membership = groups.membership,
                     accounts = groups.accounts,
                     selectedAccount = groups.selectedAccount,
+                    profileContactId = groups.profileContactId,
                 )
             },
             settingsFlow,
@@ -299,6 +328,7 @@ class ContactsViewModel(
             sortOrder = settings.sortOrder,
             listDensity = settings.listDensity,
             pinFavorites = shouldPinFavorites(load, middle, settings),
+            profileContactId = middle.profileContactId,
             event = middle.event,
         )
     }
@@ -523,7 +553,37 @@ class ContactsViewModel(
         }
     }
 
-    @Suppress("TooGenericExceptionCaught")
+    /** Контакт «Мой профиль» есть не на всех устройствах: ищем его при загрузке. */
+    @Suppress("TooGenericExceptionCaught") // Осознанно: отсутствие профиля не мешает списку.
+    private fun refreshProfile() {
+        viewModelScope.launch {
+            try {
+                profileContactIdFlow.value = getProfileContactIdUseCase()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logw(LIST_TAG, "load profile failed", e)
+                profileContactIdFlow.value = null
+            }
+        }
+    }
+
+    /** Избранное читается из провайдера: перечитываем его вместе с контактами. */
+    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой чтения избранного не мешает списку.
+    private fun refreshFavorites() {
+        viewModelScope.launch {
+            try {
+                refreshFavoritesUseCase()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logw(LIST_TAG, "refresh favorites failed", e)
+            }
+        }
+    }
+
+    /** Аккаунты для фильтра и создания: сбой не мешает списку. */
+    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой чтения аккаунтов не мешает списку.
     private fun refreshAccounts() {
         viewModelScope.launch {
             try {
@@ -600,6 +660,8 @@ class ContactsViewModel(
         }
         refreshGroups()
         refreshAccounts()
+        refreshFavorites()
+        refreshProfile()
         if (pendingProviderRefresh) {
             pendingProviderRefresh = false
             launchLoad(clearSelection = false)

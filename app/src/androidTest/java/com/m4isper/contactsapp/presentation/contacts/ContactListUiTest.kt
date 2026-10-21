@@ -31,9 +31,11 @@ import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetProfileContactIdUseCase
 import com.m4isper.contactsapp.domain.usecase.LoadContactPhotoUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
+import com.m4isper.contactsapp.domain.usecase.RefreshFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.RemoveFavoriteUseCase
 import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
@@ -77,6 +79,8 @@ class ContactListUiTest {
         AddContactsToGroupUseCase(groups),
         ToggleFavoriteUseCase(repository),
         RemoveFavoriteUseCase(repository),
+        RefreshFavoritesUseCase(repository),
+        GetProfileContactIdUseCase(repository),
         FakeContactsChangeSource(),
     )
 

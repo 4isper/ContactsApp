@@ -42,12 +42,22 @@ private class StubContactsRepository(
         photo: ByteArray,
     ) = Unit
 
+    override suspend fun copyContact(
+        contactId: Long,
+        account: com.m4isper.contactsapp.domain.model.ContactAccount,
+    ): Long = 1L
+
+    override suspend fun moveContact(
+        contactId: Long,
+        account: com.m4isper.contactsapp.domain.model.ContactAccount,
+    ): Long = 1L
+
     override suspend fun deleteContact(contactId: Long) = Unit
 
     override suspend fun mergeContacts(
         targetId: Long,
         sourceIds: List<Long>,
-    ) = Unit
+    ): com.m4isper.contactsapp.domain.model.ContactLink? = null
 }
 
 class GetContactsUseCaseTest {

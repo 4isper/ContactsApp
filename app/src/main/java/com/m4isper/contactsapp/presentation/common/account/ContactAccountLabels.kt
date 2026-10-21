@@ -26,6 +26,9 @@ internal fun contactAccountSubtitle(account: ContactAccount): String =
         else -> account.type.orEmpty()
     }
 
+/** Стабильный ключ аккаунта для тестов: локальный и пара type/name. */
+internal fun ContactAccount.testKey(): String = if (isLocal) "local" else "${type.orEmpty()}/${name.orEmpty()}"
+
 /** Однострочная подпись для списков: «user@gmail.com (Google)» или «Локальный». */
 @Composable
 internal fun contactAccountLabel(account: ContactAccount): String {

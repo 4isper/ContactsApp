@@ -80,6 +80,21 @@
     <string name="event_type_anniversary">Годовщина</string>
     <string name="event_type_other">Другое</string>
 
+    <string name="details_field_name">Имя</string>
+    <string name="details_field_phone">Телефон</string>
+    <string name="details_field_email">Почта</string>
+    <string name="details_field_address">Адрес</string>
+    <string name="details_field_website">Сайт</string>
+    <string name="details_field_organization">Организация</string>
+    <string name="details_field_note">Заметка</string>
+    <string name="details_field_birthday">День рождения</string>
+    <string name="details_copy_to_account">Копировать в другой аккаунт</string>
+    <string name="details_move_to_account">Перенести в другой аккаунт</string>
+    <string name="details_copy_done">Контакт скопирован</string>
+    <string name="details_move_done">Контакт перенесён</string>
+    <string name="details_account_failed">Не удалось сменить аккаунт</string>
+    <string name="details_move_confirm_title">Перенести контакт?</string>
+    <string name="details_move_confirm_text">Контакт будет перенесён в «%1$s». Исходная копия будет удалена.</string>
     <string name="contact_not_found">Контакт не найден</string>
     <string name="copied_to_clipboard">Скопировано</string>
     <string name="sms_failed">Не удалось открыть сообщения</string>
@@ -148,6 +163,7 @@
     <string name="action_more">Дополнительные действия</string>
     <string name="action_import">Импорт из файла</string>
     <string name="action_export">Экспорт в файл</string>
+    <string name="contacts_my_profile">Мой профиль</string>
     <string name="import_empty">В файле не найдены контакты</string>
     <string name="import_failed">Не удалось импортировать контакты</string>
     <string name="import_no_permission">Нет разрешения на импорт контактов</string>
@@ -191,6 +207,11 @@
     <string name="duplicates_primary_label">Основной контакт</string>
     <string name="duplicates_name_only_hint">Совпадение только по имени — проверьте, что это один человек</string>
     <string name="duplicates_merged">Дубликаты объединены</string>
+    <string name="duplicates_unmerged">Слияние отменено</string>
+    <string name="duplicates_undo">Отменить</string>
+    <string name="duplicates_preview_title">Предпросмотр слияния</string>
+    <string name="duplicates_preview_additions">Добавятся в «%1$s»:</string>
+    <string name="duplicates_preview_empty">Новых полей нет</string>
     <string name="duplicates_action_failed">Не удалось объединить дубликаты</string>
     <string name="action_merge">Объединить</string>
 
@@ -211,6 +232,7 @@
     <string name="settings_density_compact">Компактная</string>
     <string name="settings_favorites">Избранное</string>
     <string name="settings_favorites_first">Сначала избранное</string>
+    <string name="settings_default_account">Аккаунт по умолчанию</string>
     <string name="settings_favorites_first_desc">Закреплять избранные контакты сверху, когда фильтр не активен</string>
 
     <string name="filter_groups">Группы</string>

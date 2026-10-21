@@ -9,12 +9,15 @@ import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.repository.ContactsRepository
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
+import com.m4isper.contactsapp.domain.usecase.CopyContactToAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.ExportContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.LoadContactPhotoUseCase
+import com.m4isper.contactsapp.domain.usecase.MoveContactToAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
@@ -82,12 +85,22 @@ private class FakeDetailsRepository(
         photo: ByteArray,
     ) = Unit
 
+    override suspend fun copyContact(
+        contactId: Long,
+        account: com.m4isper.contactsapp.domain.model.ContactAccount,
+    ): Long = 1L
+
+    override suspend fun moveContact(
+        contactId: Long,
+        account: com.m4isper.contactsapp.domain.model.ContactAccount,
+    ): Long = 1L
+
     override suspend fun deleteContact(contactId: Long) = Unit
 
     override suspend fun mergeContacts(
         targetId: Long,
         sourceIds: List<Long>,
-    ) = Unit
+    ): com.m4isper.contactsapp.domain.model.ContactLink? = null
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -113,6 +126,9 @@ class ContactDetailsViewModelTest {
             getGroupMembership = GetGroupMembershipUseCase(groups),
             codec = codec,
         ),
+        GetContactAccountsUseCase(repository),
+        CopyContactToAccountUseCase(repository),
+        MoveContactToAccountUseCase(repository),
     )
 
     @Test
@@ -208,7 +224,7 @@ class ContactDetailsViewModelTest {
                     override suspend fun mergeContacts(
                         targetId: Long,
                         sourceIds: List<Long>,
-                    ) = Unit
+                    ): com.m4isper.contactsapp.domain.model.ContactLink? = null
                 }
             val viewModel =
                 ContactDetailsViewModel(
@@ -223,6 +239,9 @@ class ContactDetailsViewModelTest {
                         getGroupMembership = GetGroupMembershipUseCase(FakeGroupsRepository()),
                         codec = FakeVCardCodec(),
                     ),
+                    GetContactAccountsUseCase(repository),
+                    CopyContactToAccountUseCase(repository),
+                    MoveContactToAccountUseCase(repository),
                 )
             backgroundScope.launch { viewModel.uiState.collect { } }
 

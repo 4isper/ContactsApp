@@ -19,14 +19,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.presentation.common.Loadable
+import com.m4isper.contactsapp.presentation.common.account.contactAccountTitle
 import com.m4isper.contactsapp.presentation.common.call.ConfirmCallDialog
 import com.m4isper.contactsapp.presentation.common.call.rememberCallHandler
 import com.m4isper.contactsapp.presentation.common.format.phoneText
 import com.m4isper.contactsapp.presentation.common.share.copyToClipboard
 import com.m4isper.contactsapp.presentation.common.share.openSms
 import com.m4isper.contactsapp.presentation.common.share.shareContact
+import com.m4isper.contactsapp.presentation.editor.AccountPickerDialog
+import com.m4isper.contactsapp.ui.components.ConfirmDialog
 import com.m4isper.contactsapp.ui.components.EmptyState
 import com.m4isper.contactsapp.ui.components.ErrorState
 import com.m4isper.contactsapp.ui.components.LoadingState
@@ -37,6 +41,12 @@ private data class CallTarget(
     val name: String,
     val phone: PhoneNumber,
 )
+
+/** Что пользователь хочет сделать с аккаунтом контакта. */
+private enum class AccountAction {
+    COPY,
+    MOVE,
+}
 
 @Composable
 fun ContactDetailsScreen(
@@ -52,6 +62,9 @@ fun ContactDetailsScreen(
     val scope = rememberCoroutineScope()
 
     var pendingConfirm by remember { mutableStateOf<CallTarget?>(null) }
+    var showAccountPicker by remember { mutableStateOf(false) }
+    var pendingAction by remember { mutableStateOf<AccountAction?>(null) }
+    var pendingMoveAccount by remember { mutableStateOf<ContactAccount?>(null) }
 
     LaunchedEffect(contactId) {
         viewModel.load(contactId)
@@ -84,6 +97,14 @@ fun ContactDetailsScreen(
                     }
                 },
                 onToggleFavorite = viewModel::toggleFavorite,
+                onCopyToAccount = {
+                    pendingAction = AccountAction.COPY
+                    showAccountPicker = true
+                },
+                onMoveToAccount = {
+                    pendingAction = AccountAction.MOVE
+                    showAccountPicker = true
+                },
             )
         },
     ) { innerPadding ->
@@ -129,6 +150,82 @@ fun ContactDetailsScreen(
                 requestCall(target.phone.number)
             },
             onDismiss = { pendingConfirm = null },
+        )
+    }
+
+    // Смена аккаунта: выбор аккаунта и подтверждение переноса с удалением исходника.
+    DetailsEventToast(uiState.event, viewModel::onEventHandled)
+
+    AccountChangeDialogs(
+        uiState = uiState,
+        showAccountPicker = showAccountPicker,
+        pendingMoveAccount = pendingMoveAccount,
+        onAccountPicked = { account ->
+            showAccountPicker = false
+            when (pendingAction) {
+                AccountAction.COPY -> {
+                    pendingAction = null
+                    viewModel.onCopyToAccount(account)
+                }
+                AccountAction.MOVE -> pendingMoveAccount = account
+                null -> Unit
+            }
+        },
+        onPickerDismissed = { showAccountPicker = false },
+        onMoveConfirmed = { account ->
+            pendingMoveAccount = null
+            viewModel.onMoveToAccount(account)
+        },
+        onMoveDismissed = { pendingMoveAccount = null },
+    )
+}
+
+/** Одноразовые события карточки показываем тостом. */
+@Composable
+private fun DetailsEventToast(
+    event: DetailsEvent?,
+    onHandled: () -> Unit,
+) {
+    val context = LocalContext.current
+    LaunchedEffect(event) {
+        val messageRes =
+            when (event) {
+                is DetailsEvent.ContactCopied -> R.string.details_copy_done
+                is DetailsEvent.ContactMoved -> R.string.details_move_done
+                DetailsEvent.AccountActionFailed -> R.string.details_account_failed
+                null -> return@LaunchedEffect
+            }
+        Toast.makeText(context, messageRes, Toast.LENGTH_SHORT).show()
+        onHandled()
+    }
+}
+
+/** Диалоги смены аккаунта: выбор аккаунта и подтверждение переноса. */
+@Composable
+private fun AccountChangeDialogs(
+    uiState: DetailsUiState,
+    showAccountPicker: Boolean,
+    pendingMoveAccount: ContactAccount?,
+    onAccountPicked: (ContactAccount) -> Unit,
+    onPickerDismissed: () -> Unit,
+    onMoveConfirmed: (ContactAccount) -> Unit,
+    onMoveDismissed: () -> Unit,
+) {
+    if (showAccountPicker) {
+        AccountPickerDialog(
+            accounts = uiState.accounts,
+            selected = null,
+            onSelect = onAccountPicked,
+            onDismiss = onPickerDismissed,
+        )
+    }
+    pendingMoveAccount?.let { account ->
+        ConfirmDialog(
+            title = stringResource(R.string.details_move_confirm_title),
+            text = stringResource(R.string.details_move_confirm_text, contactAccountTitle(account)),
+            confirmLabel = stringResource(R.string.details_move_to_account),
+            onConfirm = { onMoveConfirmed(account) },
+            onDismiss = onMoveDismissed,
         )
     }
 }

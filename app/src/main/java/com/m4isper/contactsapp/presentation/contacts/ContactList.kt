@@ -73,6 +73,8 @@ internal fun ContactList(
     onSettingsClick: () -> Unit = {},
     onToggleFavorite: (Long) -> Unit = {},
     onToggleFavoriteSelected: () -> Unit = {},
+    profileContactId: Long? = null,
+    onProfileClick: (Long) -> Unit = {},
 ) {
     val context = LocalContext.current
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -178,6 +180,8 @@ internal fun ContactList(
                     onFavoritesOnlyChange = onFavoritesOnlyChange,
                     onImportClick = { vCardLaunchers.startImport(context) },
                     onExportClick = { vCardLaunchers.startExport() },
+                    profileContactId = profileContactId,
+                    onProfileClick = { profileContactId?.let { onProfileClick(it) } },
                     groups = groups,
                     selectedGroupId = uiState.selectedGroupId,
                     onGroupSelected = onGroupSelected,

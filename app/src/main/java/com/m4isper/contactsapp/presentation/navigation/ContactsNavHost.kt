@@ -11,8 +11,13 @@ import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
 import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
 import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.dropUnlessResumed
@@ -21,15 +26,19 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.StartRequest
 import com.m4isper.contactsapp.presentation.contacts.ContactsScreen
 import com.m4isper.contactsapp.presentation.details.ContactDetailsScreen
 import com.m4isper.contactsapp.presentation.duplicates.DuplicatesScreen
 import com.m4isper.contactsapp.presentation.editor.ContactEditorScreen
 import com.m4isper.contactsapp.presentation.groups.GroupsScreen
 import com.m4isper.contactsapp.presentation.import.ImportPreviewScreen
+import com.m4isper.contactsapp.presentation.import.ImportPreviewViewModel
+import com.m4isper.contactsapp.presentation.intent.StartAction
 import com.m4isper.contactsapp.presentation.recents.RecentsScreen
 import com.m4isper.contactsapp.presentation.settings.SettingsScreen
 import com.m4isper.contactsapp.ui.components.EmptyState
+import dev.zacsweers.metrox.viewmodel.metroViewModel
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -79,8 +88,14 @@ internal fun navigateToDetails(
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-fun ContactsNavHost(modifier: Modifier = Modifier) {
+fun ContactsNavHost(
+    modifier: Modifier = Modifier,
+    startRequest: StartRequest? = null,
+) {
+    val context = LocalContext.current
     val backStack = rememberNavBackStack(ContactsListKey)
+    val importViewModel: ImportPreviewViewModel = metroViewModel()
+    var pickMode by remember { mutableStateOf(false) }
 
     val windowAdaptiveInfo = currentWindowAdaptiveInfoV2()
     val directive =
@@ -89,6 +104,23 @@ fun ContactsNavHost(modifier: Modifier = Modifier) {
                 .copy(horizontalPartitionSpacerSize = 0.dp)
         }
     val listDetailStrategy = rememberListDetailSceneStrategy<NavKey>(directive = directive)
+
+    // Запуск из системы: открыть контакт, создать, выбрать или принять .vcf.
+    LaunchedEffect(startRequest?.id) {
+        when (val action = startRequest?.action) {
+            null,
+            StartAction.List,
+            -> Unit
+            is StartAction.OpenContact -> backStack.add(ContactDetailsKey(action.contactId))
+            is StartAction.EditContact -> backStack.add(ContactEditorKey(action.contactId))
+            StartAction.NewContact -> backStack.add(ContactEditorKey(null))
+            StartAction.PickContact -> pickMode = true
+            is StartAction.ImportVCard -> {
+                importViewModel.prepare(action.text)
+                backStack.add(ImportPreviewKey)
+            }
+        }
+    }
 
     // Непрозрачная подложка: прозрачные корни панелей не должны светить фоном окна.
     Surface(
@@ -117,7 +149,12 @@ fun ContactsNavHost(modifier: Modifier = Modifier) {
                     ) {
                         ContactsScreen(
                             onContactClick = { contactId ->
-                                navigateToDetails(backStack, contactId)
+                                if (pickMode) {
+                                    // Режим выбора: отдаём контакт запросившей программе.
+                                    context.pickContactResult(contactId)
+                                } else {
+                                    navigateToDetails(backStack, contactId)
+                                }
                             },
                             onAddClick = {
                                 backStack.add(ContactEditorKey(null))
@@ -136,6 +173,9 @@ fun ContactsNavHost(modifier: Modifier = Modifier) {
                             },
                             onImportPreviewReady = {
                                 backStack.add(ImportPreviewKey)
+                            },
+                            onProfileClick = { contactId ->
+                                navigateToDetails(backStack, contactId)
                             },
                         )
                     }

@@ -27,11 +27,11 @@ import com.m4isper.contactsapp.data.datasource.read.mapPhoneKind
 import com.m4isper.contactsapp.data.datasource.read.mapRelationKind
 import com.m4isper.contactsapp.data.datasource.read.mapSipKind
 import com.m4isper.contactsapp.data.datasource.read.mapWebsiteKind
-import com.m4isper.contactsapp.data.datasource.write.mergeContactForms
 import com.m4isper.contactsapp.data.format.birthdayFromString
 import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
+import com.m4isper.contactsapp.domain.model.ContactLink
 import com.m4isper.contactsapp.domain.model.EditableAddress
 import com.m4isper.contactsapp.domain.model.EditableBirthday
 import com.m4isper.contactsapp.domain.model.EditableEmail
@@ -119,22 +119,46 @@ class ContactsRepositoryImpl(
 
     override suspend fun loadContactPhoto(contactId: Long): ByteArray? = dataSource.loadContactPhoto(contactId)
 
+    override suspend fun getProfileContactId(): Long? = dataSource.loadProfileContactId()
+
+    override suspend fun copyContact(
+        contactId: Long,
+        account: ContactAccount,
+    ): Long {
+        val form = getContactForm(contactId) ?: error("no contact form for id=$contactId")
+        val newId = writer.createContact(form, account)
+        dataSource.loadContactPhoto(contactId)?.let { photo -> writer.setContactPhoto(newId, photo) }
+        return newId
+    }
+
+    override suspend fun moveContact(
+        contactId: Long,
+        account: ContactAccount,
+    ): Long {
+        val newId = copyContact(contactId, account)
+        writer.deleteContact(contactId)
+        return newId
+    }
+
     override suspend fun mergeContacts(
         targetId: Long,
         sourceIds: List<Long>,
-    ) {
-        if (sourceIds.isEmpty()) return
-        val sources =
+    ): ContactLink? {
+        val targetRawId = writer.loadRawContactId(targetId)
+        val sourceRawIds =
             sourceIds
                 .filter { it != targetId }
-                .mapNotNull { id -> getContactForm(id)?.let { id to it } }
-        if (sources.isEmpty()) return
-        val targetForm =
-            requireNotNull(getContactForm(targetId)) {
-                "No contact form for id=$targetId"
-            }
-        updateContact(targetId, mergeContactForms(targetForm, sources.map { it.second }))
-        sources.forEach { (id, _) -> deleteContact(id) }
+                .mapNotNull { id -> writer.loadRawContactId(id) }
+        return if (targetRawId != null && sourceRawIds.isNotEmpty()) {
+            writer.linkRawContacts(targetRawId, sourceRawIds)
+            ContactLink(targetRawContactId = targetRawId, sourceRawContactIds = sourceRawIds)
+        } else {
+            null
+        }
+    }
+
+    override suspend fun unmergeContacts(link: ContactLink) {
+        writer.unlinkRawContacts(link.targetRawContactId, link.sourceRawContactIds)
     }
 }
 

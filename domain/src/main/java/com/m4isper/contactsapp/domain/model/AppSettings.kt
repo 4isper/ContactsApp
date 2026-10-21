@@ -31,4 +31,6 @@ data class AppSettings(
     val favoritesFirst: Boolean = true,
     /** Последний аккаунт, выбранный при создании контакта. */
     val lastContactAccount: ContactAccount = ContactAccount.Local,
+    /** Аккаунт, в который попадают новые контакты; по умолчанию — локальный. */
+    val defaultContactAccount: ContactAccount = ContactAccount.Local,
 )

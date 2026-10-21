@@ -126,6 +126,16 @@ internal class FakeAndroidRepository(
         photo: ByteArray,
     ) = Unit
 
+    override suspend fun copyContact(
+        contactId: Long,
+        account: com.m4isper.contactsapp.domain.model.ContactAccount,
+    ): Long = 1L
+
+    override suspend fun moveContact(
+        contactId: Long,
+        account: com.m4isper.contactsapp.domain.model.ContactAccount,
+    ): Long = 1L
+
     override suspend fun deleteContact(contactId: Long) {
         failure?.let { throw it }
         deleted += contactId
@@ -134,10 +144,14 @@ internal class FakeAndroidRepository(
     override suspend fun mergeContacts(
         targetId: Long,
         sourceIds: List<Long>,
-    ) {
+    ): com.m4isper.contactsapp.domain.model.ContactLink? {
         failure?.let { throw it }
         merged += targetId to sourceIds
         contacts = contacts.filterNot { it.contactId in sourceIds }
+        return com.m4isper.contactsapp.domain.model.ContactLink(
+            targetRawContactId = targetId,
+            sourceRawContactIds = sourceIds,
+        )
     }
 
     override fun observeFavorites(): Flow<Set<Long>> = favoritesFlow.asStateFlow()

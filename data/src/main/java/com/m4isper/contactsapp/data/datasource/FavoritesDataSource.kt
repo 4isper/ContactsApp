@@ -9,4 +9,7 @@ interface FavoritesDataSource {
     suspend fun toggle(contactId: Long)
 
     suspend fun remove(contactId: Long)
+
+    /** Перечитать избранное: нужно после выдачи разрешения на контакты. */
+    suspend fun refresh()
 }

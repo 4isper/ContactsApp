@@ -16,6 +16,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Merge
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -25,12 +26,18 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -62,24 +69,39 @@ fun DuplicatesScreen(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    var pendingMerge by remember { mutableStateOf<PendingMerge?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.load()
     }
 
     LaunchedEffect(uiState.event) {
-        val messageRes =
-            when (uiState.event) {
-                DuplicatesEvent.Merged -> R.string.duplicates_merged
-                DuplicatesEvent.MergeFailed -> R.string.duplicates_action_failed
-                null -> return@LaunchedEffect
+        when (uiState.event) {
+            DuplicatesEvent.Merged -> {
+                val result =
+                    snackbarHostState.showSnackbar(
+                        message = context.getString(R.string.duplicates_merged),
+                        actionLabel = context.getString(R.string.duplicates_undo),
+                        duration = SnackbarDuration.Long,
+                    )
+                if (result == SnackbarResult.ActionPerformed) {
+                    viewModel.onUndoMerge()
+                }
             }
-        Toast.makeText(context, messageRes, Toast.LENGTH_SHORT).show()
+            DuplicatesEvent.Unmerged -> Toast.makeText(context, R.string.duplicates_unmerged, Toast.LENGTH_SHORT).show()
+            DuplicatesEvent.MergeFailed ->
+                Toast.makeText(context, R.string.duplicates_action_failed, Toast.LENGTH_SHORT).show()
+            DuplicatesEvent.UnmergeFailed ->
+                Toast.makeText(context, R.string.duplicates_action_failed, Toast.LENGTH_SHORT).show()
+            null -> Unit
+        }
         viewModel.onEventHandled()
     }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.duplicates_title)) },
@@ -119,18 +141,104 @@ fun DuplicatesScreen(
                 DuplicateGroupList(
                     groups = content.data,
                     merging = uiState.isMerging,
-                    onMerge = viewModel::onMerge,
+                    onMergePreview = { target, sources -> pendingMerge = PendingMerge(target, sources) },
                     modifier = screenModifier,
                 )
         }
     }
+
+    // Предпросмотр слияния: показываем, что добавится к основному контакту.
+    pendingMerge?.let { pending ->
+        MergePreviewDialog(
+            pending = pending,
+            onConfirm = {
+                pendingMerge = null
+                viewModel.onMerge(
+                    pending.target.contactId,
+                    pending.sources.map { it.contactId },
+                )
+            },
+            onDismiss = { pendingMerge = null },
+        )
+    }
 }
+
+/** Диалог предпросмотра: поля, которые появятся у основного контакта. */
+@Composable
+private fun MergePreviewDialog(
+    pending: PendingMerge,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val additions = mergeAdditions(pending.target, pending.sources)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.duplicates_preview_title)) },
+        text = {
+            Column {
+                Text(
+                    text = stringResource(R.string.duplicates_preview_additions, pending.target.name),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                if (additions.isEmpty()) {
+                    Text(
+                        text = stringResource(R.string.duplicates_preview_empty),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    additions.forEach { addition ->
+                        Text(
+                            text = addition.field.label() + ": " + addition.value,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                modifier = Modifier.testTag("merge_preview_confirm"),
+            ) {
+                Text(stringResource(R.string.action_merge))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.action_cancel))
+            }
+        },
+        modifier = Modifier.testTag("merge_preview_dialog"),
+    )
+}
+
+/** Подпись поля контакта в предпросмотре слияния. */
+@Composable
+private fun MergeField.label(): String =
+    when (this) {
+        MergeField.NAME -> stringResource(R.string.details_field_name)
+        MergeField.PHONE -> stringResource(R.string.details_field_phone)
+        MergeField.EMAIL -> stringResource(R.string.details_field_email)
+        MergeField.ADDRESS -> stringResource(R.string.details_field_address)
+        MergeField.WEBSITE -> stringResource(R.string.details_field_website)
+        MergeField.ORGANIZATION -> stringResource(R.string.details_field_organization)
+        MergeField.NOTE -> stringResource(R.string.details_field_note)
+        MergeField.BIRTHDAY -> stringResource(R.string.details_field_birthday)
+    }
+
+/** Слияние, ожидающее подтверждения: основной контакт и источники. */
+private data class PendingMerge(
+    val target: ContactDetails,
+    val sources: List<ContactDetails>,
+)
 
 @Composable
 private fun DuplicateGroupList(
     groups: List<DuplicateGroup>,
     merging: Boolean,
-    onMerge: (Long, List<Long>) -> Unit,
+    onMergePreview: (ContactDetails, List<ContactDetails>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val spacing = LocalSpacing.current
@@ -144,7 +252,7 @@ private fun DuplicateGroupList(
             DuplicateGroupCard(
                 group = group,
                 merging = merging,
-                onMerge = onMerge,
+                onMergePreview = onMergePreview,
                 modifier = Modifier.padding(horizontal = spacing.m, vertical = spacing.xs),
             )
         }
@@ -155,7 +263,7 @@ private fun DuplicateGroupList(
 private fun DuplicateGroupCard(
     group: DuplicateGroup,
     merging: Boolean,
-    onMerge: (Long, List<Long>) -> Unit,
+    onMergePreview: (ContactDetails, List<ContactDetails>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val spacing = LocalSpacing.current
@@ -207,7 +315,9 @@ private fun DuplicateGroupCard(
             ) {
                 FilledTonalButton(
                     onClick = {
-                        onMerge(primaryId, group.members.map { it.contactId }.filterNot { it == primaryId })
+                        val target = group.members.first { it.contactId == primaryId }
+                        val sources = group.members.filter { it.contactId != primaryId }
+                        onMergePreview(target, sources)
                     },
                     enabled = !merging,
                     modifier = Modifier.testTag("merge_group_${group.members.minOf { it.contactId }}"),

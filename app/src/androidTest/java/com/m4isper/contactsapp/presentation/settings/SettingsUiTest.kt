@@ -6,12 +6,15 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.m4isper.contactsapp.FakeAndroidRepository
 import com.m4isper.contactsapp.FakeSettingsRepository
 import com.m4isper.contactsapp.domain.model.AppSettings
 import com.m4isper.contactsapp.domain.model.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.ListDensity
 import com.m4isper.contactsapp.domain.model.ThemeMode
+import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
+import com.m4isper.contactsapp.domain.usecase.SetDefaultContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.SetFavoritesFirstUseCase
 import com.m4isper.contactsapp.domain.usecase.SetListDensityUseCase
 import com.m4isper.contactsapp.domain.usecase.SetSortOrderUseCase
@@ -34,6 +37,8 @@ class SettingsUiTest {
             SetSortOrderUseCase(repository),
             SetListDensityUseCase(repository),
             SetFavoritesFirstUseCase(repository),
+            SetDefaultContactAccountUseCase(repository),
+            GetContactAccountsUseCase(FakeAndroidRepository()),
         )
 
     @Test

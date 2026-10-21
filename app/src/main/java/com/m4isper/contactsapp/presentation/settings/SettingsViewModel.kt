@@ -3,10 +3,13 @@ package com.m4isper.contactsapp.presentation.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.m4isper.contactsapp.domain.model.AppSettings
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.ListDensity
 import com.m4isper.contactsapp.domain.model.ThemeMode
+import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
+import com.m4isper.contactsapp.domain.usecase.SetDefaultContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.SetFavoritesFirstUseCase
 import com.m4isper.contactsapp.domain.usecase.SetListDensityUseCase
 import com.m4isper.contactsapp.domain.usecase.SetSortOrderUseCase
@@ -18,9 +21,10 @@ import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -28,6 +32,8 @@ private const val SETTINGS_TAG = "SettingsScreen"
 
 data class SettingsUiState(
     val settings: AppSettings = AppSettings(),
+    /** Аккаунты, доступные для новых контактов. */
+    val accounts: List<ContactAccount> = emptyList(),
 )
 
 @Inject
@@ -39,15 +45,38 @@ class SettingsViewModel(
     private val setSortOrderUseCase: SetSortOrderUseCase,
     private val setListDensityUseCase: SetListDensityUseCase,
     private val setFavoritesFirstUseCase: SetFavoritesFirstUseCase,
+    private val setDefaultContactAccountUseCase: SetDefaultContactAccountUseCase,
+    private val getContactAccountsUseCase: GetContactAccountsUseCase,
 ) : ViewModel() {
+    private val accountsFlow = MutableStateFlow<List<ContactAccount>>(emptyList())
+
     val uiState: StateFlow<SettingsUiState> =
-        observeSettingsUseCase()
-            .map(::SettingsUiState)
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(SUBSCRIBE_TIMEOUT_MILLIS),
-                initialValue = SettingsUiState(),
-            )
+        combine(observeSettingsUseCase(), accountsFlow) { settings, accounts ->
+            SettingsUiState(settings = settings, accounts = accounts)
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(SUBSCRIBE_TIMEOUT_MILLIS),
+            initialValue = SettingsUiState(),
+        )
+
+    init {
+        loadAccounts()
+    }
+
+    /** Аккаунты для выбора аккаунта по умолчанию. */
+    @Suppress("TooGenericExceptionCaught") // Осознанно: без списка аккаунтов настройка остаётся локальной.
+    private fun loadAccounts() {
+        viewModelScope.launch {
+            try {
+                accountsFlow.value = getContactAccountsUseCase()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logw(SETTINGS_TAG, "load accounts failed", e)
+                accountsFlow.value = listOf(ContactAccount.Local)
+            }
+        }
+    }
 
     fun onThemeModeSelected(mode: ThemeMode) = update { setThemeModeUseCase(mode) }
 
@@ -56,6 +85,9 @@ class SettingsViewModel(
     fun onListDensitySelected(density: ListDensity) = update { setListDensityUseCase(density) }
 
     fun onFavoritesFirstChanged(enabled: Boolean) = update { setFavoritesFirstUseCase(enabled) }
+
+    /** Аккаунт по умолчанию для новых контактов. */
+    fun onDefaultAccountSelected(account: ContactAccount) = update { setDefaultContactAccountUseCase(account) }
 
     // Catch-all осознанный: ошибка записи настроек не должна ронять экран.
     @Suppress("TooGenericExceptionCaught")

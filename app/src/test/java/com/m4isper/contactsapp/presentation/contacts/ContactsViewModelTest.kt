@@ -29,9 +29,11 @@ import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetProfileContactIdUseCase
 import com.m4isper.contactsapp.domain.usecase.LoadContactPhotoUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
+import com.m4isper.contactsapp.domain.usecase.RefreshFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.RemoveFavoriteUseCase
 import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
@@ -127,6 +129,16 @@ private class FakeContactsRepository(
         photo: ByteArray,
     ) = Unit
 
+    override suspend fun copyContact(
+        contactId: Long,
+        account: com.m4isper.contactsapp.domain.model.ContactAccount,
+    ): Long = 1L
+
+    override suspend fun moveContact(
+        contactId: Long,
+        account: com.m4isper.contactsapp.domain.model.ContactAccount,
+    ): Long = 1L
+
     override suspend fun updateContact(
         contactId: Long,
         form: ContactForm,
@@ -142,9 +154,13 @@ private class FakeContactsRepository(
     override suspend fun mergeContacts(
         targetId: Long,
         sourceIds: List<Long>,
-    ) {
+    ): com.m4isper.contactsapp.domain.model.ContactLink? {
         failure?.let { throw it }
         contacts = contacts.filterNot { it.contactId in sourceIds }
+        return com.m4isper.contactsapp.domain.model.ContactLink(
+            targetRawContactId = targetId,
+            sourceRawContactIds = sourceIds,
+        )
     }
 }
 
@@ -183,6 +199,8 @@ class ContactsViewModelTest {
         AddContactsToGroupUseCase(groups),
         ToggleFavoriteUseCase(repository),
         RemoveFavoriteUseCase(repository),
+        RefreshFavoritesUseCase(repository),
+        GetProfileContactIdUseCase(repository),
         changes,
     )
 

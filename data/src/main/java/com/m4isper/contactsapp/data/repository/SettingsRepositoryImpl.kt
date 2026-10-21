@@ -30,4 +30,7 @@ class SettingsRepositoryImpl(
     override suspend fun setFavoritesFirst(enabled: Boolean) = dataSource.setFavoritesFirst(enabled)
 
     override suspend fun setLastContactAccount(account: ContactAccount) = dataSource.setLastContactAccount(account)
+
+    override suspend fun setDefaultContactAccount(account: ContactAccount) =
+        dataSource.setDefaultContactAccount(account)
 }

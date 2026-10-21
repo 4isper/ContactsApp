@@ -34,8 +34,8 @@ import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactFormUseCase
+import com.m4isper.contactsapp.domain.usecase.GetDefaultContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetLastContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.SetLastContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.UpdateContactUseCase
 import kotlinx.coroutines.Dispatchers
@@ -100,6 +100,16 @@ private class FakeEditorRepository :
         photo: ByteArray,
     ) = Unit
 
+    override suspend fun copyContact(
+        contactId: Long,
+        account: com.m4isper.contactsapp.domain.model.ContactAccount,
+    ): Long = 1L
+
+    override suspend fun moveContact(
+        contactId: Long,
+        account: com.m4isper.contactsapp.domain.model.ContactAccount,
+    ): Long = 1L
+
     override suspend fun deleteContact(contactId: Long) {
         deleted += contactId
         if (deleteFails) error("delete failed")
@@ -108,7 +118,7 @@ private class FakeEditorRepository :
     override suspend fun mergeContacts(
         targetId: Long,
         sourceIds: List<Long>,
-    ) = Unit
+    ): com.m4isper.contactsapp.domain.model.ContactLink? = null
 
     override fun observeFavorites(): Flow<Set<Long>> = MutableStateFlow(emptySet<Long>()).asStateFlow()
 
@@ -139,7 +149,7 @@ class ContactEditorViewModelTest {
                 CreateGroupUseCase(groups),
                 GetContactAccountsUseCase(repository),
                 GetContactAccountUseCase(repository),
-                GetLastContactAccountUseCase(settings),
+                GetDefaultContactAccountUseCase(settings),
                 SetLastContactAccountUseCase(settings),
             )
         backgroundScope.launch { viewModel.uiState.collect { } }
@@ -164,7 +174,7 @@ class ContactEditorViewModelTest {
         }
 
     @Test
-    fun `new contact starts from the last selected account`() =
+    fun `new contact starts from the default account`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val google = ContactAccount(name = "user@gmail.com", type = "com.google")
@@ -172,7 +182,7 @@ class ContactEditorViewModelTest {
                 FakeEditorRepository().apply {
                     accounts = listOf(ContactAccount.Local, google)
                 }
-            val settings = FakeSettingsRepository(AppSettings(lastContactAccount = google))
+            val settings = FakeSettingsRepository(AppSettings(defaultContactAccount = google))
             val viewModel = viewModel(repository, settings = settings)
 
             viewModel.load(null)
@@ -186,7 +196,7 @@ class ContactEditorViewModelTest {
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val google = ContactAccount(name = "user@gmail.com", type = "com.google")
-            val settings = FakeSettingsRepository(AppSettings(lastContactAccount = google))
+            val settings = FakeSettingsRepository(AppSettings(defaultContactAccount = google))
             val viewModel = viewModel(FakeEditorRepository(), settings = settings)
 
             viewModel.load(null)

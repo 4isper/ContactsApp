@@ -28,6 +28,7 @@ fun ContactsScreen(
     onRecentsClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onImportPreviewReady: () -> Unit,
+    onProfileClick: (Long) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ContactsViewModel = metroViewModel(),
 ) {
@@ -110,6 +111,8 @@ fun ContactsScreen(
             onSettingsClick = onSettingsClick,
             onToggleFavorite = viewModel::onToggleFavorite,
             onToggleFavoriteSelected = viewModel::onToggleSelectedFavorite,
+            profileContactId = uiState.profileContactId,
+            onProfileClick = { contactId -> onProfileClick(contactId) },
             modifier = modifier,
         )
     }

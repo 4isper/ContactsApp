@@ -29,12 +29,15 @@ import com.m4isper.contactsapp.domain.model.SipAddress
 import com.m4isper.contactsapp.domain.model.SipKind
 import com.m4isper.contactsapp.domain.model.Website
 import com.m4isper.contactsapp.domain.model.WebsiteKind
+import com.m4isper.contactsapp.domain.usecase.CopyContactToAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.ExportContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.LoadContactPhotoUseCase
+import com.m4isper.contactsapp.domain.usecase.MoveContactToAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
@@ -65,6 +68,9 @@ class ContactDetailsUiTest {
             getGroupMembership = GetGroupMembershipUseCase(groups),
             codec = FakeVCardCodec(),
         ),
+        GetContactAccountsUseCase(repository),
+        CopyContactToAccountUseCase(repository),
+        MoveContactToAccountUseCase(repository),
     )
 
     private fun awaitContent(viewModel: ContactDetailsViewModel) {

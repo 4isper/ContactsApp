@@ -42,6 +42,8 @@ private class FakeSettingsDataSource(
         favoritesFirstValues += enabled
     }
 
+    override suspend fun setDefaultContactAccount(account: ContactAccount) = Unit
+
     override suspend fun setLastContactAccount(account: ContactAccount) {
         lastContactAccounts += account
     }

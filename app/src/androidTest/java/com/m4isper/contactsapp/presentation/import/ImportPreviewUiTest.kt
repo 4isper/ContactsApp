@@ -41,7 +41,7 @@ class ImportPreviewUiTest {
         importContacts =
             ImportContactsUseCase(
                 createContact = CreateContactUseCase(repository),
-                mergeContacts = MergeContactsUseCase(repository, repository),
+                mergeContacts = MergeContactsUseCase(repository),
                 setContactPhoto = SetContactPhotoUseCase(repository),
                 addContactsToGroup = AddContactsToGroupUseCase(groups),
                 getGroups = GetGroupsUseCase(groups),

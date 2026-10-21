@@ -32,6 +32,7 @@ import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.presentation.common.account.contactAccountSubtitle
 import com.m4isper.contactsapp.presentation.common.account.contactAccountTitle
+import com.m4isper.contactsapp.presentation.common.account.testKey
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 
 /** Строка аккаунта: интерактивная для нового контакта, только для чтения у существующего. */
@@ -155,6 +156,3 @@ internal fun AccountPickerDialog(
         modifier = Modifier.testTag("account_picker_dialog"),
     )
 }
-
-/** Стабильный test tag: локальный аккаунт и пара type/name. */
-private fun ContactAccount.testKey(): String = if (isLocal) "local" else "${type.orEmpty()}/${name.orEmpty()}"

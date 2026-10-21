@@ -80,6 +80,21 @@
     <string name="event_type_anniversary">Anniversary</string>
     <string name="event_type_other">Other</string>
 
+    <string name="details_field_name">Name</string>
+    <string name="details_field_phone">Phone</string>
+    <string name="details_field_email">Email</string>
+    <string name="details_field_address">Address</string>
+    <string name="details_field_website">Website</string>
+    <string name="details_field_organization">Organization</string>
+    <string name="details_field_note">Note</string>
+    <string name="details_field_birthday">Birthday</string>
+    <string name="details_copy_to_account">Copy to another account</string>
+    <string name="details_move_to_account">Move to another account</string>
+    <string name="details_copy_done">Contact copied</string>
+    <string name="details_move_done">Contact moved</string>
+    <string name="details_account_failed">Couldn\'t change the account</string>
+    <string name="details_move_confirm_title">Move contact?</string>
+    <string name="details_move_confirm_text">The contact will be moved to %1$s. The original copy will be deleted.</string>
     <string name="contact_not_found">Contact not found</string>
     <string name="copied_to_clipboard">Copied</string>
     <string name="sms_failed">Couldn\'t open messaging</string>
@@ -148,6 +163,7 @@
     <string name="action_more">More actions</string>
     <string name="action_import">Import from file</string>
     <string name="action_export">Export to file</string>
+    <string name="contacts_my_profile">My profile</string>
     <string name="import_empty">No contacts found in the file</string>
     <string name="import_failed">Couldn\'t import contacts</string>
     <string name="import_no_permission">No permission to import contacts</string>
@@ -191,6 +207,11 @@
     <string name="duplicates_primary_label">Primary contact</string>
     <string name="duplicates_name_only_hint">Matched by name only — make sure this is the same person</string>
     <string name="duplicates_merged">Duplicates merged</string>
+    <string name="duplicates_unmerged">Merge undone</string>
+    <string name="duplicates_undo">Undo</string>
+    <string name="duplicates_preview_title">Merge preview</string>
+    <string name="duplicates_preview_additions">Will be added to %1$s:</string>
+    <string name="duplicates_preview_empty">No new fields</string>
     <string name="duplicates_action_failed">Couldn\'t merge duplicates</string>
     <string name="action_merge">Merge</string>
 
@@ -211,6 +232,7 @@
     <string name="settings_density_compact">Compact</string>
     <string name="settings_favorites">Favorites</string>
     <string name="settings_favorites_first">Favorites first</string>
+    <string name="settings_default_account">Default account</string>
     <string name="settings_favorites_first_desc">Pin favorites to the top when no filter is active</string>
 
     <string name="filter_groups">Groups</string>

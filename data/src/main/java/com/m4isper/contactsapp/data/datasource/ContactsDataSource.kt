@@ -17,4 +17,7 @@ interface ContactsDataSource {
 
     /** Фото контакта для экспорта; null, если фото нет. */
     suspend fun loadContactPhoto(contactId: Long): ByteArray? = null
+
+    /** id контакта «Мой профиль» из провайдера; null, если профиля нет. */
+    suspend fun loadProfileContactId(): Long? = null
 }

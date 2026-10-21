@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Merge
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.DropdownMenu
@@ -71,6 +72,8 @@ internal fun FilterHeader(
     onDuplicatesClick: () -> Unit = {},
     onRecentsClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
+    profileContactId: Long? = null,
+    onProfileClick: () -> Unit = {},
 ) {
     val spacing = LocalSpacing.current
     var menuOpen by remember { mutableStateOf(false) }
@@ -191,6 +194,22 @@ internal fun FilterHeader(
                         },
                         modifier = Modifier.testTag("export_menu_item"),
                     )
+                    if (profileContactId != null) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.contacts_my_profile)) },
+                            onClick = {
+                                menuOpen = false
+                                onProfileClick()
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Filled.Person,
+                                    contentDescription = null,
+                                )
+                            },
+                            modifier = Modifier.testTag("profile_menu_item"),
+                        )
+                    }
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.duplicates_menu)) },
                         onClick = {

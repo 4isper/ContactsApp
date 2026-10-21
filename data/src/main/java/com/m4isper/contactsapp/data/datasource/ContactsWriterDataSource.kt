@@ -29,4 +29,16 @@ interface ContactsWriterDataSource {
         contactId: Long,
         photo: ByteArray,
     )
+
+    /** Связывает raw-контакты: они агрегируются в один контакт. */
+    suspend fun linkRawContacts(
+        targetRawContactId: Long,
+        sourceRawContactIds: List<Long>,
+    )
+
+    /** Разрывает связь: контакты снова видны отдельно. */
+    suspend fun unlinkRawContacts(
+        targetRawContactId: Long,
+        sourceRawContactIds: List<Long>,
+    )
 }

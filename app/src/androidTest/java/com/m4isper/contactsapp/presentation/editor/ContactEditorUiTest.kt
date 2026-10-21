@@ -31,8 +31,8 @@ import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactFormUseCase
+import com.m4isper.contactsapp.domain.usecase.GetDefaultContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetLastContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.SetLastContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.UpdateContactUseCase
 import com.m4isper.contactsapp.testDetails
@@ -64,7 +64,7 @@ class ContactEditorUiTest {
         CreateGroupUseCase(groups),
         GetContactAccountsUseCase(repository),
         GetContactAccountUseCase(repository),
-        GetLastContactAccountUseCase(settings),
+        GetDefaultContactAccountUseCase(settings),
         SetLastContactAccountUseCase(settings),
     )
 

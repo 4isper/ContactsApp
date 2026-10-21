@@ -2,8 +2,10 @@ package com.m4isper.contactsapp.presentation.duplicates
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.m4isper.contactsapp.domain.model.ContactLink
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.MergeContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.UnmergeContactsUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.logw
 import com.m4isper.contactsapp.presentation.contacts.SUBSCRIBE_TIMEOUT_MILLIS
@@ -25,6 +27,8 @@ data class DuplicatesUiState(
     val content: Loadable<List<DuplicateGroup>> = Loadable.Loading,
     val isMerging: Boolean = false,
     val event: DuplicatesEvent? = null,
+    /** Связь последнего слияния: по ней слияние можно отменить. */
+    val lastLink: ContactLink? = null,
 )
 
 /** Одноразовые события экрана: тост об успешном или неудавшемся слиянии. */
@@ -32,6 +36,12 @@ sealed interface DuplicatesEvent {
     data object Merged : DuplicatesEvent
 
     data object MergeFailed : DuplicatesEvent
+
+    /** Слияние отменено: контакты снова видны отдельно. */
+    data object Unmerged : DuplicatesEvent
+
+    /** Отменить слияние не удалось. */
+    data object UnmergeFailed : DuplicatesEvent
 }
 
 @Inject
@@ -40,14 +50,16 @@ sealed interface DuplicatesEvent {
 class DuplicatesViewModel(
     private val getContactsUseCase: GetContactsUseCase,
     private val mergeContactsUseCase: MergeContactsUseCase,
+    private val unmergeContactsUseCase: UnmergeContactsUseCase,
 ) : ViewModel() {
     private val content = MutableStateFlow<Loadable<List<DuplicateGroup>>>(Loadable.Loading)
     private val isMerging = MutableStateFlow(false)
     private val event = MutableStateFlow<DuplicatesEvent?>(null)
+    private val lastLink = MutableStateFlow<ContactLink?>(null)
 
     val uiState: StateFlow<DuplicatesUiState> =
-        combine(content, isMerging, event) { loadable, merging, eventValue ->
-            DuplicatesUiState(content = loadable, isMerging = merging, event = eventValue)
+        combine(content, isMerging, event, lastLink) { loadable, merging, eventValue, link ->
+            DuplicatesUiState(content = loadable, isMerging = merging, event = eventValue, lastLink = link)
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(SUBSCRIBE_TIMEOUT_MILLIS),
@@ -80,13 +92,37 @@ class DuplicatesViewModel(
         viewModelScope.launch {
             isMerging.value = true
             try {
-                mergeContactsUseCase(targetId, sourceIds)
+                val link = mergeContactsUseCase(targetId, sourceIds)
+                lastLink.value = link
                 event.value = DuplicatesEvent.Merged
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 logw(DUPLICATES_TAG, "merge contacts failed", e)
                 event.value = DuplicatesEvent.MergeFailed
+            } finally {
+                isMerging.value = false
+            }
+            load()
+        }
+    }
+
+    /** Отменяет последнее слияние: контакты снова видны отдельно. */
+    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой отмены показываем тостом.
+    fun onUndoMerge() {
+        val link = lastLink.value ?: return
+        if (isMerging.value) return
+        viewModelScope.launch {
+            isMerging.value = true
+            try {
+                unmergeContactsUseCase(link)
+                lastLink.value = null
+                event.value = DuplicatesEvent.Unmerged
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logw(DUPLICATES_TAG, "unmerge contacts failed", e)
+                event.value = DuplicatesEvent.UnmergeFailed
             } finally {
                 isMerging.value = false
             }

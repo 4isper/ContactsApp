@@ -54,8 +54,10 @@ private class ImportFakeRepository(
     override suspend fun mergeContacts(
         targetId: Long,
         sourceIds: List<Long>,
-    ) {
+    ): com.m4isper.contactsapp.domain.model.ContactLink? {
         merged += targetId to sourceIds
+        return com.m4isper.contactsapp.domain.model
+            .ContactLink(targetId, sourceIds)
     }
 
     override suspend fun setContactPhoto(
@@ -119,7 +121,7 @@ private fun useCase(
     groups: ImportFakeGroupsRepository = ImportFakeGroupsRepository(),
 ) = ImportContactsUseCase(
     createContact = CreateContactUseCase(repository),
-    mergeContacts = MergeContactsUseCase(repository, ImportFakeFavoritesRepository()),
+    mergeContacts = MergeContactsUseCase(repository),
     setContactPhoto = SetContactPhotoUseCase(repository),
     addContactsToGroup = AddContactsToGroupUseCase(groups),
     getGroups = GetGroupsUseCase(groups),

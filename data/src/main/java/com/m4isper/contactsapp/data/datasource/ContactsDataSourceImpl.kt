@@ -107,6 +107,21 @@ class ContactsDataSourceImpl(
             readContactPhotoBytes(context.contentResolver, contactId)
         }
 
+    override suspend fun loadProfileContactId(): Long? =
+        withContext(Dispatchers.IO) {
+            val cursor =
+                context.contentResolver.query(
+                    ContactsContract.Profile.CONTENT_URI,
+                    arrayOf(ContactsContract.Profile._ID),
+                    null,
+                    null,
+                    null,
+                )
+            cursor?.use {
+                if (it.moveToFirst()) it.getLong(0) else null
+            }
+        }
+
     override suspend fun getContactAccounts(): List<ContactAccount> =
         withContext(Dispatchers.IO) {
             val contactTypes = contactSyncAccountTypes()

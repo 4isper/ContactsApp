@@ -60,6 +60,16 @@ private class RecordingRepository :
         photo: ByteArray,
     ) = Unit
 
+    override suspend fun copyContact(
+        contactId: Long,
+        account: com.m4isper.contactsapp.domain.model.ContactAccount,
+    ): Long = 1L
+
+    override suspend fun moveContact(
+        contactId: Long,
+        account: com.m4isper.contactsapp.domain.model.ContactAccount,
+    ): Long = 1L
+
     override suspend fun deleteContact(contactId: Long) {
         deleted += contactId
         if (contactId in failDeleteFor) throw RecordingException("delete failed for $contactId")
@@ -68,8 +78,12 @@ private class RecordingRepository :
     override suspend fun mergeContacts(
         targetId: Long,
         sourceIds: List<Long>,
-    ) {
+    ): com.m4isper.contactsapp.domain.model.ContactLink? {
         merged += targetId to sourceIds
+        return com.m4isper.contactsapp.domain.model.ContactLink(
+            targetRawContactId = targetId,
+            sourceRawContactIds = sourceIds,
+        )
     }
 
     override fun observeFavorites(): Flow<Set<Long>> = flowOf(emptySet())

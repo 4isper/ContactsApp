@@ -17,4 +17,7 @@ interface SettingsDataSource {
     suspend fun setFavoritesFirst(enabled: Boolean)
 
     suspend fun setLastContactAccount(account: ContactAccount)
+
+    /** Аккаунт по умолчанию для новых контактов. */
+    suspend fun setDefaultContactAccount(account: ContactAccount)
 }

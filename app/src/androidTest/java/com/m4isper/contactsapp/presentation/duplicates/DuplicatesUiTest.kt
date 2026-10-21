@@ -8,6 +8,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.m4isper.contactsapp.FakeAndroidRepository
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.MergeContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.UnmergeContactsUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.testDetails
 import org.junit.Assert.assertEquals
@@ -31,7 +32,8 @@ class DuplicatesUiTest {
     private fun viewModel(repository: FakeAndroidRepository) =
         DuplicatesViewModel(
             GetContactsUseCase(repository),
-            MergeContactsUseCase(repository, repository),
+            MergeContactsUseCase(repository),
+            UnmergeContactsUseCase(repository),
         )
 
     private fun awaitContent(viewModel: DuplicatesViewModel) {
@@ -64,6 +66,10 @@ class DuplicatesUiTest {
 
         compose.onNodeWithTag("duplicate_member_8").performClick()
         compose.onNodeWithTag("merge_group_7").performClick()
+
+        // Сначала предпросмотр: показываем, что добавится к основному контакту.
+        compose.onNodeWithTag("merge_preview_dialog").assertIsDisplayed()
+        compose.onNodeWithTag("merge_preview_confirm").performClick()
 
         compose.waitUntil(timeoutMillis = 5_000) { repository.merged.isNotEmpty() }
         assertEquals(listOf(8L to listOf(7L)), repository.merged)

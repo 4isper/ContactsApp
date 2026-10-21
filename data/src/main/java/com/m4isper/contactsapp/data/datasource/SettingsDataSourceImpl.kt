@@ -29,6 +29,8 @@ private val LIST_DENSITY = stringPreferencesKey("list_density")
 private val FAVORITES_FIRST = booleanPreferencesKey("favorites_first")
 private val LAST_ACCOUNT_NAME = stringPreferencesKey("last_contact_account_name")
 private val LAST_ACCOUNT_TYPE = stringPreferencesKey("last_contact_account_type")
+private val DEFAULT_ACCOUNT_NAME = stringPreferencesKey("default_contact_account_name")
+private val DEFAULT_ACCOUNT_TYPE = stringPreferencesKey("default_contact_account_type")
 
 /** Неизвестные значения (старая версия, битые данные) откатываются к дефолтам модели. */
 @Inject
@@ -48,6 +50,11 @@ class SettingsDataSourceImpl(
                     ContactAccount(
                         name = prefs[LAST_ACCOUNT_NAME],
                         type = prefs[LAST_ACCOUNT_TYPE],
+                    ),
+                defaultContactAccount =
+                    ContactAccount(
+                        name = prefs[DEFAULT_ACCOUNT_NAME],
+                        type = prefs[DEFAULT_ACCOUNT_TYPE],
                     ),
             )
         }
@@ -75,6 +82,17 @@ class SettingsDataSourceImpl(
             if (!account.isLocal) {
                 account.name?.let { prefs[LAST_ACCOUNT_NAME] = it }
                 account.type?.let { prefs[LAST_ACCOUNT_TYPE] = it }
+            }
+        }
+    }
+
+    override suspend fun setDefaultContactAccount(account: ContactAccount) {
+        context.settingsDataStore.edit { prefs ->
+            prefs.remove(DEFAULT_ACCOUNT_NAME)
+            prefs.remove(DEFAULT_ACCOUNT_TYPE)
+            if (!account.isLocal) {
+                account.name?.let { prefs[DEFAULT_ACCOUNT_NAME] = it }
+                account.type?.let { prefs[DEFAULT_ACCOUNT_TYPE] = it }
             }
         }
     }

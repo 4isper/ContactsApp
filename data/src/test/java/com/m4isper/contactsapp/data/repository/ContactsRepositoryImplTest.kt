@@ -30,6 +30,7 @@ import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
+import com.m4isper.contactsapp.domain.model.ContactLink
 import com.m4isper.contactsapp.domain.model.EditableName
 import com.m4isper.contactsapp.domain.model.EmailAddress
 import com.m4isper.contactsapp.domain.model.EmailKind
@@ -297,44 +298,76 @@ class ContactsRepositoryImplTest {
             )
         val repository = ContactsRepositoryImpl(FakeReader(byId = mapOf(7L to target, 8L to source)), writer)
 
-        runBlocking { repository.mergeContacts(targetId = 7, sourceIds = listOf(8)) }
+        val link = runBlocking { repository.mergeContacts(targetId = 7, sourceIds = listOf(8)) }
 
-        val update = writer.updated.single()
-        assertEquals(10L, update.rawContactId)
-        assertEquals(targetRows, update.rows)
-        assertEquals(listOf("+7111"), update.form.phones.map { it.number })
-        assertEquals(listOf("a@x.com"), update.form.emails.map { it.address })
-        assertNull(
-            update
-                .form
-                .emails
-                .single()
-                .rowId,
+        // Слияние связывает raw-контакты: источник остаётся в провайдере и может быть отделён.
+        assertEquals(listOf(10L to listOf(20L)), writer.linked)
+        assertEquals(
+            listOf(10L to listOf(20L)),
+            listOfNotNull(link?.let { it.targetRawContactId to it.sourceRawContactIds }),
         )
-        assertEquals(listOf(8L), writer.deleted)
+        assertTrue(writer.deleted.isEmpty())
     }
 
     @Test
     fun `merge ignores sources that no longer exist`() {
-        val writer = FakeWriter()
+        val writer = FakeWriter(rawContactIdsByContact = mapOf(7L to 10L))
         val repository = ContactsRepositoryImpl(FakeReader(details), writer)
 
-        runBlocking { repository.mergeContacts(targetId = 7, sourceIds = listOf(99)) }
+        val link = runBlocking { repository.mergeContacts(targetId = 7, sourceIds = listOf(99)) }
 
-        assertTrue(writer.updated.isEmpty())
+        assertNull(link)
+        assertTrue(writer.linked.isEmpty())
         assertTrue(writer.deleted.isEmpty())
     }
 
     @Test
-    fun `merge fails when the target is missing`() {
-        val writer = FakeWriter()
+    fun `merge returns nothing when the target is missing`() {
+        val writer = FakeWriter(rawContactIdsByContact = mapOf(8L to 20L))
         val source = ContactDetails(contactId = 8, name = "Bob")
         val repository = ContactsRepositoryImpl(FakeReader(byId = mapOf(8L to source)), writer)
 
-        assertThrows(IllegalArgumentException::class.java) {
-            runBlocking { repository.mergeContacts(targetId = 7, sourceIds = listOf(8)) }
-        }
+        val link = runBlocking { repository.mergeContacts(targetId = 7, sourceIds = listOf(8)) }
+
+        assertNull(link)
+        assertTrue(writer.linked.isEmpty())
         assertTrue(writer.deleted.isEmpty())
+    }
+
+    @Test
+    fun `copy creates the contact in the target account and keeps the source`() {
+        val google = ContactAccount(name = "user@gmail.com", type = "com.google")
+        val writer = FakeWriter(rawContactIdsByContact = mapOf(7L to 10L))
+        val repository = ContactsRepositoryImpl(FakeReader(details), writer)
+
+        val newId = runBlocking { repository.copyContact(contactId = 7, account = google) }
+
+        assertEquals(listOf(google), writer.createdAccounts)
+        assertEquals(1L, newId)
+        assertTrue(writer.deleted.isEmpty())
+    }
+
+    @Test
+    fun `move creates the copy and deletes the source`() {
+        val google = ContactAccount(name = "user@gmail.com", type = "com.google")
+        val writer = FakeWriter(rawContactIdsByContact = mapOf(7L to 10L))
+        val repository = ContactsRepositoryImpl(FakeReader(details), writer)
+
+        runBlocking { repository.moveContact(contactId = 7, account = google) }
+
+        assertEquals(listOf(google), writer.createdAccounts)
+        assertEquals(listOf(7L), writer.deleted)
+    }
+
+    @Test
+    fun `unmerge detaches the linked raw contacts`() {
+        val writer = FakeWriter()
+        val repository = ContactsRepositoryImpl(FakeReader(details), writer)
+        val link = ContactLink(targetRawContactId = 10L, sourceRawContactIds = listOf(20L))
+
+        runBlocking { repository.unmergeContacts(link) }
+
+        assertEquals(listOf(10L to listOf(20L)), writer.unlinked)
     }
 
     private fun name(
@@ -384,6 +417,8 @@ private class FakeWriter(
     val createdAccounts = mutableListOf<ContactAccount>()
     val updated = mutableListOf<UpdateCall>()
     val deleted = mutableListOf<Long>()
+    val linked = mutableListOf<Pair<Long, List<Long>>>()
+    val unlinked = mutableListOf<Pair<Long, List<Long>>>()
 
     override suspend fun createContact(
         form: ContactForm,
@@ -404,7 +439,22 @@ private class FakeWriter(
 
     override suspend fun loadContactRows(contactId: Long): ContactRows = rowsByContact[contactId] ?: rows
 
-    override suspend fun loadRawContactId(contactId: Long): Long? = rawContactIdsByContact[contactId] ?: rawContactId
+    override suspend fun loadRawContactId(contactId: Long): Long? =
+        rawContactIdsByContact[contactId] ?: if (rawContactIdsByContact.isEmpty()) rawContactId else null
+
+    override suspend fun linkRawContacts(
+        targetRawContactId: Long,
+        sourceRawContactIds: List<Long>,
+    ) {
+        linked += targetRawContactId to sourceRawContactIds
+    }
+
+    override suspend fun unlinkRawContacts(
+        targetRawContactId: Long,
+        sourceRawContactIds: List<Long>,
+    ) {
+        unlinked += targetRawContactId to sourceRawContactIds
+    }
 
     override suspend fun setContactPhoto(
         contactId: Long,

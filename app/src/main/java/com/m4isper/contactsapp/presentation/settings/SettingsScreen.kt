@@ -35,6 +35,8 @@ import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.ListDensity
 import com.m4isper.contactsapp.domain.model.ThemeMode
+import com.m4isper.contactsapp.presentation.common.account.contactAccountTitle
+import com.m4isper.contactsapp.presentation.common.account.testKey
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
@@ -115,6 +117,18 @@ fun SettingsScreen(
                     onCheckedChange = viewModel::onFavoritesFirstChanged,
                     testTag = "favorites_first_switch",
                 )
+            }
+            if (uiState.accounts.isNotEmpty()) {
+                SettingsSection(title = stringResource(R.string.settings_default_account)) {
+                    uiState.accounts.forEach { account ->
+                        SettingsOption(
+                            label = contactAccountTitle(account),
+                            selected = settings.defaultContactAccount == account,
+                            onSelect = { viewModel.onDefaultAccountSelected(account) },
+                            testTag = "default_account_${account.testKey()}",
+                        )
+                    }
+                }
             }
         }
     }

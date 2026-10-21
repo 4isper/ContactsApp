@@ -8,6 +8,7 @@ import com.m4isper.contactsapp.domain.repository.ContactsRepository
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.MergeContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.UnmergeContactsUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -62,15 +63,27 @@ private class FakeDuplicatesRepository(
         photo: ByteArray,
     ) = Unit
 
+    override suspend fun copyContact(
+        contactId: Long,
+        account: com.m4isper.contactsapp.domain.model.ContactAccount,
+    ): Long = 1L
+
+    override suspend fun moveContact(
+        contactId: Long,
+        account: com.m4isper.contactsapp.domain.model.ContactAccount,
+    ): Long = 1L
+
     override suspend fun deleteContact(contactId: Long) = Unit
 
     override suspend fun mergeContacts(
         targetId: Long,
         sourceIds: List<Long>,
-    ) {
+    ): com.m4isper.contactsapp.domain.model.ContactLink? {
         mergeFailure?.let { throw it }
         merged += targetId to sourceIds
         contacts = contacts.filterNot { it.contactId in sourceIds }
+        return com.m4isper.contactsapp.domain.model
+            .ContactLink(targetId, sourceIds)
     }
 
     override fun observeFavorites(): Flow<Set<Long>> = favoritesFlow.asStateFlow()
@@ -94,7 +107,8 @@ class DuplicatesViewModelTest {
     private fun viewModel(repository: FakeDuplicatesRepository) =
         DuplicatesViewModel(
             GetContactsUseCase(repository),
-            MergeContactsUseCase(repository, repository),
+            MergeContactsUseCase(repository),
+            UnmergeContactsUseCase(repository),
         )
 
     @Test
@@ -165,7 +179,7 @@ class DuplicatesViewModelTest {
         }
 
     @Test
-    fun `merge keeps favorite status of sources on the target`() =
+    fun `merge keeps the link for the undo`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val repository = FakeDuplicatesRepository(contacts = duplicatePair(), initialFavorites = setOf(8L))
@@ -175,7 +189,31 @@ class DuplicatesViewModelTest {
             viewModel.onMerge(targetId = 7, sourceIds = listOf(8))
             advanceUntilIdle()
 
-            assertEquals(setOf(7L), repository.favoritesFlow.value)
+            // Звезда хранится в провайдере: слияние её не трогает.
+            assertEquals(setOf(8L), repository.favoritesFlow.value)
+            assertEquals(
+                1,
+                viewModel.uiState.value.lastLink
+                    ?.sourceRawContactIds
+                    ?.size,
+            )
+        }
+
+    @Test
+    fun `undo detaches the merged contacts`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeDuplicatesRepository(contacts = duplicatePair())
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+
+            viewModel.onMerge(targetId = 7, sourceIds = listOf(8))
+            advanceUntilIdle()
+            viewModel.onUndoMerge()
+            advanceUntilIdle()
+
+            assertEquals(DuplicatesEvent.Unmerged, viewModel.uiState.value.event)
+            assertEquals(null, viewModel.uiState.value.lastLink)
         }
 
     @Test

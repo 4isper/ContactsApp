@@ -67,7 +67,7 @@ private class PreviewContactsRepository(
     override suspend fun mergeContacts(
         targetId: Long,
         sourceIds: List<Long>,
-    ) = Unit
+    ): com.m4isper.contactsapp.domain.model.ContactLink? = null
 
     override fun observeFavorites(): Flow<Set<Long>> = favorites.asStateFlow()
 
@@ -79,6 +79,16 @@ private class PreviewContactsRepository(
         contactId: Long,
         photo: ByteArray,
     ) = Unit
+
+    override suspend fun copyContact(
+        contactId: Long,
+        account: com.m4isper.contactsapp.domain.model.ContactAccount,
+    ): Long = 1L
+
+    override suspend fun moveContact(
+        contactId: Long,
+        account: com.m4isper.contactsapp.domain.model.ContactAccount,
+    ): Long = 1L
 }
 
 private fun form(name: String) = ContactForm(name = EditableName(display = name))
@@ -101,7 +111,7 @@ class ImportPreviewViewModelTest {
         importContacts =
             ImportContactsUseCase(
                 createContact = CreateContactUseCase(repository),
-                mergeContacts = MergeContactsUseCase(repository, repository),
+                mergeContacts = MergeContactsUseCase(repository),
                 setContactPhoto = SetContactPhotoUseCase(repository),
                 addContactsToGroup = AddContactsToGroupUseCase(groups),
                 getGroups = GetGroupsUseCase(groups),
