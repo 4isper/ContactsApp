@@ -102,6 +102,7 @@ fun ContactsNavHost(
     val backStack = rememberNavBackStack(ContactsListKey)
     val importViewModel: ImportPreviewViewModel = metroViewModel()
     var pickMode by remember { mutableStateOf(false) }
+    var showFavorites by remember { mutableStateOf(false) }
 
     val windowAdaptiveInfo = currentWindowAdaptiveInfoV2()
     val directive =
@@ -121,6 +122,7 @@ fun ContactsNavHost(
             is StartAction.EditContact -> backStack.add(ContactEditorKey(action.contactId))
             StartAction.NewContact -> backStack.add(ContactEditorKey(null))
             StartAction.PickContact -> pickMode = true
+            StartAction.ShowFavorites -> showFavorites = true
             is StartAction.ImportVCard -> {
                 importViewModel.prepare(action.text)
                 backStack.add(ImportPreviewKey)
@@ -154,6 +156,7 @@ fun ContactsNavHost(
                             ),
                     ) {
                         ContactsScreen(
+                            showFavorites = showFavorites,
                             onContactClick = { contactId ->
                                 if (pickMode) {
                                     // Режим выбора: отдаём контакт запросившей программе.

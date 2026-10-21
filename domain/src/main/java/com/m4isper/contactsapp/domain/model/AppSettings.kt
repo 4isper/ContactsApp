@@ -45,4 +45,13 @@ data class AppSettings(
     val appLockPinHash: String = "",
     /** Скрывать содержимое окна в списке недавних задач. */
     val secureWindow: Boolean = false,
-)
+    /** Напоминать о днях рождения и событиях. */
+    val remindersEnabled: Boolean = false,
+    /** За сколько дней предупреждать о дне рождения. */
+    val reminderLeadDays: Int = DEFAULT_REMINDER_LEAD_DAYS,
+) {
+    companion object {
+        /** Напоминание за неделю до праздника. */
+        const val DEFAULT_REMINDER_LEAD_DAYS = 7
+    }
+}

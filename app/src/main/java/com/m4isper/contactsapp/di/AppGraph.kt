@@ -2,6 +2,10 @@ package com.m4isper.contactsapp.di
 
 import android.app.Application
 import android.content.Context
+import com.m4isper.contactsapp.domain.repository.ContactsRepository
+import com.m4isper.contactsapp.domain.repository.SettingsRepository
+import com.m4isper.contactsapp.presentation.reminders.BirthdayReminderScheduler
+import com.m4isper.contactsapp.presentation.reminders.ReminderScheduler
 import com.m4isper.contactsapp.presentation.settings.AppLanguageStore
 import com.m4isper.contactsapp.presentation.settings.SharedPrefsAppLanguageStore
 import dev.zacsweers.metro.AppScope
@@ -11,11 +15,18 @@ import dev.zacsweers.metrox.viewmodel.ViewModelGraph
 
 @DependencyGraph(AppScope::class)
 interface AppGraph : ViewModelGraph {
+    /** Репозитории для фоновых задач: напоминания читают контакты и настройки. */
+    val contactsRepository: ContactsRepository
+    val settingsRepository: SettingsRepository
+
     @Provides
     fun provideContext(application: Application): Context = application.applicationContext
 
     @Provides
     fun provideAppLanguageStore(application: Application): AppLanguageStore = SharedPrefsAppLanguageStore(application)
+
+    @Provides
+    fun provideReminderScheduler(application: Application): ReminderScheduler = BirthdayReminderScheduler(application)
 
     @DependencyGraph.Factory
     fun interface Factory {

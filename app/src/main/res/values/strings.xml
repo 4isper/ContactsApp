@@ -249,6 +249,16 @@
     <string name="action_reset">Reset</string>
     <string name="app_lock_pin_repeat">Repeat the PIN code</string>
     <string name="app_lock_pin_mismatch">The PIN codes do not match</string>
+    <string name="reminders_channel_name">Reminders</string>
+    <string name="reminders_notification_title">Upcoming: %1$d</string>
+    <string name="reminders_birthday">birthday</string>
+    <string name="reminders_event">event</string>
+    <string name="settings_reminders">Reminders</string>
+    <string name="settings_reminders_desc">Notify about upcoming birthdays and events</string>
+    <string name="settings_reminder_lead">Remind in advance</string>
+    <string name="settings_reminder_lead_value">%1$d days before</string>
+    <string name="shortcut_new_contact">New contact</string>
+    <string name="shortcut_favorites">Favorites</string>
     <string name="settings_title">Settings</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_theme_system">System</string>

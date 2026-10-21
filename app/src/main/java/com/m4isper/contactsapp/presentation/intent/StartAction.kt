@@ -29,6 +29,9 @@ sealed interface StartAction {
     /** Выбрать контакт для программы, которая запросила выбор. */
     data object PickContact : StartAction
 
+    /** Открыть список избранного: ярлык приложения. */
+    data object ShowFavorites : StartAction
+
     /** Принять .vcf: показать предпросмотр импорта. */
     data class ImportVCard(
         val text: String,
@@ -46,6 +49,8 @@ internal fun startActionOf(
         Intent.ACTION_EDIT -> editActionOf(intent)
         Intent.ACTION_INSERT -> StartAction.NewContact
         Intent.ACTION_PICK -> StartAction.PickContact
+        ACTION_SHOW_FAVORITES -> StartAction.ShowFavorites
+        ACTION_NEW_CONTACT -> StartAction.NewContact
         Intent.ACTION_SEND -> sendActionOf(intent, resolver)
         else -> StartAction.List
     }
@@ -116,6 +121,12 @@ private fun Uri.readText(resolver: ContentResolver): String =
     runCatching {
         resolver.openInputStream(this)?.bufferedReader()?.use { it.readText() }
     }.getOrNull().orEmpty()
+
+/** Действие ярлыка «Избранное». */
+const val ACTION_SHOW_FAVORITES = "com.m4isper.contactsapp.action.SHOW_FAVORITES"
+
+/** Действие ярлыка «Новый контакт». */
+const val ACTION_NEW_CONTACT = "com.m4isper.contactsapp.action.NEW_CONTACT"
 
 private val VCARD_MIME_TYPES =
     setOf(

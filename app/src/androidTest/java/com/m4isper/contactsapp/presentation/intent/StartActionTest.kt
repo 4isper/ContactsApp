@@ -93,6 +93,15 @@ class StartActionTest {
     }
 
     @Test
+    fun shortcut_actions_are_recognized() {
+        val newContact = Intent(ACTION_NEW_CONTACT)
+        val favorites = Intent(ACTION_SHOW_FAVORITES)
+
+        assertEquals(StartAction.NewContact, startActionOf(newContact, resolver))
+        assertEquals(StartAction.ShowFavorites, startActionOf(favorites, resolver))
+    }
+
+    @Test
     fun unknown_intent_opens_the_list() {
         assertEquals(StartAction.List, startActionOf(Intent(Intent.ACTION_MAIN), resolver))
         assertEquals(StartAction.List, startActionOf(null, resolver))

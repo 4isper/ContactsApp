@@ -62,6 +62,11 @@ private class FakeSettingsDataSource(
     override suspend fun setSecureWindow(enabled: Boolean) = Unit
 
     override suspend fun resetSettings() = Unit
+
+    override suspend fun setReminders(
+        enabled: Boolean,
+        leadDays: Int,
+    ) = Unit
 }
 
 class SettingsRepositoryImplTest {

@@ -383,6 +383,11 @@ class ContactsViewModel(
         searchQueryFlow.value = query
     }
 
+    /** Включает фильтр избранного (без переключения). */
+    fun onShowFavoritesOnly() {
+        if (!favoritesOnlyFlow.value) favoritesOnlyFlow.value = true
+    }
+
     fun onToggleFavoritesOnly() {
         selectionFlow.value = emptySet()
         favoritesOnlyFlow.value = !favoritesOnlyFlow.value

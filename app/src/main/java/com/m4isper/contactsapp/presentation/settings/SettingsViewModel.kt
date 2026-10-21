@@ -16,12 +16,14 @@ import com.m4isper.contactsapp.domain.usecase.SetDefaultContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.SetDynamicColorUseCase
 import com.m4isper.contactsapp.domain.usecase.SetFavoritesFirstUseCase
 import com.m4isper.contactsapp.domain.usecase.SetListDensityUseCase
+import com.m4isper.contactsapp.domain.usecase.SetRemindersUseCase
 import com.m4isper.contactsapp.domain.usecase.SetSecureWindowUseCase
 import com.m4isper.contactsapp.domain.usecase.SetShowPhotosUseCase
 import com.m4isper.contactsapp.domain.usecase.SetSortOrderUseCase
 import com.m4isper.contactsapp.domain.usecase.SetThemeModeUseCase
 import com.m4isper.contactsapp.presentation.common.logw
 import com.m4isper.contactsapp.presentation.contacts.SUBSCRIBE_TIMEOUT_MILLIS
+import com.m4isper.contactsapp.presentation.reminders.ReminderScheduler
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
@@ -61,7 +63,9 @@ class SettingsViewModel(
     private val setAppLockUseCase: SetAppLockUseCase,
     private val setSecureWindowUseCase: SetSecureWindowUseCase,
     private val resetSettingsUseCase: ResetSettingsUseCase,
+    private val setRemindersUseCase: SetRemindersUseCase,
     private val languageStore: AppLanguageStore,
+    private val reminderScheduler: ReminderScheduler,
 ) : ViewModel() {
     private val accountsFlow = MutableStateFlow<List<ContactAccount>>(emptyList())
 
@@ -126,11 +130,25 @@ class SettingsViewModel(
     /** Скрывать содержимое окна в недавних задачах. */
     fun onSecureWindowChanged(enabled: Boolean) = update { setSecureWindowUseCase(enabled) }
 
+    /** Напоминания о днях рождения: включение и планирование будильника. */
+    fun onRemindersChanged(
+        enabled: Boolean,
+        leadDays: Int,
+    ) = update {
+        setRemindersUseCase(enabled, leadDays)
+        if (enabled) {
+            reminderScheduler.schedule()
+        } else {
+            reminderScheduler.cancel()
+        }
+    }
+
     /** Вернуть настройки к значениям по умолчанию. */
     fun onResetSettings() =
         update {
             languageStore.language = ""
             resetSettingsUseCase()
+            reminderScheduler.cancel()
         }
 
     // Catch-all осознанный: ошибка записи настроек не должна ронять экран.

@@ -25,10 +25,12 @@ import com.m4isper.contactsapp.domain.usecase.SetDefaultContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.SetDynamicColorUseCase
 import com.m4isper.contactsapp.domain.usecase.SetFavoritesFirstUseCase
 import com.m4isper.contactsapp.domain.usecase.SetListDensityUseCase
+import com.m4isper.contactsapp.domain.usecase.SetRemindersUseCase
 import com.m4isper.contactsapp.domain.usecase.SetSecureWindowUseCase
 import com.m4isper.contactsapp.domain.usecase.SetShowPhotosUseCase
 import com.m4isper.contactsapp.domain.usecase.SetSortOrderUseCase
 import com.m4isper.contactsapp.domain.usecase.SetThemeModeUseCase
+import com.m4isper.contactsapp.presentation.reminders.BirthdayReminderScheduler
 import com.m4isper.contactsapp.presentation.settings.SharedPrefsAppLanguageStore
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -56,7 +58,9 @@ class SettingsUiTest {
             SetAppLockUseCase(repository),
             SetSecureWindowUseCase(repository),
             ResetSettingsUseCase(repository),
+            SetRemindersUseCase(repository),
             SharedPrefsAppLanguageStore(InstrumentationRegistry.getInstrumentation().targetContext),
+            BirthdayReminderScheduler(InstrumentationRegistry.getInstrumentation().targetContext),
         )
 
     @Test

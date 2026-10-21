@@ -50,5 +50,10 @@ class SettingsRepositoryImpl(
 
     override suspend fun setSecureWindow(enabled: Boolean) = dataSource.setSecureWindow(enabled)
 
+    override suspend fun setReminders(
+        enabled: Boolean,
+        leadDays: Int,
+    ) = dataSource.setReminders(enabled, leadDays)
+
     override suspend fun resetSettings() = dataSource.resetSettings()
 }

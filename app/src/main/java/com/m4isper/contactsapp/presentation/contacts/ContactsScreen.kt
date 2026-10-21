@@ -5,6 +5,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,10 +31,16 @@ fun ContactsScreen(
     onImportPreviewReady: () -> Unit,
     onProfileClick: (Long) -> Unit,
     modifier: Modifier = Modifier,
+    showFavorites: Boolean = false,
     viewModel: ContactsViewModel = metroViewModel(),
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(showFavorites) {
+        // Ярлык «Избранное» сразу включает фильтр избранного.
+        if (showFavorites) viewModel.onShowFavoritesOnly()
+    }
     val importViewModel: ImportPreviewViewModel = metroViewModel()
 
     var hasReadPermission by remember {

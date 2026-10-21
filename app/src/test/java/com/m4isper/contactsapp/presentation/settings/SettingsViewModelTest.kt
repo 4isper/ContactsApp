@@ -14,10 +14,12 @@ import com.m4isper.contactsapp.domain.usecase.SetDefaultContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.SetDynamicColorUseCase
 import com.m4isper.contactsapp.domain.usecase.SetFavoritesFirstUseCase
 import com.m4isper.contactsapp.domain.usecase.SetListDensityUseCase
+import com.m4isper.contactsapp.domain.usecase.SetRemindersUseCase
 import com.m4isper.contactsapp.domain.usecase.SetSecureWindowUseCase
 import com.m4isper.contactsapp.domain.usecase.SetShowPhotosUseCase
 import com.m4isper.contactsapp.domain.usecase.SetSortOrderUseCase
 import com.m4isper.contactsapp.domain.usecase.SetThemeModeUseCase
+import com.m4isper.contactsapp.presentation.reminders.ReminderScheduler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -64,6 +66,19 @@ private class FakeAppLanguageStore : AppLanguageStore {
     override var language: String = ""
 }
 
+/** Планировщик напоминаний без AlarmManager: достаточно отметить, что будильник поставлен. */
+private class FakeReminderScheduler : ReminderScheduler {
+    var scheduled = false
+
+    override fun schedule() {
+        scheduled = true
+    }
+
+    override fun cancel() {
+        scheduled = false
+    }
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingsViewModelTest {
     @After
@@ -86,7 +101,9 @@ class SettingsViewModelTest {
             SetAppLockUseCase(repository),
             SetSecureWindowUseCase(repository),
             ResetSettingsUseCase(repository),
+            SetRemindersUseCase(repository),
             FakeAppLanguageStore(),
+            FakeReminderScheduler(),
         )
 
     @Test

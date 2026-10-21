@@ -45,6 +45,12 @@ interface SettingsRepository {
     /** Скрывать содержимое окна в недавних задачах. */
     suspend fun setSecureWindow(enabled: Boolean) = Unit
 
+    /** Напоминать о днях рождения и событиях. */
+    suspend fun setReminders(
+        enabled: Boolean,
+        leadDays: Int,
+    ) = Unit
+
     /** Вернуть настройки к значениям по умолчанию. */
     suspend fun resetSettings() = Unit
 }

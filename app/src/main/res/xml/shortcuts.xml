@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutId="new_contact"
+        android:shortcutLongLabel="@string/shortcut_new_contact"
+        android:shortcutShortLabel="@string/shortcut_new_contact">
+        <intent
+            android:action="com.m4isper.contactsapp.action.NEW_CONTACT"
+            android:targetClass="com.m4isper.contactsapp.MainActivity"
+            android:targetPackage="com.m4isper.contactsapp" />
+    </shortcut>
+    <shortcut
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutId="favorites"
+        android:shortcutLongLabel="@string/shortcut_favorites"
+        android:shortcutShortLabel="@string/shortcut_favorites">
+        <intent
+            android:action="com.m4isper.contactsapp.action.SHOW_FAVORITES"
+            android:targetClass="com.m4isper.contactsapp.MainActivity"
+            android:targetPackage="com.m4isper.contactsapp" />
+    </shortcut>
+</shortcuts>
