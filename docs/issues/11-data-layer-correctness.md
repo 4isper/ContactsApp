@@ -25,13 +25,11 @@ There are three data-layer correctness issues:
 - [x] A group merge either completes fully or leaves the provider in a consistent state.
 - [x] Failure-path tests cover a failed add/delete and verify cleanup or rollback.
 - [x] No production-dead merge plan remains; tests exercise the real merge path.
-- [ ] Favorites and group operations remain covered by unit/instrumentation tests.
+- [x] Favorites and group operations remain covered by unit/instrumentation tests.
 
 ## Status
 
-Done, except the last point: the favorites provider itself is still covered only indirectly
-(by UI tests), because a unit test of `ContentResolver` needs a fake provider or Robolectric —
-that work is tracked in issue 17.
+Done.
 
 What changed:
 
@@ -49,6 +47,12 @@ What changed:
   (aggregation exceptions), so the aggregated contact already shows the data of both sides and
   writing merged forms into the target would duplicate it. The real merge path is covered by
   `ContactsRepositoryImplTest`.
+- The sources of the provider are covered on the level of the provider: the tests of the data
+  module run on Robolectric with a contacts provider in memory. So the favorites (the starred
+  rows are written, read back and removed), the groups (the group is created, renamed, the
+  membership is added and removed, the merge moves the members and deletes the source group) and
+  the settings (the value is written, read back and reset) are checked without a phone. The
+  contacts are covered by the instrumentation tests, they need the real provider.
 
 ## Technical notes
 

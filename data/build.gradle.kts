@@ -17,6 +17,13 @@ android {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
+
+    testOptions {
+        unitTests {
+            // Robolectric нужны ресурсы и манифест модуля.
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
@@ -24,4 +31,6 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.androidx.datastore.preferences)
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
 }
