@@ -5,14 +5,28 @@ import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.ListDensity
 import com.m4isper.contactsapp.domain.model.ThemeMode
-import com.m4isper.contactsapp.domain.repository.SettingsRepository
+import com.m4isper.contactsapp.domain.repository.AccountSettings
+import com.m4isper.contactsapp.domain.repository.AppearanceSettings
+import com.m4isper.contactsapp.domain.repository.LanguageSettings
+import com.m4isper.contactsapp.domain.repository.ListSettings
+import com.m4isper.contactsapp.domain.repository.PrivacySettings
+import com.m4isper.contactsapp.domain.repository.ReminderSettings
+import com.m4isper.contactsapp.domain.repository.SettingsMaintenance
+import com.m4isper.contactsapp.domain.repository.SettingsReader
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 /** Фейк репозитория настроек: in-memory состояние и запись вызовов для проверок. */
 class FakeSettingsRepository(
     initial: AppSettings = AppSettings(),
-) : SettingsRepository {
+) : SettingsReader,
+    AppearanceSettings,
+    ListSettings,
+    AccountSettings,
+    LanguageSettings,
+    PrivacySettings,
+    ReminderSettings,
+    SettingsMaintenance {
     private val state = MutableStateFlow(initial)
 
     /** Текущие настройки; тесты могут менять их отсюда, чтобы проверить реакцию UI. */
@@ -29,6 +43,7 @@ class FakeSettingsRepository(
     val showPhotosValues = mutableListOf<Boolean>()
     val appLocks = mutableListOf<Pair<Boolean, String>>()
     val secureWindowValues = mutableListOf<Boolean>()
+    val reminderValues = mutableListOf<Pair<Boolean, Int>>()
     var resetCalled = false
 
     override fun observeSettings(): StateFlow<AppSettings> = state
@@ -89,6 +104,14 @@ class FakeSettingsRepository(
     override suspend fun setSecureWindow(enabled: Boolean) {
         secureWindowValues += enabled
         state.value = state.value.copy(secureWindow = enabled)
+    }
+
+    override suspend fun setReminders(
+        enabled: Boolean,
+        leadDays: Int,
+    ) {
+        reminderValues += enabled to leadDays
+        state.value = state.value.copy(remindersEnabled = enabled, reminderLeadDays = leadDays)
     }
 
     override suspend fun resetSettings() {

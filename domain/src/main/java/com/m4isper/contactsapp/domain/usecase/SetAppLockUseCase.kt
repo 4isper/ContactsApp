@@ -1,7 +1,7 @@
 package com.m4isper.contactsapp.domain.usecase
 
 import com.m4isper.contactsapp.domain.model.hashAppLockPin
-import com.m4isper.contactsapp.domain.repository.SettingsRepository
+import com.m4isper.contactsapp.domain.repository.PrivacySettings
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -9,7 +9,7 @@ import kotlinx.coroutines.withContext
 /** Защита приложения: вкл/выкл и PIN-код (в настройки попадает только хэш). */
 @Inject
 class SetAppLockUseCase(
-    private val repository: SettingsRepository,
+    private val repository: PrivacySettings,
 ) {
     suspend operator fun invoke(
         enabled: Boolean,

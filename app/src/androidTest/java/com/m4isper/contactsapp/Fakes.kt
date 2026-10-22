@@ -19,6 +19,8 @@ import com.m4isper.contactsapp.domain.model.ListDensity
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.model.ThemeMode
+import com.m4isper.contactsapp.domain.repository.AccountSettings
+import com.m4isper.contactsapp.domain.repository.AppearanceSettings
 import com.m4isper.contactsapp.domain.repository.ContactsAccounts
 import com.m4isper.contactsapp.domain.repository.ContactsChangeSource
 import com.m4isper.contactsapp.domain.repository.ContactsMerger
@@ -26,7 +28,12 @@ import com.m4isper.contactsapp.domain.repository.ContactsReader
 import com.m4isper.contactsapp.domain.repository.ContactsWriter
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import com.m4isper.contactsapp.domain.repository.GroupsRepository
-import com.m4isper.contactsapp.domain.repository.SettingsRepository
+import com.m4isper.contactsapp.domain.repository.LanguageSettings
+import com.m4isper.contactsapp.domain.repository.ListSettings
+import com.m4isper.contactsapp.domain.repository.PrivacySettings
+import com.m4isper.contactsapp.domain.repository.ReminderSettings
+import com.m4isper.contactsapp.domain.repository.SettingsMaintenance
+import com.m4isper.contactsapp.domain.repository.SettingsReader
 import com.m4isper.contactsapp.domain.vcard.VCardCodec
 import com.m4isper.contactsapp.domain.vcard.VCardContact
 import com.m4isper.contactsapp.domain.vcard.VCardExportContact
@@ -300,7 +307,14 @@ internal class FakeVCardCodec(
 /** Фейк репозитория настроек: in-memory состояние и запись вызовов для проверок. */
 internal class FakeSettingsRepository(
     initial: AppSettings = AppSettings(),
-) : SettingsRepository {
+) : SettingsReader,
+    AppearanceSettings,
+    ListSettings,
+    AccountSettings,
+    LanguageSettings,
+    PrivacySettings,
+    ReminderSettings,
+    SettingsMaintenance {
     private val state = MutableStateFlow(initial)
 
     /** Текущие настройки; тесты могут менять их отсюда, чтобы проверить реакцию UI. */
@@ -378,6 +392,11 @@ internal class FakeSettingsRepository(
         secureWindowValues += enabled
         state.value = state.value.copy(secureWindow = enabled)
     }
+
+    override suspend fun setReminders(
+        enabled: Boolean,
+        leadDays: Int,
+    ) = Unit
 
     override suspend fun resetSettings() {
         resetCalled = true

@@ -69,7 +69,7 @@ private class FakeSettingsDataSource(
     ) = Unit
 }
 
-class SettingsRepositoryImplTest {
+class SettingsPortsTest {
     @Test
     fun `observe settings delegates to data source`() =
         runBlocking {
@@ -79,7 +79,7 @@ class SettingsRepositoryImplTest {
                     sortOrder = ContactSortOrder.BY_FAMILY,
                     listDensity = ListDensity.COMPACT,
                 )
-            val repository = SettingsRepositoryImpl(FakeSettingsDataSource(expected))
+            val repository = SettingsReaderImpl(FakeSettingsDataSource(expected))
 
             assertEquals(expected, repository.observeSettings().first())
         }
@@ -89,7 +89,7 @@ class SettingsRepositoryImplTest {
         runBlocking {
             val dataSource = FakeSettingsDataSource()
 
-            SettingsRepositoryImpl(dataSource).setThemeMode(ThemeMode.LIGHT)
+            AppearanceSettingsImpl(dataSource).setThemeMode(ThemeMode.LIGHT)
 
             assertEquals(listOf("LIGHT"), dataSource.themeModes)
         }
@@ -99,7 +99,7 @@ class SettingsRepositoryImplTest {
         runBlocking {
             val dataSource = FakeSettingsDataSource()
 
-            SettingsRepositoryImpl(dataSource).setSortOrder(ContactSortOrder.BY_FAMILY)
+            ListSettingsImpl(dataSource).setSortOrder(ContactSortOrder.BY_FAMILY)
 
             assertEquals(listOf("BY_FAMILY"), dataSource.sortOrders)
         }
@@ -109,7 +109,7 @@ class SettingsRepositoryImplTest {
         runBlocking {
             val dataSource = FakeSettingsDataSource()
 
-            SettingsRepositoryImpl(dataSource).setListDensity(ListDensity.COMPACT)
+            ListSettingsImpl(dataSource).setListDensity(ListDensity.COMPACT)
 
             assertEquals(listOf("COMPACT"), dataSource.densities)
         }
@@ -119,7 +119,7 @@ class SettingsRepositoryImplTest {
         runBlocking {
             val dataSource = FakeSettingsDataSource()
 
-            SettingsRepositoryImpl(dataSource).setFavoritesFirst(false)
+            ListSettingsImpl(dataSource).setFavoritesFirst(false)
 
             assertEquals(listOf(false), dataSource.favoritesFirstValues)
         }
@@ -130,7 +130,7 @@ class SettingsRepositoryImplTest {
             val dataSource = FakeSettingsDataSource()
             val google = ContactAccount(name = "user@gmail.com", type = "com.google")
 
-            SettingsRepositoryImpl(dataSource).setLastContactAccount(google)
+            ListSettingsImpl(dataSource).setLastContactAccount(google)
 
             assertEquals(listOf(google), dataSource.lastContactAccounts)
         }

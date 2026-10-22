@@ -5,7 +5,7 @@ import com.m4isper.contactsapp.domain.model.AppLockAttempts
 import com.m4isper.contactsapp.domain.model.hashAppLockPin
 import com.m4isper.contactsapp.domain.model.needsAppLockHashMigration
 import com.m4isper.contactsapp.domain.model.verifyAppLockPin
-import com.m4isper.contactsapp.domain.repository.SettingsRepository
+import com.m4isper.contactsapp.domain.repository.PrivacySettings
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
@@ -25,7 +25,7 @@ import java.time.Duration
 @ViewModelKey
 @ContributesIntoMap(AppScope::class)
 class AppLockViewModel(
-    private val settingsRepository: SettingsRepository,
+    private val privacySettings: PrivacySettings,
 ) : ViewModel() {
     private val unlocked = MutableStateFlow(false)
     val isUnlocked: StateFlow<Boolean> = unlocked.asStateFlow()
@@ -72,7 +72,7 @@ class AppLockViewModel(
     ) {
         if (!needsAppLockHashMigration(hash)) return
         withContext(Dispatchers.Default) {
-            settingsRepository.setAppLock(true, hashAppLockPin(pin))
+            privacySettings.setAppLock(true, hashAppLockPin(pin))
         }
     }
 

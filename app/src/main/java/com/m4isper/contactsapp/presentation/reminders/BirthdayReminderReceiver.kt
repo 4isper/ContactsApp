@@ -47,7 +47,7 @@ class BirthdayReminderReceiver : BroadcastReceiver() {
 
     private suspend fun showReminder(context: Context) {
         val graph = (context.applicationContext as? ContactsApp)?.appGraph ?: return
-        val settings = ObserveSettingsUseCase(graph.settingsRepository)().first()
+        val settings = ObserveSettingsUseCase(graph.settingsReader)().first()
         val upcoming =
             if (settings.remindersEnabled) {
                 upcomingOccasions(

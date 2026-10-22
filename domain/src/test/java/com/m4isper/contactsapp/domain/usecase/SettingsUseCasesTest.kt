@@ -5,7 +5,10 @@ import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.ListDensity
 import com.m4isper.contactsapp.domain.model.ThemeMode
-import com.m4isper.contactsapp.domain.repository.SettingsRepository
+import com.m4isper.contactsapp.domain.repository.AccountSettings
+import com.m4isper.contactsapp.domain.repository.AppearanceSettings
+import com.m4isper.contactsapp.domain.repository.ListSettings
+import com.m4isper.contactsapp.domain.repository.SettingsReader
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -15,7 +18,10 @@ import org.junit.Test
 
 private class StubSettingsRepository(
     initial: AppSettings = AppSettings(),
-) : SettingsRepository {
+) : SettingsReader,
+    AppearanceSettings,
+    ListSettings,
+    AccountSettings {
     private val state = MutableStateFlow(initial)
 
     val themeModes = mutableListOf<ThemeMode>()
@@ -50,6 +56,12 @@ private class StubSettingsRepository(
         lastContactAccounts += account
         state.value = state.value.copy(lastContactAccount = account)
     }
+
+    override suspend fun setDefaultContactAccount(account: ContactAccount) = Unit
+
+    override suspend fun setDynamicColor(enabled: Boolean) = Unit
+
+    override suspend fun setShowPhotos(enabled: Boolean) = Unit
 }
 
 class SettingsUseCasesTest {
