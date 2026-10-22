@@ -39,6 +39,7 @@ import com.m4isper.contactsapp.domain.model.ImProtocol
 import com.m4isper.contactsapp.domain.model.NameMode
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
+import com.m4isper.contactsapp.domain.model.RawContactRef
 import com.m4isper.contactsapp.domain.model.RelationKind
 import com.m4isper.contactsapp.domain.model.SipKind
 import com.m4isper.contactsapp.domain.model.WebsiteKind
@@ -304,7 +305,7 @@ class ContactsRepositoryImplTest {
         assertEquals(listOf(10L to listOf(20L)), writer.linked)
         assertEquals(
             listOf(10L to listOf(20L)),
-            listOfNotNull(link?.let { it.targetRawContactId to it.sourceRawContactIds }),
+            listOfNotNull(link?.let { it.target.value to it.sources.map { source -> source.value } }),
         )
         assertTrue(writer.deleted.isEmpty())
     }
@@ -338,7 +339,11 @@ class ContactsRepositoryImplTest {
     fun `unmerge detaches the linked raw contacts`() {
         val writer = FakeWriter()
         val repository = ContactsRepositoryImpl(FakeReader(details), writer)
-        val link = ContactLink(targetRawContactId = 10L, sourceRawContactIds = listOf(20L))
+        val link =
+            ContactLink(
+                target = RawContactRef(10L),
+                sources = listOf(RawContactRef(20L)),
+            )
 
         runBlocking { repository.unmergeContacts(link) }
 

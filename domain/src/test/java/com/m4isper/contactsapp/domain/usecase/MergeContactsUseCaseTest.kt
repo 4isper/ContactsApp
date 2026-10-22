@@ -1,6 +1,7 @@
 package com.m4isper.contactsapp.domain.usecase
 
 import com.m4isper.contactsapp.domain.model.ContactLink
+import com.m4isper.contactsapp.domain.model.RawContactRef
 import com.m4isper.contactsapp.domain.repository.ContactsMerger
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import kotlinx.coroutines.flow.Flow
@@ -27,7 +28,10 @@ private class MergeFakeRepository(
     ): ContactLink? {
         if (failMerge) error("merge failed")
         merged += targetId to sourceIds
-        return ContactLink(targetRawContactId = targetId, sourceRawContactIds = sourceIds)
+        return ContactLink(
+            target = RawContactRef(targetId),
+            sources = sourceIds.map { RawContactRef(it) },
+        )
     }
 
     override suspend fun unmergeContacts(link: ContactLink) {
@@ -55,7 +59,13 @@ class MergeContactsUseCaseTest {
             val link = useCase(targetId = 7, sourceIds = listOf(8, 7, 9))
 
             assertEquals(listOf(7L to listOf(8L, 9L)), repository.merged)
-            assertEquals(ContactLink(7L, listOf(8L, 9L)), link)
+            assertEquals(
+                ContactLink(
+                    target = RawContactRef(7L),
+                    sources = listOf(RawContactRef(8L), RawContactRef(9L)),
+                ),
+                link,
+            )
         }
 
     @Test
@@ -91,6 +101,14 @@ class MergeContactsUseCaseTest {
 
             unmerge(requireNotNull(link))
 
-            assertEquals(listOf(ContactLink(7L, listOf(8L))), repository.unmerged)
+            assertEquals(
+                listOf(
+                    ContactLink(
+                        target = RawContactRef(7L),
+                        sources = listOf(RawContactRef(8L)),
+                    ),
+                ),
+                repository.unmerged,
+            )
         }
 }

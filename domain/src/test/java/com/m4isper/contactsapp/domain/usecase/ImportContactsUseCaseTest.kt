@@ -76,8 +76,16 @@ private class ImportFakeRepository(
         sourceIds: List<Long>,
     ): com.m4isper.contactsapp.domain.model.ContactLink? {
         merged += targetId to sourceIds
-        return com.m4isper.contactsapp.domain.model
-            .ContactLink(targetId, sourceIds)
+        return com.m4isper.contactsapp.domain.model.ContactLink(
+            target =
+                com.m4isper.contactsapp.domain.model
+                    .RawContactRef(targetId),
+            sources =
+                sourceIds.map {
+                    com.m4isper.contactsapp.domain.model
+                        .RawContactRef(it)
+                },
+        )
     }
 
     override suspend fun setContactPhoto(

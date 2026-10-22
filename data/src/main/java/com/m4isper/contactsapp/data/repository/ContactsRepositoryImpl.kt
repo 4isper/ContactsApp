@@ -46,6 +46,7 @@ import com.m4isper.contactsapp.domain.model.EditableSipAddress
 import com.m4isper.contactsapp.domain.model.EditableWebsite
 import com.m4isper.contactsapp.domain.model.ImProtocol
 import com.m4isper.contactsapp.domain.model.NameMode
+import com.m4isper.contactsapp.domain.model.RawContactRef
 import com.m4isper.contactsapp.domain.repository.ContactsAccounts
 import com.m4isper.contactsapp.domain.repository.ContactsMerger
 import com.m4isper.contactsapp.domain.repository.ContactsReader
@@ -145,14 +146,20 @@ class ContactsRepositoryImpl(
                 .mapNotNull { id -> writer.loadRawContactId(id) }
         return if (targetRawId != null && sourceRawIds.isNotEmpty()) {
             writer.linkRawContacts(targetRawId, sourceRawIds)
-            ContactLink(targetRawContactId = targetRawId, sourceRawContactIds = sourceRawIds)
+            ContactLink(
+                target = RawContactRef(targetRawId),
+                sources = sourceRawIds.map(::RawContactRef),
+            )
         } else {
             null
         }
     }
 
     override suspend fun unmergeContacts(link: ContactLink) {
-        writer.unlinkRawContacts(link.targetRawContactId, link.sourceRawContactIds)
+        writer.unlinkRawContacts(
+            link.target.value,
+            link.sources.map { it.value },
+        )
     }
 }
 

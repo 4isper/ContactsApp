@@ -91,8 +91,14 @@ private class RecordingRepository :
     ): com.m4isper.contactsapp.domain.model.ContactLink? {
         merged += targetId to sourceIds
         return com.m4isper.contactsapp.domain.model.ContactLink(
-            targetRawContactId = targetId,
-            sourceRawContactIds = sourceIds,
+            target =
+                com.m4isper.contactsapp.domain.model
+                    .RawContactRef(targetId),
+            sources =
+                sourceIds.map {
+                    com.m4isper.contactsapp.domain.model
+                        .RawContactRef(it)
+                },
         )
     }
 

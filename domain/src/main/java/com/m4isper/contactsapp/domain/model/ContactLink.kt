@@ -1,10 +1,10 @@
 package com.m4isper.contactsapp.domain.model
 
 /**
- * Связь контактов: целевой raw-контакт и присоединённые к нему источники.
+ * Связь контактов: целевая строка контакта и присоединённые к ней источники.
  * Хранится, чтобы слияние можно было отменить.
  */
 data class ContactLink(
-    val targetRawContactId: Long,
-    val sourceRawContactIds: List<Long>,
+    val target: RawContactRef,
+    val sources: List<RawContactRef>,
 )

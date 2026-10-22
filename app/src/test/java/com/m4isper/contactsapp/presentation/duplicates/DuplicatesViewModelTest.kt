@@ -98,8 +98,16 @@ private class FakeDuplicatesRepository(
         mergeFailure?.let { throw it }
         merged += targetId to sourceIds
         contacts = contacts.filterNot { it.contactId in sourceIds }
-        return com.m4isper.contactsapp.domain.model
-            .ContactLink(targetId, sourceIds)
+        return com.m4isper.contactsapp.domain.model.ContactLink(
+            target =
+                com.m4isper.contactsapp.domain.model
+                    .RawContactRef(targetId),
+            sources =
+                sourceIds.map {
+                    com.m4isper.contactsapp.domain.model
+                        .RawContactRef(it)
+                },
+        )
     }
 
     override fun observeFavorites(): Flow<Set<Long>> = favoritesFlow.asStateFlow()
@@ -210,7 +218,7 @@ class DuplicatesViewModelTest {
             assertEquals(
                 1,
                 viewModel.uiState.value.lastLink
-                    ?.sourceRawContactIds
+                    ?.sources
                     ?.size,
             )
         }
