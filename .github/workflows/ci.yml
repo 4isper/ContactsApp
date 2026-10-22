@@ -39,9 +39,6 @@ jobs:
           build-tools: 37.0.0
           accept-licenses: true
 
-      - name: Install required Android SDK components
-        run: sdkmanager "platforms;android-37" "build-tools;37.0.0"
-
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
 
