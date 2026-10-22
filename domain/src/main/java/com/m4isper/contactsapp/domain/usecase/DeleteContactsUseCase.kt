@@ -2,7 +2,6 @@ package com.m4isper.contactsapp.domain.usecase
 
 import com.m4isper.contactsapp.domain.repository.ContactsWriter
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
-import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.CancellationException
 
 /** Результат пакетного удаления: [deletedIds] — удалено, [failedIds] — не удалось удалить. */
@@ -14,7 +13,6 @@ data class DeleteContactsResult(
         get() = failedIds.isEmpty()
 }
 
-@Inject
 class DeleteContactsUseCase(
     private val repository: ContactsWriter,
     private val favoritesRepository: FavoritesRepository,

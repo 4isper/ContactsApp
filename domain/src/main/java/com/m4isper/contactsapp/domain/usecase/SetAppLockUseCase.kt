@@ -2,12 +2,10 @@ package com.m4isper.contactsapp.domain.usecase
 
 import com.m4isper.contactsapp.domain.repository.PrivacySettings
 import com.m4isper.contactsapp.domain.security.PinHasher
-import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /** Защита приложения: вкл/выкл и PIN-код (в настройки попадает только хэш). */
-@Inject
 class SetAppLockUseCase(
     private val privacySettings: PrivacySettings,
     private val pinHasher: PinHasher,

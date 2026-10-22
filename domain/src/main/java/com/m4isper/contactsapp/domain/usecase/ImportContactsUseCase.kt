@@ -8,7 +8,6 @@ import com.m4isper.contactsapp.domain.model.ImportFailure
 import com.m4isper.contactsapp.domain.model.ImportFailureReason
 import com.m4isper.contactsapp.domain.model.ImportOutcome
 import com.m4isper.contactsapp.domain.vcard.VCardContact
-import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.CancellationException
 import java.util.Locale
 
@@ -18,7 +17,6 @@ import java.util.Locale
  * так же, как при обычном создании. Проблемный контакт не роняет остальные:
  * по нему пишется причина в [ImportOutcome.failures].
  */
-@Inject
 class ImportContactsUseCase(
     private val createContact: CreateContactUseCase,
     private val mergeContacts: MergeContactsUseCase,

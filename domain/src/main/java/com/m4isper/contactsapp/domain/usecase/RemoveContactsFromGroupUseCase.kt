@@ -1,10 +1,8 @@
 package com.m4isper.contactsapp.domain.usecase
 
 import com.m4isper.contactsapp.domain.repository.GroupsRepository
-import dev.zacsweers.metro.Inject
 
 /** Убирает контакты из группы. */
-@Inject
 class RemoveContactsFromGroupUseCase(
     private val repository: GroupsRepository,
 ) {

@@ -6,7 +6,6 @@ import com.m4isper.contactsapp.domain.model.FormError
 import com.m4isper.contactsapp.domain.model.normalized
 import com.m4isper.contactsapp.domain.model.validateContactForm
 import com.m4isper.contactsapp.domain.repository.ContactsWriter
-import dev.zacsweers.metro.Inject
 
 sealed interface SaveResult {
     /** Контакт сохранён; [contactId] — id созданного контакта. */
@@ -19,7 +18,6 @@ sealed interface SaveResult {
     ) : SaveResult
 }
 
-@Inject
 class CreateContactUseCase(
     private val repository: ContactsWriter,
 ) {

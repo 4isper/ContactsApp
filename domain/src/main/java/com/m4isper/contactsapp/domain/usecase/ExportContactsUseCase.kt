@@ -2,13 +2,11 @@ package com.m4isper.contactsapp.domain.usecase
 
 import com.m4isper.contactsapp.domain.vcard.VCardCodec
 import com.m4isper.contactsapp.domain.vcard.VCardExportContact
-import dev.zacsweers.metro.Inject
 
 /**
  * Экспорт контактов в .vcf: детали, фото и названия групп.
  * Контакты без данных (удалённые между чтением списка и сборкой) пропускаются.
  */
-@Inject
 class ExportContactsUseCase(
     private val getContactDetails: GetContactDetailsUseCase,
     private val loadContactPhoto: LoadContactPhotoUseCase,

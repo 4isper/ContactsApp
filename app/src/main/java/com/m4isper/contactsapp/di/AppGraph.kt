@@ -15,7 +15,9 @@ import dev.zacsweers.metro.Provides
 import dev.zacsweers.metrox.viewmodel.ViewModelGraph
 
 @DependencyGraph(AppScope::class)
-interface AppGraph : ViewModelGraph {
+interface AppGraph :
+    ViewModelGraph,
+    UseCaseProviders {
     /** Репозитории для фоновых задач: напоминания читают контакты и настройки. */
     val contactsReader: ContactsReader
     val settingsReader: SettingsReader

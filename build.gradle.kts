@@ -35,6 +35,8 @@ val checkArchitecture =
                             "com.m4isper.contactsapp.data.",
                             "com.m4isper.contactsapp.presentation.",
                             "com.m4isper.contactsapp.di.",
+                            "dev.zacsweers.metro.",
+                            "dev.zacsweers.metrox.",
                         ),
                     "data/src/main" to
                         listOf(
