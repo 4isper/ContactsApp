@@ -46,6 +46,32 @@ private const val CONTACT_SORT_ORDER =
     "${ContactsContract.Contacts.DISPLAY_NAME} ASC"
 
 /**
+ * Контакты без имени в список не попадают. Фильтр уходит в провайдер, а не в
+ * Kotlin: иначе страница считается по «сырым» заголовкам, а показывается меньше
+ * контактов — и постраничная загрузка теряет часть списка.
+ */
+private const val VISIBLE_CONTACTS_SELECTION =
+    "LENGTH(TRIM(${ContactsContract.Contacts.DISPLAY_NAME})) > 0"
+
+/** Типы данных, которые нужны карточке контакта. */
+private val DATA_MIMETYPES =
+    arrayOf(
+        Phone.CONTENT_ITEM_TYPE,
+        Email.CONTENT_ITEM_TYPE,
+        StructuredName.CONTENT_ITEM_TYPE,
+        Nickname.CONTENT_ITEM_TYPE,
+        Relation.CONTENT_ITEM_TYPE,
+        Organization.CONTENT_ITEM_TYPE,
+        StructuredPostal.CONTENT_ITEM_TYPE,
+        Website.CONTENT_ITEM_TYPE,
+        Note.CONTENT_ITEM_TYPE,
+        SipAddress.CONTENT_ITEM_TYPE,
+    )
+
+/** Сколько id контактов уходит в один запрос к провайдеру. */
+private const val IDS_PER_QUERY = 500
+
+/**
  * Единственное место чтения [ContactsContract].
  * Список читается по таблице Contacts (видны и контакты без номера),
  * детали — по data-строкам контакта.
@@ -59,26 +85,8 @@ class ContactsDataSourceImpl(
 ) : ContactsDataSource {
     override suspend fun loadContacts(): List<ContactDetails> =
         withContext(Dispatchers.IO) {
-            val headers = queryHeaders(selection = null, args = null)
-            val visibleIds = headers.mapTo(mutableSetOf()) { it.contactId }
-            val rows =
-                queryData(
-                    selection =
-                        "${ContactsContract.Data.MIMETYPE} IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    args =
-                        arrayOf(
-                            Phone.CONTENT_ITEM_TYPE,
-                            Email.CONTENT_ITEM_TYPE,
-                            StructuredName.CONTENT_ITEM_TYPE,
-                            Nickname.CONTENT_ITEM_TYPE,
-                            Relation.CONTENT_ITEM_TYPE,
-                            Organization.CONTENT_ITEM_TYPE,
-                            StructuredPostal.CONTENT_ITEM_TYPE,
-                            Website.CONTENT_ITEM_TYPE,
-                            Note.CONTENT_ITEM_TYPE,
-                            SipAddress.CONTENT_ITEM_TYPE,
-                        ),
-                ).filter { it.contactId in visibleIds }
+            val headers = queryHeaders(selection = VISIBLE_CONTACTS_SELECTION, args = null)
+            val rows = queryRowsOf(headers.map { it.contactId })
             aggregateContacts(headers, rows, queryContactAccounts())
         }
 
@@ -89,29 +97,12 @@ class ContactsDataSourceImpl(
         withContext(Dispatchers.IO) {
             val headers =
                 queryHeaders(
-                    selection = null,
+                    selection = VISIBLE_CONTACTS_SELECTION,
                     args = null,
                     sortOrder = pageSortOrder(offset, limit),
                 )
             if (headers.isEmpty()) return@withContext emptyList()
-            val visibleIds = headers.mapTo(mutableSetOf()) { it.contactId }
-            val rows =
-                queryData(
-                    selection = "${ContactsContract.Data.MIMETYPE} IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    args =
-                        arrayOf(
-                            Phone.CONTENT_ITEM_TYPE,
-                            Email.CONTENT_ITEM_TYPE,
-                            StructuredName.CONTENT_ITEM_TYPE,
-                            Nickname.CONTENT_ITEM_TYPE,
-                            Relation.CONTENT_ITEM_TYPE,
-                            Organization.CONTENT_ITEM_TYPE,
-                            StructuredPostal.CONTENT_ITEM_TYPE,
-                            Website.CONTENT_ITEM_TYPE,
-                            Note.CONTENT_ITEM_TYPE,
-                            SipAddress.CONTENT_ITEM_TYPE,
-                        ),
-                ).filter { it.contactId in visibleIds }
+            val rows = queryRowsOf(headers.map { it.contactId })
             aggregateContacts(headers, rows, queryContactAccounts())
         }
 
@@ -311,6 +302,26 @@ class ContactsDataSourceImpl(
             }
         }
         return headers
+    }
+
+    /**
+     * Строки данных (телефоны, почта, имена) только для указанных контактов:
+     * полная выборка Data на каждую страницу читала бы всю базу целиком.
+     */
+    private fun queryRowsOf(contactIds: List<Long>): List<DataRow> {
+        if (contactIds.isEmpty()) return emptyList()
+        val rows = mutableListOf<DataRow>()
+        contactIds.chunked(IDS_PER_QUERY).forEach { chunk ->
+            val placeholders = chunk.joinToString(",") { "?" }
+            rows +=
+                queryData(
+                    selection =
+                        "${ContactsContract.Data.CONTACT_ID} IN ($placeholders) AND " +
+                            "${ContactsContract.Data.MIMETYPE} IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    args = chunk.map(Long::toString).toTypedArray() + DATA_MIMETYPES,
+                )
+        }
+        return rows
     }
 
     private fun queryData(
