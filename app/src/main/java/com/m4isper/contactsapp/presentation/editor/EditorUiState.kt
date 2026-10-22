@@ -191,6 +191,25 @@ internal fun editorStateFromForm(
     )
 }
 
+/**
+ * Следующий id строки формы: счётчик общий для всех видов строк, чтобы ключи
+ * списков не совпадали.
+ */
+internal fun EditorUiState.nextRowId(): Long {
+    val ids =
+        listOf(
+            phones.maxOfOrNull { it.rowId } ?: 0L,
+            emails.maxOfOrNull { it.rowId } ?: 0L,
+            addresses.maxOfOrNull { it.rowId } ?: 0L,
+            websites.maxOfOrNull { it.rowId } ?: 0L,
+            instantMessages.maxOfOrNull { it.rowId } ?: 0L,
+            sipAddresses.maxOfOrNull { it.rowId } ?: 0L,
+            relations.maxOfOrNull { it.rowId } ?: 0L,
+            events.maxOfOrNull { it.rowId } ?: 0L,
+        )
+    return ids.max() + 1L
+}
+
 /** Список строк, в котором строка [rowId] заменяется результатом [transform]. */
 internal fun <T> List<EditorRow<T>>.withRow(
     rowId: Long,

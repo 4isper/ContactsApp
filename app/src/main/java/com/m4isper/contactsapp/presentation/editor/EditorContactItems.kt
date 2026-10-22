@@ -3,30 +3,32 @@ package com.m4isper.contactsapp.presentation.editor
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.runtime.Composable
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.domain.model.EditableAddress
 import com.m4isper.contactsapp.domain.model.FormField
 
 /** Строки каналов связи: телефоны, почта, мессенджеры, SIP, адреса и сайты. */
 internal fun LazyListScope.editorContactItems(
     uiState: EditorUiState,
-    viewModel: ContactEditorViewModel,
+    edit: ((EditorUiState) -> EditorUiState) -> Unit,
 ) {
-    phoneItems(uiState, viewModel)
-    emailItems(uiState, viewModel)
-    instantMessageItems(uiState, viewModel)
-    sipItems(uiState, viewModel)
-    addressItems(uiState, viewModel)
-    websiteItems(uiState, viewModel)
+    phoneItems(uiState, edit)
+    emailItems(uiState, edit)
+    instantMessageItems(uiState, edit)
+    sipItems(uiState, edit)
+    addressItems(uiState, edit)
+    websiteItems(uiState, edit)
 }
 
 private fun LazyListScope.phoneItems(
     uiState: EditorUiState,
-    viewModel: ContactEditorViewModel,
+    edit: ((EditorUiState) -> EditorUiState) -> Unit,
 ) {
     item(key = "phones-header") {
         SectionHeader(
             titleRes = R.string.editor_section_phones,
-            onAdd = viewModel::onAddPhone,
+            onAdd = { edit { it.withAddedPhone() } },
             addLabelRes = R.string.editor_add_phone,
             addTestTag = "editor_add_phone_button",
         )
@@ -41,25 +43,25 @@ private fun LazyListScope.phoneItems(
             canRemove = uiState.phones.size > 1,
             canMoveUp = index > 0,
             canMoveDown = index < uiState.phones.lastIndex,
-            onPhoneChange = viewModel::onPhoneChange,
-            onKindChange = viewModel::onKindChange,
-            onCustomLabelChange = viewModel::onCustomLabelChange,
-            onSetPrimary = viewModel::onSetPrimaryPhone,
-            onMoveUp = { viewModel.onMovePhone(it, -1) },
-            onMoveDown = { viewModel.onMovePhone(it, 1) },
-            onRemove = viewModel::onRemovePhone,
+            onPhoneChange = { rowId, value -> edit { it.withPhone(rowId, value) } },
+            onKindChange = { rowId, kind -> edit { it.withPhoneKind(rowId, kind) } },
+            onCustomLabelChange = { rowId, value -> edit { it.withPhoneLabel(rowId, value) } },
+            onSetPrimary = { rowId -> edit { it.withPrimaryPhone(rowId) } },
+            onMoveUp = { rowId -> edit { it.withMovedPhone(rowId, -1) } },
+            onMoveDown = { rowId -> edit { it.withMovedPhone(rowId, 1) } },
+            onRemove = { rowId -> edit { it.withoutPhone(rowId) } },
         )
     }
 }
 
 private fun LazyListScope.emailItems(
     uiState: EditorUiState,
-    viewModel: ContactEditorViewModel,
+    edit: ((EditorUiState) -> EditorUiState) -> Unit,
 ) {
     item(key = "emails-header") {
         SectionHeader(
             titleRes = R.string.editor_section_emails,
-            onAdd = viewModel::onAddEmail,
+            onAdd = { edit { it.withAddedEmail() } },
             addLabelRes = R.string.editor_add_email,
             addTestTag = "editor_add_email_button",
         )
@@ -73,25 +75,25 @@ private fun LazyListScope.emailItems(
             error = uiState.fieldErrors[FormField.EMAIL]?.fieldMessage(),
             canMoveUp = index > 0,
             canMoveDown = index < uiState.emails.lastIndex,
-            onEmailChange = viewModel::onEmailChange,
-            onKindChange = viewModel::onEmailKindChange,
-            onCustomLabelChange = viewModel::onEmailCustomLabelChange,
-            onSetPrimary = viewModel::onSetPrimaryEmail,
-            onMoveUp = { viewModel.onMoveEmail(it, -1) },
-            onMoveDown = { viewModel.onMoveEmail(it, 1) },
-            onRemove = viewModel::onRemoveEmail,
+            onEmailChange = { rowId, value -> edit { it.withEmail(rowId, value) } },
+            onKindChange = { rowId, kind -> edit { it.withEmailKind(rowId, kind) } },
+            onCustomLabelChange = { rowId, value -> edit { it.withEmailLabel(rowId, value) } },
+            onSetPrimary = { rowId -> edit { it.withPrimaryEmail(rowId) } },
+            onMoveUp = { rowId -> edit { it.withMovedEmail(rowId, -1) } },
+            onMoveDown = { rowId -> edit { it.withMovedEmail(rowId, 1) } },
+            onRemove = { rowId -> edit { it.withoutEmail(rowId) } },
         )
     }
 }
 
 private fun LazyListScope.instantMessageItems(
     uiState: EditorUiState,
-    viewModel: ContactEditorViewModel,
+    edit: ((EditorUiState) -> EditorUiState) -> Unit,
 ) {
     item(key = "instant-messages-header") {
         SectionHeader(
             titleRes = R.string.editor_section_instant_messages,
-            onAdd = viewModel::onAddIm,
+            onAdd = { edit { it.withAddedIm() } },
             addLabelRes = R.string.editor_add_im,
             addTestTag = "editor_add_im_button",
         )
@@ -102,22 +104,32 @@ private fun LazyListScope.instantMessageItems(
     ) { row ->
         ImEditorRow(
             row = row,
-            onImChange = viewModel::onImChange,
-            onProtocolChange = viewModel::onImProtocolChange,
-            onCustomProtocolChange = viewModel::onImCustomProtocolChange,
-            onRemove = viewModel::onRemoveIm,
+            onImChange = { rowId, value -> edit { it.withIm(rowId, value) } },
+            onProtocolChange = {
+                rowId,
+                protocol,
+                ->
+                edit { it.withImProtocol(rowId, protocol) }
+            },
+            onCustomProtocolChange = {
+                rowId,
+                value,
+                ->
+                edit { it.withImCustomProtocol(rowId, value) }
+            },
+            onRemove = { rowId -> edit { it.withoutIm(rowId) } },
         )
     }
 }
 
 private fun LazyListScope.sipItems(
     uiState: EditorUiState,
-    viewModel: ContactEditorViewModel,
+    edit: ((EditorUiState) -> EditorUiState) -> Unit,
 ) {
     item(key = "sip-header") {
         SectionHeader(
             titleRes = R.string.editor_section_sip,
-            onAdd = viewModel::onAddSip,
+            onAdd = { edit { it.withAddedSip() } },
             addLabelRes = R.string.editor_add_sip,
             addTestTag = "editor_add_sip_button",
         )
@@ -128,22 +140,22 @@ private fun LazyListScope.sipItems(
     ) { row ->
         SipEditorRow(
             row = row,
-            onSipChange = viewModel::onSipChange,
-            onKindChange = viewModel::onSipKindChange,
-            onCustomLabelChange = viewModel::onSipCustomLabelChange,
-            onRemove = viewModel::onRemoveSip,
+            onSipChange = { rowId, value -> edit { it.withSip(rowId, value) } },
+            onKindChange = { rowId, kind -> edit { it.withSipKind(rowId, kind) } },
+            onCustomLabelChange = { rowId, value -> edit { it.withSipLabel(rowId, value) } },
+            onRemove = { rowId -> edit { it.withoutSip(rowId) } },
         )
     }
 }
 
 private fun LazyListScope.addressItems(
     uiState: EditorUiState,
-    viewModel: ContactEditorViewModel,
+    edit: ((EditorUiState) -> EditorUiState) -> Unit,
 ) {
     item(key = "addresses-header") {
         SectionHeader(
             titleRes = R.string.editor_section_addresses,
-            onAdd = viewModel::onAddAddress,
+            onAdd = { edit { it.withAddedAddress() } },
             addLabelRes = R.string.editor_add_address,
             addTestTag = "editor_add_address_button",
         )
@@ -152,30 +164,39 @@ private fun LazyListScope.addressItems(
         items = uiState.addresses,
         key = { it.rowId },
     ) { row ->
-        AddressEditorRow(
-            row = row,
-            onStreetChange = viewModel::onAddressStreetChange,
-            onPoBoxChange = viewModel::onAddressPoBoxChange,
-            onNeighborhoodChange = viewModel::onAddressNeighborhoodChange,
-            onCityChange = viewModel::onAddressCityChange,
-            onRegionChange = viewModel::onAddressRegionChange,
-            onPostcodeChange = viewModel::onAddressPostcodeChange,
-            onCountryChange = viewModel::onAddressCountryChange,
-            onKindChange = viewModel::onAddressKindChange,
-            onCustomLabelChange = viewModel::onAddressCustomLabelChange,
-            onRemove = viewModel::onRemoveAddress,
-        )
+        addressRow(row = row, edit = edit)
     }
+}
+
+/** Строка адреса: у неё больше полей, чем у остальных строк формы. */
+@Composable
+private fun addressRow(
+    row: EditorRow<EditableAddress>,
+    edit: ((EditorUiState) -> EditorUiState) -> Unit,
+) {
+    AddressEditorRow(
+        row = row,
+        onStreetChange = { rowId, value -> edit { it.withAddressStreet(rowId, value) } },
+        onPoBoxChange = { rowId, value -> edit { it.withAddressPoBox(rowId, value) } },
+        onNeighborhoodChange = { rowId, value -> edit { it.withAddressNeighborhood(rowId, value) } },
+        onCityChange = { rowId, value -> edit { it.withAddressCity(rowId, value) } },
+        onRegionChange = { rowId, value -> edit { it.withAddressRegion(rowId, value) } },
+        onPostcodeChange = { rowId, value -> edit { it.withAddressPostcode(rowId, value) } },
+        onCountryChange = { rowId, value -> edit { it.withAddressCountry(rowId, value) } },
+        onKindChange = { rowId, kind -> edit { it.withAddressKind(rowId, kind) } },
+        onCustomLabelChange = { rowId, value -> edit { it.withAddressLabel(rowId, value) } },
+        onRemove = { rowId -> edit { it.withoutAddress(rowId) } },
+    )
 }
 
 private fun LazyListScope.websiteItems(
     uiState: EditorUiState,
-    viewModel: ContactEditorViewModel,
+    edit: ((EditorUiState) -> EditorUiState) -> Unit,
 ) {
     item(key = "websites-header") {
         SectionHeader(
             titleRes = R.string.editor_section_websites,
-            onAdd = viewModel::onAddWebsite,
+            onAdd = { edit { it.withAddedWebsite() } },
             addLabelRes = R.string.editor_add_website,
             addTestTag = "editor_add_website_button",
         )
@@ -187,10 +208,15 @@ private fun LazyListScope.websiteItems(
         WebsiteEditorRow(
             row = row,
             error = uiState.fieldErrors[FormField.WEBSITE]?.fieldMessage(),
-            onWebsiteChange = viewModel::onWebsiteChange,
-            onKindChange = viewModel::onWebsiteKindChange,
-            onCustomLabelChange = viewModel::onWebsiteCustomLabelChange,
-            onRemove = viewModel::onRemoveWebsite,
+            onWebsiteChange = { rowId, value -> edit { it.withWebsite(rowId, value) } },
+            onKindChange = { rowId, kind -> edit { it.withWebsiteKind(rowId, kind) } },
+            onCustomLabelChange = {
+                rowId,
+                value,
+                ->
+                edit { it.withWebsiteLabel(rowId, value) }
+            },
+            onRemove = { rowId -> edit { it.withoutWebsite(rowId) } },
         )
     }
 }

@@ -49,6 +49,7 @@ internal fun EditorForm(
 ) {
     val spacing = LocalSpacing.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val edit: ((EditorUiState) -> EditorUiState) -> Unit = viewModel::update
     var showDatePicker by remember { mutableStateOf(false) }
     var showGroupPicker by remember { mutableStateOf(false) }
     var showAccountPicker by remember { mutableStateOf(false) }
@@ -61,7 +62,7 @@ internal fun EditorForm(
             source = source,
             onConfirm = { cropped ->
                 cropSource = null
-                viewModel.onPhotoPicked(cropped.toString())
+                edit { it.withPhoto(cropped.toString()) }
             },
             onDismiss = { cropSource = null },
         )
@@ -88,7 +89,7 @@ internal fun EditorForm(
                 photoUri = uiState.photoUri,
                 context = context,
                 onCrop = { cropSource = it },
-                onRemove = viewModel::onPhotoRemoved,
+                onRemove = { edit { it.withoutPhoto() } },
             )
         }
         accountItems(uiState = uiState, onClick = { showAccountPicker = true })
@@ -104,16 +105,16 @@ internal fun EditorForm(
                 phoneticGiven = uiState.phoneticGivenName,
                 phoneticMiddle = uiState.phoneticMiddleName,
                 phoneticFamily = uiState.phoneticFamilyName,
-                onDisplayNameChange = viewModel::onDisplayNameChange,
-                onGivenNameChange = viewModel::onGivenNameChange,
-                onFamilyNameChange = viewModel::onFamilyNameChange,
-                onMiddleNameChange = viewModel::onMiddleNameChange,
-                onPrefixChange = viewModel::onNamePrefixChange,
-                onSuffixChange = viewModel::onNameSuffixChange,
-                onPhoneticGivenChange = viewModel::onPhoneticGivenNameChange,
-                onPhoneticMiddleChange = viewModel::onPhoneticMiddleNameChange,
-                onPhoneticFamilyChange = viewModel::onPhoneticFamilyNameChange,
-                onToggleMode = viewModel::onToggleNameMode,
+                onDisplayNameChange = { value -> edit { it.withDisplayName(value) } },
+                onGivenNameChange = { value -> edit { it.withGivenName(value) } },
+                onFamilyNameChange = { value -> edit { it.withFamilyName(value) } },
+                onMiddleNameChange = { value -> edit { it.withMiddleName(value) } },
+                onPrefixChange = { value -> edit { it.withNamePrefix(value) } },
+                onSuffixChange = { value -> edit { it.withNameSuffix(value) } },
+                onPhoneticGivenChange = { value -> edit { it.withPhoneticGivenName(value) } },
+                onPhoneticMiddleChange = { value -> edit { it.withPhoneticMiddleName(value) } },
+                onPhoneticFamilyChange = { value -> edit { it.withPhoneticFamilyName(value) } },
+                onToggleMode = { edit { it.withToggledNameMode() } },
             )
         }
         item(key = "nickname-header") {
@@ -122,7 +123,7 @@ internal fun EditorForm(
         item(key = "nickname") {
             OutlinedTextField(
                 value = uiState.nickname.nickname,
-                onValueChange = viewModel::onNicknameChange,
+                onValueChange = { value -> edit { it.withNickname(value) } },
                 label = { Text(stringResource(R.string.editor_nickname_label)) },
                 singleLine = true,
                 shape = MaterialTheme.shapes.medium,
@@ -142,10 +143,10 @@ internal fun EditorForm(
                 onClick = { showGroupPicker = true },
             )
         }
-        editorContactItems(uiState = uiState, viewModel = viewModel)
+        editorContactItems(uiState = uiState, edit = edit)
         editorExtraItems(
             uiState = uiState,
-            viewModel = viewModel,
+            edit = edit,
             onBirthdayClick = { showDatePicker = true },
             onEventDateClick = { eventPickerRowId = it },
         )
@@ -193,7 +194,7 @@ internal fun EditorForm(
         BirthdayPickerDialog(
             birthday = uiState.birthday.value,
             onConfirmed = { birthday ->
-                viewModel.onBirthdayChange(birthday)
+                edit { it.withBirthday(birthday) }
                 showDatePicker = false
             },
             onDismiss = { showDatePicker = false },
@@ -206,7 +207,7 @@ internal fun EditorForm(
             birthday = eventPickerRow.value.date,
             confirmTestTag = "editor_event_date_confirm",
             onConfirmed = { birthday ->
-                viewModel.onEventDateChange(eventPickerRow.rowId, birthday)
+                edit { it.withEventDate(eventPickerRow.rowId, birthday) }
                 eventPickerRowId = null
             },
             onDismiss = { eventPickerRowId = null },
@@ -219,7 +220,7 @@ internal fun EditorForm(
             groups = uiState.availableGroups,
             selectedIds = uiState.selectedGroupIds,
             confirmLabel = stringResource(R.string.action_done),
-            onToggle = viewModel::onGroupToggled,
+            onToggle = { groupId -> edit { it.withToggledGroup(groupId) } },
             onCreateGroup = viewModel::onCreateGroup,
             onConfirm = { showGroupPicker = false },
             onDismiss = { showGroupPicker = false },

@@ -2,28 +2,10 @@ package com.m4isper.contactsapp.presentation.editor
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.m4isper.contactsapp.domain.model.AddressKind
-import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.ContactGroup
-import com.m4isper.contactsapp.domain.model.EditableAddress
-import com.m4isper.contactsapp.domain.model.EditableEmail
-import com.m4isper.contactsapp.domain.model.EditableEvent
-import com.m4isper.contactsapp.domain.model.EditableInstantMessage
 import com.m4isper.contactsapp.domain.model.EditablePhone
-import com.m4isper.contactsapp.domain.model.EditableRelation
-import com.m4isper.contactsapp.domain.model.EditableSipAddress
-import com.m4isper.contactsapp.domain.model.EditableWebsite
-import com.m4isper.contactsapp.domain.model.EmailKind
-import com.m4isper.contactsapp.domain.model.EventKind
 import com.m4isper.contactsapp.domain.model.FormField
-import com.m4isper.contactsapp.domain.model.ImProtocol
-import com.m4isper.contactsapp.domain.model.PhoneKind
-import com.m4isper.contactsapp.domain.model.RelationKind
-import com.m4isper.contactsapp.domain.model.SipKind
-import com.m4isper.contactsapp.domain.model.WebsiteKind
 import com.m4isper.contactsapp.domain.model.findSimilarContacts
 import com.m4isper.contactsapp.domain.model.validateContactFields
 import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
@@ -35,7 +17,6 @@ import com.m4isper.contactsapp.domain.usecase.GetContactFormUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetDefaultContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
-import com.m4isper.contactsapp.domain.usecase.SaveResult
 import com.m4isper.contactsapp.domain.usecase.SetLastContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.UpdateContactUseCase
 import com.m4isper.contactsapp.presentation.common.logw
@@ -55,8 +36,6 @@ private const val EDITOR_TAG = "ContactEditor"
 @Inject
 @ViewModelKey
 @ContributesIntoMap(AppScope::class)
-// Подавление осознанное: фасад формы, тонкие сеттеры на каждое поле; декомпозиция не даёт выгоды.
-@Suppress("TooManyFunctions", "LargeClass") // Осознанно: редактор держит форму, группы и аккаунты (issue 14).
 class ContactEditorViewModel(
     private val getContactFormUseCase: GetContactFormUseCase,
     private val createContactUseCase: CreateContactUseCase,
@@ -110,8 +89,8 @@ class ContactEditorViewModel(
                     state.value =
                         editorStateFromForm(id, form) { ++nextRowId }
                             .copy(
-                                allGroups = loadGroups(),
-                                selectedAccount = loadContactAccount(id),
+                                allGroups = loadGroups(getGroupsUseCase),
+                                selectedAccount = loadContactAccount(getContactAccountUseCase, id),
                             )
                 }
             } catch (e: CancellationException) {
@@ -123,18 +102,6 @@ class ContactEditorViewModel(
         }
     }
 
-    /** Похожие контакты для предупреждения о дубле: сбой не мешает сохранению. */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой поиска дублей не мешает сохранению.
-    private suspend fun loadContacts(): List<ContactDetails> =
-        try {
-            getContactsUseCase()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            logw(EDITOR_TAG, "load contacts for duplicates failed", e)
-            emptyList()
-        }
-
     /** Новый контакт: сразу показываем локальный аккаунт, затем подгружаем доступные. */
     private fun startNewContact() {
         state.value =
@@ -144,9 +111,9 @@ class ContactEditorViewModel(
                 selectedAccount = ContactAccount.Local,
             )
         viewModelScope.launch {
-            val accounts = loadAccounts()
-            val groups = loadGroups()
-            val defaultAccount = loadDefaultAccount()
+            val accounts = loadAccounts(getContactAccountsUseCase)
+            val groups = loadGroups(getGroupsUseCase)
+            val defaultAccount = loadDefaultAccount(getDefaultContactAccountUseCase)
             state.update { current ->
                 val selected =
                     defaultAccount.takeIf { it in accounts }
@@ -167,274 +134,9 @@ class ContactEditorViewModel(
         }
     }
 
-    fun onDisplayNameChange(value: String) = updateData { it.copy(displayName = value) }
-
-    fun onGivenNameChange(value: String) = updateData { it.copy(givenName = value) }
-
-    fun onFamilyNameChange(value: String) = updateData { it.copy(familyName = value) }
-
-    fun onMiddleNameChange(value: String) = updateData { it.copy(middleName = value) }
-
-    fun onNamePrefixChange(value: String) = updateData { it.copy(namePrefix = value) }
-
-    fun onNameSuffixChange(value: String) = updateData { it.copy(nameSuffix = value) }
-
-    fun onPhoneticGivenNameChange(value: String) = updateData { it.copy(phoneticGivenName = value) }
-
-    fun onPhoneticMiddleNameChange(value: String) = updateData { it.copy(phoneticMiddleName = value) }
-
-    fun onPhoneticFamilyNameChange(value: String) = updateData { it.copy(phoneticFamilyName = value) }
-
-    fun onToggleNameMode() = updateData { it.toggledNameMode() }
-
-    fun onPhoneChange(
-        rowId: Long,
-        value: String,
-    ) = updateData { it.copy(phones = it.phones.withRow(rowId) { phone -> phone.copy(number = value) }) }
-
-    fun onKindChange(
-        rowId: Long,
-        kind: PhoneKind,
-    ) = updateData { it.copy(phones = it.phones.withRow(rowId) { phone -> phone.copy(kind = kind) }) }
-
-    fun onCustomLabelChange(
-        rowId: Long,
-        value: String,
-    ) = updateData { it.copy(phones = it.phones.withRow(rowId) { phone -> phone.copy(customLabel = value) }) }
-
-    fun onAddPhone() = updateData { it.copy(phones = it.phones + newRow(EditablePhone(number = ""))) }
-
-    fun onSetPrimaryPhone(rowId: Long) =
-        updateData {
-            it.copy(
-                phones =
-                    it.phones.map { row ->
-                        row.copy(value = row.value.copy(isPrimary = row.rowId == rowId))
-                    },
-            )
-        }
-
-    fun onMovePhone(
-        rowId: Long,
-        offset: Int,
-    ) = updateData { it.copy(phones = it.phones.moved(rowId, offset)) }
-
-    fun onRemovePhone(rowId: Long) =
-        updateData {
-            val remaining = it.phones.filterNot { row -> row.rowId == rowId }
-            it.copy(phones = remaining.ifEmpty { listOf(newRow(EditablePhone(number = ""))) })
-        }
-
-    fun onEmailChange(
-        rowId: Long,
-        value: String,
-    ) = updateData { it.copy(emails = it.emails.withRow(rowId) { email -> email.copy(address = value) }) }
-
-    fun onEmailKindChange(
-        rowId: Long,
-        kind: EmailKind,
-    ) = updateData { it.copy(emails = it.emails.withRow(rowId) { email -> email.copy(kind = kind) }) }
-
-    fun onEmailCustomLabelChange(
-        rowId: Long,
-        value: String,
-    ) = updateData { it.copy(emails = it.emails.withRow(rowId) { email -> email.copy(customLabel = value) }) }
-
-    fun onAddEmail() = updateData { it.copy(emails = it.emails + newRow(EditableEmail(address = ""))) }
-
-    fun onSetPrimaryEmail(rowId: Long) =
-        updateData {
-            it.copy(
-                emails =
-                    it.emails.map { row ->
-                        row.copy(value = row.value.copy(isPrimary = row.rowId == rowId))
-                    },
-            )
-        }
-
-    fun onMoveEmail(
-        rowId: Long,
-        offset: Int,
-    ) = updateData { it.copy(emails = it.emails.moved(rowId, offset)) }
-
-    fun onRemoveEmail(rowId: Long) =
-        updateData { editor ->
-            editor.copy(emails = editor.emails.filterNot { row -> row.rowId == rowId })
-        }
-
-    fun onAddressChange(
-        rowId: Long,
-        value: String,
-    ) = updateData {
-        it.copy(addresses = it.addresses.withRow(rowId) { address -> address.copy(address = value) })
-    }
-
-    fun onAddressStreetChange(
-        rowId: Long,
-        value: String,
-    ) = updateData {
-        it.copy(
-            addresses =
-                it.addresses.withRow(rowId) { address ->
-                    address.copy(street = value, address = "")
-                },
-        )
-    }
-
-    fun onAddressPoBoxChange(
-        rowId: Long,
-        value: String,
-    ) = updateData {
-        it.copy(addresses = it.addresses.withRow(rowId) { address -> address.copy(poBox = value) })
-    }
-
-    fun onAddressNeighborhoodChange(
-        rowId: Long,
-        value: String,
-    ) = updateData {
-        it.copy(addresses = it.addresses.withRow(rowId) { address -> address.copy(neighborhood = value) })
-    }
-
-    fun onAddressCityChange(
-        rowId: Long,
-        value: String,
-    ) = updateData {
-        it.copy(addresses = it.addresses.withRow(rowId) { address -> address.copy(city = value) })
-    }
-
-    fun onAddressRegionChange(
-        rowId: Long,
-        value: String,
-    ) = updateData {
-        it.copy(addresses = it.addresses.withRow(rowId) { address -> address.copy(region = value) })
-    }
-
-    fun onAddressPostcodeChange(
-        rowId: Long,
-        value: String,
-    ) = updateData {
-        it.copy(addresses = it.addresses.withRow(rowId) { address -> address.copy(postcode = value) })
-    }
-
-    fun onAddressCountryChange(
-        rowId: Long,
-        value: String,
-    ) = updateData {
-        it.copy(addresses = it.addresses.withRow(rowId) { address -> address.copy(country = value) })
-    }
-
-    fun onAddressKindChange(
-        rowId: Long,
-        kind: AddressKind,
-    ) = updateData { it.copy(addresses = it.addresses.withRow(rowId) { address -> address.copy(kind = kind) }) }
-
-    fun onAddressCustomLabelChange(
-        rowId: Long,
-        value: String,
-    ) = updateData {
-        it.copy(addresses = it.addresses.withRow(rowId) { address -> address.copy(customLabel = value) })
-    }
-
-    fun onAddAddress() = updateData { it.copy(addresses = it.addresses + newRow(EditableAddress(address = ""))) }
-
-    fun onRemoveAddress(rowId: Long) =
-        updateData { editor ->
-            editor.copy(addresses = editor.addresses.filterNot { row -> row.rowId == rowId })
-        }
-
-    fun onWebsiteChange(
-        rowId: Long,
-        value: String,
-    ) = updateData { it.copy(websites = it.websites.withRow(rowId) { website -> website.copy(url = value) }) }
-
-    fun onWebsiteKindChange(
-        rowId: Long,
-        kind: WebsiteKind,
-    ) = updateData {
-        it.copy(websites = it.websites.withRow(rowId) { website -> website.copy(kind = kind) })
-    }
-
-    fun onWebsiteCustomLabelChange(
-        rowId: Long,
-        value: String,
-    ) = updateData {
-        it.copy(websites = it.websites.withRow(rowId) { website -> website.copy(customLabel = value) })
-    }
-
-    fun onAddWebsite() = updateData { it.copy(websites = it.websites + newRow(EditableWebsite(url = ""))) }
-
-    fun onRemoveWebsite(rowId: Long) =
-        updateData { editor ->
-            editor.copy(websites = editor.websites.filterNot { row -> row.rowId == rowId })
-        }
-
-    fun onImChange(
-        rowId: Long,
-        value: String,
-    ) = updateData {
-        it.copy(instantMessages = it.instantMessages.withRow(rowId) { message -> message.copy(address = value) })
-    }
-
-    fun onImProtocolChange(
-        rowId: Long,
-        protocol: ImProtocol,
-    ) = updateData {
-        it.copy(instantMessages = it.instantMessages.withRow(rowId) { message -> message.copy(protocol = protocol) })
-    }
-
-    fun onImCustomProtocolChange(
-        rowId: Long,
-        value: String,
-    ) = updateData {
-        it.copy(instantMessages = it.instantMessages.withRow(rowId) { message -> message.copy(customProtocol = value) })
-    }
-
-    fun onAddIm() =
-        updateData {
-            it.copy(instantMessages = it.instantMessages + newRow(EditableInstantMessage(address = "")))
-        }
-
-    fun onRemoveIm(rowId: Long) =
-        updateData { editor ->
-            editor.copy(instantMessages = editor.instantMessages.filterNot { row -> row.rowId == rowId })
-        }
-
-    fun onSipChange(
-        rowId: Long,
-        value: String,
-    ) = updateData {
-        it.copy(sipAddresses = it.sipAddresses.withRow(rowId) { sip -> sip.copy(address = value) })
-    }
-
-    fun onSipKindChange(
-        rowId: Long,
-        kind: SipKind,
-    ) = updateData {
-        it.copy(sipAddresses = it.sipAddresses.withRow(rowId) { sip -> sip.copy(kind = kind) })
-    }
-
-    fun onSipCustomLabelChange(
-        rowId: Long,
-        value: String,
-    ) = updateData {
-        it.copy(sipAddresses = it.sipAddresses.withRow(rowId) { sip -> sip.copy(customLabel = value) })
-    }
-
-    fun onAddSip() =
-        updateData {
-            it.copy(sipAddresses = it.sipAddresses + newRow(EditableSipAddress(address = "")))
-        }
-
-    fun onRemoveSip(rowId: Long) =
-        updateData { editor ->
-            editor.copy(sipAddresses = editor.sipAddresses.filterNot { row -> row.rowId == rowId })
-        }
-
-    fun onNicknameChange(value: String) = updateData { it.copy(nickname = it.nickname.copy(nickname = value)) }
-
     fun onAccountSelected(account: ContactAccount) {
         if (!state.value.isNew) return
-        updateData { current ->
+        update { current ->
             val availableGroupIds =
                 current.allGroups
                     .filter { it.belongsTo(account) }
@@ -444,20 +146,8 @@ class ContactEditorViewModel(
                 selectedGroupIds = current.selectedGroupIds.intersect(availableGroupIds),
             )
         }
-        viewModelScope.launch { persistLastAccount(account) }
+        viewModelScope.launch { persistLastAccount(setLastContactAccountUseCase, account) }
     }
-
-    fun onGroupToggled(groupId: Long) =
-        updateData {
-            it.copy(
-                selectedGroupIds =
-                    if (groupId in it.selectedGroupIds) {
-                        it.selectedGroupIds - groupId
-                    } else {
-                        it.selectedGroupIds + groupId
-                    },
-            )
-        }
 
     /** Создаёт группу прямо из пикера и сразу отмечает её: метку создают, чтобы назначить контакту. */
     @Suppress("TooGenericExceptionCaught") // Осознанно: сбой создания группы показывается в форме.
@@ -488,75 +178,6 @@ class ContactEditorViewModel(
         }
     }
 
-    fun onRelationNameChange(
-        rowId: Long,
-        value: String,
-    ) = updateData { it.copy(relations = it.relations.withRow(rowId) { relation -> relation.copy(name = value) }) }
-
-    fun onRelationKindChange(
-        rowId: Long,
-        kind: RelationKind,
-    ) = updateData { it.copy(relations = it.relations.withRow(rowId) { relation -> relation.copy(kind = kind) }) }
-
-    fun onRelationCustomLabelChange(
-        rowId: Long,
-        value: String,
-    ) = updateData {
-        it.copy(relations = it.relations.withRow(rowId) { relation -> relation.copy(customLabel = value) })
-    }
-
-    fun onAddRelation() = updateData { it.copy(relations = it.relations + newRow(EditableRelation(name = ""))) }
-
-    fun onRemoveRelation(rowId: Long) =
-        updateData { editor ->
-            editor.copy(relations = editor.relations.filterNot { row -> row.rowId == rowId })
-        }
-
-    fun onEventDateChange(
-        rowId: Long,
-        date: Birthday?,
-    ) = updateData { it.copy(events = it.events.withRow(rowId) { event -> event.copy(date = date) }) }
-
-    fun onEventKindChange(
-        rowId: Long,
-        kind: EventKind,
-    ) = updateData { it.copy(events = it.events.withRow(rowId) { event -> event.copy(kind = kind) }) }
-
-    fun onEventCustomLabelChange(
-        rowId: Long,
-        value: String,
-    ) = updateData { it.copy(events = it.events.withRow(rowId) { event -> event.copy(customLabel = value) }) }
-
-    fun onAddEvent() = updateData { it.copy(events = it.events + newRow(EditableEvent())) }
-
-    fun onRemoveEvent(rowId: Long) =
-        updateData { editor ->
-            editor.copy(events = editor.events.filterNot { row -> row.rowId == rowId })
-        }
-
-    fun onOrganizationCompanyChange(value: String) =
-        updateData { it.copy(organization = it.organization.copy(company = value)) }
-
-    fun onOrganizationTitleChange(value: String) =
-        updateData { it.copy(organization = it.organization.copy(title = value)) }
-
-    fun onOrganizationDepartmentChange(value: String) =
-        updateData { it.copy(organization = it.organization.copy(department = value)) }
-
-    fun onOrganizationJobDescriptionChange(value: String) =
-        updateData { it.copy(organization = it.organization.copy(jobDescription = value)) }
-
-    fun onOrganizationOfficeLocationChange(value: String) =
-        updateData { it.copy(organization = it.organization.copy(officeLocation = value)) }
-
-    fun onNoteChange(value: String) = updateData { it.copy(note = it.note.copy(note = value)) }
-
-    fun onBirthdayChange(value: Birthday?) = updateData { it.copy(birthday = it.birthday.copy(value = value)) }
-
-    fun onPhotoPicked(uri: String) = updateData { it.copy(photoUri = uri, photoChanged = true) }
-
-    fun onPhotoRemoved() = updateData { it.copy(photoUri = null, photoChanged = true) }
-
     fun isDirty(): Boolean = state.value.isDirty()
 
     // Catch-all осознанный: любая ошибка превращается в Error-стейт.
@@ -578,13 +199,13 @@ class ContactEditorViewModel(
         viewModelScope.launch {
             if (id == null) {
                 // Новый контакт: предупреждаем, если такой уже есть.
-                val similar = findSimilarContacts(form, loadContacts())
+                val similar = findSimilarContacts(form, loadContacts(getContactsUseCase))
                 if (similar.isNotEmpty()) {
                     state.update { it.copy(similarContacts = similar) }
                     return@launch
                 }
             }
-            save(id, form)
+            save(state, createContactUseCase, updateContactUseCase, id, form)
         }
     }
 
@@ -593,39 +214,12 @@ class ContactEditorViewModel(
         val id = state.value.contactId
         val form = state.value.toForm()
         state.update { it.copy(similarContacts = emptyList()) }
-        viewModelScope.launch { save(id, form) }
+        viewModelScope.launch { save(state, createContactUseCase, updateContactUseCase, id, form) }
     }
 
     /** Пользователь отказался от сохранения. */
     fun onSaveDismissed() {
         state.update { it.copy(similarContacts = emptyList()) }
-    }
-
-    @Suppress("TooGenericExceptionCaught") // Осознанно: ошибка сохранения показывается в поле формы.
-    private suspend fun save(
-        id: Long?,
-        form: ContactForm,
-    ) {
-        state.update { it.copy(isBusy = true, errorMessage = null, fieldErrors = emptyMap()) }
-        try {
-            val result =
-                if (id == null) {
-                    createContactUseCase(form, state.value.selectedAccount ?: ContactAccount.Local)
-                } else {
-                    updateContactUseCase(id, form)
-                }
-            when (result) {
-                is SaveResult.Saved -> state.update { it.copy(closeScreen = true) }
-                is SaveResult.Invalid -> state.update { it.copy(formError = result.error) }
-            }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            logw(EDITOR_TAG, "save contact failed", e)
-            state.update { it.copy(errorMessage = e.message) }
-        } finally {
-            state.update { it.copy(isBusy = false) }
-        }
     }
 
     // Catch-all осознанный: любая ошибка превращается в Error-стейт.
@@ -653,70 +247,9 @@ class ContactEditorViewModel(
         }
     }
 
-    private fun updateData(transform: (EditorUiState) -> EditorUiState) {
+    /** Меняет состояние формы и снимает прежние ошибки. */
+    internal fun update(transform: (EditorUiState) -> EditorUiState) {
         state.update { transform(it).copy(formError = null, errorMessage = null, deleteFailed = false) }
-    }
-
-    /** Список групп для пикера: сбой чтения не должен ломать редактирование контакта. */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой списка групп не мешает форме.
-    private suspend fun loadGroups(): List<ContactGroup> =
-        try {
-            getGroupsUseCase()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            logw(EDITOR_TAG, "load groups failed", e)
-            emptyList()
-        }
-
-    /** Аккаунты для нового контакта: сбой чтения оставляет только локальный. */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: без списка аккаунтов форма остаётся локальной.
-    private suspend fun loadAccounts(): List<ContactAccount> {
-        val loaded =
-            try {
-                getContactAccountsUseCase()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logw(EDITOR_TAG, "load accounts failed", e)
-                emptyList()
-            }
-        return (listOf(ContactAccount.Local) + loaded.filterNot { it.isLocal }).distinct()
-    }
-
-    /** Аккаунт существующего контакта: сбой чтения не мешает редактированию. */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: аккаунт контакта не мешает форме.
-    private suspend fun loadContactAccount(contactId: Long): ContactAccount =
-        try {
-            getContactAccountUseCase(contactId)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            logw(EDITOR_TAG, "load contact account failed", e)
-            ContactAccount.Local
-        }
-
-    /** Последний выбранный аккаунт: сбой настроек не мешает созданию контакта. */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: без аккаунта по умолчанию форма остаётся локальной.
-    private suspend fun loadDefaultAccount(): ContactAccount =
-        try {
-            getDefaultContactAccountUseCase()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            logw(EDITOR_TAG, "load default contact account failed", e)
-            ContactAccount.Local
-        }
-
-    @Suppress("TooGenericExceptionCaught") // Осознанно: последний аккаунт - удобство, его сбой не важен.
-    private suspend fun persistLastAccount(account: ContactAccount) {
-        try {
-            setLastContactAccountUseCase(account)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            logw(EDITOR_TAG, "save last contact account failed", e)
-        }
     }
 
     /** Новая строка со стабильным ключом: счётчик живёт в пределах экрана. */

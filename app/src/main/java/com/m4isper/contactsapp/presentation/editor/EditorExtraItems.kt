@@ -23,67 +23,67 @@ import com.m4isper.contactsapp.ui.theme.LocalSpacing
 /** Организация, день рождения, события, связи и заметка. */
 internal fun LazyListScope.editorExtraItems(
     uiState: EditorUiState,
-    viewModel: ContactEditorViewModel,
+    edit: ((EditorUiState) -> EditorUiState) -> Unit,
     onBirthdayClick: () -> Unit,
     onEventDateClick: (Long) -> Unit,
 ) {
-    organizationItems(uiState, viewModel)
-    birthdayItems(uiState, viewModel, onBirthdayClick)
-    eventItems(uiState, viewModel, onEventDateClick)
-    relationItems(uiState, viewModel)
-    noteItems(uiState, viewModel)
+    organizationItems(uiState, edit)
+    birthdayItems(uiState, edit, onBirthdayClick)
+    eventItems(uiState, edit, onEventDateClick)
+    relationItems(uiState, edit)
+    noteItems(uiState, edit)
 }
 
 private fun LazyListScope.organizationItems(
     uiState: EditorUiState,
-    viewModel: ContactEditorViewModel,
+    edit: ((EditorUiState) -> EditorUiState) -> Unit,
 ) {
     item(key = "organization-header") {
         SectionHeader(titleRes = R.string.editor_section_organization)
     }
     item(key = "organization") {
-        OrganizationFields(uiState, viewModel)
+        OrganizationFields(uiState, edit)
     }
 }
 
 @Composable
 private fun OrganizationFields(
     uiState: EditorUiState,
-    viewModel: ContactEditorViewModel,
+    edit: ((EditorUiState) -> EditorUiState) -> Unit,
 ) {
     val spacing = LocalSpacing.current
     Column(modifier = Modifier.padding(horizontal = spacing.m)) {
         OrganizationField(
             value = uiState.organization.company,
-            onValueChange = viewModel::onOrganizationCompanyChange,
+            onValueChange = { value -> edit { it.withOrganizationCompany(value) } },
             labelRes = R.string.editor_organization_company,
             testTag = "editor_company_field",
         )
         Spacer(modifier = Modifier.height(spacing.s))
         OrganizationField(
             value = uiState.organization.title,
-            onValueChange = viewModel::onOrganizationTitleChange,
+            onValueChange = { value -> edit { it.withOrganizationTitle(value) } },
             labelRes = R.string.editor_organization_title,
             testTag = "editor_title_field",
         )
         Spacer(modifier = Modifier.height(spacing.s))
         OrganizationField(
             value = uiState.organization.department,
-            onValueChange = viewModel::onOrganizationDepartmentChange,
+            onValueChange = { value -> edit { it.withOrganizationDepartment(value) } },
             labelRes = R.string.editor_organization_department,
             testTag = "editor_department_field",
         )
         Spacer(modifier = Modifier.height(spacing.s))
         OrganizationField(
             value = uiState.organization.jobDescription,
-            onValueChange = viewModel::onOrganizationJobDescriptionChange,
+            onValueChange = { value -> edit { it.withOrganizationJobDescription(value) } },
             labelRes = R.string.editor_organization_job_description,
             testTag = "editor_job_description_field",
         )
         Spacer(modifier = Modifier.height(spacing.s))
         OrganizationField(
             value = uiState.organization.officeLocation,
-            onValueChange = viewModel::onOrganizationOfficeLocationChange,
+            onValueChange = { value -> edit { it.withOrganizationOfficeLocation(value) } },
             labelRes = R.string.editor_organization_office_location,
             testTag = "editor_office_location_field",
         )
@@ -117,7 +117,7 @@ private fun OrganizationField(
 
 private fun LazyListScope.birthdayItems(
     uiState: EditorUiState,
-    viewModel: ContactEditorViewModel,
+    edit: ((EditorUiState) -> EditorUiState) -> Unit,
     onBirthdayClick: () -> Unit,
 ) {
     item(key = "birthday-header") {
@@ -127,20 +127,20 @@ private fun LazyListScope.birthdayItems(
         BirthdayEditorRow(
             birthday = uiState.birthday,
             onPickClick = onBirthdayClick,
-            onBirthdayChange = viewModel::onBirthdayChange,
+            onBirthdayChange = { value -> edit { it.withBirthday(value) } },
         )
     }
 }
 
 private fun LazyListScope.eventItems(
     uiState: EditorUiState,
-    viewModel: ContactEditorViewModel,
+    edit: ((EditorUiState) -> EditorUiState) -> Unit,
     onEventDateClick: (Long) -> Unit,
 ) {
     item(key = "events-header") {
         SectionHeader(
             titleRes = R.string.editor_section_events,
-            onAdd = viewModel::onAddEvent,
+            onAdd = { edit { it.withAddedEvent() } },
             addLabelRes = R.string.editor_add_event,
             addTestTag = "editor_add_event_button",
         )
@@ -151,23 +151,23 @@ private fun LazyListScope.eventItems(
     ) { row ->
         EventEditorRow(
             row = row,
-            onKindChange = viewModel::onEventKindChange,
+            onKindChange = { rowId, kind -> edit { it.withEventKind(rowId, kind) } },
             onDatePickClick = onEventDateClick,
-            onDateChange = viewModel::onEventDateChange,
-            onCustomLabelChange = viewModel::onEventCustomLabelChange,
-            onRemove = viewModel::onRemoveEvent,
+            onDateChange = { rowId, date -> edit { it.withEventDate(rowId, date) } },
+            onCustomLabelChange = { rowId, value -> edit { it.withEventLabel(rowId, value) } },
+            onRemove = { rowId -> edit { it.withoutEvent(rowId) } },
         )
     }
 }
 
 private fun LazyListScope.relationItems(
     uiState: EditorUiState,
-    viewModel: ContactEditorViewModel,
+    edit: ((EditorUiState) -> EditorUiState) -> Unit,
 ) {
     item(key = "relations-header") {
         SectionHeader(
             titleRes = R.string.editor_section_relations,
-            onAdd = viewModel::onAddRelation,
+            onAdd = { edit { it.withAddedRelation() } },
             addLabelRes = R.string.editor_add_relation,
             addTestTag = "editor_add_relation_button",
         )
@@ -178,17 +178,22 @@ private fun LazyListScope.relationItems(
     ) { row ->
         RelationEditorRow(
             row = row,
-            onNameChange = viewModel::onRelationNameChange,
-            onKindChange = viewModel::onRelationKindChange,
-            onCustomLabelChange = viewModel::onRelationCustomLabelChange,
-            onRemove = viewModel::onRemoveRelation,
+            onNameChange = { rowId, value -> edit { it.withRelationName(rowId, value) } },
+            onKindChange = { rowId, kind -> edit { it.withRelationKind(rowId, kind) } },
+            onCustomLabelChange = {
+                rowId,
+                value,
+                ->
+                edit { it.withRelationLabel(rowId, value) }
+            },
+            onRemove = { rowId -> edit { it.withoutRelation(rowId) } },
         )
     }
 }
 
 private fun LazyListScope.noteItems(
     uiState: EditorUiState,
-    viewModel: ContactEditorViewModel,
+    edit: ((EditorUiState) -> EditorUiState) -> Unit,
 ) {
     item(key = "note-header") {
         SectionHeader(titleRes = R.string.editor_section_note)
@@ -197,7 +202,7 @@ private fun LazyListScope.noteItems(
         val spacing = LocalSpacing.current
         OutlinedTextField(
             value = uiState.note.note,
-            onValueChange = viewModel::onNoteChange,
+            onValueChange = { value -> edit { it.withNote(value) } },
             label = { Text(stringResource(R.string.editor_note_label)) },
             minLines = 3,
             shape = MaterialTheme.shapes.medium,

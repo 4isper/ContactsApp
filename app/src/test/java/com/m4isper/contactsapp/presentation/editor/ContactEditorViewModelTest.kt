@@ -185,7 +185,7 @@ class ContactEditorViewModelTest {
             viewModel.load(null)
             advanceUntilIdle()
 
-            viewModel.onDisplayNameChange("Anna")
+            viewModel.update { state -> state.withDisplayName("Anna") }
             viewModel.onSave()
             advanceUntilIdle()
 
@@ -224,7 +224,7 @@ class ContactEditorViewModelTest {
             viewModel.load(null, sessionId = 1L)
             advanceUntilIdle()
 
-            viewModel.onDisplayNameChange("Anna")
+            viewModel.update { state -> state.withDisplayName("Anna") }
             // Повторный load в том же сеансе (например, после выдачи разрешения).
             viewModel.load(null, sessionId = 1L)
             advanceUntilIdle()
@@ -301,7 +301,7 @@ class ContactEditorViewModelTest {
             assertEquals(ContactAccount.Local, viewModel.uiState.value.selectedAccount)
 
             viewModel.onAccountSelected(google)
-            viewModel.onDisplayNameChange("Anna")
+            viewModel.update { state -> state.withDisplayName("Anna") }
             viewModel.onSave()
             advanceUntilIdle()
 
@@ -382,14 +382,14 @@ class ContactEditorViewModelTest {
             viewModel.load(null)
             advanceUntilIdle()
 
-            viewModel.onAddIm()
+            viewModel.update { state -> state.withAddedIm() }
             advanceUntilIdle()
             val rowId =
                 viewModel.uiState.value.instantMessages
                     .single()
                     .rowId
-            viewModel.onImChange(rowId, "tg_anna")
-            viewModel.onImCustomProtocolChange(rowId, "Telegram")
+            viewModel.update { state -> state.withIm(rowId, "tg_anna") }
+            viewModel.update { state -> state.withImCustomProtocol(rowId, "Telegram") }
             viewModel.onSave()
             advanceUntilIdle()
 
@@ -414,11 +414,11 @@ class ContactEditorViewModelTest {
 
             assertEquals(false, viewModel.isDirty())
 
-            viewModel.onAddEmail()
+            viewModel.update { state -> state.withAddedEmail() }
             advanceUntilIdle()
             assertEquals(false, viewModel.isDirty())
 
-            viewModel.onAddIm()
+            viewModel.update { state -> state.withAddedIm() }
             advanceUntilIdle()
             assertEquals(false, viewModel.isDirty())
 
@@ -426,11 +426,11 @@ class ContactEditorViewModelTest {
                 viewModel.uiState.value.emails
                     .single()
                     .rowId
-            viewModel.onEmailChange(rowId, "anna@example.com")
+            viewModel.update { state -> state.withEmail(rowId, "anna@example.com") }
             advanceUntilIdle()
             assertEquals(true, viewModel.isDirty())
 
-            viewModel.onRemoveEmail(rowId)
+            viewModel.update { state -> state.withoutEmail(rowId) }
             advanceUntilIdle()
             assertEquals(false, viewModel.isDirty())
         }
@@ -444,35 +444,41 @@ class ContactEditorViewModelTest {
             viewModel.load(null)
             advanceUntilIdle()
 
-            viewModel.onDisplayNameChange("Anna")
-            viewModel.onAddEmail()
+            viewModel.update { state -> state.withDisplayName("Anna") }
+            viewModel.update { state -> state.withAddedEmail() }
             advanceUntilIdle()
-            viewModel.onEmailChange(
-                viewModel.uiState.value.emails
-                    .first()
-                    .rowId,
-                "anna@example.com",
-            )
-            viewModel.onAddAddress()
+            viewModel.update { state ->
+                state.withEmail(
+                    viewModel.uiState.value.emails
+                        .first()
+                        .rowId,
+                    "anna@example.com",
+                )
+            }
+            viewModel.update { state -> state.withAddedAddress() }
             advanceUntilIdle()
-            viewModel.onAddressChange(
-                viewModel.uiState.value.addresses
-                    .first()
-                    .rowId,
-                "Moscow",
-            )
-            viewModel.onAddWebsite()
+            viewModel.update { state ->
+                state.withAddress(
+                    viewModel.uiState.value.addresses
+                        .first()
+                        .rowId,
+                    "Moscow",
+                )
+            }
+            viewModel.update { state -> state.withAddedWebsite() }
             advanceUntilIdle()
-            viewModel.onWebsiteChange(
-                viewModel.uiState.value.websites
-                    .first()
-                    .rowId,
-                "https://example.com",
-            )
-            viewModel.onOrganizationCompanyChange("ACME")
-            viewModel.onNoteChange("Note")
-            viewModel.onBirthdayChange(Birthday(day = 24, month = 5, year = 1990))
-            viewModel.onPhotoPicked("content://photo/1")
+            viewModel.update { state ->
+                state.withWebsite(
+                    viewModel.uiState.value.websites
+                        .first()
+                        .rowId,
+                    "https://example.com",
+                )
+            }
+            viewModel.update { state -> state.withOrganizationCompany("ACME") }
+            viewModel.update { state -> state.withNote("Note") }
+            viewModel.update { state -> state.withBirthday(Birthday(day = 24, month = 5, year = 1990)) }
+            viewModel.update { state -> state.withPhoto("content://photo/1") }
             viewModel.onSave()
             advanceUntilIdle()
 
@@ -497,51 +503,51 @@ class ContactEditorViewModelTest {
             viewModel.load(null)
             advanceUntilIdle()
 
-            viewModel.onDisplayNameChange("Anna")
-            viewModel.onAddPhone()
-            viewModel.onAddPhone()
+            viewModel.update { state -> state.withDisplayName("Anna") }
+            viewModel.update { state -> state.withAddedPhone() }
+            viewModel.update { state -> state.withAddedPhone() }
             advanceUntilIdle()
             val firstPhone = viewModel.uiState.value.phones[0]
             val secondPhone = viewModel.uiState.value.phones[1]
-            viewModel.onPhoneChange(firstPhone.rowId, "111")
-            viewModel.onPhoneChange(secondPhone.rowId, "222")
-            viewModel.onKindChange(secondPhone.rowId, PhoneKind.WORK_MOBILE)
-            viewModel.onMovePhone(secondPhone.rowId, -1)
-            viewModel.onSetPrimaryPhone(secondPhone.rowId)
+            viewModel.update { state -> state.withPhone(firstPhone.rowId, "111") }
+            viewModel.update { state -> state.withPhone(secondPhone.rowId, "222") }
+            viewModel.update { state -> state.withPhoneKind(secondPhone.rowId, PhoneKind.WORK_MOBILE) }
+            viewModel.update { state -> state.withMovedPhone(secondPhone.rowId, -1) }
+            viewModel.update { state -> state.withPrimaryPhone(secondPhone.rowId) }
 
-            viewModel.onAddEmail()
+            viewModel.update { state -> state.withAddedEmail() }
             advanceUntilIdle()
             val email = viewModel.uiState.value.emails[0]
-            viewModel.onEmailChange(email.rowId, "anna@example.com")
-            viewModel.onEmailKindChange(email.rowId, EmailKind.MOBILE)
-            viewModel.onSetPrimaryEmail(email.rowId)
+            viewModel.update { state -> state.withEmail(email.rowId, "anna@example.com") }
+            viewModel.update { state -> state.withEmailKind(email.rowId, EmailKind.MOBILE) }
+            viewModel.update { state -> state.withPrimaryEmail(email.rowId) }
 
-            viewModel.onAddAddress()
+            viewModel.update { state -> state.withAddedAddress() }
             advanceUntilIdle()
             val address = viewModel.uiState.value.addresses[0]
-            viewModel.onAddressStreetChange(address.rowId, "Lenina 1")
-            viewModel.onAddressCityChange(address.rowId, "Moscow")
-            viewModel.onAddressRegionChange(address.rowId, "MO")
-            viewModel.onAddressPostcodeChange(address.rowId, "101000")
-            viewModel.onAddressCountryChange(address.rowId, "Russia")
-            viewModel.onAddressKindChange(address.rowId, AddressKind.WORK)
+            viewModel.update { state -> state.withAddressStreet(address.rowId, "Lenina 1") }
+            viewModel.update { state -> state.withAddressCity(address.rowId, "Moscow") }
+            viewModel.update { state -> state.withAddressRegion(address.rowId, "MO") }
+            viewModel.update { state -> state.withAddressPostcode(address.rowId, "101000") }
+            viewModel.update { state -> state.withAddressCountry(address.rowId, "Russia") }
+            viewModel.update { state -> state.withAddressKind(address.rowId, AddressKind.WORK) }
 
-            viewModel.onAddSip()
+            viewModel.update { state -> state.withAddedSip() }
             advanceUntilIdle()
             val sip = viewModel.uiState.value.sipAddresses[0]
-            viewModel.onSipChange(sip.rowId, "sip:anna@example.com")
-            viewModel.onSipKindChange(sip.rowId, SipKind.WORK)
+            viewModel.update { state -> state.withSip(sip.rowId, "sip:anna@example.com") }
+            viewModel.update { state -> state.withSipKind(sip.rowId, SipKind.WORK) }
 
-            viewModel.onAddWebsite()
+            viewModel.update { state -> state.withAddedWebsite() }
             advanceUntilIdle()
             val website = viewModel.uiState.value.websites[0]
-            viewModel.onWebsiteChange(website.rowId, "https://blog.example")
-            viewModel.onWebsiteKindChange(website.rowId, WebsiteKind.BLOG)
+            viewModel.update { state -> state.withWebsite(website.rowId, "https://blog.example") }
+            viewModel.update { state -> state.withWebsiteKind(website.rowId, WebsiteKind.BLOG) }
 
-            viewModel.onOrganizationCompanyChange("ACME")
-            viewModel.onOrganizationDepartmentChange("Platform")
-            viewModel.onOrganizationJobDescriptionChange("Leads engineering")
-            viewModel.onOrganizationOfficeLocationChange("London")
+            viewModel.update { state -> state.withOrganizationCompany("ACME") }
+            viewModel.update { state -> state.withOrganizationDepartment("Platform") }
+            viewModel.update { state -> state.withOrganizationJobDescription("Leads engineering") }
+            viewModel.update { state -> state.withOrganizationOfficeLocation("London") }
             viewModel.onSave()
             advanceUntilIdle()
 
@@ -600,7 +606,7 @@ class ContactEditorViewModelTest {
                 viewModel.uiState.value.phones
                     .single()
                     .rowId
-            viewModel.onPhoneChange(phoneRowId, "+79161234567")
+            viewModel.update { state -> state.withPhone(phoneRowId, "+79161234567") }
 
             viewModel.onSave()
             advanceUntilIdle()
@@ -622,13 +628,13 @@ class ContactEditorViewModelTest {
             val viewModel = viewModel(repository)
             viewModel.load(null)
             advanceUntilIdle()
-            viewModel.onAddEmail()
+            viewModel.update { state -> state.withAddedEmail() }
             advanceUntilIdle()
             val emailRowId =
                 viewModel.uiState.value.emails
                     .single()
                     .rowId
-            viewModel.onEmailChange(emailRowId, "not-an-email")
+            viewModel.update { state -> state.withEmail(emailRowId, "not-an-email") }
 
             viewModel.onSave()
             advanceUntilIdle()
@@ -658,7 +664,7 @@ class ContactEditorViewModelTest {
 
             assertEquals(false, viewModel.isDirty())
 
-            viewModel.onPhotoRemoved()
+            viewModel.update { state -> state.withoutPhoto() }
             advanceUntilIdle()
             assertEquals(true, viewModel.isDirty())
 
@@ -711,8 +717,8 @@ class ContactEditorViewModelTest {
             viewModel.load(null)
             advanceUntilIdle()
 
-            viewModel.onDisplayNameChange("Иван Петров")
-            viewModel.onToggleNameMode()
+            viewModel.update { state -> state.withDisplayName("Иван Петров") }
+            viewModel.update { state -> state.withToggledNameMode() }
             advanceUntilIdle()
 
             val state = viewModel.uiState.value
@@ -729,11 +735,11 @@ class ContactEditorViewModelTest {
             viewModel.load(null)
             advanceUntilIdle()
 
-            viewModel.onToggleNameMode()
-            viewModel.onGivenNameChange("Иван")
-            viewModel.onMiddleNameChange("Петрович")
-            viewModel.onFamilyNameChange("Петров")
-            viewModel.onToggleNameMode()
+            viewModel.update { state -> state.withToggledNameMode() }
+            viewModel.update { state -> state.withGivenName("Иван") }
+            viewModel.update { state -> state.withMiddleName("Петрович") }
+            viewModel.update { state -> state.withFamilyName("Петров") }
+            viewModel.update { state -> state.withToggledNameMode() }
             advanceUntilIdle()
 
             val state = viewModel.uiState.value
@@ -750,9 +756,9 @@ class ContactEditorViewModelTest {
             viewModel.load(null)
             advanceUntilIdle()
 
-            viewModel.onToggleNameMode()
-            viewModel.onGivenNameChange("Иван")
-            viewModel.onFamilyNameChange("Петров")
+            viewModel.update { state -> state.withToggledNameMode() }
+            viewModel.update { state -> state.withGivenName("Иван") }
+            viewModel.update { state -> state.withFamilyName("Петров") }
             viewModel.onSave()
             advanceUntilIdle()
 
@@ -800,10 +806,10 @@ class ContactEditorViewModelTest {
             viewModel.load(null)
             advanceUntilIdle()
 
-            viewModel.onToggleNameMode()
-            viewModel.onGivenNameChange("Иван")
-            viewModel.onPhoneticGivenNameChange("Ivan")
-            viewModel.onPhoneticFamilyNameChange("Petrov")
+            viewModel.update { state -> state.withToggledNameMode() }
+            viewModel.update { state -> state.withGivenName("Иван") }
+            viewModel.update { state -> state.withPhoneticGivenName("Ivan") }
+            viewModel.update { state -> state.withPhoneticFamilyName("Petrov") }
             viewModel.onSave()
             advanceUntilIdle()
 
@@ -823,11 +829,11 @@ class ContactEditorViewModelTest {
 
             assertEquals(false, viewModel.isDirty())
 
-            viewModel.onToggleNameMode()
+            viewModel.update { state -> state.withToggledNameMode() }
             advanceUntilIdle()
             assertEquals(true, viewModel.isDirty())
 
-            viewModel.onToggleNameMode()
+            viewModel.update { state -> state.withToggledNameMode() }
             advanceUntilIdle()
             assertEquals(false, viewModel.isDirty())
         }
@@ -889,24 +895,24 @@ class ContactEditorViewModelTest {
             viewModel.load(null)
             advanceUntilIdle()
 
-            viewModel.onDisplayNameChange("Anna")
-            viewModel.onNicknameChange("Нюша")
-            viewModel.onAddRelation()
+            viewModel.update { state -> state.withDisplayName("Anna") }
+            viewModel.update { state -> state.withNickname("Нюша") }
+            viewModel.update { state -> state.withAddedRelation() }
             advanceUntilIdle()
             val relationRowId =
                 viewModel.uiState.value.relations
                     .single()
                     .rowId
-            viewModel.onRelationNameChange(relationRowId, "Bob")
-            viewModel.onRelationKindChange(relationRowId, RelationKind.SISTER)
-            viewModel.onAddEvent()
+            viewModel.update { state -> state.withRelationName(relationRowId, "Bob") }
+            viewModel.update { state -> state.withRelationKind(relationRowId, RelationKind.SISTER) }
+            viewModel.update { state -> state.withAddedEvent() }
             advanceUntilIdle()
             val eventRowId =
                 viewModel.uiState.value.events
                     .single()
                     .rowId
-            viewModel.onEventDateChange(eventRowId, Birthday(day = 10, month = 9, year = null))
-            viewModel.onEventKindChange(eventRowId, EventKind.ANNIVERSARY)
+            viewModel.update { state -> state.withEventDate(eventRowId, Birthday(day = 10, month = 9, year = null)) }
+            viewModel.update { state -> state.withEventKind(eventRowId, EventKind.ANNIVERSARY) }
             viewModel.onSave()
             advanceUntilIdle()
 
@@ -927,8 +933,8 @@ class ContactEditorViewModelTest {
             viewModel.load(null)
             advanceUntilIdle()
 
-            viewModel.onAddRelation()
-            viewModel.onAddEvent()
+            viewModel.update { state -> state.withAddedRelation() }
+            viewModel.update { state -> state.withAddedEvent() }
             advanceUntilIdle()
             assertEquals(false, viewModel.isDirty())
 
@@ -936,11 +942,11 @@ class ContactEditorViewModelTest {
                 viewModel.uiState.value.relations
                     .single()
                     .rowId
-            viewModel.onRelationNameChange(relationRowId, "Bob")
+            viewModel.update { state -> state.withRelationName(relationRowId, "Bob") }
             advanceUntilIdle()
             assertEquals(true, viewModel.isDirty())
 
-            viewModel.onRemoveRelation(relationRowId)
+            viewModel.update { state -> state.withoutRelation(relationRowId) }
             advanceUntilIdle()
             assertEquals(false, viewModel.isDirty())
 
@@ -948,11 +954,11 @@ class ContactEditorViewModelTest {
                 viewModel.uiState.value.events
                     .single()
                     .rowId
-            viewModel.onEventDateChange(eventRowId, Birthday(day = 10, month = 9, year = null))
+            viewModel.update { state -> state.withEventDate(eventRowId, Birthday(day = 10, month = 9, year = null)) }
             advanceUntilIdle()
             assertEquals(true, viewModel.isDirty())
 
-            viewModel.onRemoveEvent(eventRowId)
+            viewModel.update { state -> state.withoutEvent(eventRowId) }
             advanceUntilIdle()
             assertEquals(false, viewModel.isDirty())
         }
@@ -1022,7 +1028,7 @@ class ContactEditorViewModelTest {
                 viewModel.uiState.value.events
                     .single()
                     .rowId
-            viewModel.onRemoveEvent(rowId)
+            viewModel.update { state -> state.withoutEvent(rowId) }
             advanceUntilIdle()
 
             assertEquals(true, viewModel.isDirty())
@@ -1040,7 +1046,7 @@ class ContactEditorViewModelTest {
             viewModel.load(7)
             advanceUntilIdle()
 
-            viewModel.onDisplayNameChange("Edited")
+            viewModel.update { state -> state.withDisplayName("Edited") }
             // Повторный вызов — например, после возврата с экрана системных разрешений.
             viewModel.load(7)
             advanceUntilIdle()
@@ -1117,13 +1123,13 @@ class ContactEditorViewModelTest {
             viewModel.load(null)
             advanceUntilIdle()
 
-            viewModel.onGroupToggled(100)
+            viewModel.update { state -> state.withToggledGroup(100) }
             assertEquals(setOf(100L), viewModel.uiState.value.selectedGroupIds)
 
             viewModel.onAccountSelected(google)
             assertEquals(emptySet<Long>(), viewModel.uiState.value.selectedGroupIds)
 
-            viewModel.onGroupToggled(200)
+            viewModel.update { state -> state.withToggledGroup(200) }
             viewModel.onAccountSelected(ContactAccount.Local)
             assertEquals(emptySet<Long>(), viewModel.uiState.value.selectedGroupIds)
         }
@@ -1243,8 +1249,8 @@ class ContactEditorViewModelTest {
             viewModel.load(null)
             advanceUntilIdle()
 
-            viewModel.onDisplayNameChange("Anna")
-            viewModel.onGroupToggled(100)
+            viewModel.update { state -> state.withDisplayName("Anna") }
+            viewModel.update { state -> state.withToggledGroup(100) }
             viewModel.onSave()
             advanceUntilIdle()
 
@@ -1268,7 +1274,7 @@ class ContactEditorViewModelTest {
             viewModel.load(7)
             advanceUntilIdle()
 
-            viewModel.onGroupToggled(100)
+            viewModel.update { state -> state.withToggledGroup(100) }
             viewModel.onSave()
             advanceUntilIdle()
 
@@ -1305,8 +1311,8 @@ class ContactEditorViewModelTest {
             advanceUntilIdle()
             assertEquals(false, viewModel.isDirty())
 
-            viewModel.onGroupToggled(300)
-            viewModel.onGroupToggled(300)
+            viewModel.update { state -> state.withToggledGroup(300) }
+            viewModel.update { state -> state.withToggledGroup(300) }
 
             assertEquals(false, viewModel.isDirty())
         }
