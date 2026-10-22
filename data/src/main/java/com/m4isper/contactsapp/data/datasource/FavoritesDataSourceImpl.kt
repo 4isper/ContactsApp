@@ -18,6 +18,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +26,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private val Context.favoritesDataStore: DataStore<Preferences> by preferencesDataStore(
     name = "favorites",
@@ -78,33 +80,39 @@ class FavoritesDataSourceImpl(
                     observing = false
                 }
             }
-            startObserving()
-            if (canReadContacts()) migrateLegacyFavorites()
-            trySend(loadStarred())
+            withContext(Dispatchers.IO) {
+                startObserving()
+                if (canReadContacts()) migrateLegacyFavorites()
+                trySend(loadStarred())
+            }
             launch {
                 // Разрешение могло выдать только что: перечитываем и включаем наблюдение.
                 refreshTrigger.collect {
-                    startObserving()
-                    if (canReadContacts()) migrateLegacyFavorites()
-                    trySend(loadStarred())
+                    withContext(Dispatchers.IO) {
+                        startObserving()
+                        if (canReadContacts()) migrateLegacyFavorites()
+                        trySend(loadStarred())
+                    }
                 }
             }
             awaitClose { stopObserving() }
         }.distinctUntilChanged()
 
-    override suspend fun toggle(contactId: Long) {
-        val rawIds = rawContactIds(contactId)
-        if (rawIds.isEmpty()) return
-        if (rawIds.any { isStarred(it) }) {
-            rawIds.forEach(::removeStarred)
-        } else {
-            rawIds.forEach(::addStarred)
+    override suspend fun toggle(contactId: Long) =
+        withContext(Dispatchers.IO) {
+            val rawIds = rawContactIds(contactId)
+            if (rawIds.isEmpty()) return@withContext
+            if (rawIds.any { isStarred(it) }) {
+                rawIds.forEach(::removeStarred)
+            } else {
+                rawIds.forEach(::addStarred)
+            }
         }
-    }
 
-    override suspend fun remove(contactId: Long) {
-        rawContactIds(contactId).forEach(::removeStarred)
-    }
+    override suspend fun remove(contactId: Long) =
+        withContext(Dispatchers.IO) {
+            rawContactIds(contactId).forEach(::removeStarred)
+        }
 
     override suspend fun refresh() {
         refreshTrigger.value += 1
