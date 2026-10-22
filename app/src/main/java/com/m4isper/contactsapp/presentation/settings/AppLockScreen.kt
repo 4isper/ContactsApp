@@ -12,9 +12,11 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,16 +27,31 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.time.Duration
 
 /** Экран ввода PIN-кода: приложение открыт, но защищён. */
 @Composable
 internal fun AppLockScreen(
-    onUnlock: (String) -> Boolean,
+    onUnlock: suspend (String) -> Boolean,
     modifier: Modifier = Modifier,
+    lockedFor: Duration = Duration.ZERO,
 ) {
     val spacing = LocalSpacing.current
+    val scope = rememberCoroutineScope()
     var pin by remember { mutableStateOf("") }
     var failed by remember { mutableStateOf(false) }
+    var checking by remember { mutableStateOf(false) }
+    var remaining by remember(lockedFor) { mutableStateOf(lockedFor) }
+
+    // Обратный отсчёт блокировки: пока ждём, сообщаем, сколько осталось.
+    LaunchedEffect(lockedFor) {
+        while (remaining > Duration.ZERO) {
+            delay(COUNTDOWN_STEP_MILLIS)
+            remaining -= Duration.ofMillis(COUNTDOWN_STEP_MILLIS)
+        }
+    }
 
     Surface(modifier = modifier.fillMaxSize()) {
         Column(
@@ -80,9 +97,23 @@ internal fun AppLockScreen(
                     modifier = Modifier.padding(top = spacing.xs),
                 )
             }
+            if (remaining > Duration.ZERO) {
+                Text(
+                    text = stringResource(R.string.app_lock_too_many_attempts, remaining.seconds.toInt()),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = spacing.xs),
+                )
+            }
             Button(
-                onClick = { failed = !onUnlock(pin) },
-                enabled = pin.length >= MIN_PIN_LENGTH,
+                onClick = {
+                    checking = true
+                    scope.launch {
+                        failed = !onUnlock(pin)
+                        checking = false
+                    }
+                },
+                enabled = pin.length >= MIN_PIN_LENGTH && !checking,
                 modifier =
                     Modifier
                         .padding(top = spacing.m)
@@ -93,3 +124,5 @@ internal fun AppLockScreen(
         }
     }
 }
+
+private const val COUNTDOWN_STEP_MILLIS = 1_000L

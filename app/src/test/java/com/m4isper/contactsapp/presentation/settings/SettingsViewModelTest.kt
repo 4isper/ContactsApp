@@ -22,12 +22,15 @@ import com.m4isper.contactsapp.domain.usecase.SetThemeModeUseCase
 import com.m4isper.contactsapp.presentation.reminders.ReminderScheduler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -120,6 +123,11 @@ class SettingsViewModelTest {
             viewModel.onSecureWindowChanged(true)
             viewModel.onAppLockChanged(true, "1234")
             advanceUntilIdle()
+            withContext(Dispatchers.Default) {
+                withTimeout(5_000) {
+                    while (repository.appLocks.isEmpty()) delay(10)
+                }
+            }
 
             assertEquals(listOf("ru"), repository.languages)
             assertEquals(listOf(false), repository.dynamicColorValues)

@@ -1,35 +1,82 @@
 package com.m4isper.contactsapp.presentation.settings
 
 import androidx.lifecycle.ViewModel
+import com.m4isper.contactsapp.domain.model.AppLockAttempts
+import com.m4isper.contactsapp.domain.model.hashAppLockPin
+import com.m4isper.contactsapp.domain.model.needsAppLockHashMigration
 import com.m4isper.contactsapp.domain.model.verifyAppLockPin
+import com.m4isper.contactsapp.domain.repository.SettingsRepository
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.withContext
+import java.time.Duration
 
-/** Защита приложения: показан PIN-экран, пока контакт не разблокирован. */
+/**
+ * Защита приложения: показан PIN-экран, пока контакт не разблокирован.
+ * Проверка PIN идёт в фоне: хэш считается медленно и не должен блокировать интерфейс.
+ */
 @Inject
 @ViewModelKey
 @ContributesIntoMap(AppScope::class)
-class AppLockViewModel : ViewModel() {
+class AppLockViewModel(
+    private val settingsRepository: SettingsRepository,
+) : ViewModel() {
     private val unlocked = MutableStateFlow(false)
     val isUnlocked: StateFlow<Boolean> = unlocked.asStateFlow()
+    private val lockWait = MutableStateFlow(Duration.ZERO)
 
-    /** Проверяет PIN и снимает блокировку. */
-    fun unlock(
+    /** Сколько осталось ждать до следующей попытки ввода PIN. */
+    val lockRemaining: StateFlow<Duration> = lockWait.asStateFlow()
+    private val attempts = AppLockAttempts()
+
+    /**
+     * Проверяет PIN и снимает блокировку.
+     * @return true, если PIN верный и приложение разблокировано.
+     */
+    suspend fun unlock(
         pin: String,
         hash: String,
     ): Boolean {
-        val ok = verifyAppLockPin(pin, hash)
-        if (ok) unlocked.value = true
+        if (attempts.isLocked()) {
+            publishLockWait()
+            return false
+        }
+        val ok = withContext(Dispatchers.Default) { verifyAppLockPin(pin, hash) }
+        if (ok) {
+            attempts.registerSuccess()
+            lockWait.value = Duration.ZERO
+            unlocked.value = true
+            migrateLegacyHash(pin, hash)
+        } else {
+            attempts.registerFailure()
+            publishLockWait()
+        }
         return ok
     }
 
     /** Снова блокирует приложение: уход в фон. */
     fun lock() {
         unlocked.value = false
+    }
+
+    /** Старый хэш SHA-256 заменяем на PBKDF2 после первого успешного ввода. */
+    private suspend fun migrateLegacyHash(
+        pin: String,
+        hash: String,
+    ) {
+        if (!needsAppLockHashMigration(hash)) return
+        withContext(Dispatchers.Default) {
+            settingsRepository.setAppLock(true, hashAppLockPin(pin))
+        }
+    }
+
+    private fun publishLockWait() {
+        lockWait.value = attempts.remainingLock()
     }
 }

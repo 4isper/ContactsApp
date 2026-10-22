@@ -87,6 +87,7 @@ private fun AppContent(startRequests: Flow<StartRequest?>) {
     val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
     val lockViewModel: AppLockViewModel = metroViewModel()
     val unlocked by lockViewModel.isUnlocked.collectAsStateWithLifecycle()
+    val lockRemaining by lockViewModel.lockRemaining.collectAsStateWithLifecycle()
     val startRequest by startRequests.collectAsStateWithLifecycle(initialValue = null)
 
     // Уход в фон снова включает защиту приложения.
@@ -103,6 +104,7 @@ private fun AppContent(startRequests: Flow<StartRequest?>) {
             if (settings.appLockEnabled && !unlocked) {
                 AppLockScreen(
                     onUnlock = { pin -> lockViewModel.unlock(pin, settings.appLockPinHash) },
+                    lockedFor = lockRemaining,
                 )
             } else {
                 ContactsNavHost(

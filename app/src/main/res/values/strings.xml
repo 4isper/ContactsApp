@@ -228,6 +228,7 @@
     <string name="app_lock_hint">Enter the PIN code to continue</string>
     <string name="app_lock_pin">PIN code</string>
     <string name="app_lock_wrong_pin">Wrong PIN code</string>
+    <string name="app_lock_too_many_attempts">Too many attempts. Try again in %1$d s</string>
     <string name="app_lock_unlock">Unlock</string>
     <string name="settings_language">Language</string>
     <string name="settings_language_system">System language</string>
