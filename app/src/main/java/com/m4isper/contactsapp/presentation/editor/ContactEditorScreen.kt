@@ -28,6 +28,7 @@ import dev.zacsweers.metrox.viewmodel.metroViewModel
 @Composable
 fun ContactEditorScreen(
     contactId: Long?,
+    sessionId: Long = 0L,
     onDone: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -49,9 +50,9 @@ fun ContactEditorScreen(
             hasWritePermission = isGranted
         }
 
-    LaunchedEffect(contactId, hasWritePermission) {
+    LaunchedEffect(contactId, sessionId, hasWritePermission) {
         if (hasWritePermission) {
-            viewModel.load(contactId)
+            viewModel.load(contactId, sessionId)
         }
     }
 

@@ -76,15 +76,21 @@ class ContactEditorViewModel(
     /** Повторный load того же контакта (например, после выдачи разрешения) не перезагружает форму. */
     private var loadStarted = false
     private var loadStartedFor: Long? = null
+    private var loadSession: Long = 0L
 
     internal val uiState: StateFlow<EditorUiState> = state.asStateFlow()
 
     // Catch-all осознанный: любая ошибка превращается в Error-стейт.
     @Suppress("TooGenericExceptionCaught")
-    fun load(id: Long?) {
-        if (loadStarted && loadStartedFor == id) return
+    fun load(
+        id: Long?,
+        sessionId: Long = 0L,
+    ) {
+        // Тот же сеанс — та же форма: перечитывать её нельзя, иначе пропали бы правки.
+        if (loadStarted && loadStartedFor == id && loadSession == sessionId) return
         loadStarted = true
         loadStartedFor = id
+        loadSession = sessionId
         if (id == null) {
             startNewContact()
             return

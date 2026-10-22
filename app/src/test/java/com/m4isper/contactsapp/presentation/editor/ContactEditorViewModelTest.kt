@@ -53,8 +53,17 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+
+/** Форма контакта для загрузки в редактор. */
+private fun formOf(displayName: String): ContactForm =
+    ContactForm(
+        name =
+            com.m4isper.contactsapp.domain.model
+                .EditableName(display = displayName),
+    )
 
 private class FakeEditorRepository :
     ContactsRepository,
@@ -174,6 +183,45 @@ class ContactEditorViewModelTest {
 
             assertTrue(viewModel.uiState.value.closeScreen)
             assertEquals(1, repository.created.size)
+        }
+
+    @Test
+    fun `new session for the same contact reloads the form`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeEditorRepository()
+            repository.formToLoad = formOf("Anna")
+            val viewModel = viewModel(repository)
+            viewModel.load(id = 1L, sessionId = 1L)
+            advanceUntilIdle()
+
+            viewModel.onSave()
+            advanceUntilIdle()
+            assertTrue(viewModel.uiState.value.closeScreen)
+
+            // Тот же контакт, но новый сеанс правки: форма должна открыться заново.
+            viewModel.load(id = 1L, sessionId = 2L)
+            advanceUntilIdle()
+
+            assertFalse("Экран закрылся бы сразу при повторном открытии", viewModel.uiState.value.closeScreen)
+            assertEquals("Anna", viewModel.uiState.value.displayName)
+        }
+
+    @Test
+    fun `same session keeps the edited form`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeEditorRepository()
+            val viewModel = viewModel(repository)
+            viewModel.load(null, sessionId = 1L)
+            advanceUntilIdle()
+
+            viewModel.onDisplayNameChange("Anna")
+            // Повторный load в том же сеансе (например, после выдачи разрешения).
+            viewModel.load(null, sessionId = 1L)
+            advanceUntilIdle()
+
+            assertEquals("Anna", viewModel.uiState.value.displayName)
         }
 
     @Test

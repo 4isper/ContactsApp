@@ -13,6 +13,7 @@ import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneSt
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -73,6 +74,8 @@ data class ContactDetailsKey(
 @Serializable
 data class ContactEditorKey(
     val contactId: Long? = null,
+    /** Номер сеанса правки: новый сеанс — новая форма, даже для того же контакта. */
+    val sessionId: Long = 0L,
 ) : NavKey
 
 /**
@@ -103,6 +106,7 @@ fun ContactsNavHost(
     val importViewModel: ImportPreviewViewModel = metroViewModel()
     var pickMode by remember { mutableStateOf(false) }
     var showFavorites by remember { mutableStateOf(false) }
+    var editorSession by remember { mutableLongStateOf(0L) }
 
     val windowAdaptiveInfo = currentWindowAdaptiveInfoV2()
     val directive =
@@ -119,8 +123,8 @@ fun ContactsNavHost(
             StartAction.List,
             -> Unit
             is StartAction.OpenContact -> backStack.add(ContactDetailsKey(action.contactId))
-            is StartAction.EditContact -> backStack.add(ContactEditorKey(action.contactId))
-            StartAction.NewContact -> backStack.add(ContactEditorKey(null))
+            is StartAction.EditContact -> backStack.add(ContactEditorKey(action.contactId, editorSession++))
+            StartAction.NewContact -> backStack.add(ContactEditorKey(null, editorSession++))
             StartAction.PickContact -> pickMode = true
             StartAction.ShowFavorites -> showFavorites = true
             is StartAction.ImportVCard -> {
@@ -166,7 +170,7 @@ fun ContactsNavHost(
                                 }
                             },
                             onAddClick = {
-                                backStack.add(ContactEditorKey(null))
+                                backStack.add(ContactEditorKey(null, editorSession++))
                             },
                             onGroupsClick = {
                                 backStack.add(GroupsKey)
@@ -231,12 +235,13 @@ fun ContactsNavHost(
                         ContactDetailsScreen(
                             contactId = key.contactId,
                             onBack = dropUnlessResumed { backStack.removeLastOrNull() },
-                            onEdit = { backStack.add(ContactEditorKey(key.contactId)) },
+                            onEdit = { backStack.add(ContactEditorKey(key.contactId, editorSession++)) },
                         )
                     }
                     entry<ContactEditorKey> { key ->
                         ContactEditorScreen(
                             contactId = key.contactId,
+                            sessionId = key.sessionId,
                             onDone = { backStack.removeLastOrNull() },
                             onBack = dropUnlessResumed { backStack.removeLastOrNull() },
                         )
