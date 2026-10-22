@@ -107,23 +107,9 @@ class ContactListUiTest {
             val scope = rememberCoroutineScope()
             ContactList(
                 uiState = ContactsUiState(content = Loadable.Content(listOf(anna, bob))),
-                onSearchQueryChange = {},
-                onFavoritesOnlyChange = {},
-                onContactClick = {},
-                onAddClick = {},
-                onRetry = {},
-                onRefresh = {},
-                onContactSelected = {},
-                onClearSelection = {},
-                onSelectAll = {},
-                onDeleteSelected = {},
-                onUndoDelete = {},
-                onDeleteWindowClosed = {},
-                onShareSelected = {},
-                onImportText = {},
-                onExportRequested = {},
-                onExportSelectionRequested = {},
-                onEventHandled = {},
+                onAction = { action ->
+                    Unit
+                },
             )
         }
 
@@ -147,23 +133,9 @@ class ContactListUiTest {
             val scope = rememberCoroutineScope()
             ContactList(
                 uiState = ContactsUiState(content = Loadable.Content(listOf(contact))),
-                onSearchQueryChange = {},
-                onFavoritesOnlyChange = {},
-                onContactClick = {},
-                onAddClick = {},
-                onRetry = {},
-                onRefresh = {},
-                onContactSelected = {},
-                onClearSelection = {},
-                onSelectAll = {},
-                onDeleteSelected = {},
-                onUndoDelete = {},
-                onDeleteWindowClosed = {},
-                onShareSelected = {},
-                onImportText = {},
-                onExportRequested = {},
-                onExportSelectionRequested = {},
-                onEventHandled = {},
+                onAction = { action ->
+                    Unit
+                },
             )
         }
 
@@ -177,23 +149,12 @@ class ContactListUiTest {
             val scope = rememberCoroutineScope()
             ContactList(
                 uiState = ContactsUiState(content = Loadable.Content(listOf(anna, bob))),
-                onSearchQueryChange = {},
-                onFavoritesOnlyChange = {},
-                onContactClick = { clicked.set(it) },
-                onAddClick = {},
-                onRetry = {},
-                onRefresh = {},
-                onContactSelected = {},
-                onClearSelection = {},
-                onSelectAll = {},
-                onDeleteSelected = {},
-                onUndoDelete = {},
-                onDeleteWindowClosed = {},
-                onShareSelected = {},
-                onImportText = {},
-                onExportRequested = {},
-                onExportSelectionRequested = {},
-                onEventHandled = {},
+                onAction = { action ->
+                    when (action) {
+                        is ContactsNavigationAction.ContactClicked -> clicked.set(action.contactId)
+                        else -> Unit
+                    }
+                },
             )
         }
 
@@ -209,23 +170,12 @@ class ContactListUiTest {
             val scope = rememberCoroutineScope()
             ContactList(
                 uiState = ContactsUiState(content = Loadable.Content(listOf(anna))),
-                onSearchQueryChange = {},
-                onFavoritesOnlyChange = { toggled.set(true) },
-                onContactClick = {},
-                onAddClick = {},
-                onRetry = {},
-                onRefresh = {},
-                onContactSelected = {},
-                onClearSelection = {},
-                onSelectAll = {},
-                onDeleteSelected = {},
-                onUndoDelete = {},
-                onDeleteWindowClosed = {},
-                onShareSelected = {},
-                onImportText = {},
-                onExportRequested = {},
-                onExportSelectionRequested = {},
-                onEventHandled = {},
+                onAction = { action ->
+                    when (action) {
+                        is ContactsListAction.FavoritesOnlyToggled -> toggled.set(true)
+                        else -> Unit
+                    }
+                },
             )
         }
 
@@ -243,23 +193,39 @@ class ContactListUiTest {
             val uiState by viewModel.uiState.collectAsState()
             ContactList(
                 uiState = uiState,
-                onSearchQueryChange = viewModel.filters::onSearchQueryChange,
-                onFavoritesOnlyChange = viewModel.filters::onToggleFavoritesOnly,
-                onContactClick = {},
-                onAddClick = {},
-                onRetry = viewModel::refresh,
-                onRefresh = viewModel::refresh,
-                onContactSelected = viewModel.selection::onContactSelected,
-                onClearSelection = viewModel.selection::clear,
-                onSelectAll = viewModel.selection::selectAll,
-                onDeleteSelected = viewModel::onDeleteSelected,
-                onUndoDelete = viewModel::onUndoDelete,
-                onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
-                onShareSelected = { scope.launch { viewModel.onShareSelected() } },
-                onImportText = {},
-                onExportRequested = viewModel.files::onExportRequested,
-                onExportSelectionRequested = viewModel::onExportSelection,
-                onEventHandled = viewModel::onEventHandled,
+                onAction = { action ->
+                    when (action) {
+                        is ContactsListAction.SearchQueryChanged ->
+                            viewModel.filters.onSearchQueryChange(
+                                action.query,
+                            )
+                        is ContactsListAction.FavoritesOnlyToggled ->
+                            viewModel.filters
+                                .onToggleFavoritesOnly()
+                        is ContactsFileAction.Retry -> viewModel.refresh()
+                        is ContactsFileAction.Refresh -> viewModel.refresh()
+                        is ContactsListAction.ContactSelected ->
+                            viewModel.selection.onContactSelected(
+                                action.contactId,
+                            )
+                        is ContactsListAction.ClearSelection -> viewModel.selection.clear()
+                        is ContactsListAction.SelectAll ->
+                            viewModel.selection.selectAll(
+                                action.contactIds,
+                            )
+                        is ContactsFileAction.DeleteSelected -> viewModel.onDeleteSelected()
+                        is ContactsFileAction.UndoDelete -> viewModel.onUndoDelete()
+                        is ContactsFileAction.DeleteWindowClosed -> viewModel.onDeleteWindowClosed()
+                        is ContactsFileAction.ShareSelected ->
+                            scope.launch {
+                                viewModel.onShareSelected()
+                            }
+                        is ContactsFileAction.ExportRequested -> viewModel.files.onExportRequested()
+                        is ContactsFileAction.ExportSelectionRequested -> viewModel.onExportSelection()
+                        is ContactsFileAction.EventHandled -> viewModel.onEventHandled()
+                        else -> Unit
+                    }
+                },
             )
         }
         viewModel.refresh()
@@ -285,23 +251,12 @@ class ContactListUiTest {
             val scope = rememberCoroutineScope()
             ContactList(
                 uiState = ContactsUiState(content = Loadable.Content(listOf(anna))),
-                onSearchQueryChange = {},
-                onFavoritesOnlyChange = {},
-                onContactClick = {},
-                onAddClick = { added.set(true) },
-                onRetry = {},
-                onRefresh = {},
-                onContactSelected = {},
-                onClearSelection = {},
-                onSelectAll = {},
-                onDeleteSelected = {},
-                onUndoDelete = {},
-                onDeleteWindowClosed = {},
-                onShareSelected = {},
-                onImportText = {},
-                onExportRequested = {},
-                onExportSelectionRequested = {},
-                onEventHandled = {},
+                onAction = { action ->
+                    when (action) {
+                        is ContactsNavigationAction.AddClicked -> added.set(true)
+                        else -> Unit
+                    }
+                },
             )
         }
 
@@ -319,23 +274,39 @@ class ContactListUiTest {
             val uiState by viewModel.uiState.collectAsState()
             ContactList(
                 uiState = uiState,
-                onSearchQueryChange = viewModel.filters::onSearchQueryChange,
-                onFavoritesOnlyChange = viewModel.filters::onToggleFavoritesOnly,
-                onContactClick = {},
-                onAddClick = {},
-                onRetry = viewModel::refresh,
-                onRefresh = viewModel::refresh,
-                onContactSelected = viewModel.selection::onContactSelected,
-                onClearSelection = viewModel.selection::clear,
-                onSelectAll = viewModel.selection::selectAll,
-                onDeleteSelected = viewModel::onDeleteSelected,
-                onUndoDelete = viewModel::onUndoDelete,
-                onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
-                onShareSelected = { scope.launch { viewModel.onShareSelected() } },
-                onImportText = {},
-                onExportRequested = viewModel.files::onExportRequested,
-                onExportSelectionRequested = viewModel::onExportSelection,
-                onEventHandled = viewModel::onEventHandled,
+                onAction = { action ->
+                    when (action) {
+                        is ContactsListAction.SearchQueryChanged ->
+                            viewModel.filters.onSearchQueryChange(
+                                action.query,
+                            )
+                        is ContactsListAction.FavoritesOnlyToggled ->
+                            viewModel.filters
+                                .onToggleFavoritesOnly()
+                        is ContactsFileAction.Retry -> viewModel.refresh()
+                        is ContactsFileAction.Refresh -> viewModel.refresh()
+                        is ContactsListAction.ContactSelected ->
+                            viewModel.selection.onContactSelected(
+                                action.contactId,
+                            )
+                        is ContactsListAction.ClearSelection -> viewModel.selection.clear()
+                        is ContactsListAction.SelectAll ->
+                            viewModel.selection.selectAll(
+                                action.contactIds,
+                            )
+                        is ContactsFileAction.DeleteSelected -> viewModel.onDeleteSelected()
+                        is ContactsFileAction.UndoDelete -> viewModel.onUndoDelete()
+                        is ContactsFileAction.DeleteWindowClosed -> viewModel.onDeleteWindowClosed()
+                        is ContactsFileAction.ShareSelected ->
+                            scope.launch {
+                                viewModel.onShareSelected()
+                            }
+                        is ContactsFileAction.ExportRequested -> viewModel.files.onExportRequested()
+                        is ContactsFileAction.ExportSelectionRequested -> viewModel.onExportSelection()
+                        is ContactsFileAction.EventHandled -> viewModel.onEventHandled()
+                        else -> Unit
+                    }
+                },
             )
         }
         viewModel.refresh()
@@ -373,28 +344,58 @@ class ContactListUiTest {
             val uiState by viewModel.uiState.collectAsState()
             ContactList(
                 uiState = uiState,
-                onSearchQueryChange = viewModel.filters::onSearchQueryChange,
-                onFavoritesOnlyChange = viewModel.filters::onToggleFavoritesOnly,
-                onContactClick = {},
-                onAddClick = {},
-                onRetry = viewModel::refresh,
-                onRefresh = viewModel::refresh,
-                onContactSelected = viewModel.selection::onContactSelected,
-                onClearSelection = viewModel.selection::clear,
-                onSelectAll = viewModel.selection::selectAll,
-                onDeleteSelected = viewModel::onDeleteSelected,
-                onUndoDelete = viewModel::onUndoDelete,
-                onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
-                onShareSelected = { scope.launch { viewModel.onShareSelected() } },
-                onImportText = {},
-                onExportRequested = viewModel.files::onExportRequested,
-                onExportSelectionRequested = viewModel::onExportSelection,
-                onEventHandled = viewModel::onEventHandled,
                 groups = uiState.groups,
-                onGroupSelected = viewModel.filters::onGroupSelected,
-                onCreateGroup = { title -> scope.launch { viewModel.groups.onCreateGroup(title) } },
-                onManageGroupsClick = {},
-                onAddSelectedToGroup = { ids -> scope.launch { viewModel.groups.onAddSelectedToGroup(ids) } },
+                onAction = { action ->
+                    when (action) {
+                        is ContactsListAction.SearchQueryChanged ->
+                            viewModel.filters.onSearchQueryChange(
+                                action.query,
+                            )
+                        is ContactsListAction.FavoritesOnlyToggled ->
+                            viewModel.filters
+                                .onToggleFavoritesOnly()
+                        is ContactsFileAction.Retry -> viewModel.refresh()
+                        is ContactsFileAction.Refresh -> viewModel.refresh()
+                        is ContactsListAction.ContactSelected ->
+                            viewModel.selection.onContactSelected(
+                                action.contactId,
+                            )
+                        is ContactsListAction.ClearSelection -> viewModel.selection.clear()
+                        is ContactsListAction.SelectAll ->
+                            viewModel.selection.selectAll(
+                                action.contactIds,
+                            )
+                        is ContactsFileAction.DeleteSelected -> viewModel.onDeleteSelected()
+                        is ContactsFileAction.UndoDelete -> viewModel.onUndoDelete()
+                        is ContactsFileAction.DeleteWindowClosed -> viewModel.onDeleteWindowClosed()
+                        is ContactsFileAction.ShareSelected ->
+                            scope.launch {
+                                viewModel.onShareSelected()
+                            }
+                        is ContactsFileAction.ExportRequested -> viewModel.files.onExportRequested()
+                        is ContactsFileAction.ExportSelectionRequested -> viewModel.onExportSelection()
+                        is ContactsFileAction.EventHandled -> viewModel.onEventHandled()
+                        is ContactsListAction.GroupSelected ->
+                            viewModel.filters.onGroupSelected(
+                                action.groupId,
+                            )
+                        is ContactsListAction.CreateGroup ->
+                            scope.launch {
+                                viewModel.groups
+                                    .onCreateGroup(
+                                        action.title,
+                                    )
+                            }
+                        is ContactsListAction.AddSelectedToGroup ->
+                            scope.launch {
+                                viewModel.groups
+                                    .onAddSelectedToGroup(
+                                        action.groupIds,
+                                    )
+                            }
+                        else -> Unit
+                    }
+                },
             )
         }
         viewModel.refresh()
@@ -427,23 +428,39 @@ class ContactListUiTest {
             val uiState by viewModel.uiState.collectAsState()
             ContactList(
                 uiState = uiState,
-                onSearchQueryChange = viewModel.filters::onSearchQueryChange,
-                onFavoritesOnlyChange = viewModel.filters::onToggleFavoritesOnly,
-                onContactClick = {},
-                onAddClick = {},
-                onRetry = viewModel::refresh,
-                onRefresh = viewModel::refresh,
-                onContactSelected = viewModel.selection::onContactSelected,
-                onClearSelection = viewModel.selection::clear,
-                onSelectAll = viewModel.selection::selectAll,
-                onDeleteSelected = viewModel::onDeleteSelected,
-                onUndoDelete = viewModel::onUndoDelete,
-                onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
-                onShareSelected = { scope.launch { viewModel.onShareSelected() } },
-                onImportText = {},
-                onExportRequested = viewModel.files::onExportRequested,
-                onExportSelectionRequested = viewModel::onExportSelection,
-                onEventHandled = viewModel::onEventHandled,
+                onAction = { action ->
+                    when (action) {
+                        is ContactsListAction.SearchQueryChanged ->
+                            viewModel.filters.onSearchQueryChange(
+                                action.query,
+                            )
+                        is ContactsListAction.FavoritesOnlyToggled ->
+                            viewModel.filters
+                                .onToggleFavoritesOnly()
+                        is ContactsFileAction.Retry -> viewModel.refresh()
+                        is ContactsFileAction.Refresh -> viewModel.refresh()
+                        is ContactsListAction.ContactSelected ->
+                            viewModel.selection.onContactSelected(
+                                action.contactId,
+                            )
+                        is ContactsListAction.ClearSelection -> viewModel.selection.clear()
+                        is ContactsListAction.SelectAll ->
+                            viewModel.selection.selectAll(
+                                action.contactIds,
+                            )
+                        is ContactsFileAction.DeleteSelected -> viewModel.onDeleteSelected()
+                        is ContactsFileAction.UndoDelete -> viewModel.onUndoDelete()
+                        is ContactsFileAction.DeleteWindowClosed -> viewModel.onDeleteWindowClosed()
+                        is ContactsFileAction.ShareSelected ->
+                            scope.launch {
+                                viewModel.onShareSelected()
+                            }
+                        is ContactsFileAction.ExportRequested -> viewModel.files.onExportRequested()
+                        is ContactsFileAction.ExportSelectionRequested -> viewModel.onExportSelection()
+                        is ContactsFileAction.EventHandled -> viewModel.onEventHandled()
+                        else -> Unit
+                    }
+                },
             )
         }
         viewModel.refresh()
@@ -488,23 +505,39 @@ class ContactListUiTest {
             val uiState by viewModel.uiState.collectAsState()
             ContactList(
                 uiState = uiState,
-                onSearchQueryChange = viewModel.filters::onSearchQueryChange,
-                onFavoritesOnlyChange = viewModel.filters::onToggleFavoritesOnly,
-                onContactClick = {},
-                onAddClick = {},
-                onRetry = viewModel::refresh,
-                onRefresh = viewModel::refresh,
-                onContactSelected = viewModel.selection::onContactSelected,
-                onClearSelection = viewModel.selection::clear,
-                onSelectAll = viewModel.selection::selectAll,
-                onDeleteSelected = viewModel::onDeleteSelected,
-                onUndoDelete = viewModel::onUndoDelete,
-                onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
-                onShareSelected = { scope.launch { viewModel.onShareSelected() } },
-                onImportText = {},
-                onExportRequested = viewModel.files::onExportRequested,
-                onExportSelectionRequested = viewModel::onExportSelection,
-                onEventHandled = viewModel::onEventHandled,
+                onAction = { action ->
+                    when (action) {
+                        is ContactsListAction.SearchQueryChanged ->
+                            viewModel.filters.onSearchQueryChange(
+                                action.query,
+                            )
+                        is ContactsListAction.FavoritesOnlyToggled ->
+                            viewModel.filters
+                                .onToggleFavoritesOnly()
+                        is ContactsFileAction.Retry -> viewModel.refresh()
+                        is ContactsFileAction.Refresh -> viewModel.refresh()
+                        is ContactsListAction.ContactSelected ->
+                            viewModel.selection.onContactSelected(
+                                action.contactId,
+                            )
+                        is ContactsListAction.ClearSelection -> viewModel.selection.clear()
+                        is ContactsListAction.SelectAll ->
+                            viewModel.selection.selectAll(
+                                action.contactIds,
+                            )
+                        is ContactsFileAction.DeleteSelected -> viewModel.onDeleteSelected()
+                        is ContactsFileAction.UndoDelete -> viewModel.onUndoDelete()
+                        is ContactsFileAction.DeleteWindowClosed -> viewModel.onDeleteWindowClosed()
+                        is ContactsFileAction.ShareSelected ->
+                            scope.launch {
+                                viewModel.onShareSelected()
+                            }
+                        is ContactsFileAction.ExportRequested -> viewModel.files.onExportRequested()
+                        is ContactsFileAction.ExportSelectionRequested -> viewModel.onExportSelection()
+                        is ContactsFileAction.EventHandled -> viewModel.onEventHandled()
+                        else -> Unit
+                    }
+                },
             )
         }
         viewModel.refresh()
@@ -536,23 +569,9 @@ class ContactListUiTest {
             val scope = rememberCoroutineScope()
             ContactList(
                 uiState = ContactsUiState(content = Loadable.Content(listOf(anna))),
-                onSearchQueryChange = {},
-                onFavoritesOnlyChange = {},
-                onContactClick = {},
-                onAddClick = {},
-                onRetry = {},
-                onRefresh = {},
-                onContactSelected = {},
-                onClearSelection = {},
-                onSelectAll = {},
-                onDeleteSelected = {},
-                onUndoDelete = {},
-                onDeleteWindowClosed = {},
-                onShareSelected = {},
-                onImportText = {},
-                onExportRequested = {},
-                onExportSelectionRequested = {},
-                onEventHandled = {},
+                onAction = { action ->
+                    Unit
+                },
             )
         }
 
@@ -571,23 +590,9 @@ class ContactListUiTest {
             val scope = rememberCoroutineScope()
             ContactList(
                 uiState = ContactsUiState(content = Loadable.Content(listOf(anna))),
-                onSearchQueryChange = {},
-                onFavoritesOnlyChange = {},
-                onContactClick = {},
-                onAddClick = {},
-                onRetry = {},
-                onRefresh = {},
-                onContactSelected = {},
-                onClearSelection = {},
-                onSelectAll = {},
-                onDeleteSelected = {},
-                onUndoDelete = {},
-                onDeleteWindowClosed = {},
-                onShareSelected = {},
-                onImportText = {},
-                onExportRequested = {},
-                onExportSelectionRequested = {},
-                onEventHandled = {},
+                onAction = { action ->
+                    Unit
+                },
             )
         }
 
@@ -603,23 +608,9 @@ class ContactListUiTest {
             val scope = rememberCoroutineScope()
             ContactList(
                 uiState = ContactsUiState(content = Loadable.Content(listOf(anna))),
-                onSearchQueryChange = {},
-                onFavoritesOnlyChange = {},
-                onContactClick = {},
-                onAddClick = {},
-                onRetry = {},
-                onRefresh = {},
-                onContactSelected = {},
-                onClearSelection = {},
-                onSelectAll = {},
-                onDeleteSelected = {},
-                onUndoDelete = {},
-                onDeleteWindowClosed = {},
-                onShareSelected = {},
-                onImportText = {},
-                onExportRequested = {},
-                onExportSelectionRequested = {},
-                onEventHandled = {},
+                onAction = { action ->
+                    Unit
+                },
             )
         }
 
@@ -636,23 +627,9 @@ class ContactListUiTest {
             val scope = rememberCoroutineScope()
             ContactList(
                 uiState = ContactsUiState(content = Loadable.Content(listOf(noPhone))),
-                onSearchQueryChange = {},
-                onFavoritesOnlyChange = {},
-                onContactClick = {},
-                onAddClick = {},
-                onRetry = {},
-                onRefresh = {},
-                onContactSelected = {},
-                onClearSelection = {},
-                onSelectAll = {},
-                onDeleteSelected = {},
-                onUndoDelete = {},
-                onDeleteWindowClosed = {},
-                onShareSelected = {},
-                onImportText = {},
-                onExportRequested = {},
-                onExportSelectionRequested = {},
-                onEventHandled = {},
+                onAction = { action ->
+                    Unit
+                },
             )
         }
 
@@ -669,25 +646,51 @@ class ContactListUiTest {
             val uiState by viewModel.uiState.collectAsState()
             ContactList(
                 uiState = uiState,
-                onSearchQueryChange = viewModel.filters::onSearchQueryChange,
-                onFavoritesOnlyChange = viewModel.filters::onToggleFavoritesOnly,
-                onContactClick = {},
-                onAddClick = {},
-                onRetry = viewModel::refresh,
-                onRefresh = viewModel::refresh,
-                onContactSelected = viewModel.selection::onContactSelected,
-                onClearSelection = viewModel.selection::clear,
-                onSelectAll = viewModel.selection::selectAll,
-                onDeleteSelected = viewModel::onDeleteSelected,
-                onUndoDelete = viewModel::onUndoDelete,
-                onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
-                onShareSelected = { scope.launch { viewModel.onShareSelected() } },
-                onImportText = {},
-                onExportRequested = viewModel.files::onExportRequested,
-                onExportSelectionRequested = viewModel::onExportSelection,
-                onEventHandled = viewModel::onEventHandled,
-                onToggleFavorite = { id -> scope.launch { viewModel.favorites.onToggleFavorite(id) } },
-                onToggleFavoriteSelected = { scope.launch { viewModel.onToggleSelectedFavorite() } },
+                onAction = { action ->
+                    when (action) {
+                        is ContactsListAction.SearchQueryChanged ->
+                            viewModel.filters.onSearchQueryChange(
+                                action.query,
+                            )
+                        is ContactsListAction.FavoritesOnlyToggled ->
+                            viewModel.filters
+                                .onToggleFavoritesOnly()
+                        is ContactsFileAction.Retry -> viewModel.refresh()
+                        is ContactsFileAction.Refresh -> viewModel.refresh()
+                        is ContactsListAction.ContactSelected ->
+                            viewModel.selection.onContactSelected(
+                                action.contactId,
+                            )
+                        is ContactsListAction.ClearSelection -> viewModel.selection.clear()
+                        is ContactsListAction.SelectAll ->
+                            viewModel.selection.selectAll(
+                                action.contactIds,
+                            )
+                        is ContactsFileAction.DeleteSelected -> viewModel.onDeleteSelected()
+                        is ContactsFileAction.UndoDelete -> viewModel.onUndoDelete()
+                        is ContactsFileAction.DeleteWindowClosed -> viewModel.onDeleteWindowClosed()
+                        is ContactsFileAction.ShareSelected ->
+                            scope.launch {
+                                viewModel.onShareSelected()
+                            }
+                        is ContactsFileAction.ExportRequested -> viewModel.files.onExportRequested()
+                        is ContactsFileAction.ExportSelectionRequested -> viewModel.onExportSelection()
+                        is ContactsFileAction.EventHandled -> viewModel.onEventHandled()
+                        is ContactsListAction.ToggleFavorite ->
+                            scope.launch {
+                                viewModel.favorites
+                                    .onToggleFavorite(
+                                        action.contactId,
+                                    )
+                            }
+                        is ContactsListAction.ToggleFavoriteSelected ->
+                            scope.launch {
+                                viewModel
+                                    .onToggleSelectedFavorite()
+                            }
+                        else -> Unit
+                    }
+                },
             )
         }
         viewModel.refresh()
@@ -712,25 +715,51 @@ class ContactListUiTest {
             val uiState by viewModel.uiState.collectAsState()
             ContactList(
                 uiState = uiState,
-                onSearchQueryChange = viewModel.filters::onSearchQueryChange,
-                onFavoritesOnlyChange = viewModel.filters::onToggleFavoritesOnly,
-                onContactClick = {},
-                onAddClick = {},
-                onRetry = viewModel::refresh,
-                onRefresh = viewModel::refresh,
-                onContactSelected = viewModel.selection::onContactSelected,
-                onClearSelection = viewModel.selection::clear,
-                onSelectAll = viewModel.selection::selectAll,
-                onDeleteSelected = viewModel::onDeleteSelected,
-                onUndoDelete = viewModel::onUndoDelete,
-                onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
-                onShareSelected = { scope.launch { viewModel.onShareSelected() } },
-                onImportText = {},
-                onExportRequested = viewModel.files::onExportRequested,
-                onExportSelectionRequested = viewModel::onExportSelection,
-                onEventHandled = viewModel::onEventHandled,
-                onToggleFavorite = { id -> scope.launch { viewModel.favorites.onToggleFavorite(id) } },
-                onToggleFavoriteSelected = { scope.launch { viewModel.onToggleSelectedFavorite() } },
+                onAction = { action ->
+                    when (action) {
+                        is ContactsListAction.SearchQueryChanged ->
+                            viewModel.filters.onSearchQueryChange(
+                                action.query,
+                            )
+                        is ContactsListAction.FavoritesOnlyToggled ->
+                            viewModel.filters
+                                .onToggleFavoritesOnly()
+                        is ContactsFileAction.Retry -> viewModel.refresh()
+                        is ContactsFileAction.Refresh -> viewModel.refresh()
+                        is ContactsListAction.ContactSelected ->
+                            viewModel.selection.onContactSelected(
+                                action.contactId,
+                            )
+                        is ContactsListAction.ClearSelection -> viewModel.selection.clear()
+                        is ContactsListAction.SelectAll ->
+                            viewModel.selection.selectAll(
+                                action.contactIds,
+                            )
+                        is ContactsFileAction.DeleteSelected -> viewModel.onDeleteSelected()
+                        is ContactsFileAction.UndoDelete -> viewModel.onUndoDelete()
+                        is ContactsFileAction.DeleteWindowClosed -> viewModel.onDeleteWindowClosed()
+                        is ContactsFileAction.ShareSelected ->
+                            scope.launch {
+                                viewModel.onShareSelected()
+                            }
+                        is ContactsFileAction.ExportRequested -> viewModel.files.onExportRequested()
+                        is ContactsFileAction.ExportSelectionRequested -> viewModel.onExportSelection()
+                        is ContactsFileAction.EventHandled -> viewModel.onEventHandled()
+                        is ContactsListAction.ToggleFavorite ->
+                            scope.launch {
+                                viewModel.favorites
+                                    .onToggleFavorite(
+                                        action.contactId,
+                                    )
+                            }
+                        is ContactsListAction.ToggleFavoriteSelected ->
+                            scope.launch {
+                                viewModel
+                                    .onToggleSelectedFavorite()
+                            }
+                        else -> Unit
+                    }
+                },
             )
         }
         viewModel.refresh()
@@ -764,25 +793,51 @@ class ContactListUiTest {
             val uiState by viewModel.uiState.collectAsState()
             ContactList(
                 uiState = uiState,
-                onSearchQueryChange = viewModel.filters::onSearchQueryChange,
-                onFavoritesOnlyChange = viewModel.filters::onToggleFavoritesOnly,
-                onContactClick = {},
-                onAddClick = {},
-                onRetry = viewModel::refresh,
-                onRefresh = viewModel::refresh,
-                onContactSelected = viewModel.selection::onContactSelected,
-                onClearSelection = viewModel.selection::clear,
-                onSelectAll = viewModel.selection::selectAll,
-                onDeleteSelected = viewModel::onDeleteSelected,
-                onUndoDelete = viewModel::onUndoDelete,
-                onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
-                onShareSelected = { scope.launch { viewModel.onShareSelected() } },
-                onImportText = {},
-                onExportRequested = viewModel.files::onExportRequested,
-                onExportSelectionRequested = viewModel::onExportSelection,
-                onEventHandled = viewModel::onEventHandled,
-                onToggleFavorite = { id -> scope.launch { viewModel.favorites.onToggleFavorite(id) } },
-                onToggleFavoriteSelected = { scope.launch { viewModel.onToggleSelectedFavorite() } },
+                onAction = { action ->
+                    when (action) {
+                        is ContactsListAction.SearchQueryChanged ->
+                            viewModel.filters.onSearchQueryChange(
+                                action.query,
+                            )
+                        is ContactsListAction.FavoritesOnlyToggled ->
+                            viewModel.filters
+                                .onToggleFavoritesOnly()
+                        is ContactsFileAction.Retry -> viewModel.refresh()
+                        is ContactsFileAction.Refresh -> viewModel.refresh()
+                        is ContactsListAction.ContactSelected ->
+                            viewModel.selection.onContactSelected(
+                                action.contactId,
+                            )
+                        is ContactsListAction.ClearSelection -> viewModel.selection.clear()
+                        is ContactsListAction.SelectAll ->
+                            viewModel.selection.selectAll(
+                                action.contactIds,
+                            )
+                        is ContactsFileAction.DeleteSelected -> viewModel.onDeleteSelected()
+                        is ContactsFileAction.UndoDelete -> viewModel.onUndoDelete()
+                        is ContactsFileAction.DeleteWindowClosed -> viewModel.onDeleteWindowClosed()
+                        is ContactsFileAction.ShareSelected ->
+                            scope.launch {
+                                viewModel.onShareSelected()
+                            }
+                        is ContactsFileAction.ExportRequested -> viewModel.files.onExportRequested()
+                        is ContactsFileAction.ExportSelectionRequested -> viewModel.onExportSelection()
+                        is ContactsFileAction.EventHandled -> viewModel.onEventHandled()
+                        is ContactsListAction.ToggleFavorite ->
+                            scope.launch {
+                                viewModel.favorites
+                                    .onToggleFavorite(
+                                        action.contactId,
+                                    )
+                            }
+                        is ContactsListAction.ToggleFavoriteSelected ->
+                            scope.launch {
+                                viewModel
+                                    .onToggleSelectedFavorite()
+                            }
+                        else -> Unit
+                    }
+                },
             )
         }
         viewModel.refresh()

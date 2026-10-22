@@ -21,6 +21,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactAccount
+import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.account.contactAccountTitle
@@ -103,18 +104,12 @@ fun ContactDetailsScreen(
                 },
                 onShareAsText = {
                     scope.launch {
-                        val details = (uiState.content as? Loadable.Content)?.data
-                        shareOrFail(context, details != null) {
-                            shareContactAsText(context, contactAsText(requireNotNull(details)))
-                        }
+                        shareDetailsAsText(context, (uiState.content as? Loadable.Content)?.data)
                     }
                 },
                 onShareAsQr = {
                     scope.launch {
-                        val vCard = viewModel.vCardText()
-                        shareOrFail(context, vCard != null) {
-                            shareContactAsQr(context, requireNotNull(vCard))
-                        }
+                        shareDetailsAsQr(context, viewModel.vCardText())
                     }
                 },
                 onToggleFavorite = {
@@ -254,7 +249,30 @@ private fun AccountChangeDialogs(
     }
 }
 
-/** Показывает ошибку, если делиться нечем, иначе выполняет действие. */
+/** Делится контактом текстом: без деталей показываем ошибку, а не падаем. */
+private suspend fun shareDetailsAsText(
+    context: Context,
+    details: ContactDetails?,
+) {
+    if (details == null) {
+        shareOrFail(context, false) { }
+    } else {
+        shareOrFail(context, true) { shareContactAsText(context, contactAsText(details)) }
+    }
+}
+
+/** Делится контактом QR-кодом: без карточки показываем ошибку, а не падаем. */
+private suspend fun shareDetailsAsQr(
+    context: Context,
+    vCard: String?,
+) {
+    if (vCard == null) {
+        shareOrFail(context, false) { }
+    } else {
+        shareOrFail(context, true) { shareContactAsQr(context, vCard) }
+    }
+}
+
 private suspend fun shareOrFail(
     context: Context,
     hasContent: Boolean,

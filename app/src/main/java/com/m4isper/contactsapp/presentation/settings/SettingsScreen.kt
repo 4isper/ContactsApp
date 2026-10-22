@@ -1,6 +1,5 @@
 package com.m4isper.contactsapp.presentation.settings
 
-import android.app.Activity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -54,6 +53,7 @@ import dev.zacsweers.metrox.viewmodel.metroViewModel
 @Composable
 internal fun SettingsScreen(
     onBack: () -> Unit,
+    onRestartRequired: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = metroViewModel(),
 ) {
@@ -157,8 +157,8 @@ internal fun SettingsScreen(
                         selected = settings.appLanguage == tag,
                         onSelect = {
                             viewModel.onLanguageSelected(tag)
-                            // Язык применяется при создании Activity: пересоздаём окно.
-                            (context as? Activity)?.recreate()
+                            // Язык применяется при создании Activity: окно пересоздаёт хост.
+                            onRestartRequired()
                         },
                         testTag = "language_${tag.ifBlank { "system" }}",
                     )
@@ -243,7 +243,7 @@ internal fun SettingsScreen(
             onConfirm = {
                 showResetDialog = false
                 viewModel.onResetSettings()
-                (context as? Activity)?.recreate()
+                onRestartRequired()
             },
             onDismiss = { showResetDialog = false },
             danger = true,

@@ -20,10 +20,28 @@ Several Compose screens expose too much behavior through ad-hoc parameters and p
 
 ## Acceptance criteria
 
-- [ ] `ContactsScreen` exposes one action/event API instead of dozens of callbacks.
-- [ ] Composables do not call `Activity` lifecycle methods directly.
-- [ ] Missing contact details render an error/empty state instead of crashing.
-- [ ] UI tests cover the extracted actions and the details error path.
+- [x] `ContactsScreen` exposes one action/event API instead of dozens of callbacks.
+- [x] Composables do not call `Activity` lifecycle methods directly.
+- [x] Missing contact details render an error/empty state instead of crashing.
+- [x] UI tests cover the extracted actions and the details error path.
+
+## Status
+
+Done.
+
+- The list has one contract instead of thirty callbacks: `ContactsUiAction` with three groups -
+  the state of the list, the files and the deletion, the transitions to the other screens. The
+  screen parses the action in one place, the leaves keep their own lambdas.
+- The transitions belong to the host: the navigation actions come to the navigation host as
+  `ContactsNavigationAction`, and it opens the screen. The screen of the list does not know the
+  back stack.
+- The screen of the settings does not touch the lifecycle of the activity any more: it reports
+  that the window has to be recreated, and the activity does it.
+- The card of the contact does not fall on `requireNotNull`: the sharing of the text and of the
+  QR code checks the data and shows the error of the sharing.
+- The UI tests of the list go through the actions (the click on the contact, the star, the
+  search, the share, the groups), and the card of the contact keeps the test of the unknown
+  contact.
 
 ## Technical notes
 

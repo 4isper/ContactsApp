@@ -63,7 +63,7 @@ class MainActivity : ComponentActivity() {
             CompositionLocalProvider(
                 LocalMetroViewModelFactory provides vmFactory,
             ) {
-                AppContent(startRequests)
+                AppContent(startRequests, onRestartRequired = { recreate() })
             }
         }
     }
@@ -82,7 +82,10 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun AppContent(startRequests: Flow<StartRequest?>) {
+private fun AppContent(
+    startRequests: Flow<StartRequest?>,
+    onRestartRequired: () -> Unit,
+) {
     val settingsViewModel: AppSettingsViewModel = metroViewModel()
     val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
     val lockViewModel: AppLockViewModel = metroViewModel()
@@ -110,6 +113,8 @@ private fun AppContent(startRequests: Flow<StartRequest?>) {
                 ContactsNavHost(
                     modifier = Modifier.fillMaxSize(),
                     startRequest = startRequest,
+                    // Язык приложения применяется при создании Activity: пересоздаём окно.
+                    onRestartRequired = onRestartRequired,
                 )
             }
         }

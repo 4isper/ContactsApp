@@ -43,39 +43,42 @@ private data class QuickCallTarget(
 @Composable
 internal fun ContactList(
     uiState: ContactsUiState,
-    onSearchQueryChange: (String) -> Unit,
-    onFavoritesOnlyChange: () -> Unit,
-    onContactClick: (Long) -> Unit,
-    onAddClick: () -> Unit,
-    onRetry: () -> Unit,
-    onRefresh: () -> Unit,
-    onContactSelected: (Long) -> Unit,
-    onClearSelection: () -> Unit,
-    onSelectAll: (List<Long>) -> Unit,
-    onDeleteSelected: () -> Unit,
-    onUndoDelete: () -> Unit,
-    onDeleteWindowClosed: () -> Unit,
-    onShareSelected: () -> Unit,
-    onImportText: (String) -> Unit,
-    onExportRequested: () -> Unit,
-    onExportSelectionRequested: () -> Unit,
-    onEventHandled: () -> Unit,
+    onAction: (ContactsUiAction) -> Unit,
     modifier: Modifier = Modifier,
     groups: List<ContactGroup> = emptyList(),
-    onGroupSelected: (Long?) -> Unit = {},
     accounts: List<ContactAccount> = emptyList(),
-    onAccountSelected: (ContactAccount?) -> Unit = {},
-    onCreateGroup: (String) -> Unit = {},
-    onManageGroupsClick: () -> Unit = {},
-    onAddSelectedToGroup: (Set<Long>) -> Unit = {},
-    onDuplicatesClick: () -> Unit = {},
-    onRecentsClick: () -> Unit = {},
-    onSettingsClick: () -> Unit = {},
-    onToggleFavorite: (Long) -> Unit = {},
-    onToggleFavoriteSelected: () -> Unit = {},
     profileContactId: Long? = null,
-    onProfileClick: (Long) -> Unit = {},
 ) {
+    // Листья получают свои лямбды, а контракт экрана остаётся один.
+    val onSearchQueryChange: (String) -> Unit = { onAction(ContactsListAction.SearchQueryChanged(it)) }
+    val onFavoritesOnlyChange: () -> Unit = { onAction(ContactsListAction.FavoritesOnlyToggled) }
+    val onContactClick: (Long) -> Unit = { onAction(ContactsNavigationAction.ContactClicked(it)) }
+    val onAddClick: () -> Unit = { onAction(ContactsNavigationAction.AddClicked) }
+    val onRetry: () -> Unit = { onAction(ContactsFileAction.Retry) }
+    val onRefresh: () -> Unit = { onAction(ContactsFileAction.Refresh) }
+    val onContactSelected: (Long) -> Unit = { onAction(ContactsListAction.ContactSelected(it)) }
+    val onClearSelection: () -> Unit = { onAction(ContactsListAction.ClearSelection) }
+    val onSelectAll: (List<Long>) -> Unit = { onAction(ContactsListAction.SelectAll(it)) }
+    val onDeleteSelected: () -> Unit = { onAction(ContactsFileAction.DeleteSelected) }
+    val onUndoDelete: () -> Unit = { onAction(ContactsFileAction.UndoDelete) }
+    val onDeleteWindowClosed: () -> Unit = { onAction(ContactsFileAction.DeleteWindowClosed) }
+    val onShareSelected: () -> Unit = { onAction(ContactsFileAction.ShareSelected) }
+    val onImportText: (String) -> Unit = { onAction(ContactsFileAction.ImportText(it)) }
+    val onExportRequested: () -> Unit = { onAction(ContactsFileAction.ExportRequested) }
+    val onExportSelectionRequested: () -> Unit = { onAction(ContactsFileAction.ExportSelectionRequested) }
+    val onEventHandled: () -> Unit = { onAction(ContactsFileAction.EventHandled) }
+    val onGroupSelected: (Long?) -> Unit = { onAction(ContactsListAction.GroupSelected(it)) }
+    val onAccountSelected: (ContactAccount?) -> Unit = { onAction(ContactsListAction.AccountSelected(it)) }
+    val onCreateGroup: (String) -> Unit = { onAction(ContactsListAction.CreateGroup(it)) }
+    val onManageGroupsClick: () -> Unit = { onAction(ContactsNavigationAction.ManageGroupsClicked) }
+    val onAddSelectedToGroup: (Set<Long>) -> Unit = { onAction(ContactsListAction.AddSelectedToGroup(it)) }
+    val onDuplicatesClick: () -> Unit = { onAction(ContactsNavigationAction.DuplicatesClicked) }
+    val onRecentsClick: () -> Unit = { onAction(ContactsNavigationAction.RecentsClicked) }
+    val onSettingsClick: () -> Unit = { onAction(ContactsNavigationAction.SettingsClicked) }
+    val onToggleFavorite: (Long) -> Unit = { onAction(ContactsListAction.ToggleFavorite(it)) }
+    val onToggleFavoriteSelected: () -> Unit = { onAction(ContactsListAction.ToggleFavoriteSelected) }
+    val onProfileClick: (Long) -> Unit = { onAction(ContactsNavigationAction.ProfileClicked(it)) }
+
     val context = LocalContext.current
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showGroupPicker by remember { mutableStateOf(false) }

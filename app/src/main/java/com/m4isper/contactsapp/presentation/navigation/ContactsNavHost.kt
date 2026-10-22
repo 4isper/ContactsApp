@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp.presentation.navigation
 
+import android.content.Context
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Contacts
@@ -28,6 +29,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.StartRequest
+import com.m4isper.contactsapp.presentation.contacts.ContactsNavigationAction
 import com.m4isper.contactsapp.presentation.contacts.ContactsScreen
 import com.m4isper.contactsapp.presentation.details.ContactDetailsScreen
 import com.m4isper.contactsapp.presentation.duplicates.DuplicatesScreen
@@ -100,6 +102,7 @@ internal fun navigateToDetails(
 fun ContactsNavHost(
     modifier: Modifier = Modifier,
     startRequest: StartRequest? = null,
+    onRestartRequired: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val backStack = rememberNavBackStack(ContactsListKey)
@@ -161,34 +164,18 @@ fun ContactsNavHost(
                     ) {
                         ContactsScreen(
                             showFavorites = showFavorites,
-                            onContactClick = { contactId ->
-                                if (pickMode) {
-                                    // Режим выбора: отдаём контакт запросившей программе.
-                                    context.pickContactResult(contactId)
-                                } else {
-                                    navigateToDetails(backStack, contactId)
-                                }
-                            },
-                            onAddClick = {
-                                backStack.add(ContactEditorKey(null, editorSession++))
-                            },
-                            onGroupsClick = {
-                                backStack.add(GroupsKey)
-                            },
-                            onDuplicatesClick = {
-                                backStack.add(DuplicatesKey)
-                            },
-                            onRecentsClick = {
-                                backStack.add(RecentsKey)
-                            },
-                            onSettingsClick = {
-                                backStack.add(SettingsKey)
+                            onNavigation = { action ->
+                                handleContactsNavigation(
+                                    action = action,
+                                    backStack = backStack,
+                                    pickMode = pickMode,
+                                    context = context,
+                                    editorSession = editorSession,
+                                )
+                                editorSession++
                             },
                             onImportPreviewReady = {
                                 backStack.add(ImportPreviewKey)
-                            },
-                            onProfileClick = { contactId ->
-                                navigateToDetails(backStack, contactId)
                             },
                         )
                     }
@@ -227,6 +214,7 @@ fun ContactsNavHost(
                     entry<SettingsKey> {
                         SettingsScreen(
                             onBack = dropUnlessResumed { backStack.removeLastOrNull() },
+                            onRestartRequired = onRestartRequired,
                         )
                     }
                     entry<ContactDetailsKey>(
@@ -248,5 +236,30 @@ fun ContactsNavHost(
                     }
                 },
         )
+    }
+}
+
+/** Переходы экрана списка: контакт, добавление, группы, дубликаты, недавние и настройки. */
+private fun handleContactsNavigation(
+    action: ContactsNavigationAction,
+    backStack: MutableList<NavKey>,
+    pickMode: Boolean,
+    context: Context,
+    editorSession: Long,
+) {
+    when (action) {
+        is ContactsNavigationAction.ContactClicked ->
+            if (pickMode) {
+                // Режим выбора: отдаём контакт запросившей программе.
+                context.pickContactResult(action.contactId)
+            } else {
+                navigateToDetails(backStack, action.contactId)
+            }
+        ContactsNavigationAction.AddClicked -> backStack.add(ContactEditorKey(null, editorSession))
+        ContactsNavigationAction.ManageGroupsClicked -> backStack.add(GroupsKey)
+        ContactsNavigationAction.DuplicatesClicked -> backStack.add(DuplicatesKey)
+        ContactsNavigationAction.RecentsClicked -> backStack.add(RecentsKey)
+        ContactsNavigationAction.SettingsClicked -> backStack.add(SettingsKey)
+        is ContactsNavigationAction.ProfileClicked -> navigateToDetails(backStack, action.contactId)
     }
 }
