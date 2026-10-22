@@ -27,11 +27,31 @@ These choices make the domain harder to test in isolation, hide behavior from im
 
 ## Acceptance criteria
 
-- [ ] No business logic remains in repository interface default methods.
-- [ ] Each consumer depends only on the narrow port it actually uses.
-- [ ] `:domain` has no Metro imports and no Android provider types in public models.
-- [ ] Provider ids and photo references are represented by opaque domain types and mapped in `:data`.
-- [ ] Existing behavior is covered by tests, and architecture tests reject new boundary violations.
+- [x] No business logic remains in repository interface default methods.
+- [x] Each consumer depends only on the narrow port it actually uses.
+- [x] `:domain` has no Metro imports and no Android provider types in public models.
+- [x] Provider ids and photo references are represented by opaque domain types and mapped in `:data`.
+- [x] Existing behavior is covered by tests, and architecture tests reject new boundary violations.
+
+## Status
+
+Done.
+
+- The contacts port is split into the reader, the accounts, the writer and the merger; the
+  settings port into the reader, the appearance, the list, the accounts, the language, the
+  privacy, the reminders and the maintenance. Every use case depends only on its own port.
+- The ports have no default bodies any more. The copy and the move of a contact were the
+  business rules hidden in the port - they are rules of the use cases now.
+- The data layer contributes the narrow ports: the implementation of the contacts, four small
+  implementations of the settings.
+- The domain has no Metro import any more: the use cases are plain classes, and the
+  composition root of the app lists how they are built. The architecture check rejects a DI
+  import in the domain, the same way it rejects Android or the data layer.
+- The cryptography left the domain: the port `PinHasher` describes the contract, the PBKDF2
+  implementation lives in the data module.
+- The provider identifiers are hidden behind value objects: `RawContactRef` for the rows of the
+  provider and `PhotoRef` for the photo. The data layer maps them, the domain never
+  interprets them.
 
 ## Technical notes
 

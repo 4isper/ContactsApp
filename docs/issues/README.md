@@ -37,7 +37,7 @@ These issues are open and come from the Clean Architecture / Clean Code audit. T
 
 | # | File | Title | Priority | Status |
 |---|---|---|---|---|
-| 09 | [09-domain-boundaries.md](09-domain-boundaries.md) | Tighten domain ports and remove infrastructure leaks | P1 | Open |
+| 09 | [09-domain-boundaries.md](09-domain-boundaries.md) | Tighten domain ports and remove infrastructure leaks | P1 | Done |
 | 10 | [10-business-rules-in-domain.md](10-business-rules-in-domain.md) | Move contact business rules from presentation to domain | P1 | Done |
 | 11 | [11-data-layer-correctness.md](11-data-layer-correctness.md) | Make data-layer IO safe and group merge atomic | P1 | Done |
 | 12 | [12-applock-pin-security.md](12-applock-pin-security.md) | Harden app-lock PIN storage | P1 | Done |
