@@ -1,8 +1,8 @@
 package com.m4isper.contactsapp.presentation.settings
 
 import com.m4isper.contactsapp.FakeSettingsRepository
-import com.m4isper.contactsapp.domain.model.AppLockAttempts
-import com.m4isper.contactsapp.domain.model.hashAppLockPin
+import com.m4isper.contactsapp.data.security.Pbkdf2PinHasher
+import com.m4isper.contactsapp.domain.security.AppLockAttempts
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -12,14 +12,15 @@ import java.time.Duration
 
 class AppLockViewModelTest {
     private val repository = FakeSettingsRepository()
+    private val hasher = Pbkdf2PinHasher()
 
-    private fun viewModel() = AppLockViewModel(repository)
+    private fun viewModel() = AppLockViewModel(repository, hasher)
 
     @Test
     fun `correct pin unlocks the app`() =
         runTest {
             val viewModel = viewModel()
-            val hash = hashAppLockPin("1234")
+            val hash = hasher.hash("1234")
 
             assertTrue(viewModel.unlock("1234", hash))
             assertTrue(viewModel.isUnlocked.value)
@@ -29,7 +30,7 @@ class AppLockViewModelTest {
     fun `wrong pin keeps the app locked`() =
         runTest {
             val viewModel = viewModel()
-            val hash = hashAppLockPin("1234")
+            val hash = hasher.hash("1234")
 
             assertFalse(viewModel.unlock("9999", hash))
             assertFalse(viewModel.isUnlocked.value)
@@ -39,7 +40,7 @@ class AppLockViewModelTest {
     fun `lock blocks the app again`() =
         runTest {
             val viewModel = viewModel()
-            val hash = hashAppLockPin("1234")
+            val hash = hasher.hash("1234")
             viewModel.unlock("1234", hash)
 
             viewModel.lock()
@@ -61,7 +62,7 @@ class AppLockViewModelTest {
     fun `too many wrong pins block the input`() =
         runTest {
             val viewModel = viewModel()
-            val hash = hashAppLockPin("1234")
+            val hash = hasher.hash("1234")
 
             repeat(AppLockAttempts.DEFAULT_MAX_ATTEMPTS) {
                 assertFalse(viewModel.unlock("9999", hash))
@@ -90,7 +91,7 @@ class AppLockViewModelTest {
     fun `a new hash is not rewritten`() =
         runTest {
             val viewModel = viewModel()
-            val hash = hashAppLockPin("1234")
+            val hash = hasher.hash("1234")
 
             assertTrue(viewModel.unlock("1234", hash))
 

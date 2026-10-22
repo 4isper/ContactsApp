@@ -1,6 +1,7 @@
 package com.m4isper.contactsapp.presentation.settings
 
 import com.m4isper.contactsapp.FakeSettingsRepository
+import com.m4isper.contactsapp.data.security.Pbkdf2PinHasher
 import com.m4isper.contactsapp.domain.model.AppSettings
 import com.m4isper.contactsapp.domain.model.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.ListDensity
@@ -82,7 +83,7 @@ class SettingsViewModelTest {
             SetAppLanguageUseCase(repository),
             SetDynamicColorUseCase(repository),
             SetShowPhotosUseCase(repository),
-            SetAppLockUseCase(repository),
+            SetAppLockUseCase(repository, Pbkdf2PinHasher()),
             SetSecureWindowUseCase(repository),
             ResetSettingsUseCase(repository),
             SetRemindersUseCase(repository),

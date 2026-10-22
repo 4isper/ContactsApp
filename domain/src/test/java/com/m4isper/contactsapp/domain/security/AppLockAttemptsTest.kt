@@ -1,4 +1,4 @@
-package com.m4isper.contactsapp.domain.model
+package com.m4isper.contactsapp.domain.security
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

@@ -1,11 +1,9 @@
 package com.m4isper.contactsapp.presentation.settings
 
 import androidx.lifecycle.ViewModel
-import com.m4isper.contactsapp.domain.model.AppLockAttempts
-import com.m4isper.contactsapp.domain.model.hashAppLockPin
-import com.m4isper.contactsapp.domain.model.needsAppLockHashMigration
-import com.m4isper.contactsapp.domain.model.verifyAppLockPin
 import com.m4isper.contactsapp.domain.repository.PrivacySettings
+import com.m4isper.contactsapp.domain.security.AppLockAttempts
+import com.m4isper.contactsapp.domain.security.PinHasher
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
@@ -26,6 +24,7 @@ import java.time.Duration
 @ContributesIntoMap(AppScope::class)
 class AppLockViewModel(
     private val privacySettings: PrivacySettings,
+    private val pinHasher: PinHasher,
 ) : ViewModel() {
     private val unlocked = MutableStateFlow(false)
     val isUnlocked: StateFlow<Boolean> = unlocked.asStateFlow()
@@ -47,7 +46,7 @@ class AppLockViewModel(
             publishLockWait()
             return false
         }
-        val ok = withContext(Dispatchers.Default) { verifyAppLockPin(pin, hash) }
+        val ok = withContext(Dispatchers.Default) { pinHasher.verify(pin, hash) }
         if (ok) {
             attempts.registerSuccess()
             lockWait.value = Duration.ZERO
@@ -70,9 +69,9 @@ class AppLockViewModel(
         pin: String,
         hash: String,
     ) {
-        if (!needsAppLockHashMigration(hash)) return
+        if (!pinHasher.needsMigration(hash)) return
         withContext(Dispatchers.Default) {
-            privacySettings.setAppLock(true, hashAppLockPin(pin))
+            privacySettings.setAppLock(true, pinHasher.hash(pin))
         }
     }
 
