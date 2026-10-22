@@ -342,6 +342,8 @@ private fun GroupDetailEvents(
     viewModel: GroupDetailViewModel,
 ) {
     val context = LocalContext.current
+    val deletedMessage = stringResource(R.string.group_deleted)
+    val undoDeleteLabel = stringResource(R.string.group_undo_delete)
     LaunchedEffect(event) {
         when (event) {
             GroupDetailEvent.MemberRemoved -> toast(context, R.string.group_member_removed)
@@ -351,8 +353,8 @@ private fun GroupDetailEvents(
             GroupDetailEvent.GroupDeleted -> {
                 val result =
                     snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.group_deleted),
-                        actionLabel = context.getString(R.string.group_undo_delete),
+                        message = deletedMessage,
+                        actionLabel = undoDeleteLabel,
                         duration = SnackbarDuration.Long,
                     )
                 if (result == SnackbarResult.ActionPerformed) {

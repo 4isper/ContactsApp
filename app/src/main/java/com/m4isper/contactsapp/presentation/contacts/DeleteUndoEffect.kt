@@ -7,6 +7,7 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import com.m4isper.contactsapp.R
 
 /**
@@ -24,14 +25,15 @@ internal fun DeleteUndoEffect(
     onWindowClosed: () -> Unit,
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     // Ключ — размер очереди: второй батч в том же окне обновляет текст snackbar.
     LaunchedEffect(pendingDeleteIds.size) {
         if (pendingDeleteIds.isEmpty()) return@LaunchedEffect
         val count = pendingDeleteIds.size
         val result =
             snackbarHostState.showSnackbar(
-                message = context.resources.getQuantityString(R.plurals.batch_delete_undo, count, count),
-                actionLabel = context.getString(R.string.action_undo),
+                message = resources.getQuantityString(R.plurals.batch_delete_undo, count, count),
+                actionLabel = resources.getString(R.string.action_undo),
                 withDismissAction = true,
                 duration = SnackbarDuration.Indefinite,
             )
@@ -39,7 +41,7 @@ internal fun DeleteUndoEffect(
         // возвращать контакты в этом случае нельзя.
         if (result == SnackbarResult.ActionPerformed && !deleteClosing) {
             onUndoDelete()
-            val message = context.resources.getQuantityString(R.plurals.batch_delete_undone, count, count)
+            val message = resources.getQuantityString(R.plurals.batch_delete_undone, count, count)
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
     }
