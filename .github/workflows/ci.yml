@@ -32,10 +32,12 @@ jobs:
           cache: gradle
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Accept Android SDK licenses
-        run: yes | sdkmanager --licenses > /dev/null || true
+        uses: android-actions/setup-android@v4
+        with:
+          api-level: 37
+          target: google_apis
+          build-tools: 37.0.0
+          accept-licenses: true
 
       - name: Install required Android SDK components
         run: sdkmanager "platforms;android-37" "build-tools;37.0.0"
