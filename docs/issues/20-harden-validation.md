@@ -22,10 +22,28 @@ Validation is in the right layer (domain/`ContactForm`), but it is shallow:
 
 ## Acceptance criteria
 
-- [ ] Valid international email/phone/URL values are accepted and normalized consistently.
-- [ ] Invalid values are rejected with a clear, stable error.
-- [ ] Validation exists in one place; UI does not reimplement the rules.
-- [ ] Edge-case tests cover international phones, IDN/URLs, and malformed input.
+- [x] Valid international email/phone/URL values are accepted and normalized consistently.
+- [x] Invalid values are rejected with a clear, stable error.
+- [x] Validation exists in one place; UI does not reimplement the rules.
+- [x] Edge-case tests cover international phones, IDN/URLs, and malformed input.
+
+## Status
+
+Done.
+
+- The domain has the values of the form: `Email`, `Phone` and `Url` normalize and check
+  themselves, and the value object is created only for a valid input.
+- The email keeps its local part, the domain is lower cased and must consist of the labels with
+  a letter top level domain.
+- The phone keeps only the digits and the leading «+», the length is as in E.164, and the
+  formatting (spaces, dashes, brackets) disappears.
+- The site gets the `https` scheme, the host is lower cased and converted to ASCII, so an
+  international domain works; only `http` and `https` are allowed.
+- The rules live in one place: the validation of the form uses the value objects, and the
+  normalized form stores the normalized values. The interface only shows the message of the
+  error, it does not check anything itself.
+- The tests are table driven: the valid and the invalid values of every kind are covered,
+  including the international phone, the IDN domain and the malformed input.
 
 ## Technical notes
 
