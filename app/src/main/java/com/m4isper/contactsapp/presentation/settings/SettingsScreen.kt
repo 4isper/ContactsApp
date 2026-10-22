@@ -44,6 +44,7 @@ import com.m4isper.contactsapp.domain.model.ListDensity
 import com.m4isper.contactsapp.domain.model.ThemeMode
 import com.m4isper.contactsapp.presentation.common.account.contactAccountTitle
 import com.m4isper.contactsapp.presentation.common.account.testKey
+import com.m4isper.contactsapp.presentation.common.message
 import com.m4isper.contactsapp.ui.components.ConfirmDialog
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 import dev.zacsweers.metrox.viewmodel.metroViewModel
@@ -51,7 +52,7 @@ import dev.zacsweers.metrox.viewmodel.metroViewModel
 /** Настройки: тема, сортировка списка и его плотность. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(
+internal fun SettingsScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = metroViewModel(),
@@ -90,6 +91,14 @@ fun SettingsScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(vertical = spacing.s),
         ) {
+            uiState.error?.let { error ->
+                Text(
+                    text = error.message(),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(horizontal = spacing.m, vertical = spacing.s),
+                )
+            }
             SettingsSection(title = stringResource(R.string.settings_theme)) {
                 ThemeMode.entries.forEach { mode ->
                     SettingsOption(

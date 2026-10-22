@@ -230,6 +230,7 @@
     <string name="error_save_failed">Не удалось сохранить контакт</string>
     <string name="error_delete_failed">Не удалось удалить контакт</string>
     <string name="error_import_failed">Не удалось прочитать файл</string>
+    <string name="error_schedule_failed">Не удалось запланировать напоминание</string>
     <string name="error_unknown">Что-то пошло не так</string>
     <string name="app_lock_hint">Введите PIN-код, чтобы продолжить</string>
     <string name="app_lock_pin">PIN-код</string>

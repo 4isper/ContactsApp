@@ -20,10 +20,28 @@ The DI graph is centralized in `AppGraph`, but two paths bypass it or mix respon
 
 ## Acceptance criteria
 
-- [ ] `BirthdayReminderReceiver` and `ContactsWidgetProvider` use the shared DI graph without manual use-case assembly.
-- [ ] Saving reminder settings and scheduling the alarm cannot silently diverge.
-- [ ] `SettingsViewModel` does not call `ReminderScheduler` directly.
-- [ ] Entry points and the reminder-settings flow have focused tests.
+- [x] `BirthdayReminderReceiver` and `ContactsWidgetProvider` use the shared DI graph without manual use-case assembly.
+- [x] Saving reminder settings and scheduling the alarm cannot silently diverge.
+- [x] `SettingsViewModel` does not call `ReminderScheduler` directly.
+- [x] Entry points and the reminder-settings flow have focused tests.
+
+## Status
+
+Done.
+
+- The points of entry take the use cases from the graph: the graph gives `getContacts`,
+  `getContactDetails`, `observeSettings` and `observeFavorites`, so the receiver of the reminders
+  and the widget of the favorites do not assemble the use cases by hand.
+- The settings of the reminders have a coordinator: it saves the settings, then plans the alarm,
+  and if the planning fails it returns the previous settings and reports the failure - the stored
+  state and the alarm do not diverge silently.
+- The screen of the settings does not know the planner and the store of the language: the
+  coordinators of the reminders, of the language and of the reset own them.
+- The failure of the alarm is shown to the user as the kind of the error `SCHEDULE_FAILED`.
+- Tests: the coordinator of the reminders (the settings are saved, the failure of the alarm rolls
+  the settings back, the failure of the cancellation is reported) and the screen of the settings
+  (the failure of the alarm shows an error). The logic of the entry points is thin: the rules live
+  in the domain and are covered there.
 
 ## Technical notes
 

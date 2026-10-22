@@ -2,6 +2,7 @@ package com.m4isper.contactsapp.presentation.settings
 
 import com.m4isper.contactsapp.FakeSettingsRepository
 import com.m4isper.contactsapp.data.security.Pbkdf2PinHasher
+import com.m4isper.contactsapp.domain.model.AppError
 import com.m4isper.contactsapp.domain.model.AppSettings
 import com.m4isper.contactsapp.domain.model.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.ListDensity
@@ -21,6 +22,7 @@ import com.m4isper.contactsapp.domain.usecase.SetShowPhotosUseCase
 import com.m4isper.contactsapp.domain.usecase.SetSortOrderUseCase
 import com.m4isper.contactsapp.domain.usecase.SetThemeModeUseCase
 import com.m4isper.contactsapp.presentation.reminders.ReminderScheduler
+import com.m4isper.contactsapp.presentation.settings.SettingsResetCoordinator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -51,6 +53,13 @@ private class FakeAppLanguageStore : AppLanguageStore {
     override var language: String = ""
 }
 
+/** Планировщик напоминаний, который не может поставить будильник. */
+private class FailingReminderScheduler : ReminderScheduler {
+    override fun schedule() = throw IllegalStateException("no alarm")
+
+    override fun cancel() = Unit
+}
+
 /** Планировщик напоминаний без AlarmManager: достаточно отметить, что будильник поставлен. */
 private class FakeReminderScheduler : ReminderScheduler {
     var scheduled = false
@@ -73,22 +82,39 @@ class SettingsViewModelTest {
 
     private fun viewModel(repository: FakeSettingsRepository = FakeSettingsRepository()) =
         SettingsViewModel(
-            ObserveSettingsUseCase(repository),
-            SetThemeModeUseCase(repository),
-            SetSortOrderUseCase(repository),
-            SetListDensityUseCase(repository),
-            SetFavoritesFirstUseCase(repository),
-            SetDefaultContactAccountUseCase(repository),
-            GetContactAccountsUseCase(SettingsFakeContactsRepository()),
-            SetAppLanguageUseCase(repository),
-            SetDynamicColorUseCase(repository),
-            SetShowPhotosUseCase(repository),
-            SetAppLockUseCase(repository, Pbkdf2PinHasher()),
-            SetSecureWindowUseCase(repository),
-            ResetSettingsUseCase(repository),
-            SetRemindersUseCase(repository),
-            FakeAppLanguageStore(),
-            FakeReminderScheduler(),
+            observeSettingsUseCase = ObserveSettingsUseCase(repository),
+            setThemeModeUseCase = SetThemeModeUseCase(repository),
+            setSortOrderUseCase = SetSortOrderUseCase(repository),
+            setListDensityUseCase = SetListDensityUseCase(repository),
+            setFavoritesFirstUseCase = SetFavoritesFirstUseCase(repository),
+            setDefaultContactAccountUseCase = SetDefaultContactAccountUseCase(repository),
+            getContactAccountsUseCase = GetContactAccountsUseCase(SettingsFakeContactsRepository()),
+            setDynamicColorUseCase = SetDynamicColorUseCase(repository),
+            setShowPhotosUseCase = SetShowPhotosUseCase(repository),
+            setAppLockUseCase = SetAppLockUseCase(repository, Pbkdf2PinHasher()),
+            setSecureWindowUseCase = SetSecureWindowUseCase(repository),
+            reset =
+                SettingsResetCoordinator(
+                    resetSettings = ResetSettingsUseCase(repository),
+                    languageStore = FakeAppLanguageStore(),
+                    reminders =
+                        ReminderSettingsCoordinator(
+                            setReminders = SetRemindersUseCase(repository),
+                            readSettings = ObserveSettingsUseCase(repository),
+                            scheduler = FakeReminderScheduler(),
+                        ),
+                ),
+            reminders =
+                ReminderSettingsCoordinator(
+                    setReminders = SetRemindersUseCase(repository),
+                    readSettings = ObserveSettingsUseCase(repository),
+                    scheduler = FakeReminderScheduler(),
+                ),
+            language =
+                AppLanguageCoordinator(
+                    setLanguage = SetAppLanguageUseCase(repository),
+                    languageStore = FakeAppLanguageStore(),
+                ),
         )
 
     @Test
@@ -123,6 +149,55 @@ class SettingsViewModelTest {
                     .second
                     .isNotBlank(),
             )
+        }
+
+    @Test
+    fun `a failed scheduling of the reminder is shown as an error`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeSettingsRepository()
+            val viewModel =
+                SettingsViewModel(
+                    observeSettingsUseCase = ObserveSettingsUseCase(repository),
+                    setThemeModeUseCase = SetThemeModeUseCase(repository),
+                    setSortOrderUseCase = SetSortOrderUseCase(repository),
+                    setListDensityUseCase = SetListDensityUseCase(repository),
+                    setFavoritesFirstUseCase = SetFavoritesFirstUseCase(repository),
+                    setDefaultContactAccountUseCase = SetDefaultContactAccountUseCase(repository),
+                    getContactAccountsUseCase = GetContactAccountsUseCase(SettingsFakeContactsRepository()),
+                    setDynamicColorUseCase = SetDynamicColorUseCase(repository),
+                    setShowPhotosUseCase = SetShowPhotosUseCase(repository),
+                    setAppLockUseCase = SetAppLockUseCase(repository, Pbkdf2PinHasher()),
+                    setSecureWindowUseCase = SetSecureWindowUseCase(repository),
+                    reset =
+                        SettingsResetCoordinator(
+                            resetSettings = ResetSettingsUseCase(repository),
+                            languageStore = FakeAppLanguageStore(),
+                            reminders =
+                                ReminderSettingsCoordinator(
+                                    setReminders = SetRemindersUseCase(repository),
+                                    readSettings = ObserveSettingsUseCase(repository),
+                                    scheduler = FailingReminderScheduler(),
+                                ),
+                        ),
+                    reminders =
+                        ReminderSettingsCoordinator(
+                            setReminders = SetRemindersUseCase(repository),
+                            readSettings = ObserveSettingsUseCase(repository),
+                            scheduler = FailingReminderScheduler(),
+                        ),
+                    language =
+                        AppLanguageCoordinator(
+                            setLanguage = SetAppLanguageUseCase(repository),
+                            languageStore = FakeAppLanguageStore(),
+                        ),
+                )
+            backgroundScope.launch { viewModel.uiState.collect { } }
+
+            viewModel.onRemindersChanged(true, 3)
+            advanceUntilIdle()
+
+            assertEquals(AppError.SCHEDULE_FAILED, viewModel.uiState.value.error)
         }
 
     @Test

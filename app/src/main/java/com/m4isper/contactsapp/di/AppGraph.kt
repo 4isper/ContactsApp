@@ -2,9 +2,10 @@ package com.m4isper.contactsapp.di
 
 import android.app.Application
 import android.content.Context
-import com.m4isper.contactsapp.domain.repository.ContactsReader
-import com.m4isper.contactsapp.domain.repository.FavoritesRepository
-import com.m4isper.contactsapp.domain.repository.SettingsReader
+import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
+import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
+import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
 import com.m4isper.contactsapp.presentation.reminders.BirthdayReminderScheduler
 import com.m4isper.contactsapp.presentation.reminders.ReminderScheduler
 import com.m4isper.contactsapp.presentation.settings.AppLanguageStore
@@ -18,10 +19,14 @@ import dev.zacsweers.metrox.viewmodel.ViewModelGraph
 interface AppGraph :
     ViewModelGraph,
     UseCaseProviders {
-    /** Репозитории для фоновых задач: напоминания читают контакты и настройки. */
-    val contactsReader: ContactsReader
-    val settingsReader: SettingsReader
-    val favoritesRepository: FavoritesRepository
+    /**
+     * Use cases для точек входа Android: получатель напоминаний и виджет берут
+     * их здесь, а не собирают вручную - иначе composition root дублируется.
+     */
+    val getContacts: GetContactsUseCase
+    val getContactDetails: GetContactDetailsUseCase
+    val observeSettings: ObserveSettingsUseCase
+    val observeFavorites: ObserveFavoritesUseCase
 
     @Provides
     fun provideContext(application: Application): Context = application.applicationContext

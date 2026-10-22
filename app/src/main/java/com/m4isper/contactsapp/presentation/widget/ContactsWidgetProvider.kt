@@ -15,7 +15,6 @@ import com.m4isper.contactsapp.ContactsApp
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.normalizeContactText
-import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -49,9 +48,9 @@ class ContactsWidgetProvider : AppWidgetProvider() {
 
     private suspend fun loadFavorites(context: Context): List<ContactDetails> {
         val graph = (context.applicationContext as? ContactsApp)?.appGraph ?: return emptyList()
-        val ids = ObserveFavoritesUseCase(graph.favoritesRepository)().first()
+        val ids = graph.observeFavorites().first()
         return ids
-            .mapNotNull { id -> graph.contactsReader.getContactDetails(id) }
+            .mapNotNull { id -> graph.getContactDetails(id) }
             .sortedBy { normalizeContactText(it.name) }
     }
 

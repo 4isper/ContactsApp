@@ -46,7 +46,7 @@ These issues are open and come from the Clean Architecture / Clean Code audit. T
 | 15 | [15-error-handling-observability.md](15-error-handling-observability.md) | Unify error handling and release logging | P2 | Done |
 | 16 | [16-static-analysis-quality-gate.md](16-static-analysis-quality-gate.md) | Make detekt and architecture checks effective | P1 | Done |
 | 17 | [17-test-architecture.md](17-test-architecture.md) | Add shared fixtures and cover ContentResolver data sources | P2 | Done |
-| 18 | [18-composition-root-settings.md](18-composition-root-settings.md) | Centralize the composition root and settings side effects | P2 | Open |
+| 18 | [18-composition-root-settings.md](18-composition-root-settings.md) | Centralize the composition root and settings side effects | P2 | Done |
 | 19 | [19-ui-actions-side-effects.md](19-ui-actions-side-effects.md) | Replace callback-heavy UI APIs and move side effects out of composition | P2 | Open |
 | 20 | [20-harden-validation.md](20-harden-validation.md) | Harden domain validation for email, URL, and phone | P2 | Open |
 

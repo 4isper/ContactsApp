@@ -18,6 +18,7 @@ internal fun AppError.messageRes(): Int =
         AppError.SAVE_FAILED -> R.string.error_save_failed
         AppError.DELETE_FAILED -> R.string.error_delete_failed
         AppError.IMPORT_FAILED -> R.string.error_import_failed
+        AppError.SCHEDULE_FAILED -> R.string.error_schedule_failed
         AppError.UNKNOWN -> R.string.error_unknown
     }
 

@@ -32,6 +32,9 @@ import com.m4isper.contactsapp.domain.usecase.SetShowPhotosUseCase
 import com.m4isper.contactsapp.domain.usecase.SetSortOrderUseCase
 import com.m4isper.contactsapp.domain.usecase.SetThemeModeUseCase
 import com.m4isper.contactsapp.presentation.reminders.BirthdayReminderScheduler
+import com.m4isper.contactsapp.presentation.settings.AppLanguageCoordinator
+import com.m4isper.contactsapp.presentation.settings.ReminderSettingsCoordinator
+import com.m4isper.contactsapp.presentation.settings.SettingsResetCoordinator
 import com.m4isper.contactsapp.presentation.settings.SharedPrefsAppLanguageStore
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -46,22 +49,51 @@ class SettingsUiTest {
 
     private fun viewModel(repository: FakeSettingsRepository) =
         SettingsViewModel(
-            ObserveSettingsUseCase(repository),
-            SetThemeModeUseCase(repository),
-            SetSortOrderUseCase(repository),
-            SetListDensityUseCase(repository),
-            SetFavoritesFirstUseCase(repository),
-            SetDefaultContactAccountUseCase(repository),
-            GetContactAccountsUseCase(FakeAndroidRepository()),
-            SetAppLanguageUseCase(repository),
-            SetDynamicColorUseCase(repository),
-            SetShowPhotosUseCase(repository),
-            SetAppLockUseCase(repository, Pbkdf2PinHasher()),
-            SetSecureWindowUseCase(repository),
-            ResetSettingsUseCase(repository),
-            SetRemindersUseCase(repository),
-            SharedPrefsAppLanguageStore(InstrumentationRegistry.getInstrumentation().targetContext),
-            BirthdayReminderScheduler(InstrumentationRegistry.getInstrumentation().targetContext),
+            observeSettingsUseCase = ObserveSettingsUseCase(repository),
+            setThemeModeUseCase = SetThemeModeUseCase(repository),
+            setSortOrderUseCase = SetSortOrderUseCase(repository),
+            setListDensityUseCase = SetListDensityUseCase(repository),
+            setFavoritesFirstUseCase = SetFavoritesFirstUseCase(repository),
+            setDefaultContactAccountUseCase = SetDefaultContactAccountUseCase(repository),
+            getContactAccountsUseCase = GetContactAccountsUseCase(FakeAndroidRepository()),
+            setDynamicColorUseCase = SetDynamicColorUseCase(repository),
+            setShowPhotosUseCase = SetShowPhotosUseCase(repository),
+            setAppLockUseCase = SetAppLockUseCase(repository, Pbkdf2PinHasher()),
+            setSecureWindowUseCase = SetSecureWindowUseCase(repository),
+            reset =
+                SettingsResetCoordinator(
+                    resetSettings = ResetSettingsUseCase(repository),
+                    languageStore =
+                        SharedPrefsAppLanguageStore(
+                            InstrumentationRegistry.getInstrumentation().targetContext,
+                        ),
+                    reminders =
+                        ReminderSettingsCoordinator(
+                            setReminders = SetRemindersUseCase(repository),
+                            readSettings = ObserveSettingsUseCase(repository),
+                            scheduler =
+                                BirthdayReminderScheduler(
+                                    InstrumentationRegistry.getInstrumentation().targetContext,
+                                ),
+                        ),
+                ),
+            reminders =
+                ReminderSettingsCoordinator(
+                    setReminders = SetRemindersUseCase(repository),
+                    readSettings = ObserveSettingsUseCase(repository),
+                    scheduler =
+                        BirthdayReminderScheduler(
+                            InstrumentationRegistry.getInstrumentation().targetContext,
+                        ),
+                ),
+            language =
+                AppLanguageCoordinator(
+                    setLanguage = SetAppLanguageUseCase(repository),
+                    languageStore =
+                        SharedPrefsAppLanguageStore(
+                            InstrumentationRegistry.getInstrumentation().targetContext,
+                        ),
+                ),
         )
 
     @Test

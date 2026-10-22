@@ -19,8 +19,6 @@ import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.reminders.OccasionKind
 import com.m4isper.contactsapp.domain.reminders.UpcomingOccasion
 import com.m4isper.contactsapp.domain.reminders.upcomingOccasions
-import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -47,11 +45,11 @@ class BirthdayReminderReceiver : BroadcastReceiver() {
 
     private suspend fun showReminder(context: Context) {
         val graph = (context.applicationContext as? ContactsApp)?.appGraph ?: return
-        val settings = ObserveSettingsUseCase(graph.settingsReader)().first()
+        val settings = graph.observeSettings().first()
         val upcoming =
             if (settings.remindersEnabled) {
                 upcomingOccasions(
-                    contacts = GetContactsUseCase(graph.contactsReader)(),
+                    contacts = graph.getContacts(),
                     leadDays = settings.reminderLeadDays,
                     today = LocalDate.now(),
                 )
