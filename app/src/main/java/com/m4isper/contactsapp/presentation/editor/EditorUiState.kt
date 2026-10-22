@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp.presentation.editor
 
+import com.m4isper.contactsapp.domain.model.AppError
 import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
@@ -70,7 +71,7 @@ internal data class EditorUiState(
     val fieldErrors: Map<FormField, FormError> = emptyMap(),
     /** Похожие контакты: предупреждаем о вероятном дубле перед сохранением. */
     val similarContacts: List<ContactDetails> = emptyList(),
-    val errorMessage: String? = null,
+    val error: AppError? = null,
     /** Удаление не удалось: экран не закрывается, форма остаётся доступной. */
     val deleteFailed: Boolean = false,
     val closeScreen: Boolean = false,

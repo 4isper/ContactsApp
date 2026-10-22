@@ -4,18 +4,18 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.m4isper.contactsapp.domain.duplicates.DuplicateGroup
 import com.m4isper.contactsapp.domain.duplicates.findDuplicateGroups
+import com.m4isper.contactsapp.domain.model.AppError
 import com.m4isper.contactsapp.domain.model.ContactLink
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.MergeContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.UnmergeContactsUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
-import com.m4isper.contactsapp.presentation.common.logw
+import com.m4isper.contactsapp.presentation.common.safeCall
 import com.m4isper.contactsapp.presentation.contacts.SUBSCRIBE_TIMEOUT_MILLIS
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -69,23 +69,18 @@ class DuplicatesViewModel(
         )
 
     // Catch-all осознанный: любая ошибка загрузки превращается в Error-стейт.
-    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой поиска дублей показывается пустым списком.
     fun load() {
         viewModelScope.launch {
-            try {
+            safeCall(DUPLICATES_TAG, "load duplicates failed") {
                 val groups = findDuplicateGroups(getContactsUseCase())
                 content.value = if (groups.isEmpty()) Loadable.Empty else Loadable.Content(groups)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logw(DUPLICATES_TAG, "load duplicates failed", e)
-                content.value = Loadable.Error(e.message)
+            }.onFailure { failure ->
+                content.value = Loadable.Error(AppError.from(failure))
             }
         }
     }
 
     // Catch-all осознанный: ошибка слияния показывается тостом, список перезагружается.
-    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой слияния показывается тостом.
     fun onMerge(
         targetId: Long,
         sourceIds: List<Long>,
@@ -93,41 +88,32 @@ class DuplicatesViewModel(
         if (isMerging.value || sourceIds.isEmpty()) return
         viewModelScope.launch {
             isMerging.value = true
-            try {
+            safeCall(DUPLICATES_TAG, "merge contacts failed") {
                 val link = mergeContactsUseCase(targetId, sourceIds)
                 lastLink.value = link
                 event.value = DuplicatesEvent.Merged
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logw(DUPLICATES_TAG, "merge contacts failed", e)
+            }.onFailure { failure ->
                 event.value = DuplicatesEvent.MergeFailed
-            } finally {
-                isMerging.value = false
             }
+            isMerging.value = false
             load()
         }
     }
 
     /** Отменяет последнее слияние: контакты снова видны отдельно. */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой отмены показываем тостом.
     fun onUndoMerge() {
         val link = lastLink.value ?: return
         if (isMerging.value) return
         viewModelScope.launch {
             isMerging.value = true
-            try {
+            safeCall(DUPLICATES_TAG, "unmerge contacts failed") {
                 unmergeContactsUseCase(link)
                 lastLink.value = null
                 event.value = DuplicatesEvent.Unmerged
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logw(DUPLICATES_TAG, "unmerge contacts failed", e)
+            }.onFailure { failure ->
                 event.value = DuplicatesEvent.UnmergeFailed
-            } finally {
-                isMerging.value = false
             }
+            isMerging.value = false
             load()
         }
     }

@@ -139,7 +139,7 @@ fun RecentsScreen(
                     )
                 is Loadable.Error ->
                     ErrorState(
-                        message = content.message,
+                        error = content.error,
                         onRetry = viewModel::load,
                         modifier = screenModifier,
                     )

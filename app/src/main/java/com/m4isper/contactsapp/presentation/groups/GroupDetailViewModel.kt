@@ -14,13 +14,12 @@ import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.MergeGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.RemoveContactsFromGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.RenameGroupUseCase
-import com.m4isper.contactsapp.presentation.common.logw
+import com.m4isper.contactsapp.presentation.common.safeCall
 import com.m4isper.contactsapp.presentation.contacts.SUBSCRIBE_TIMEOUT_MILLIS
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -137,12 +136,11 @@ class GroupDetailViewModel(
     }
 
     /** Перечитывает группу, состав и список групп. */
-    @Suppress("TooGenericExceptionCaught") // Осознанный: ошибка загрузки показывается пустым экраном.
     private fun refresh() {
         val groupId = groupIdFlow.value ?: return
         viewModelScope.launch {
             isLoadingFlow.value = true
-            try {
+            safeCall(GROUP_DETAIL_TAG, "load group failed") {
                 val groups = getGroupsUseCase()
                 val membership = getMembershipUseCase()
                 val memberIds = membership.filterValues { groupId in it }.keys
@@ -151,13 +149,8 @@ class GroupDetailViewModel(
                 groupsFlow.value = groups.filter { it.id != groupId }
                 allContactsFlow.value = contacts
                 membersFlow.value = contacts.filter { it.contactId in memberIds }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logw(GROUP_DETAIL_TAG, "load group failed", e)
-            } finally {
-                isLoadingFlow.value = false
             }
+            isLoadingFlow.value = false
         }
     }
 
@@ -217,7 +210,6 @@ class GroupDetailViewModel(
     }
 
     /** Изменение группы: событие об успехе или об ошибке. */
-    @Suppress("TooGenericExceptionCaught") // Осознанный: ошибка изменения показывается тостом.
     private fun mutate(
         success: GroupDetailEvent,
         block: suspend (Long) -> Unit,
@@ -226,17 +218,13 @@ class GroupDetailViewModel(
         if (isBusyFlow.value) return
         viewModelScope.launch {
             isBusyFlow.value = true
-            try {
+            safeCall(GROUP_DETAIL_TAG, "group mutation failed") {
                 block(groupId)
                 eventFlow.value = success
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logw(GROUP_DETAIL_TAG, "group mutation failed", e)
+            }.onFailure { failure ->
                 eventFlow.value = GroupDetailEvent.ActionFailed
-            } finally {
-                isBusyFlow.value = false
             }
+            isBusyFlow.value = false
             refresh()
         }
     }

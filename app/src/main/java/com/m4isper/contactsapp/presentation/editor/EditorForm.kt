@@ -39,6 +39,7 @@ import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.FormError
 import com.m4isper.contactsapp.presentation.common.groups.GroupPickerDialog
+import com.m4isper.contactsapp.presentation.common.message
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 
 @Composable
@@ -150,7 +151,7 @@ internal fun EditorForm(
             onBirthdayClick = { showDatePicker = true },
             onEventDateClick = { eventPickerRowId = it },
         )
-        if (uiState.formError != null || uiState.errorMessage != null || uiState.deleteFailed) {
+        if (uiState.formError != null || uiState.error != null || uiState.deleteFailed) {
             item(key = "error") {
                 Text(
                     text = formMessage(uiState),
@@ -379,5 +380,5 @@ private fun formMessage(uiState: EditorUiState): String =
     when {
         uiState.deleteFailed -> stringResource(R.string.batch_delete_failed)
         uiState.formError == FormError.EMPTY_FORM -> stringResource(R.string.form_error_empty)
-        else -> uiState.errorMessage.orEmpty()
+        else -> uiState.error?.message().orEmpty()
     }

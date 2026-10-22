@@ -1,5 +1,7 @@
 package com.m4isper.contactsapp.presentation.common
 
+import com.m4isper.contactsapp.domain.model.AppError
+
 sealed interface Loadable<out T> {
     data object Loading : Loadable<Nothing>
 
@@ -10,6 +12,6 @@ sealed interface Loadable<out T> {
     ) : Loadable<T>
 
     data class Error(
-        val message: String?,
+        val error: AppError?,
     ) : Loadable<Nothing>
 }

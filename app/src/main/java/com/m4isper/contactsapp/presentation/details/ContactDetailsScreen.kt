@@ -147,7 +147,7 @@ fun ContactDetailsScreen(
                 )
             is Loadable.Error ->
                 ErrorState(
-                    message = content.message,
+                    error = content.error,
                     onRetry = viewModel::refresh,
                     modifier = screenModifier,
                 )

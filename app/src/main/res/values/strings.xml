@@ -225,6 +225,12 @@
 
     <string name="settings_menu">Settings</string>
     <string name="app_lock_title">Contacts is locked</string>
+    <string name="error_permission_denied">No permission to access contacts</string>
+    <string name="error_provider_failed">The contacts provider is unavailable</string>
+    <string name="error_save_failed">Could not save the contact</string>
+    <string name="error_delete_failed">Could not delete the contact</string>
+    <string name="error_import_failed">Could not read the file</string>
+    <string name="error_unknown">Something went wrong</string>
     <string name="app_lock_hint">Enter the PIN code to continue</string>
     <string name="app_lock_pin">PIN code</string>
     <string name="app_lock_wrong_pin">Wrong PIN code</string>

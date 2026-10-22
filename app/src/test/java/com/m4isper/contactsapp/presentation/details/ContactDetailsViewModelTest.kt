@@ -2,6 +2,7 @@ package com.m4isper.contactsapp.presentation.details
 
 import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.FakeVCardCodec
+import com.m4isper.contactsapp.domain.model.AppError
 import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
@@ -198,7 +199,7 @@ class ContactDetailsViewModelTest {
 
             val content = viewModel.uiState.value.content
             assertTrue(content is Loadable.Error)
-            assertEquals("denied", (content as Loadable.Error).message)
+            assertEquals(AppError.PERMISSION_DENIED, (content as Loadable.Error).error)
         }
 
     @Test

@@ -43,7 +43,7 @@ These issues are open and come from the Clean Architecture / Clean Code audit. T
 | 12 | [12-applock-pin-security.md](12-applock-pin-security.md) | Harden app-lock PIN storage | P1 | Done |
 | 13 | [13-duplicate-normalization-locale.md](13-duplicate-normalization-locale.md) | Make duplicate normalization locale-independent | P1 | Done |
 | 14 | [14-viewmodel-decomposition.md](14-viewmodel-decomposition.md) | Split oversized ViewModels | P2 | Done |
-| 15 | [15-error-handling-observability.md](15-error-handling-observability.md) | Unify error handling and release logging | P2 | Open |
+| 15 | [15-error-handling-observability.md](15-error-handling-observability.md) | Unify error handling and release logging | P2 | Done |
 | 16 | [16-static-analysis-quality-gate.md](16-static-analysis-quality-gate.md) | Make detekt and architecture checks effective | P1 | Done |
 | 17 | [17-test-architecture.md](17-test-architecture.md) | Add shared fixtures and cover ContentResolver data sources | P2 | Open |
 | 18 | [18-composition-root-settings.md](18-composition-root-settings.md) | Centralize the composition root and settings side effects | P2 | Open |

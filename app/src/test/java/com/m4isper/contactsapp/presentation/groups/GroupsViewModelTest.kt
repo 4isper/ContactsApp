@@ -1,6 +1,7 @@
 package com.m4isper.contactsapp.presentation.groups
 
 import com.m4isper.contactsapp.FakeGroupsRepository
+import com.m4isper.contactsapp.domain.model.AppError
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteGroupUseCase
@@ -145,10 +146,10 @@ class GroupsViewModelTest {
 
             viewModel.onCreate("Друзья")
             advanceUntilIdle()
-            assertEquals("boom", viewModel.uiState.value.errorMessage)
+            assertEquals(AppError.UNKNOWN, viewModel.uiState.value.error)
 
             viewModel.onErrorHandled()
             advanceUntilIdle()
-            assertEquals(null, viewModel.uiState.value.errorMessage)
+            assertEquals(null, viewModel.uiState.value.error)
         }
 }

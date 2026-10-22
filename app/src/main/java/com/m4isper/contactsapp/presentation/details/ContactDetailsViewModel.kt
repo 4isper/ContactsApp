@@ -2,6 +2,7 @@ package com.m4isper.contactsapp.presentation.details
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.m4isper.contactsapp.domain.model.AppError
 import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactGroup
@@ -14,13 +15,12 @@ import com.m4isper.contactsapp.domain.usecase.MoveContactToAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
-import com.m4isper.contactsapp.presentation.common.logw
+import com.m4isper.contactsapp.presentation.common.safeCall
 import com.m4isper.contactsapp.presentation.contacts.SUBSCRIBE_TIMEOUT_MILLIS
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -106,7 +106,7 @@ class ContactDetailsViewModel(
         ) { load, extra ->
             val content =
                 when {
-                    load.failure != null -> Loadable.Error(load.failure.message)
+                    load.failure != null -> Loadable.Error(AppError.from(load.failure))
                     load.loading && load.details == null -> Loadable.Loading
                     load.details == null -> Loadable.Empty
                     else -> Loadable.Content(load.details)
@@ -133,16 +133,11 @@ class ContactDetailsViewModel(
     }
 
     // Catch-all осознанный: сбой записи избранного не должен ронять экран.
-    @Suppress("TooGenericExceptionCaught") // Осознанно: неудачная правка показывается тостом.
     fun toggleFavorite() {
         val contactId = selectedContactId.value ?: return
         viewModelScope.launch {
-            try {
+            safeCall(DETAILS_TAG, "toggleFavorite failed") {
                 toggleFavoriteUseCase(contactId)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logw(DETAILS_TAG, "toggleFavorite failed", e)
             }
         }
     }
@@ -157,51 +152,35 @@ class ContactDetailsViewModel(
     }
 
     // Catch-all осознанный: любая ошибка загрузки превращается в Error-стейт.
-    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой обновления показывается тостом.
     fun refresh() {
         val contactId = selectedContactId.value ?: return
         if (isLoading.value) return
         viewModelScope.launch {
             isLoading.value = true
             loadFailure.value = null
-            try {
+            safeCall(DETAILS_TAG, "load contact details failed") {
                 val details = getContactDetailsUseCase(contactId)
                 loadedDetails.value = details
                 groupsFlow.value = if (details != null) loadGroups(contactId) else emptyList()
                 accountsFlow.value = loadAccounts()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                loadFailure.value = e
-            } finally {
-                isLoading.value = false
+            }.onFailure { failure ->
+                loadFailure.value = failure
             }
+            isLoading.value = false
         }
     }
 
     /** Сбой чтения групп не отменяет показ контакта: детали важнее состава групп. */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой списка групп не мешает карточке.
     private suspend fun loadGroups(contactId: Long): List<ContactGroup> =
-        try {
+        safeCall(DETAILS_TAG, "load groups failed") {
             getContactGroupsUseCase(contactId)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            logw(DETAILS_TAG, "load groups failed", e)
-            emptyList()
-        }
+        }.getOrElse { emptyList() }
 
     /** Аккаунты для копирования и переноса: сбой не мешает смотреть контакт. */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: без списка аккаунтов карточка остаётся локальной.
     private suspend fun loadAccounts(): List<ContactAccount> =
-        try {
+        safeCall(DETAILS_TAG, "load accounts failed") {
             getContactAccountsUseCase()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            logw(DETAILS_TAG, "load accounts failed", e)
-            emptyList()
-        }
+        }.getOrElse { emptyList() }
 
     /** Копирует контакт в выбранный аккаунт: исходный остаётся на месте. */
     fun onCopyToAccount(account: ContactAccount) =
@@ -218,23 +197,19 @@ class ContactDetailsViewModel(
         }
 
     /** Смена аккаунта: ошибка показывается тостом, контакт остаётся на месте. */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: неудачная смена аккаунта показывается тостом.
     private fun changeAccount(
         account: ContactAccount,
         action: suspend (Long, ContactAccount) -> Pair<Long, DetailsEvent>,
     ) {
         val contactId = selectedContactId.value ?: return
         viewModelScope.launch {
-            try {
+            safeCall(DETAILS_TAG, "change contact account failed") {
                 val (newId, event) = action(contactId, account)
                 eventFlow.value = event
                 if (newId != contactId) {
                     loadedDetails.value = loadedDetails.value?.copy(contactId = newId)
                 }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logw(DETAILS_TAG, "change contact account failed", e)
+            }.onFailure { failure ->
                 eventFlow.value = DetailsEvent.AccountActionFailed
             }
         }

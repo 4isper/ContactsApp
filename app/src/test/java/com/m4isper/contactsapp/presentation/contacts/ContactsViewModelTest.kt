@@ -4,6 +4,7 @@ import com.m4isper.contactsapp.FakeContactsChangeSource
 import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.FakeSettingsRepository
 import com.m4isper.contactsapp.FakeVCardCodec
+import com.m4isper.contactsapp.domain.model.AppError
 import com.m4isper.contactsapp.domain.model.AppSettings
 import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
@@ -612,11 +613,11 @@ class ContactsViewModelTest {
 
             val content = viewModel.uiState.value.content
             assertTrue(content is Loadable.Error)
-            assertEquals("denied", (content as Loadable.Error).message)
+            assertEquals(AppError.PERMISSION_DENIED, (content as Loadable.Error).error)
         }
 
     @Test
-    fun `refresh failure without message emits error with null message`() =
+    fun `refresh failure without message emits unknown error`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val repository = FakeContactsRepository(failure = RuntimeException())
@@ -628,7 +629,7 @@ class ContactsViewModelTest {
 
             val content = viewModel.uiState.value.content
             assertTrue(content is Loadable.Error)
-            assertEquals(null, (content as Loadable.Error).message)
+            assertEquals(AppError.UNKNOWN, (content as Loadable.Error).error)
         }
 
     @Test

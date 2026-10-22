@@ -14,12 +14,11 @@ import com.m4isper.contactsapp.domain.usecase.ImportContactsUseCase
 import com.m4isper.contactsapp.domain.vcard.VCardCodec
 import com.m4isper.contactsapp.domain.vcard.VCardContact
 import com.m4isper.contactsapp.domain.vcard.VCardInvalidContact
-import com.m4isper.contactsapp.presentation.common.logw
+import com.m4isper.contactsapp.presentation.common.safeCall
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -76,19 +75,14 @@ class ImportPreviewViewModel(
     private var parsed: List<VCardContact> = emptyList()
 
     /** Разбор файла и поиск дублей среди существующих контактов. */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: битый файл не должен ронять экран.
     fun prepare(text: String) {
         viewModelScope.launch {
             state.value = ImportPreviewUiState(isPreparing = true)
             val result =
-                try {
+                safeCall(IMPORT_TAG, "vCard parse failed") {
                     codec.parse(text)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    logw(IMPORT_TAG, "vCard parse failed", e)
-                    null
-                }
+                }.getOrElse { null }
+
             if (result == null) {
                 state.value = ImportPreviewUiState(failed = true)
                 return@launch
@@ -126,7 +120,6 @@ class ImportPreviewViewModel(
     }
 
     /** Импорт выбранных контактов. */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой импорта показываем в итогах.
     fun onImport() {
         val current = state.value
         if (!current.canImport) return
@@ -137,14 +130,10 @@ class ImportPreviewViewModel(
                     parsed.getOrNull(entry.index)?.let { ImportEntry(contact = it, decision = entry.decision) }
                 }
             val outcome =
-                try {
+                safeCall(IMPORT_TAG, "import failed") {
                     importContacts(entries, current.selectedAccount ?: ContactAccount.Local)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    logw(IMPORT_TAG, "import failed", e)
-                    null
-                }
+                }.getOrElse { null }
+
             state.value =
                 state.value.copy(
                     isImporting = false,
@@ -177,25 +166,13 @@ class ImportPreviewViewModel(
             categories = contact.categories,
         )
 
-    @Suppress("TooGenericExceptionCaught") // Осознанно: без списка контактов импорт всё равно работает.
     private suspend fun loadContacts(): List<ContactDetails> =
-        try {
+        safeCall(IMPORT_TAG, "load contacts failed") {
             getContacts()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            logw(IMPORT_TAG, "load contacts failed", e)
-            emptyList()
-        }
+        }.getOrElse { emptyList() }
 
-    @Suppress("TooGenericExceptionCaught") // Осознанно: без списка аккаунтов импорт остаётся локальным.
     private suspend fun loadAccounts(): List<ContactAccount> =
-        try {
+        safeCall(IMPORT_TAG, "load accounts failed") {
             getContactAccounts()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            logw(IMPORT_TAG, "load accounts failed", e)
-            listOf(ContactAccount.Local)
-        }
+        }.getOrElse { listOf(ContactAccount.Local) }
 }

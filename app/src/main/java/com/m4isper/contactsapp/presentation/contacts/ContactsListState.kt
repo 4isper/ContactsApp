@@ -3,9 +3,8 @@ package com.m4isper.contactsapp.presentation.contacts
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.repository.ContactsChangeSource
 import com.m4isper.contactsapp.domain.usecase.GetContactsPageUseCase
-import com.m4isper.contactsapp.presentation.common.logw
+import com.m4isper.contactsapp.presentation.common.safeCall
 import dev.zacsweers.metro.Inject
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -43,7 +42,7 @@ internal class ContactsListState(
     val providerChanges: Flow<Unit> = changesSource.observeChanges()
 
     // Catch-all осознанный: любая ошибка загрузки превращается в Error-стейт.
-    @Suppress("TooGenericExceptionCaught")
+
     /**
      * Загружает список страницами: первая страница показывается сразу,
      * остальные добавляются следом. Если список уже грузится, следующая попытка
@@ -56,16 +55,12 @@ internal class ContactsListState(
         }
         _failure.value = null
         _isLoading.value = true
-        try {
+        safeCall(LIST_TAG, "refresh contacts failed") {
             loadByPages()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            logw(LIST_TAG, "refresh contacts failed", e)
-            _failure.value = e
-        } finally {
-            _isLoading.value = false
+        }.onFailure { failure ->
+            _failure.value = failure
         }
+        _isLoading.value = false
         if (pendingReload) {
             pendingReload = false
             load()

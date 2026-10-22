@@ -2,6 +2,7 @@ package com.m4isper.contactsapp.presentation.groups
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.m4isper.contactsapp.domain.model.AppError
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteGroupUseCase
@@ -9,13 +10,12 @@ import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.RenameGroupUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
-import com.m4isper.contactsapp.presentation.common.logw
+import com.m4isper.contactsapp.presentation.common.safeCall
 import com.m4isper.contactsapp.presentation.contacts.SUBSCRIBE_TIMEOUT_MILLIS
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -34,7 +34,7 @@ data class GroupItem(
 data class GroupsUiState(
     val content: Loadable<List<GroupItem>> = Loadable.Loading,
     val isBusy: Boolean = false,
-    val errorMessage: String? = null,
+    val error: AppError? = null,
 )
 
 @Inject
@@ -49,11 +49,11 @@ class GroupsViewModel(
 ) : ViewModel() {
     private val content = MutableStateFlow<Loadable<List<GroupItem>>>(Loadable.Loading)
     private val isBusy = MutableStateFlow(false)
-    private val errorMessage = MutableStateFlow<String?>(null)
+    private val error = MutableStateFlow<AppError?>(null)
 
     val uiState: StateFlow<GroupsUiState> =
-        combine(content, isBusy, errorMessage) { loadable, busy, error ->
-            GroupsUiState(content = loadable, isBusy = busy, errorMessage = error)
+        combine(content, isBusy, error) { loadable, busy, failure ->
+            GroupsUiState(content = loadable, isBusy = busy, error = failure)
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(SUBSCRIBE_TIMEOUT_MILLIS),
@@ -61,17 +61,13 @@ class GroupsViewModel(
         )
 
     // Catch-all осознанный: любая ошибка загрузки превращается в Error-стейт.
-    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой загрузки показывается пустым списком.
     fun load() {
         viewModelScope.launch {
-            try {
+            safeCall(GROUPS_TAG, "load groups failed") {
                 val items = groupItems(getGroupsUseCase(), getMembershipUseCase())
                 content.value = if (items.isEmpty()) Loadable.Empty else Loadable.Content(items)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logw(GROUPS_TAG, "load groups failed", e)
-                content.value = Loadable.Error(e.message)
+            }.onFailure { failure ->
+                content.value = Loadable.Error(AppError.from(failure))
             }
         }
     }
@@ -86,25 +82,20 @@ class GroupsViewModel(
     fun onDelete(groupId: Long) = mutate { deleteGroupUseCase(groupId) }
 
     fun onErrorHandled() {
-        errorMessage.value = null
+        error.value = null
     }
 
     // Catch-all осознанный: ошибка изменения показывается тостом, список перезагружается.
-    @Suppress("TooGenericExceptionCaught") // Осознанно: неудачная правка показывается тостом.
     private fun mutate(block: suspend () -> Unit) {
         if (isBusy.value) return
         viewModelScope.launch {
             isBusy.value = true
-            try {
+            safeCall(GROUPS_TAG, "group mutation failed") {
                 block()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logw(GROUPS_TAG, "group mutation failed", e)
-                errorMessage.value = e.message
-            } finally {
-                isBusy.value = false
+            }.onFailure { failure ->
+                error.value = AppError.from(failure)
             }
+            isBusy.value = false
             load()
         }
     }

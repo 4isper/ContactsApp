@@ -2,8 +2,7 @@ package com.m4isper.contactsapp.presentation.contacts
 
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.usecase.ExportContactsUseCase
-import com.m4isper.contactsapp.presentation.common.logw
-import kotlinx.coroutines.CancellationException
+import com.m4isper.contactsapp.presentation.common.safeCall
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -21,18 +20,13 @@ internal class ContactsFileActions(
     private val getContacts: suspend () -> List<ContactDetails>,
 ) {
     /** Собирает .vcf всех контактов; запись в файл — на стороне UI. */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: любая ошибка загрузки превращается в ExportFailed.
     fun onExportRequested() {
         scope.launch {
             val ids =
-                try {
+                safeCall(FILES_TAG, "export contacts load failed") {
                     getContacts().map { it.contactId }
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    logw(FILES_TAG, "export contacts load failed", e)
-                    null
-                }
+                }.getOrElse { null }
+
             events.value =
                 when {
                     ids == null -> ContactsEvent.ExportFailed
@@ -57,18 +51,11 @@ internal class ContactsFileActions(
      * Содержимое .vcf для контактов: null, если сборка не удалась.
      * Экран делит этот текст с пользователем напрямую.
      */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: любую ошибку сборки показываем как ExportFailed.
     suspend fun exportContent(contactIds: List<Long>): String? =
-        try {
+        safeCall(FILES_TAG, "export vcard encode failed") {
             exportContacts(contactIds).takeIf { it.isNotEmpty() }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            logw(FILES_TAG, "export vcard encode failed", e)
-            null
-        }
+        }.getOrElse { null }
 
-    @Suppress("TooGenericExceptionCaught") // Осознанно: любую ошибку сборки показываем как ExportFailed.
     private suspend fun exportReady(contactIds: List<Long>): ContactsEvent {
         val content = exportContent(contactIds)
         return if (content == null) {

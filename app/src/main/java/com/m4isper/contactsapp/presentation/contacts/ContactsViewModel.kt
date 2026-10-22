@@ -3,6 +3,7 @@ package com.m4isper.contactsapp.presentation.contacts
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.m4isper.contactsapp.domain.contacts.filterContacts
+import com.m4isper.contactsapp.domain.model.AppError
 import com.m4isper.contactsapp.domain.model.AppSettings
 import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
@@ -14,12 +15,11 @@ import com.m4isper.contactsapp.domain.usecase.ExportContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
-import com.m4isper.contactsapp.presentation.common.logw
+import com.m4isper.contactsapp.presentation.common.safeCall
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -145,7 +145,7 @@ private fun contactsContent(
     visible: List<ContactDetails>,
 ): Loadable<List<ContactDetails>> =
     when {
-        load.failure != null -> Loadable.Error(load.failure.message)
+        load.failure != null -> Loadable.Error(AppError.from(load.failure))
         load.loading && visible.isEmpty() -> Loadable.Loading
         visible.isEmpty() -> Loadable.Empty
         else -> Loadable.Content(visible)
@@ -373,19 +373,14 @@ internal class ContactsViewModel(
     fun onExportSelection() = files.onExportSelection(selection.selected.value.toList())
 
     /** Догружает полные детали выделенных контактов: в списке они облегчённые, для vCard этого мало. */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: неудачное share показывается тостом.
     suspend fun onShareSelected() {
         val ids = selection.selected.value.toList()
         if (ids.isEmpty()) return
         val content =
-            try {
+            safeCall(LIST_TAG, "share vCard encode failed") {
                 files.exportContent(ids)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logw(LIST_TAG, "share vCard encode failed", e)
-                null
-            }
+            }.getOrElse { null }
+
         if (content != null) {
             eventFlow.value = ContactsEvent.Share(content)
         }

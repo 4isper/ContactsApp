@@ -19,6 +19,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.domain.model.AppError
+import com.m4isper.contactsapp.presentation.common.message
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 
 @Composable
@@ -33,7 +35,7 @@ fun LoadingState(modifier: Modifier = Modifier) {
 
 @Composable
 fun ErrorState(
-    message: String?,
+    error: AppError?,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -47,7 +49,7 @@ fun ErrorState(
             modifier = Modifier.padding(spacing.xl),
         ) {
             Text(
-                text = message ?: stringResource(R.string.contacts_load_error),
+                text = error?.message() ?: stringResource(R.string.contacts_load_error),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
             )

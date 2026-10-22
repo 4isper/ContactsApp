@@ -45,7 +45,7 @@ internal fun ContactListBody(
                 )
             is Loadable.Error ->
                 ErrorState(
-                    message = content.message,
+                    error = content.error,
                     onRetry = onRetry,
                 )
             is Loadable.Content ->

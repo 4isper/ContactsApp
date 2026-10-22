@@ -4,9 +4,8 @@ import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.RefreshFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.RemoveFavoriteUseCase
 import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
-import com.m4isper.contactsapp.presentation.common.logw
+import com.m4isper.contactsapp.presentation.common.safeCall
 import dev.zacsweers.metro.Inject
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 
 private const val FAVORITES_TAG = "ContactsFavorites"
@@ -26,14 +25,9 @@ internal class ContactsFavoriteState(
     val favorites: Flow<Set<Long>> = observeFavorites()
 
     /** Быстрое избранное из строки списка. */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: неудачная правка показывается тостом.
     suspend fun onToggleFavorite(contactId: Long) {
-        try {
+        safeCall(FAVORITES_TAG, "toggle favorite failed") {
             toggleFavorite(contactId)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            logw(FAVORITES_TAG, "toggle favorite failed", e)
         }
     }
 
@@ -41,7 +35,6 @@ internal class ContactsFavoriteState(
      * Пакетное избранное: если выбраны только избранные — снимаем отметку,
      * иначе добавляем все ещё не избранные контакты.
      */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: неудачная правка показывается тостом.
     suspend fun onToggleSelectedFavorite(
         selected: Set<Long>,
         favorites: Set<Long>,
@@ -50,25 +43,16 @@ internal class ContactsFavoriteState(
         val allFavorite = selected.all { it in favorites }
         val toRemove = if (allFavorite) selected else emptySet()
         val toAdd = if (allFavorite) emptySet() else selected - favorites
-        try {
+        safeCall(FAVORITES_TAG, "batch favorite update failed") {
             toRemove.forEach { removeFavorite(it) }
             toAdd.forEach { toggleFavorite(it) }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            logw(FAVORITES_TAG, "batch favorite update failed", e)
         }
     }
 
     /** Избранное читается из провайдера: перечитываем его вместе с контактами. */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой чтения избранного не мешает списку.
     suspend fun refresh() {
-        try {
+        safeCall(FAVORITES_TAG, "refresh favorites failed") {
             refreshFavorites()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            logw(FAVORITES_TAG, "refresh favorites failed", e)
         }
     }
 }

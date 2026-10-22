@@ -225,6 +225,12 @@
 
     <string name="settings_menu">Настройки</string>
     <string name="app_lock_title">Контакты заблокированы</string>
+    <string name="error_permission_denied">Нет доступа к контактам</string>
+    <string name="error_provider_failed">Провайдер контактов недоступен</string>
+    <string name="error_save_failed">Не удалось сохранить контакт</string>
+    <string name="error_delete_failed">Не удалось удалить контакт</string>
+    <string name="error_import_failed">Не удалось прочитать файл</string>
+    <string name="error_unknown">Что-то пошло не так</string>
     <string name="app_lock_hint">Введите PIN-код, чтобы продолжить</string>
     <string name="app_lock_pin">PIN-код</string>
     <string name="app_lock_wrong_pin">Неверный PIN-код</string>

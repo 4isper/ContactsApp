@@ -2,6 +2,7 @@ package com.m4isper.contactsapp.presentation.editor
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.m4isper.contactsapp.domain.model.AppError
 import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.EditablePhone
@@ -19,12 +20,11 @@ import com.m4isper.contactsapp.domain.usecase.GetDefaultContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
 import com.m4isper.contactsapp.domain.usecase.SetLastContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.UpdateContactUseCase
-import com.m4isper.contactsapp.presentation.common.logw
+import com.m4isper.contactsapp.presentation.common.safeCall
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -60,7 +60,6 @@ class ContactEditorViewModel(
     internal val uiState: StateFlow<EditorUiState> = state.asStateFlow()
 
     // Catch-all осознанный: любая ошибка превращается в Error-стейт.
-    @Suppress("TooGenericExceptionCaught") // Осознанно: любая ошибка загрузки превращается в Error-стейт.
     fun load(
         id: Long?,
         sessionId: Long = 0L,
@@ -81,7 +80,7 @@ class ContactEditorViewModel(
                 isBusy = true,
             )
         viewModelScope.launch {
-            try {
+            safeCall(EDITOR_TAG, "load contact form failed") {
                 val form = getContactFormUseCase(id)
                 if (form == null) {
                     state.update { it.copy(closeScreen = true) }
@@ -93,11 +92,8 @@ class ContactEditorViewModel(
                                 selectedAccount = loadContactAccount(getContactAccountUseCase, id),
                             )
                 }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logw(EDITOR_TAG, "load contact form failed", e)
-                state.update { it.copy(errorMessage = e.message, isBusy = false) }
+            }.onFailure { failure ->
+                state.update { it.copy(error = AppError.from(failure), isBusy = false) }
             }
         }
     }
@@ -150,12 +146,11 @@ class ContactEditorViewModel(
     }
 
     /** Создаёт группу прямо из пикера и сразу отмечает её: метку создают, чтобы назначить контакту. */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой создания группы показывается в форме.
     fun onCreateGroup(title: String) {
         if (title.isBlank()) return
         val account = state.value.selectedAccount ?: ContactAccount.Local
         viewModelScope.launch {
-            try {
+            safeCall(EDITOR_TAG, "create group failed") {
                 val group = createGroupUseCase(title, account)
                 state.update { current ->
                     val currentAccount = current.selectedAccount ?: ContactAccount.Local
@@ -169,11 +164,8 @@ class ContactEditorViewModel(
                             },
                     )
                 }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logw(EDITOR_TAG, "create group failed", e)
-                state.update { it.copy(errorMessage = e.message) }
+            }.onFailure { failure ->
+                state.update { it.copy(error = AppError.from(failure)) }
             }
         }
     }
@@ -181,7 +173,6 @@ class ContactEditorViewModel(
     fun isDirty(): Boolean = state.value.isDirty()
 
     // Catch-all осознанный: любая ошибка превращается в Error-стейт.
-    @Suppress("TooGenericExceptionCaught") // Осознанно: ошибка сохранения показывается в поле формы.
     fun onSave() {
         val id = state.value.contactId
         val form = state.value.toForm()
@@ -223,12 +214,11 @@ class ContactEditorViewModel(
     }
 
     // Catch-all осознанный: любая ошибка превращается в Error-стейт.
-    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой удаления показывается тостом.
     fun onDelete() {
         val id = state.value.contactId ?: return
         viewModelScope.launch {
             state.update { it.copy(isBusy = true, deleteFailed = false) }
-            try {
+            safeCall(EDITOR_TAG, "delete contact failed") {
                 val result = deleteContactsUseCase(setOf(id))
                 state.update {
                     it.copy(
@@ -236,20 +226,16 @@ class ContactEditorViewModel(
                         deleteFailed = !result.allDeleted,
                     )
                 }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logw(EDITOR_TAG, "delete contact failed", e)
-                state.update { it.copy(errorMessage = e.message) }
-            } finally {
-                state.update { it.copy(isBusy = false) }
+            }.onFailure { failure ->
+                state.update { it.copy(error = AppError.DELETE_FAILED) }
             }
+            state.update { it.copy(isBusy = false) }
         }
     }
 
     /** Меняет состояние формы и снимает прежние ошибки. */
     internal fun update(transform: (EditorUiState) -> EditorUiState) {
-        state.update { transform(it).copy(formError = null, errorMessage = null, deleteFailed = false) }
+        state.update { transform(it).copy(formError = null, error = null, deleteFailed = false) }
     }
 
     /** Новая строка со стабильным ключом: счётчик живёт в пределах экрана. */

@@ -21,14 +21,13 @@ import com.m4isper.contactsapp.domain.usecase.SetSecureWindowUseCase
 import com.m4isper.contactsapp.domain.usecase.SetShowPhotosUseCase
 import com.m4isper.contactsapp.domain.usecase.SetSortOrderUseCase
 import com.m4isper.contactsapp.domain.usecase.SetThemeModeUseCase
-import com.m4isper.contactsapp.presentation.common.logw
+import com.m4isper.contactsapp.presentation.common.safeCall
 import com.m4isper.contactsapp.presentation.contacts.SUBSCRIBE_TIMEOUT_MILLIS
 import com.m4isper.contactsapp.presentation.reminders.ReminderScheduler
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -83,15 +82,11 @@ class SettingsViewModel(
     }
 
     /** Аккаунты для выбора аккаунта по умолчанию. */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: без списка аккаунтов настройка остаётся локальной.
     private fun loadAccounts() {
         viewModelScope.launch {
-            try {
+            safeCall(SETTINGS_TAG, "load accounts failed") {
                 accountsFlow.value = getContactAccountsUseCase()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logw(SETTINGS_TAG, "load accounts failed", e)
+            }.onFailure { failure ->
                 accountsFlow.value = listOf(ContactAccount.Local)
             }
         }
@@ -152,15 +147,10 @@ class SettingsViewModel(
         }
 
     // Catch-all осознанный: ошибка записи настроек не должна ронять экран.
-    @Suppress("TooGenericExceptionCaught") // Осознанно: неудачная правка показывается тостом.
     private fun update(block: suspend () -> Unit) {
         viewModelScope.launch {
-            try {
+            safeCall(SETTINGS_TAG, "update settings failed") {
                 block()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logw(SETTINGS_TAG, "update settings failed", e)
             }
         }
     }

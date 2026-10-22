@@ -45,6 +45,7 @@ import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.account.contactAccountLabel
 import com.m4isper.contactsapp.presentation.common.groups.GroupNameDialog
+import com.m4isper.contactsapp.presentation.common.message
 import com.m4isper.contactsapp.ui.components.ConfirmDialog
 import com.m4isper.contactsapp.ui.components.EmptyState
 import com.m4isper.contactsapp.ui.components.ErrorState
@@ -71,8 +72,9 @@ fun GroupsScreen(
         viewModel.load()
     }
 
-    LaunchedEffect(uiState.errorMessage) {
-        uiState.errorMessage?.let { message ->
+    val errorText = uiState.error?.message()
+    LaunchedEffect(uiState.error) {
+        errorText?.let { message ->
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
             viewModel.onErrorHandled()
         }
@@ -122,7 +124,7 @@ fun GroupsScreen(
                 )
             is Loadable.Error ->
                 ErrorState(
-                    message = content.message,
+                    error = content.error,
                     onRetry = viewModel::load,
                     modifier = screenModifier,
                 )
