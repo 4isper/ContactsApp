@@ -6,7 +6,10 @@ import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.EditableName
 import com.m4isper.contactsapp.domain.model.EditablePhone
 import com.m4isper.contactsapp.domain.model.FormError
-import com.m4isper.contactsapp.domain.repository.ContactsRepository
+import com.m4isper.contactsapp.domain.repository.ContactsAccounts
+import com.m4isper.contactsapp.domain.repository.ContactsMerger
+import com.m4isper.contactsapp.domain.repository.ContactsReader
+import com.m4isper.contactsapp.domain.repository.ContactsWriter
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -20,9 +23,28 @@ private class RecordingException(
 ) : RuntimeException(message)
 
 private class RecordingRepository :
-    ContactsRepository,
+    ContactsReader,
+    ContactsAccounts,
+    ContactsWriter,
+    ContactsMerger,
     FavoritesRepository {
     val created = mutableListOf<ContactForm>()
+
+    override suspend fun unmergeContacts(link: com.m4isper.contactsapp.domain.model.ContactLink) = Unit
+
+    override suspend fun getContactsPage(
+        offset: Int,
+        limit: Int,
+    ): List<ContactDetails> = emptyList()
+
+    override suspend fun loadContactPhoto(contactId: Long): ByteArray? = null
+
+    override suspend fun getProfileContactId(): Long? = null
+
+    override suspend fun getContactAccount(contactId: Long): ContactAccount = ContactAccount.Local
+
+    override suspend fun getContactAccounts(): List<ContactAccount> = listOf(ContactAccount.Local)
+
     val createdAccounts = mutableListOf<ContactAccount>()
     val updated = mutableListOf<Pair<Long, ContactForm>>()
     val deleted = mutableListOf<Long>()
@@ -36,8 +58,6 @@ private class RecordingRepository :
     override suspend fun getContactDetails(contactId: Long): ContactDetails? = null
 
     override suspend fun getContactForm(contactId: Long): ContactForm? = null
-
-    override suspend fun createContact(form: ContactForm): Long = createContact(form, ContactAccount.Local)
 
     override suspend fun createContact(
         form: ContactForm,
@@ -59,16 +79,6 @@ private class RecordingRepository :
         contactId: Long,
         photo: ByteArray,
     ) = Unit
-
-    override suspend fun copyContact(
-        contactId: Long,
-        account: com.m4isper.contactsapp.domain.model.ContactAccount,
-    ): Long = 1L
-
-    override suspend fun moveContact(
-        contactId: Long,
-        account: com.m4isper.contactsapp.domain.model.ContactAccount,
-    ): Long = 1L
 
     override suspend fun deleteContact(contactId: Long) {
         deleted += contactId

@@ -253,7 +253,7 @@ class ContactsRepositoryImplTest {
         val form = ContactForm()
 
         runBlocking {
-            repository.createContact(form)
+            repository.createContact(form, ContactAccount.Local)
             repository.deleteContact(7)
         }
 
@@ -332,31 +332,6 @@ class ContactsRepositoryImplTest {
         assertNull(link)
         assertTrue(writer.linked.isEmpty())
         assertTrue(writer.deleted.isEmpty())
-    }
-
-    @Test
-    fun `copy creates the contact in the target account and keeps the source`() {
-        val google = ContactAccount(name = "user@gmail.com", type = "com.google")
-        val writer = FakeWriter(rawContactIdsByContact = mapOf(7L to 10L))
-        val repository = ContactsRepositoryImpl(FakeReader(details), writer)
-
-        val newId = runBlocking { repository.copyContact(contactId = 7, account = google) }
-
-        assertEquals(listOf(google), writer.createdAccounts)
-        assertEquals(1L, newId)
-        assertTrue(writer.deleted.isEmpty())
-    }
-
-    @Test
-    fun `move creates the copy and deletes the source`() {
-        val google = ContactAccount(name = "user@gmail.com", type = "com.google")
-        val writer = FakeWriter(rawContactIdsByContact = mapOf(7L to 10L))
-        val repository = ContactsRepositoryImpl(FakeReader(details), writer)
-
-        runBlocking { repository.moveContact(contactId = 7, account = google) }
-
-        assertEquals(listOf(google), writer.createdAccounts)
-        assertEquals(listOf(7L), writer.deleted)
     }
 
     @Test

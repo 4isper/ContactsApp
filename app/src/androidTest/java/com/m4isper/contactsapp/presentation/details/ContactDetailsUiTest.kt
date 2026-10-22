@@ -69,8 +69,8 @@ class ContactDetailsUiTest {
             codec = FakeVCardCodec(),
         ),
         GetContactAccountsUseCase(repository),
-        CopyContactToAccountUseCase(repository),
-        MoveContactToAccountUseCase(repository),
+        CopyContactToAccountUseCase(repository, repository),
+        MoveContactToAccountUseCase(CopyContactToAccountUseCase(repository, repository), repository),
     )
 
     private fun awaitContent(viewModel: ContactDetailsViewModel) {

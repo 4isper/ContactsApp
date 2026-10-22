@@ -6,8 +6,10 @@ import com.m4isper.contactsapp.domain.model.AddressKind
 import com.m4isper.contactsapp.domain.model.AppSettings
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactAccount
+import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.ContactGroup
+import com.m4isper.contactsapp.domain.model.ContactLink
 import com.m4isper.contactsapp.domain.model.EditableAddress
 import com.m4isper.contactsapp.domain.model.EditableBirthday
 import com.m4isper.contactsapp.domain.model.EditableEmail
@@ -26,7 +28,10 @@ import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.RelationKind
 import com.m4isper.contactsapp.domain.model.SipKind
 import com.m4isper.contactsapp.domain.model.WebsiteKind
-import com.m4isper.contactsapp.domain.repository.ContactsRepository
+import com.m4isper.contactsapp.domain.repository.ContactsAccounts
+import com.m4isper.contactsapp.domain.repository.ContactsMerger
+import com.m4isper.contactsapp.domain.repository.ContactsReader
+import com.m4isper.contactsapp.domain.repository.ContactsWriter
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
@@ -66,8 +71,22 @@ private fun formOf(displayName: String): ContactForm =
     )
 
 private class FakeEditorRepository :
-    ContactsRepository,
+    ContactsReader,
+    ContactsAccounts,
+    ContactsWriter,
+    ContactsMerger,
     FavoritesRepository {
+    override suspend fun getContactsPage(
+        offset: Int,
+        limit: Int,
+    ): List<ContactDetails> = emptyList()
+
+    override suspend fun loadContactPhoto(contactId: Long): ByteArray? = null
+
+    override suspend fun getProfileContactId(): Long? = null
+
+    override suspend fun unmergeContacts(link: ContactLink) = Unit
+
     val created = mutableListOf<ContactForm>()
     val createdAccounts = mutableListOf<ContactAccount>()
     var accounts: List<ContactAccount> = listOf(ContactAccount.Local)
@@ -87,8 +106,6 @@ private class FakeEditorRepository :
     override suspend fun getContactAccount(contactId: Long): ContactAccount = accountToLoad
 
     override suspend fun getContactAccounts(): List<ContactAccount> = accounts
-
-    override suspend fun createContact(form: ContactForm): Long = createContact(form, ContactAccount.Local)
 
     override suspend fun createContact(
         form: ContactForm,
@@ -110,16 +127,6 @@ private class FakeEditorRepository :
         contactId: Long,
         photo: ByteArray,
     ) = Unit
-
-    override suspend fun copyContact(
-        contactId: Long,
-        account: com.m4isper.contactsapp.domain.model.ContactAccount,
-    ): Long = 1L
-
-    override suspend fun moveContact(
-        contactId: Long,
-        account: com.m4isper.contactsapp.domain.model.ContactAccount,
-    ): Long = 1L
 
     override suspend fun deleteContact(contactId: Long) {
         deleted += contactId

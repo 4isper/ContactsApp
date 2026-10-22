@@ -1,10 +1,15 @@
 package com.m4isper.contactsapp.presentation.duplicates
 
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
+import com.m4isper.contactsapp.domain.model.ContactLink
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
-import com.m4isper.contactsapp.domain.repository.ContactsRepository
+import com.m4isper.contactsapp.domain.repository.ContactsAccounts
+import com.m4isper.contactsapp.domain.repository.ContactsMerger
+import com.m4isper.contactsapp.domain.repository.ContactsReader
+import com.m4isper.contactsapp.domain.repository.ContactsWriter
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.MergeContactsUseCase
@@ -35,8 +40,26 @@ private fun duplicatePair(): List<ContactDetails> =
 private class FakeDuplicatesRepository(
     var contacts: List<ContactDetails> = emptyList(),
     initialFavorites: Set<Long> = emptySet(),
-) : ContactsRepository,
+) : ContactsReader,
+    ContactsAccounts,
+    ContactsWriter,
+    ContactsMerger,
     FavoritesRepository {
+    override suspend fun getContactsPage(
+        offset: Int,
+        limit: Int,
+    ): List<ContactDetails> = emptyList()
+
+    override suspend fun loadContactPhoto(contactId: Long): ByteArray? = null
+
+    override suspend fun getProfileContactId(): Long? = null
+
+    override suspend fun getContactAccount(contactId: Long): ContactAccount = ContactAccount.Local
+
+    override suspend fun getContactAccounts(): List<ContactAccount> = listOf(ContactAccount.Local)
+
+    override suspend fun unmergeContacts(link: ContactLink) = Unit
+
     var failure: Throwable? = null
     var mergeFailure: Throwable? = null
     val merged = mutableListOf<Pair<Long, List<Long>>>()
@@ -51,7 +74,10 @@ private class FakeDuplicatesRepository(
 
     override suspend fun getContactForm(contactId: Long): ContactForm? = null
 
-    override suspend fun createContact(form: ContactForm): Long = 1L
+    override suspend fun createContact(
+        form: ContactForm,
+        account: ContactAccount,
+    ): Long = 1L
 
     override suspend fun updateContact(
         contactId: Long,
@@ -62,16 +88,6 @@ private class FakeDuplicatesRepository(
         contactId: Long,
         photo: ByteArray,
     ) = Unit
-
-    override suspend fun copyContact(
-        contactId: Long,
-        account: com.m4isper.contactsapp.domain.model.ContactAccount,
-    ): Long = 1L
-
-    override suspend fun moveContact(
-        contactId: Long,
-        account: com.m4isper.contactsapp.domain.model.ContactAccount,
-    ): Long = 1L
 
     override suspend fun deleteContact(contactId: Long) = Unit
 

@@ -1,12 +1,15 @@
 package com.m4isper.contactsapp.domain.usecase
 
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.EditableName
 import com.m4isper.contactsapp.domain.model.ImportDecision
 import com.m4isper.contactsapp.domain.model.ImportEntry
-import com.m4isper.contactsapp.domain.repository.ContactsRepository
+import com.m4isper.contactsapp.domain.repository.ContactsMerger
+import com.m4isper.contactsapp.domain.repository.ContactsReader
+import com.m4isper.contactsapp.domain.repository.ContactsWriter
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import com.m4isper.contactsapp.domain.repository.GroupsRepository
 import com.m4isper.contactsapp.domain.vcard.VCardContact
@@ -19,8 +22,39 @@ import org.junit.Test
 
 private class ImportFakeRepository(
     private val failAt: Int? = null,
-) : ContactsRepository {
+) : ContactsReader,
+    ContactsWriter,
+    ContactsMerger {
     val created = mutableListOf<ContactForm>()
+
+    override suspend fun updateContact(
+        contactId: Long,
+        form: ContactForm,
+    ) = Unit
+
+    override suspend fun createContact(
+        form: ContactForm,
+        account: ContactAccount,
+    ): Long {
+        val index = attempts
+        attempts += 1
+        if (failAt == index) error("import failed")
+        created += form
+        nextId += 1
+        return nextId
+    }
+
+    override suspend fun getContactsPage(
+        offset: Int,
+        limit: Int,
+    ): List<ContactDetails> = emptyList()
+
+    override suspend fun loadContactPhoto(contactId: Long): ByteArray? = null
+
+    override suspend fun getProfileContactId(): Long? = null
+
+    override suspend fun unmergeContacts(link: com.m4isper.contactsapp.domain.model.ContactLink) = Unit
+
     val photos = mutableListOf<Pair<Long, ByteArray>>()
     val merged = mutableListOf<Pair<Long, List<Long>>>()
     val deleted = mutableListOf<Long>()
@@ -32,20 +66,6 @@ private class ImportFakeRepository(
     override suspend fun getContactDetails(contactId: Long): ContactDetails? = null
 
     override suspend fun getContactForm(contactId: Long): ContactForm? = null
-
-    override suspend fun createContact(form: ContactForm): Long {
-        val index = attempts
-        attempts += 1
-        if (failAt == index) error("import failed")
-        created += form
-        nextId += 1
-        return nextId
-    }
-
-    override suspend fun updateContact(
-        contactId: Long,
-        form: ContactForm,
-    ) = Unit
 
     override suspend fun deleteContact(contactId: Long) {
         deleted += contactId

@@ -51,7 +51,7 @@ class ContactsWidgetProvider : AppWidgetProvider() {
         val graph = (context.applicationContext as? ContactsApp)?.appGraph ?: return emptyList()
         val ids = ObserveFavoritesUseCase(graph.favoritesRepository)().first()
         return ids
-            .mapNotNull { id -> graph.contactsRepository.getContactDetails(id) }
+            .mapNotNull { id -> graph.contactsReader.getContactDetails(id) }
             .sortedBy { normalizeContactText(it.name) }
     }
 

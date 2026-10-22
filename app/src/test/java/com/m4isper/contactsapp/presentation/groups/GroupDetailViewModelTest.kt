@@ -1,11 +1,16 @@
 package com.m4isper.contactsapp.presentation.groups
 
 import com.m4isper.contactsapp.FakeGroupsRepository
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
+import com.m4isper.contactsapp.domain.model.ContactLink
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
-import com.m4isper.contactsapp.domain.repository.ContactsRepository
+import com.m4isper.contactsapp.domain.repository.ContactsAccounts
+import com.m4isper.contactsapp.domain.repository.ContactsMerger
+import com.m4isper.contactsapp.domain.repository.ContactsReader
+import com.m4isper.contactsapp.domain.repository.ContactsWriter
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import com.m4isper.contactsapp.domain.usecase.AddContactsToGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
@@ -33,8 +38,26 @@ import org.junit.Test
 
 private class GroupDetailContactsRepository(
     private val contacts: List<ContactDetails>,
-) : ContactsRepository,
+) : ContactsReader,
+    ContactsAccounts,
+    ContactsWriter,
+    ContactsMerger,
     FavoritesRepository {
+    override suspend fun getContactsPage(
+        offset: Int,
+        limit: Int,
+    ): List<ContactDetails> = emptyList()
+
+    override suspend fun loadContactPhoto(contactId: Long): ByteArray? = null
+
+    override suspend fun getProfileContactId(): Long? = null
+
+    override suspend fun getContactAccount(contactId: Long): ContactAccount = ContactAccount.Local
+
+    override suspend fun getContactAccounts(): List<ContactAccount> = listOf(ContactAccount.Local)
+
+    override suspend fun unmergeContacts(link: ContactLink) = Unit
+
     override suspend fun getContacts(): List<ContactDetails> = contacts
 
     override suspend fun getContactDetails(contactId: Long): ContactDetails? =
@@ -42,7 +65,10 @@ private class GroupDetailContactsRepository(
 
     override suspend fun getContactForm(contactId: Long): ContactForm? = null
 
-    override suspend fun createContact(form: ContactForm): Long = 1L
+    override suspend fun createContact(
+        form: ContactForm,
+        account: ContactAccount,
+    ): Long = 1L
 
     override suspend fun updateContact(
         contactId: Long,

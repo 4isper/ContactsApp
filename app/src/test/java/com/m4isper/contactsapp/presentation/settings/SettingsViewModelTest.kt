@@ -37,31 +37,12 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** Аккаунты для выбора аккаунта по умолчанию: в тесте настроек важен только список. */
-private class SettingsFakeContactsRepository : com.m4isper.contactsapp.domain.repository.ContactsRepository {
-    override suspend fun getContacts(): List<com.m4isper.contactsapp.domain.model.ContactDetails> = emptyList()
+private class SettingsFakeContactsRepository : com.m4isper.contactsapp.domain.repository.ContactsAccounts {
+    override suspend fun getContactAccount(contactId: Long): com.m4isper.contactsapp.domain.model.ContactAccount =
+        com.m4isper.contactsapp.domain.model.ContactAccount.Local
 
-    override suspend fun getContactDetails(contactId: Long): com.m4isper.contactsapp.domain.model.ContactDetails? = null
-
-    override suspend fun getContactForm(contactId: Long): com.m4isper.contactsapp.domain.model.ContactForm? = null
-
-    override suspend fun createContact(form: com.m4isper.contactsapp.domain.model.ContactForm): Long = 1L
-
-    override suspend fun updateContact(
-        contactId: Long,
-        form: com.m4isper.contactsapp.domain.model.ContactForm,
-    ) = Unit
-
-    override suspend fun deleteContact(contactId: Long) = Unit
-
-    override suspend fun setContactPhoto(
-        contactId: Long,
-        photo: ByteArray,
-    ) = Unit
-
-    override suspend fun mergeContacts(
-        targetId: Long,
-        sourceIds: List<Long>,
-    ): com.m4isper.contactsapp.domain.model.ContactLink? = null
+    override suspend fun getContactAccounts(): List<com.m4isper.contactsapp.domain.model.ContactAccount> =
+        listOf(com.m4isper.contactsapp.domain.model.ContactAccount.Local)
 }
 
 /** Хранилище языка в памяти: настройки проверяются без Android-контекста. */

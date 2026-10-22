@@ -1,6 +1,6 @@
 package com.m4isper.contactsapp.domain.usecase
 
-import com.m4isper.contactsapp.domain.repository.ContactsRepository
+import com.m4isper.contactsapp.domain.repository.ContactsWriter
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.CancellationException
@@ -16,7 +16,7 @@ data class DeleteContactsResult(
 
 @Inject
 class DeleteContactsUseCase(
-    private val repository: ContactsRepository,
+    private val repository: ContactsWriter,
     private val favoritesRepository: FavoritesRepository,
 ) {
     /**

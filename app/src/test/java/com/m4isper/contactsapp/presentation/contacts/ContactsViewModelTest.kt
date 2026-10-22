@@ -9,6 +9,7 @@ import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.ContactGroup
+import com.m4isper.contactsapp.domain.model.ContactLink
 import com.m4isper.contactsapp.domain.model.ContactRelation
 import com.m4isper.contactsapp.domain.model.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.EmailAddress
@@ -18,7 +19,10 @@ import com.m4isper.contactsapp.domain.model.NameParts
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.model.RelationKind
-import com.m4isper.contactsapp.domain.repository.ContactsRepository
+import com.m4isper.contactsapp.domain.repository.ContactsAccounts
+import com.m4isper.contactsapp.domain.repository.ContactsMerger
+import com.m4isper.contactsapp.domain.repository.ContactsReader
+import com.m4isper.contactsapp.domain.repository.ContactsWriter
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import com.m4isper.contactsapp.domain.usecase.AddContactsToGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
@@ -74,8 +78,19 @@ private class FakeContactsRepository(
     var failure: Throwable? = null,
     initialFavorites: Set<Long> = emptySet(),
     var accounts: List<ContactAccount> = listOf(ContactAccount.Local),
-) : ContactsRepository,
+) : ContactsReader,
+    ContactsAccounts,
+    ContactsWriter,
+    ContactsMerger,
     FavoritesRepository {
+    override suspend fun loadContactPhoto(contactId: Long): ByteArray? = null
+
+    override suspend fun getProfileContactId(): Long? = null
+
+    override suspend fun getContactAccount(contactId: Long): ContactAccount = ContactAccount.Local
+
+    override suspend fun unmergeContacts(link: ContactLink) = Unit
+
     private val favoritesFlow = MutableStateFlow(initialFavorites)
     val deleted = mutableListOf<Long>()
     val created = mutableListOf<ContactForm>()
@@ -124,7 +139,10 @@ private class FakeContactsRepository(
         favoritesFlow.value = favoritesFlow.value - contactId
     }
 
-    override suspend fun createContact(form: ContactForm): Long {
+    override suspend fun createContact(
+        form: ContactForm,
+        account: ContactAccount,
+    ): Long {
         failure?.let { throw it }
         created += form
         val newId = (contacts.maxOfOrNull { it.contactId } ?: 0L) + 1
@@ -137,16 +155,6 @@ private class FakeContactsRepository(
         contactId: Long,
         photo: ByteArray,
     ) = Unit
-
-    override suspend fun copyContact(
-        contactId: Long,
-        account: com.m4isper.contactsapp.domain.model.ContactAccount,
-    ): Long = 1L
-
-    override suspend fun moveContact(
-        contactId: Long,
-        account: com.m4isper.contactsapp.domain.model.ContactAccount,
-    ): Long = 1L
 
     override suspend fun updateContact(
         contactId: Long,

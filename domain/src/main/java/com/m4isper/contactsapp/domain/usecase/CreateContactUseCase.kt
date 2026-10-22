@@ -5,7 +5,7 @@ import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.FormError
 import com.m4isper.contactsapp.domain.model.normalized
 import com.m4isper.contactsapp.domain.model.validateContactForm
-import com.m4isper.contactsapp.domain.repository.ContactsRepository
+import com.m4isper.contactsapp.domain.repository.ContactsWriter
 import dev.zacsweers.metro.Inject
 
 sealed interface SaveResult {
@@ -21,7 +21,7 @@ sealed interface SaveResult {
 
 @Inject
 class CreateContactUseCase(
-    private val repository: ContactsRepository,
+    private val repository: ContactsWriter,
 ) {
     suspend operator fun invoke(
         form: ContactForm,

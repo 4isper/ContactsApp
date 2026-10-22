@@ -3,7 +3,7 @@ package com.m4isper.contactsapp.domain.usecase
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.ContactGroup
-import com.m4isper.contactsapp.domain.repository.ContactsRepository
+import com.m4isper.contactsapp.domain.repository.ContactsReader
 import com.m4isper.contactsapp.domain.repository.GroupsRepository
 import com.m4isper.contactsapp.domain.vcard.VCardCodec
 import com.m4isper.contactsapp.domain.vcard.VCardExportContact
@@ -16,41 +16,19 @@ import org.junit.Test
 private class ExportContactsRepository(
     private val details: Map<Long, ContactDetails>,
     private val photos: Map<Long, ByteArray> = emptyMap(),
-) : ContactsRepository {
+) : ContactsReader {
     override suspend fun getContacts(): List<ContactDetails> = details.values.toList()
+
+    override suspend fun getContactsPage(
+        offset: Int,
+        limit: Int,
+    ): List<ContactDetails> = emptyList()
+
+    override suspend fun getProfileContactId(): Long? = null
 
     override suspend fun getContactDetails(contactId: Long): ContactDetails? = details[contactId]
 
     override suspend fun getContactForm(contactId: Long): ContactForm? = null
-
-    override suspend fun createContact(form: ContactForm): Long = 1L
-
-    override suspend fun updateContact(
-        contactId: Long,
-        form: ContactForm,
-    ) = Unit
-
-    override suspend fun deleteContact(contactId: Long) = Unit
-
-    override suspend fun mergeContacts(
-        targetId: Long,
-        sourceIds: List<Long>,
-    ): com.m4isper.contactsapp.domain.model.ContactLink? = null
-
-    override suspend fun setContactPhoto(
-        contactId: Long,
-        photo: ByteArray,
-    ) = Unit
-
-    override suspend fun copyContact(
-        contactId: Long,
-        account: com.m4isper.contactsapp.domain.model.ContactAccount,
-    ): Long = 1L
-
-    override suspend fun moveContact(
-        contactId: Long,
-        account: com.m4isper.contactsapp.domain.model.ContactAccount,
-    ): Long = 1L
 
     override suspend fun loadContactPhoto(contactId: Long): ByteArray? = photos[contactId]
 }

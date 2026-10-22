@@ -1,7 +1,7 @@
 package com.m4isper.contactsapp.domain.usecase
 
 import com.m4isper.contactsapp.domain.model.ContactLink
-import com.m4isper.contactsapp.domain.repository.ContactsRepository
+import com.m4isper.contactsapp.domain.repository.ContactsMerger
 import dev.zacsweers.metro.Inject
 
 /**
@@ -10,7 +10,7 @@ import dev.zacsweers.metro.Inject
  */
 @Inject
 class MergeContactsUseCase(
-    private val contactsRepository: ContactsRepository,
+    private val contactsRepository: ContactsMerger,
 ) {
     suspend operator fun invoke(
         targetId: Long,

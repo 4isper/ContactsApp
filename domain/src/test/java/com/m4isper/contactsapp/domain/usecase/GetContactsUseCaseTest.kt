@@ -4,7 +4,7 @@ import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
-import com.m4isper.contactsapp.domain.repository.ContactsRepository
+import com.m4isper.contactsapp.domain.repository.ContactsReader
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -22,42 +22,22 @@ private fun details(
 
 private class StubContactsRepository(
     private val contacts: List<ContactDetails>,
-) : ContactsRepository {
+) : ContactsReader {
     override suspend fun getContacts(): List<ContactDetails> = contacts
+
+    override suspend fun getContactsPage(
+        offset: Int,
+        limit: Int,
+    ): List<ContactDetails> = emptyList()
+
+    override suspend fun loadContactPhoto(contactId: Long): ByteArray? = null
+
+    override suspend fun getProfileContactId(): Long? = null
 
     override suspend fun getContactForm(contactId: Long): ContactForm? = null
 
     override suspend fun getContactDetails(contactId: Long): ContactDetails? =
         contacts.firstOrNull { it.contactId == contactId }
-
-    override suspend fun createContact(form: ContactForm): Long = 1L
-
-    override suspend fun updateContact(
-        contactId: Long,
-        form: ContactForm,
-    ) = Unit
-
-    override suspend fun setContactPhoto(
-        contactId: Long,
-        photo: ByteArray,
-    ) = Unit
-
-    override suspend fun copyContact(
-        contactId: Long,
-        account: com.m4isper.contactsapp.domain.model.ContactAccount,
-    ): Long = 1L
-
-    override suspend fun moveContact(
-        contactId: Long,
-        account: com.m4isper.contactsapp.domain.model.ContactAccount,
-    ): Long = 1L
-
-    override suspend fun deleteContact(contactId: Long) = Unit
-
-    override suspend fun mergeContacts(
-        targetId: Long,
-        sourceIds: List<Long>,
-    ): com.m4isper.contactsapp.domain.model.ContactLink? = null
 }
 
 class GetContactsUseCaseTest {

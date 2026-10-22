@@ -46,19 +46,29 @@ import com.m4isper.contactsapp.domain.model.EditableSipAddress
 import com.m4isper.contactsapp.domain.model.EditableWebsite
 import com.m4isper.contactsapp.domain.model.ImProtocol
 import com.m4isper.contactsapp.domain.model.NameMode
-import com.m4isper.contactsapp.domain.repository.ContactsRepository
+import com.m4isper.contactsapp.domain.repository.ContactsAccounts
+import com.m4isper.contactsapp.domain.repository.ContactsMerger
+import com.m4isper.contactsapp.domain.repository.ContactsReader
+import com.m4isper.contactsapp.domain.repository.ContactsWriter
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
+import dev.zacsweers.metro.binding
 
 @Inject
 @SingleIn(AppScope::class)
-@ContributesBinding(AppScope::class)
+@ContributesBinding(AppScope::class, binding = binding<ContactsReader>())
+@ContributesBinding(AppScope::class, binding = binding<ContactsAccounts>())
+@ContributesBinding(AppScope::class, binding = binding<ContactsWriter>())
+@ContributesBinding(AppScope::class, binding = binding<ContactsMerger>())
 class ContactsRepositoryImpl(
     private val dataSource: ContactsDataSource,
     private val writer: ContactsWriterDataSource,
-) : ContactsRepository {
+) : ContactsReader,
+    ContactsAccounts,
+    ContactsWriter,
+    ContactsMerger {
     override suspend fun getContacts(): List<ContactDetails> = dataSource.loadContacts()
 
     override suspend fun getContactsPage(
@@ -96,8 +106,6 @@ class ContactsRepositoryImpl(
 
     override suspend fun getContactAccounts(): List<ContactAccount> = dataSource.getContactAccounts()
 
-    override suspend fun createContact(form: ContactForm): Long = writer.createContact(form, ContactAccount.Local)
-
     override suspend fun createContact(
         form: ContactForm,
         account: ContactAccount,
@@ -125,25 +133,6 @@ class ContactsRepositoryImpl(
     override suspend fun loadContactPhoto(contactId: Long): ByteArray? = dataSource.loadContactPhoto(contactId)
 
     override suspend fun getProfileContactId(): Long? = dataSource.loadProfileContactId()
-
-    override suspend fun copyContact(
-        contactId: Long,
-        account: ContactAccount,
-    ): Long {
-        val form = getContactForm(contactId) ?: error("no contact form for id=$contactId")
-        val newId = writer.createContact(form, account)
-        dataSource.loadContactPhoto(contactId)?.let { photo -> writer.setContactPhoto(newId, photo) }
-        return newId
-    }
-
-    override suspend fun moveContact(
-        contactId: Long,
-        account: ContactAccount,
-    ): Long {
-        val newId = copyContact(contactId, account)
-        writer.deleteContact(contactId)
-        return newId
-    }
 
     override suspend fun mergeContacts(
         targetId: Long,

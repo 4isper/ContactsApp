@@ -2,12 +2,17 @@ package com.m4isper.contactsapp.presentation.details
 
 import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.FakeVCardCodec
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.ContactGroup
+import com.m4isper.contactsapp.domain.model.ContactLink
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
-import com.m4isper.contactsapp.domain.repository.ContactsRepository
+import com.m4isper.contactsapp.domain.repository.ContactsAccounts
+import com.m4isper.contactsapp.domain.repository.ContactsMerger
+import com.m4isper.contactsapp.domain.repository.ContactsReader
+import com.m4isper.contactsapp.domain.repository.ContactsWriter
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import com.m4isper.contactsapp.domain.usecase.CopyContactToAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.ExportContactsUseCase
@@ -41,8 +46,26 @@ private class FakeDetailsRepository(
     var contacts: List<ContactDetails> = emptyList(),
     var failure: Throwable? = null,
     initialFavorites: Set<Long> = emptySet(),
-) : ContactsRepository,
+) : ContactsReader,
+    ContactsAccounts,
+    ContactsWriter,
+    ContactsMerger,
     FavoritesRepository {
+    override suspend fun getContactsPage(
+        offset: Int,
+        limit: Int,
+    ): List<ContactDetails> = emptyList()
+
+    override suspend fun loadContactPhoto(contactId: Long): ByteArray? = null
+
+    override suspend fun getProfileContactId(): Long? = null
+
+    override suspend fun getContactAccount(contactId: Long): ContactAccount = ContactAccount.Local
+
+    override suspend fun getContactAccounts(): List<ContactAccount> = listOf(ContactAccount.Local)
+
+    override suspend fun unmergeContacts(link: ContactLink) = Unit
+
     private val favoritesFlow = MutableStateFlow(initialFavorites)
 
     override suspend fun getContacts(): List<ContactDetails> {
@@ -73,7 +96,10 @@ private class FakeDetailsRepository(
         favoritesFlow.value = favoritesFlow.value - contactId
     }
 
-    override suspend fun createContact(form: ContactForm): Long = 1L
+    override suspend fun createContact(
+        form: ContactForm,
+        account: ContactAccount,
+    ): Long = 1L
 
     override suspend fun updateContact(
         contactId: Long,
@@ -84,16 +110,6 @@ private class FakeDetailsRepository(
         contactId: Long,
         photo: ByteArray,
     ) = Unit
-
-    override suspend fun copyContact(
-        contactId: Long,
-        account: com.m4isper.contactsapp.domain.model.ContactAccount,
-    ): Long = 1L
-
-    override suspend fun moveContact(
-        contactId: Long,
-        account: com.m4isper.contactsapp.domain.model.ContactAccount,
-    ): Long = 1L
 
     override suspend fun deleteContact(contactId: Long) = Unit
 
@@ -127,8 +143,8 @@ class ContactDetailsViewModelTest {
             codec = codec,
         ),
         GetContactAccountsUseCase(repository),
-        CopyContactToAccountUseCase(repository),
-        MoveContactToAccountUseCase(repository),
+        CopyContactToAccountUseCase(repository, repository),
+        MoveContactToAccountUseCase(CopyContactToAccountUseCase(repository, repository), repository),
     )
 
     @Test
@@ -191,7 +207,27 @@ class ContactDetailsViewModelTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             var calls = 0
             val repository =
-                object : ContactsRepository, FavoritesRepository {
+                object : ContactsReader, ContactsAccounts, ContactsWriter, ContactsMerger, FavoritesRepository {
+                    override suspend fun getContactsPage(
+                        offset: Int,
+                        limit: Int,
+                    ): List<ContactDetails> = emptyList()
+
+                    override suspend fun loadContactPhoto(contactId: Long): ByteArray? = null
+
+                    override suspend fun getProfileContactId(): Long? = null
+
+                    override suspend fun getContactAccount(contactId: Long): ContactAccount = ContactAccount.Local
+
+                    override suspend fun getContactAccounts(): List<ContactAccount> = listOf(ContactAccount.Local)
+
+                    override suspend fun unmergeContacts(link: ContactLink) = Unit
+
+                    override suspend fun createContact(
+                        form: ContactForm,
+                        account: ContactAccount,
+                    ): Long = 1L
+
                     override suspend fun getContacts(): List<ContactDetails> = emptyList()
 
                     override suspend fun getContactForm(contactId: Long): ContactForm? = null
@@ -206,8 +242,6 @@ class ContactDetailsViewModelTest {
                     override suspend fun toggleFavorite(contactId: Long) = Unit
 
                     override suspend fun removeFavorite(contactId: Long) = Unit
-
-                    override suspend fun createContact(form: ContactForm): Long = 1L
 
                     override suspend fun setContactPhoto(
                         contactId: Long,
@@ -240,8 +274,8 @@ class ContactDetailsViewModelTest {
                         codec = FakeVCardCodec(),
                     ),
                     GetContactAccountsUseCase(repository),
-                    CopyContactToAccountUseCase(repository),
-                    MoveContactToAccountUseCase(repository),
+                    CopyContactToAccountUseCase(repository, repository),
+                    MoveContactToAccountUseCase(CopyContactToAccountUseCase(repository, repository), repository),
                 )
             backgroundScope.launch { viewModel.uiState.collect { } }
 

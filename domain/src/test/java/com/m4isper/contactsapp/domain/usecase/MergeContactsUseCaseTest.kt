@@ -1,9 +1,7 @@
 package com.m4isper.contactsapp.domain.usecase
 
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.ContactLink
-import com.m4isper.contactsapp.domain.repository.ContactsRepository
+import com.m4isper.contactsapp.domain.repository.ContactsMerger
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,31 +15,11 @@ import org.junit.Test
 private class MergeFakeRepository(
     initialFavorites: Set<Long> = emptySet(),
     private val failMerge: Boolean = false,
-) : ContactsRepository,
+) : ContactsMerger,
     FavoritesRepository {
     val merged = mutableListOf<Pair<Long, List<Long>>>()
     val unmerged = mutableListOf<ContactLink>()
     val favoritesFlow = MutableStateFlow(initialFavorites)
-
-    override suspend fun getContacts(): List<ContactDetails> = emptyList()
-
-    override suspend fun getContactDetails(contactId: Long): ContactDetails? = null
-
-    override suspend fun getContactForm(contactId: Long): ContactForm? = null
-
-    override suspend fun createContact(form: ContactForm): Long = 1L
-
-    override suspend fun updateContact(
-        contactId: Long,
-        form: ContactForm,
-    ) = Unit
-
-    override suspend fun setContactPhoto(
-        contactId: Long,
-        photo: ByteArray,
-    ) = Unit
-
-    override suspend fun deleteContact(contactId: Long) = Unit
 
     override suspend fun mergeContacts(
         targetId: Long,
@@ -55,16 +33,6 @@ private class MergeFakeRepository(
     override suspend fun unmergeContacts(link: ContactLink) {
         unmerged += link
     }
-
-    override suspend fun copyContact(
-        contactId: Long,
-        account: com.m4isper.contactsapp.domain.model.ContactAccount,
-    ): Long = 2L
-
-    override suspend fun moveContact(
-        contactId: Long,
-        account: com.m4isper.contactsapp.domain.model.ContactAccount,
-    ): Long = 2L
 
     override fun observeFavorites(): Flow<Set<Long>> = favoritesFlow.asStateFlow()
 

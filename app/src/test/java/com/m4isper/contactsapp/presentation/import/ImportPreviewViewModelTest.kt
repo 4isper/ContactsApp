@@ -5,12 +5,16 @@ import com.m4isper.contactsapp.FakeVCardCodec
 import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactForm
+import com.m4isper.contactsapp.domain.model.ContactLink
 import com.m4isper.contactsapp.domain.model.EditableName
 import com.m4isper.contactsapp.domain.model.EditablePhone
 import com.m4isper.contactsapp.domain.model.ImportDecision
 import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
-import com.m4isper.contactsapp.domain.repository.ContactsRepository
+import com.m4isper.contactsapp.domain.repository.ContactsAccounts
+import com.m4isper.contactsapp.domain.repository.ContactsMerger
+import com.m4isper.contactsapp.domain.repository.ContactsReader
+import com.m4isper.contactsapp.domain.repository.ContactsWriter
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import com.m4isper.contactsapp.domain.usecase.AddContactsToGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
@@ -38,8 +42,24 @@ import org.junit.Test
 
 private class PreviewContactsRepository(
     var contacts: List<ContactDetails> = emptyList(),
-) : ContactsRepository,
+) : ContactsReader,
+    ContactsAccounts,
+    ContactsWriter,
+    ContactsMerger,
     FavoritesRepository {
+    override suspend fun getContactsPage(
+        offset: Int,
+        limit: Int,
+    ): List<ContactDetails> = emptyList()
+
+    override suspend fun loadContactPhoto(contactId: Long): ByteArray? = null
+
+    override suspend fun getProfileContactId(): Long? = null
+
+    override suspend fun getContactAccount(contactId: Long): ContactAccount = ContactAccount.Local
+
+    override suspend fun unmergeContacts(link: ContactLink) = Unit
+
     val created = mutableListOf<ContactForm>()
     private val favorites = MutableStateFlow(emptySet<Long>())
 
@@ -52,7 +72,10 @@ private class PreviewContactsRepository(
 
     override suspend fun getContactAccounts(): List<ContactAccount> = listOf(ContactAccount.Local)
 
-    override suspend fun createContact(form: ContactForm): Long {
+    override suspend fun createContact(
+        form: ContactForm,
+        account: ContactAccount,
+    ): Long {
         created += form
         return created.size.toLong()
     }
@@ -79,16 +102,6 @@ private class PreviewContactsRepository(
         contactId: Long,
         photo: ByteArray,
     ) = Unit
-
-    override suspend fun copyContact(
-        contactId: Long,
-        account: com.m4isper.contactsapp.domain.model.ContactAccount,
-    ): Long = 1L
-
-    override suspend fun moveContact(
-        contactId: Long,
-        account: com.m4isper.contactsapp.domain.model.ContactAccount,
-    ): Long = 1L
 }
 
 private fun form(name: String) = ContactForm(name = EditableName(display = name))

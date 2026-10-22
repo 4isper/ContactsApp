@@ -51,7 +51,7 @@ class BirthdayReminderReceiver : BroadcastReceiver() {
         val upcoming =
             if (settings.remindersEnabled) {
                 upcomingOccasions(
-                    contacts = GetContactsUseCase(graph.contactsRepository)(),
+                    contacts = GetContactsUseCase(graph.contactsReader)(),
                     leadDays = settings.reminderLeadDays,
                     today = LocalDate.now(),
                 )
