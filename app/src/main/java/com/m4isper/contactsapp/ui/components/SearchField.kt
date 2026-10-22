@@ -2,6 +2,8 @@ package com.m4isper.contactsapp.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
@@ -12,8 +14,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 
@@ -24,6 +28,7 @@ fun SearchField(
     modifier: Modifier = Modifier,
 ) {
     val spacing = LocalSpacing.current
+    val focusManager = LocalFocusManager.current
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
@@ -39,13 +44,15 @@ fun SearchField(
                 IconButton(onClick = { onValueChange("") }) {
                     Icon(
                         Icons.Filled.Clear,
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.action_clear_search),
                     )
                 }
             }
         },
         singleLine = true,
         shape = MaterialTheme.shapes.medium,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
         modifier =
             modifier
                 .fillMaxWidth()

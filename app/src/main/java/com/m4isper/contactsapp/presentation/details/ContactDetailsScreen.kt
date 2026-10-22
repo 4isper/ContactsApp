@@ -1,73 +1,58 @@
 package com.m4isper.contactsapp.presentation.details
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.PersonSearch
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.PhoneKind
 import com.m4isper.contactsapp.domain.model.PhoneNumber
-import com.m4isper.contactsapp.presentation.common.ConfirmCallDialog
 import com.m4isper.contactsapp.presentation.common.Loadable
-import com.m4isper.contactsapp.presentation.common.copyNumber
-import com.m4isper.contactsapp.presentation.common.openSms
-import com.m4isper.contactsapp.presentation.common.rememberCallHandler
-import com.m4isper.contactsapp.presentation.common.shareContact
-import com.m4isper.contactsapp.ui.components.DetailsAvatar
+import com.m4isper.contactsapp.presentation.common.account.contactAccountTitle
+import com.m4isper.contactsapp.presentation.common.call.ConfirmCallDialog
+import com.m4isper.contactsapp.presentation.common.call.rememberCallHandler
+import com.m4isper.contactsapp.presentation.common.format.phoneText
+import com.m4isper.contactsapp.presentation.common.share.contactAsText
+import com.m4isper.contactsapp.presentation.common.share.copyToClipboard
+import com.m4isper.contactsapp.presentation.common.share.openSms
+import com.m4isper.contactsapp.presentation.common.share.shareContact
+import com.m4isper.contactsapp.presentation.common.share.shareContactAsQr
+import com.m4isper.contactsapp.presentation.common.share.shareContactAsText
+import com.m4isper.contactsapp.presentation.editor.AccountPickerDialog
+import com.m4isper.contactsapp.presentation.widget.ContactsWidgetProvider
+import com.m4isper.contactsapp.ui.components.ConfirmDialog
 import com.m4isper.contactsapp.ui.components.EmptyState
 import com.m4isper.contactsapp.ui.components.ErrorState
 import com.m4isper.contactsapp.ui.components.LoadingState
-import com.m4isper.contactsapp.ui.theme.LocalSpacing
 import dev.zacsweers.metrox.viewmodel.metroViewModel
+import kotlinx.coroutines.launch
 
 private data class CallTarget(
     val name: String,
-    val phone: String,
+    val phone: PhoneNumber,
 )
+
+/** Что пользователь хочет сделать с аккаунтом контакта. */
+private enum class AccountAction {
+    COPY,
+    MOVE,
+}
 
 @Composable
 fun ContactDetailsScreen(
@@ -80,8 +65,12 @@ fun ContactDetailsScreen(
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val requestCall = rememberCallHandler()
+    val scope = rememberCoroutineScope()
 
     var pendingConfirm by remember { mutableStateOf<CallTarget?>(null) }
+    var showAccountPicker by remember { mutableStateOf(false) }
+    var pendingAction by remember { mutableStateOf<AccountAction?>(null) }
+    var pendingMoveAccount by remember { mutableStateOf<ContactAccount?>(null) }
 
     LaunchedEffect(contactId) {
         viewModel.load(contactId)
@@ -103,8 +92,38 @@ fun ContactDetailsScreen(
                 isFavorite = uiState.isFavorite,
                 onBack = onBack,
                 onEdit = onEdit,
-                onShare = { shareContact(context, it) },
-                onToggleFavorite = viewModel::toggleFavorite,
+                onShare = {
+                    scope.launch {
+                        val vCard = viewModel.vCardText()
+                        if (vCard == null) {
+                            Toast.makeText(context, R.string.share_failed, Toast.LENGTH_SHORT).show()
+                        } else {
+                            shareContact(context, vCard)
+                        }
+                    }
+                },
+                onShareAsText = {
+                    scope.launch {
+                        shareDetailsAsText(context, (uiState.content as? Loadable.Content)?.data)
+                    }
+                },
+                onShareAsQr = {
+                    scope.launch {
+                        shareDetailsAsQr(context, viewModel.vCardText())
+                    }
+                },
+                onToggleFavorite = {
+                    viewModel.toggleFavorite()
+                    ContactsWidgetProvider.refresh(context)
+                },
+                onCopyToAccount = {
+                    pendingAction = AccountAction.COPY
+                    showAccountPicker = true
+                },
+                onMoveToAccount = {
+                    pendingAction = AccountAction.MOVE
+                    showAccountPicker = true
+                },
             )
         },
     ) { innerPadding ->
@@ -114,26 +133,29 @@ fun ContactDetailsScreen(
                 .padding(innerPadding)
 
         when (val content = uiState.content) {
-            is Loadable.Loading -> LoadingState()
+            is Loadable.Loading -> LoadingState(screenModifier)
             is Loadable.Empty ->
                 EmptyState(
                     icon = Icons.Filled.PersonSearch,
                     title = stringResource(R.string.contact_not_found),
+                    modifier = screenModifier,
                 )
             is Loadable.Error ->
                 ErrorState(
-                    message = content.message,
+                    error = content.error,
                     onRetry = viewModel::refresh,
+                    modifier = screenModifier,
                 )
             is Loadable.Content ->
                 DetailsContent(
                     details = content.data,
-                    onCallClick = {
-                        pendingConfirm = CallTarget(content.data.name, it.number)
+                    onCallClick = { phone ->
+                        pendingConfirm = CallTarget(content.data.name, phone)
                     },
                     onSmsClick = { openSms(context, it.number) },
-                    onCopyClick = { copyNumber(context, it.number) },
+                    onCopyClick = { copyToClipboard(context, it) },
                     modifier = screenModifier,
+                    groups = uiState.groups,
                 )
         }
     }
@@ -141,251 +163,124 @@ fun ContactDetailsScreen(
     pendingConfirm?.let { target ->
         ConfirmCallDialog(
             contactName = target.name,
-            contactPhone = target.phone,
+            phoneText = phoneText(target.phone),
             onConfirm = {
                 pendingConfirm = null
-                requestCall(target.phone)
+                requestCall(target.phone.number)
             },
             onDismiss = { pendingConfirm = null },
         )
     }
-}
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun DetailsTopBar(
-    title: String?,
-    shareable: ContactDetails?,
-    isFavorite: Boolean,
-    onBack: () -> Unit,
-    onEdit: () -> Unit,
-    onShare: (ContactDetails) -> Unit,
-    onToggleFavorite: () -> Unit,
-) {
-    TopAppBar(
-        title = { Text(title ?: stringResource(R.string.action_back)) },
-        navigationIcon = {
-            IconButton(
-                onClick = onBack,
-                modifier = Modifier.testTag("back_button"),
-            ) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.action_back),
-                )
+    // Смена аккаунта: выбор аккаунта и подтверждение переноса с удалением исходника.
+    DetailsEventToast(uiState.event, viewModel::onEventHandled)
+
+    AccountChangeDialogs(
+        uiState = uiState,
+        showAccountPicker = showAccountPicker,
+        pendingMoveAccount = pendingMoveAccount,
+        onAccountPicked = { account ->
+            showAccountPicker = false
+            when (pendingAction) {
+                AccountAction.COPY -> {
+                    pendingAction = null
+                    viewModel.onCopyToAccount(account)
+                }
+                AccountAction.MOVE -> pendingMoveAccount = account
+                null -> Unit
             }
         },
-        actions = {
-            if (shareable != null) {
-                IconButton(
-                    onClick = onEdit,
-                    modifier = Modifier.testTag("edit_button"),
-                ) {
-                    Icon(
-                        Icons.Filled.Edit,
-                        contentDescription = stringResource(R.string.action_edit),
-                    )
-                }
-                IconButton(
-                    onClick = onToggleFavorite,
-                    modifier = Modifier.testTag("favorite_button"),
-                ) {
-                    Icon(
-                        if (isFavorite) {
-                            Icons.Filled.Favorite
-                        } else {
-                            Icons.Filled.FavoriteBorder
-                        },
-                        contentDescription = stringResource(R.string.action_toggle_favorite),
-                        tint =
-                            if (isFavorite) {
-                                MaterialTheme.colorScheme.tertiary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                    )
-                }
-                IconButton(onClick = { onShare(shareable) }) {
-                    Icon(
-                        Icons.Filled.Share,
-                        contentDescription = stringResource(R.string.share_contact),
-                    )
-                }
-            }
+        onPickerDismissed = { showAccountPicker = false },
+        onMoveConfirmed = { account ->
+            pendingMoveAccount = null
+            viewModel.onMoveToAccount(account)
         },
+        onMoveDismissed = { pendingMoveAccount = null },
     )
 }
 
+/** Одноразовые события карточки показываем тостом. */
 @Composable
-private fun DetailsContent(
-    details: ContactDetails,
-    onCallClick: (PhoneNumber) -> Unit,
-    onSmsClick: (PhoneNumber) -> Unit,
-    onCopyClick: (PhoneNumber) -> Unit,
-    modifier: Modifier = Modifier,
+private fun DetailsEventToast(
+    event: DetailsEvent?,
+    onHandled: () -> Unit,
 ) {
-    LazyColumn(modifier = modifier.fillMaxSize()) {
-        item(key = "header") {
-            DetailsHeader(
-                details = details,
-                onCallPrimary = {
-                    details.phones.firstOrNull()?.let(onCallClick)
-                },
-                onSmsPrimary = {
-                    details.phones.firstOrNull()?.let(onSmsClick)
-                },
-            )
-        }
-        items(
-            items = details.phones,
-            key = { it.number },
-        ) { phone ->
-            PhoneRow(
-                phone = phone,
-                onClick = { onCallClick(phone) },
-                onSmsClick = { onSmsClick(phone) },
-                onCopyClick = { onCopyClick(phone) },
-            )
-        }
+    val context = LocalContext.current
+    LaunchedEffect(event) {
+        val messageRes =
+            when (event) {
+                is DetailsEvent.ContactCopied -> R.string.details_copy_done
+                is DetailsEvent.ContactMoved -> R.string.details_move_done
+                DetailsEvent.AccountActionFailed -> R.string.details_account_failed
+                null -> return@LaunchedEffect
+            }
+        Toast.makeText(context, messageRes, Toast.LENGTH_SHORT).show()
+        onHandled()
     }
 }
 
+/** Диалоги смены аккаунта: выбор аккаунта и подтверждение переноса. */
 @Composable
-private fun DetailsHeader(
-    details: ContactDetails,
-    onCallPrimary: () -> Unit,
-    onSmsPrimary: () -> Unit,
+private fun AccountChangeDialogs(
+    uiState: DetailsUiState,
+    showAccountPicker: Boolean,
+    pendingMoveAccount: ContactAccount?,
+    onAccountPicked: (ContactAccount) -> Unit,
+    onPickerDismissed: () -> Unit,
+    onMoveConfirmed: (ContactAccount) -> Unit,
+    onMoveDismissed: () -> Unit,
 ) {
-    val spacing = LocalSpacing.current
-    Card(
-        colors =
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            ),
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = spacing.m)
-                .padding(top = spacing.m),
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = spacing.xl),
-        ) {
-            DetailsAvatar(
-                name = details.name,
-                photoUri = details.photoUri,
-            )
-            Spacer(modifier = Modifier.height(spacing.m))
-            Text(
-                text = details.name,
-                style = MaterialTheme.typography.headlineSmall,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                text =
-                    pluralStringResource(
-                        R.plurals.phone_count,
-                        details.phoneCount,
-                        details.phoneCount,
-                    ),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(modifier = Modifier.height(spacing.m))
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(spacing.s),
-            ) {
-                FilledTonalButton(onClick = onCallPrimary) {
-                    Icon(
-                        Icons.Filled.Call,
-                        contentDescription = null,
-                    )
-                    Spacer(modifier = Modifier.width(spacing.s))
-                    Text(stringResource(R.string.action_call))
-                }
-                OutlinedButton(onClick = onSmsPrimary) {
-                    Icon(
-                        Icons.Filled.Message,
-                        contentDescription = null,
-                    )
-                    Spacer(modifier = Modifier.width(spacing.s))
-                    Text(stringResource(R.string.action_send_sms))
-                }
-            }
-        }
+    if (showAccountPicker) {
+        AccountPickerDialog(
+            accounts = uiState.accounts,
+            selected = null,
+            onSelect = onAccountPicked,
+            onDismiss = onPickerDismissed,
+        )
+    }
+    pendingMoveAccount?.let { account ->
+        ConfirmDialog(
+            title = stringResource(R.string.details_move_confirm_title),
+            text = stringResource(R.string.details_move_confirm_text, contactAccountTitle(account)),
+            confirmLabel = stringResource(R.string.details_move_to_account),
+            onConfirm = { onMoveConfirmed(account) },
+            onDismiss = onMoveDismissed,
+        )
     }
 }
 
-@Composable
-private fun PhoneRow(
-    phone: PhoneNumber,
-    onClick: () -> Unit,
-    onSmsClick: () -> Unit,
-    onCopyClick: () -> Unit,
-    modifier: Modifier = Modifier,
+/** Делится контактом текстом: без деталей показываем ошибку, а не падаем. */
+private suspend fun shareDetailsAsText(
+    context: Context,
+    details: ContactDetails?,
 ) {
-    val spacing = LocalSpacing.current
-    Card(
-        onClick = onClick,
-        colors =
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-            ),
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .padding(horizontal = spacing.m, vertical = spacing.xs)
-                .testTag("phone_row_${phone.number}"),
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(spacing.m),
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = phone.number,
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Text(
-                    text = phoneKindLabel(phone),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            IconButton(onClick = onSmsClick) {
-                Icon(
-                    Icons.Filled.Message,
-                    contentDescription = stringResource(R.string.action_send_sms),
-                )
-            }
-            IconButton(onClick = onCopyClick) {
-                Icon(
-                    Icons.Filled.ContentCopy,
-                    contentDescription = stringResource(R.string.action_copy_number),
-                )
-            }
-            IconButton(onClick = onClick) {
-                Icon(
-                    Icons.Filled.Call,
-                    contentDescription = stringResource(R.string.action_call),
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-            }
-        }
+    if (details == null) {
+        shareOrFail(context, false) { }
+    } else {
+        shareOrFail(context, true) { shareContactAsText(context, contactAsText(details)) }
     }
 }
 
-@Composable
-private fun phoneKindLabel(phone: PhoneNumber): String =
-    phone.customLabel ?: stringResource(
-        when (phone.kind) {
-            PhoneKind.MOBILE -> R.string.phone_type_mobile
-            PhoneKind.HOME -> R.string.phone_type_home
-            PhoneKind.WORK -> R.string.phone_type_work
-            PhoneKind.OTHER -> R.string.phone_type_other
-        },
-    )
+/** Делится контактом QR-кодом: без карточки показываем ошибку, а не падаем. */
+private suspend fun shareDetailsAsQr(
+    context: Context,
+    vCard: String?,
+) {
+    if (vCard == null) {
+        shareOrFail(context, false) { }
+    } else {
+        shareOrFail(context, true) { shareContactAsQr(context, vCard) }
+    }
+}
+
+private suspend fun shareOrFail(
+    context: Context,
+    hasContent: Boolean,
+    action: suspend () -> Unit,
+) {
+    if (hasContent) {
+        action()
+    } else {
+        Toast.makeText(context, R.string.share_failed, Toast.LENGTH_SHORT).show()
+    }
+}

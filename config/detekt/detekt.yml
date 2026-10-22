@@ -89,7 +89,7 @@ complexity:
     ignoreOverloaded: false
   CyclomaticComplexMethod:
     active: true
-    allowedComplexity: 14
+    allowedComplexity: 12
     ignoreSingleWhenExpression: false
     ignoreSimpleWhenEntries: false
     ignoreNestingFunctions: false
@@ -109,10 +109,12 @@ complexity:
     ignoredLabels: []
   LargeClass:
     active: true
-    allowedLines: 600
+    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**']
+    allowedLines: 450
   LongMethod:
     active: true
-    allowedLines: 60
+    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**']
+    allowedLines: 40
     ignoreAnnotated:
       - 'Composable'
   LongParameterList:
@@ -132,7 +134,7 @@ complexity:
     ignoreArgumentsMatchingNames: false
   NestedBlockDepth:
     active: true
-    allowedDepth: 4
+    allowedDepth: 3
   NestedScopeFunctions:
     active: false
     allowedDepth: 1

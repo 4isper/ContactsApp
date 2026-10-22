@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,9 +23,12 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 
+/** Показывать ли фотографии контактов: выключается в настройках. */
+val LocalShowPhotos = staticCompositionLocalOf { true }
+
 /**
  * Круглый аватар: фото контакта поверх инициала.
- * Если фото нет или не загрузилось — виден инициал.
+ * Если фото нет, не загрузилось или отключено в настройках — виден инициал.
  */
 @Composable
 fun ContactAvatar(
@@ -50,7 +54,7 @@ fun ContactAvatar(
             fontWeight = FontWeight.Bold,
             style = textStyle,
         )
-        if (photoUri != null) {
+        if (photoUri != null && LocalShowPhotos.current) {
             AsyncImage(
                 model =
                     ImageRequest
@@ -74,12 +78,12 @@ fun ListAvatar(
     name: String,
     photoUri: String?,
     modifier: Modifier = Modifier,
+    size: Dp = LocalSpacing.current.avatarList,
 ) {
-    val spacing = LocalSpacing.current
     ContactAvatar(
         name = name,
         photoUri = photoUri,
-        size = spacing.avatarList,
+        size = size,
         textStyle = MaterialTheme.typography.titleMedium,
         modifier = modifier,
     )

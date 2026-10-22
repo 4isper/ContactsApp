@@ -24,7 +24,7 @@ private val PreviewContacts =
             contactId = 1,
             name = "Anna Ivanova",
             phones = listOf(PhoneNumber("+7 900 111-11-11", PhoneKind.MOBILE)),
-            photoUri = null,
+            photo = null,
         ),
         ContactDetails(
             contactId = 2,
@@ -34,7 +34,7 @@ private val PreviewContacts =
                     PhoneNumber("+7 900 222-22-22", PhoneKind.MOBILE),
                     PhoneNumber("+7 900 333-33-33", PhoneKind.WORK),
                 ),
-            photoUri = null,
+            photo = null,
         ),
     )
 
@@ -64,20 +64,24 @@ internal fun ContactListDarkPreview() {
     }
 }
 
+@Preview(name = "List selection mode", showBackground = true)
 @Composable
-private fun ContactListContent() {
+internal fun ContactListSelectionPreview() {
+    ThemedPreview(darkTheme = false) {
+        ContactListContent(selection = setOf(1, 2))
+    }
+}
+
+@Composable
+private fun ContactListContent(selection: Set<Long> = emptySet()) {
     ContactList(
         uiState =
             ContactsUiState(
                 content = Loadable.Content(PreviewContacts),
                 favorites = setOf(1),
+                selection = selection,
             ),
-        onSearchQueryChange = {},
-        onFavoritesOnlyChange = {},
-        onContactClick = {},
-        onAddClick = {},
-        onRetry = {},
-        onRefresh = {},
+        onAction = {},
     )
 }
 

@@ -40,6 +40,13 @@ android {
         compose = true
         buildConfig = true
     }
+
+    testOptions {
+        unitTests {
+            // Стенды android.util.Log и подобных классов в JVM-тестах не должны падать.
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 dependencies {
@@ -64,7 +71,7 @@ dependencies {
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.kotlinx.serialization.core)
     implementation(libs.coil.compose)
-    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.zxing.core)
     implementation(libs.androidx.adaptive)
     implementation(libs.androidx.adaptive.layout)
     implementation(libs.androidx.adaptive.navigation3)

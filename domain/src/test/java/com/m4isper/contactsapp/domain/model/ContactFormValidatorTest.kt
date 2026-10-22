@@ -8,7 +8,7 @@ class ContactFormValidatorTest {
     @Test
     fun `name only is valid`() {
         assertNull(
-            validateContactForm(ContactForm(name = "Anna")),
+            validateContactForm(ContactForm(name = EditableName(display = "Anna"))),
         )
     }
 
@@ -17,7 +17,6 @@ class ContactFormValidatorTest {
         assertNull(
             validateContactForm(
                 ContactForm(
-                    name = "",
                     phones = listOf(EditablePhone(number = "111")),
                 ),
             ),
@@ -28,22 +27,65 @@ class ContactFormValidatorTest {
     fun `blank name and no phones is empty form`() {
         assertEquals(
             FormError.EMPTY_FORM,
-            validateContactForm(ContactForm(name = "   ")),
+            validateContactForm(ContactForm(name = EditableName(display = "   "))),
         )
     }
 
     @Test
-    fun `blank phone row is blank phone error`() {
-        assertEquals(
-            FormError.BLANK_PHONE,
+    fun `structured given name only is valid`() {
+        assertNull(
             validateContactForm(
                 ContactForm(
-                    name = "Anna",
+                    name = EditableName(mode = NameMode.STRUCTURED, given = "Anna"),
+                ),
+            ),
+        )
+    }
+
+    @Test
+    fun `structured blank components is empty form`() {
+        assertEquals(
+            FormError.EMPTY_FORM,
+            validateContactForm(
+                ContactForm(
+                    name = EditableName(mode = NameMode.STRUCTURED, given = "  ", family = ""),
+                ),
+            ),
+        )
+    }
+
+    @Test
+    fun `instant message only is valid`() {
+        assertNull(
+            validateContactForm(
+                ContactForm(
+                    instantMessages = listOf(EditableInstantMessage(address = "anna_tg")),
+                ),
+            ),
+        )
+    }
+
+    @Test
+    fun `blank phone row alone is empty form`() {
+        assertEquals(
+            FormError.EMPTY_FORM,
+            validateContactForm(
+                ContactForm(
                     phones =
                         listOf(
-                            EditablePhone(number = "111"),
                             EditablePhone(number = "  "),
                         ),
+                ),
+            ),
+        )
+    }
+
+    @Test
+    fun `event with unparsed date counts as non-empty form`() {
+        assertNull(
+            validateContactForm(
+                ContactForm(
+                    events = listOf(EditableEvent(unparsedDate = "1985-03-0X")),
                 ),
             ),
         )

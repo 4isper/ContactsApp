@@ -19,4 +19,6 @@ class FavoritesRepositoryImpl(
     override suspend fun toggleFavorite(contactId: Long) = dataSource.toggle(contactId)
 
     override suspend fun removeFavorite(contactId: Long) = dataSource.remove(contactId)
+
+    override suspend fun refreshFavorites() = dataSource.refresh()
 }
