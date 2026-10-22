@@ -11,10 +11,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 private class FakeSettingsDataSource(
     initial: AppSettings = AppSettings(),
+    private val failure: Throwable? = null,
 ) : SettingsDataSource {
     private val state = MutableStateFlow(initial)
 
@@ -27,6 +29,7 @@ private class FakeSettingsDataSource(
     override val settings: Flow<AppSettings> = state
 
     override suspend fun setThemeMode(mode: String) {
+        failure?.let { throw it }
         themeModes += mode
     }
 
@@ -61,7 +64,9 @@ private class FakeSettingsDataSource(
 
     override suspend fun setSecureWindow(enabled: Boolean) = Unit
 
-    override suspend fun resetSettings() = Unit
+    override suspend fun resetSettings() {
+        failure?.let { throw it }
+    }
 
     override suspend fun setReminders(
         enabled: Boolean,
@@ -70,6 +75,15 @@ private class FakeSettingsDataSource(
 }
 
 class SettingsPortsTest {
+    @Test
+    fun `a failed write of the settings is propagated`() {
+        val settings = AppearanceSettingsImpl(FakeSettingsDataSource(failure = RuntimeException("boom")))
+
+        val failure = runCatching { runBlocking { settings.setThemeMode(ThemeMode.LIGHT) } }.exceptionOrNull()
+
+        assertTrue(failure is RuntimeException)
+    }
+
     @Test
     fun `observe settings delegates to data source`() =
         runBlocking {

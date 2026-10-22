@@ -8,46 +8,21 @@ import com.m4isper.contactsapp.domain.model.AppError
 import com.m4isper.contactsapp.domain.model.AppSettings
 import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactForm
 import com.m4isper.contactsapp.domain.model.ContactGroup
-import com.m4isper.contactsapp.domain.model.ContactLink
 import com.m4isper.contactsapp.domain.model.ContactRelation
 import com.m4isper.contactsapp.domain.model.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.EmailAddress
 import com.m4isper.contactsapp.domain.model.EmailKind
 import com.m4isper.contactsapp.domain.model.ListDensity
 import com.m4isper.contactsapp.domain.model.NameParts
-import com.m4isper.contactsapp.domain.model.PhoneKind
-import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.domain.model.RelationKind
-import com.m4isper.contactsapp.domain.repository.ContactsAccounts
-import com.m4isper.contactsapp.domain.repository.ContactsMerger
-import com.m4isper.contactsapp.domain.repository.ContactsReader
-import com.m4isper.contactsapp.domain.repository.ContactsWriter
-import com.m4isper.contactsapp.domain.repository.FavoritesRepository
-import com.m4isper.contactsapp.domain.usecase.AddContactsToGroupUseCase
-import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
-import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.ExportContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactsPageUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
-import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetProfileContactIdUseCase
-import com.m4isper.contactsapp.domain.usecase.LoadContactPhotoUseCase
-import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
-import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
-import com.m4isper.contactsapp.domain.usecase.RefreshFavoritesUseCase
-import com.m4isper.contactsapp.domain.usecase.RemoveFavoriteUseCase
-import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
+import com.m4isper.contactsapp.testing.ContactsTestGraph
+import com.m4isper.contactsapp.testing.FakeContactsRepository
+import com.m4isper.contactsapp.testing.testDetails
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
@@ -60,133 +35,6 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-
-private fun details(
-    id: Long,
-    name: String,
-    vararg phones: String,
-) = ContactDetails(
-    contactId = id,
-    name = name,
-    phones = phones.map { PhoneNumber(it, PhoneKind.MOBILE) },
-)
-
-/** Технический сбой удаления одного контакта, независимый от [FakeContactsRepository.failure]. */
-private class DeleteFailedException : RuntimeException("delete failed")
-
-private class FakeContactsRepository(
-    var contacts: List<ContactDetails> = emptyList(),
-    var failure: Throwable? = null,
-    initialFavorites: Set<Long> = emptySet(),
-    var accounts: List<ContactAccount> = listOf(ContactAccount.Local),
-) : ContactsReader,
-    ContactsAccounts,
-    ContactsWriter,
-    ContactsMerger,
-    FavoritesRepository {
-    override suspend fun loadContactPhoto(contactId: Long): ByteArray? = null
-
-    override suspend fun getProfileContactId(): Long? = null
-
-    override suspend fun getContactAccount(contactId: Long): ContactAccount = ContactAccount.Local
-
-    override suspend fun unmergeContacts(link: ContactLink) = Unit
-
-    private val favoritesFlow = MutableStateFlow(initialFavorites)
-    val deleted = mutableListOf<Long>()
-    val created = mutableListOf<ContactForm>()
-
-    /** Удаление этих контактов падает технически (в отличие от [failure], не влияет на загрузку). */
-    val failDeleteFor = mutableSetOf<Long>()
-
-    override suspend fun getContacts(): List<ContactDetails> {
-        failure?.let { throw it }
-        return contacts
-    }
-
-    override suspend fun getContactsPage(
-        offset: Int,
-        limit: Int,
-    ): List<ContactDetails> {
-        failure?.let { throw it }
-        return contacts.drop(offset).take(limit)
-    }
-
-    override suspend fun getContactForm(contactId: Long): ContactForm? = null
-
-    override suspend fun getContactDetails(contactId: Long): ContactDetails? {
-        failure?.let { throw it }
-        return contacts.firstOrNull { it.contactId == contactId }
-    }
-
-    override suspend fun getContactAccounts(): List<ContactAccount> {
-        failure?.let { throw it }
-        return accounts
-    }
-
-    override fun observeFavorites(): Flow<Set<Long>> = favoritesFlow.asStateFlow()
-
-    override suspend fun toggleFavorite(contactId: Long) {
-        val current = favoritesFlow.value
-        favoritesFlow.value =
-            if (contactId in current) {
-                current - contactId
-            } else {
-                current + contactId
-            }
-    }
-
-    override suspend fun removeFavorite(contactId: Long) {
-        favoritesFlow.value = favoritesFlow.value - contactId
-    }
-
-    override suspend fun createContact(
-        form: ContactForm,
-        account: ContactAccount,
-    ): Long {
-        failure?.let { throw it }
-        created += form
-        val newId = (contacts.maxOfOrNull { it.contactId } ?: 0L) + 1
-        val name = form.name.display.ifBlank { form.name.composed }
-        contacts = contacts + ContactDetails(contactId = newId, name = name)
-        return newId
-    }
-
-    override suspend fun setContactPhoto(
-        contactId: Long,
-        photo: ByteArray,
-    ) = Unit
-
-    override suspend fun updateContact(
-        contactId: Long,
-        form: ContactForm,
-    ) = Unit
-
-    override suspend fun deleteContact(contactId: Long) {
-        failure?.let { throw it }
-        if (contactId in failDeleteFor) throw DeleteFailedException()
-        deleted += contactId
-        contacts = contacts.filterNot { it.contactId == contactId }
-    }
-
-    override suspend fun mergeContacts(
-        targetId: Long,
-        sourceIds: List<Long>,
-    ): com.m4isper.contactsapp.domain.model.ContactLink? {
-        failure?.let { throw it }
-        contacts = contacts.filterNot { it.contactId in sourceIds }
-        return com.m4isper.contactsapp.domain.model.ContactLink(
-            target =
-                com.m4isper.contactsapp.domain.model
-                    .RawContactRef(targetId),
-            sources =
-                sourceIds.map {
-                    com.m4isper.contactsapp.domain.model
-                        .RawContactRef(it)
-                },
-        )
-    }
-}
 
 @OptIn(ExperimentalCoroutinesApi::class)
 // Подавление осознанное: тест-аггрегатор поведения списка, декомпозиция по файлам не нужна.
@@ -203,44 +51,13 @@ class ContactsViewModelTest {
         codec: FakeVCardCodec = FakeVCardCodec(),
         settings: FakeSettingsRepository = FakeSettingsRepository(),
         changes: FakeContactsChangeSource = FakeContactsChangeSource(),
-    ): ContactsViewModel {
-        val selection = ContactsSelectionState()
-        val filters = ContactsFilterState(selection)
-        return ContactsViewModel(
-            list = ContactsListState(GetContactsPageUseCase(repository), changes),
-            filters = filters,
-            selection = selection,
-            favorites =
-                ContactsFavoriteState(
-                    observeFavorites = ObserveFavoritesUseCase(repository),
-                    toggleFavorite = ToggleFavoriteUseCase(repository),
-                    removeFavorite = RemoveFavoriteUseCase(repository),
-                    refreshFavorites = RefreshFavoritesUseCase(repository),
-                ),
-            groups =
-                ContactsGroupState(
-                    getGroups = GetGroupsUseCase(groups),
-                    getMembership = GetGroupMembershipUseCase(groups),
-                    getAccounts = GetContactAccountsUseCase(repository),
-                    getProfileContactId = GetProfileContactIdUseCase(repository),
-                    createGroup = CreateGroupUseCase(groups),
-                    addContactsToGroup = AddContactsToGroupUseCase(groups),
-                    filters = filters,
-                    selection = selection,
-                ),
-            deleteContactsUseCase = DeleteContactsUseCase(repository, repository),
-            exportContactsUseCase =
-                ExportContactsUseCase(
-                    getContactDetails = GetContactDetailsUseCase(repository),
-                    loadContactPhoto = LoadContactPhotoUseCase(repository),
-                    getGroups = GetGroupsUseCase(groups),
-                    getGroupMembership = GetGroupMembershipUseCase(groups),
-                    codec = codec,
-                ),
-            getContactsUseCase = GetContactsUseCase(repository),
-            observeSettingsUseCase = ObserveSettingsUseCase(settings),
-        )
-    }
+    ) = ContactsTestGraph(
+        repository = repository,
+        groups = groups,
+        settings = settings,
+        changes = changes,
+        codec = codec,
+    ).viewModel()
 
     @Test
     fun `contacts are loaded page by page`() =
@@ -249,9 +66,9 @@ class ContactsViewModelTest {
             val repository =
                 FakeContactsRepository(
                     listOf(
-                        details(1, "Anna", "111"),
-                        details(2, "Bob", "222"),
-                        details(3, "Cara", "333"),
+                        testDetails(1, "Anna", "111"),
+                        testDetails(2, "Bob", "222"),
+                        testDetails(3, "Cara", "333"),
                     ),
                 )
             val viewModel = viewModel(repository)
@@ -272,8 +89,8 @@ class ContactsViewModelTest {
             val repository =
                 FakeContactsRepository(
                     listOf(
-                        details(1, "Anna", "111", "112"),
-                        details(2, "Bob", "222"),
+                        testDetails(1, "Anna", "111", "112"),
+                        testDetails(2, "Bob", "222"),
                     ),
                 )
             val viewModel = viewModel(repository)
@@ -291,14 +108,14 @@ class ContactsViewModelTest {
     fun `provider change refreshes contacts automatically`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val repository = FakeContactsRepository(listOf(testDetails(1, "Anna", "111")))
             val changes = FakeContactsChangeSource()
             val viewModel = viewModel(repository, changes = changes)
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
             advanceUntilIdle()
 
-            repository.contacts = repository.contacts + details(2, "Bob", "222")
+            repository.contacts = repository.contacts + testDetails(2, "Bob", "222")
             viewModel.startObservingChanges()
             advanceUntilIdle()
             changes.notifyChange()
@@ -320,8 +137,8 @@ class ContactsViewModelTest {
             val repository =
                 FakeContactsRepository(
                     listOf(
-                        details(1, "Anna", "111"),
-                        details(2, "Bob", "222"),
+                        testDetails(1, "Anna", "111"),
+                        testDetails(2, "Bob", "222"),
                     ),
                 )
             val changes = FakeContactsChangeSource()
@@ -345,7 +162,7 @@ class ContactsViewModelTest {
     fun `stopped observer ignores provider changes`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val repository = FakeContactsRepository(listOf(testDetails(1, "Anna", "111")))
             val changes = FakeContactsChangeSource()
             val viewModel = viewModel(repository, changes = changes)
             backgroundScope.launch { viewModel.uiState.collect { } }
@@ -356,7 +173,7 @@ class ContactsViewModelTest {
             advanceUntilIdle()
             viewModel.stopObservingChanges()
 
-            repository.contacts = repository.contacts + details(2, "Bob", "222")
+            repository.contacts = repository.contacts + testDetails(2, "Bob", "222")
             changes.notifyChange()
             advanceTimeBy(CONTACTS_CHANGE_DEBOUNCE_MILLIS + 1)
             advanceUntilIdle()
@@ -376,7 +193,7 @@ class ContactsViewModelTest {
                         listDensity = ListDensity.COMPACT,
                     ),
                 )
-            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val repository = FakeContactsRepository(listOf(testDetails(1, "Anna", "111")))
             val viewModel = viewModel(repository, settings = settings)
             backgroundScope.launch { viewModel.uiState.collect { } }
 
@@ -394,8 +211,8 @@ class ContactsViewModelTest {
             val repository =
                 FakeContactsRepository(
                     listOf(
-                        details(1, "Anna", "111"),
-                        details(2, "Bob", "222"),
+                        testDetails(1, "Anna", "111"),
+                        testDetails(2, "Bob", "222"),
                     ),
                 )
             val viewModel = viewModel(repository)
@@ -421,8 +238,8 @@ class ContactsViewModelTest {
             val repository =
                 FakeContactsRepository(
                     listOf(
-                        details(1, "Anna", "111"),
-                        details(2, "Bob", "222"),
+                        testDetails(1, "Anna", "111"),
+                        testDetails(2, "Bob", "222"),
                     ),
                 )
             val viewModel = viewModel(repository)
@@ -448,7 +265,7 @@ class ContactsViewModelTest {
             val repository =
                 FakeContactsRepository(
                     listOf(
-                        details(1, "Anna", "111"),
+                        testDetails(1, "Anna", "111"),
                         ContactDetails(
                             contactId = 2,
                             name = "Bob",
@@ -484,7 +301,7 @@ class ContactsViewModelTest {
                             name = "Петров Иван",
                             nameParts = NameParts(given = "Иван", family = "Петров", middle = "Петрович"),
                         ),
-                        details(2, "Bob", "222"),
+                        testDetails(2, "Bob", "222"),
                     ),
                 )
             val viewModel = viewModel(repository)
@@ -520,7 +337,7 @@ class ContactsViewModelTest {
                                     phoneticGiven = "Ivan",
                                 ),
                         ),
-                        details(2, "Bob", "222"),
+                        testDetails(2, "Bob", "222"),
                     ),
                 )
             val viewModel = viewModel(repository)
@@ -552,7 +369,7 @@ class ContactsViewModelTest {
                             name = "Bob",
                             relations = listOf(ContactRelation(name = "Михаил", kind = RelationKind.FRIEND)),
                         ),
-                        details(3, "Cara", "333"),
+                        testDetails(3, "Cara", "333"),
                     ),
                 )
             val viewModel = viewModel(repository)
@@ -585,7 +402,7 @@ class ContactsViewModelTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val repository =
                 FakeContactsRepository(
-                    listOf(details(1, "Anna", "111")),
+                    listOf(testDetails(1, "Anna", "111")),
                 )
             val viewModel = viewModel(repository)
             backgroundScope.launch { viewModel.uiState.collect { } }
@@ -617,6 +434,21 @@ class ContactsViewModelTest {
         }
 
     @Test
+    fun `the cancellation of the load is not turned into an error`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeContactsRepository(failure = CancellationException("cancelled"))
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            // Отмена корутины - не ошибка провайдера: список остаётся пустым.
+            assertTrue(viewModel.uiState.value.content !is Loadable.Error)
+        }
+
+    @Test
     fun `refresh failure without message emits unknown error`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
@@ -638,7 +470,7 @@ class ContactsViewModelTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val repository =
                 FakeContactsRepository(
-                    listOf(details(1, "Anna", "111")),
+                    listOf(testDetails(1, "Anna", "111")),
                 )
             val viewModel = viewModel(repository)
             backgroundScope.launch { viewModel.uiState.collect { } }
@@ -660,8 +492,8 @@ class ContactsViewModelTest {
             val repository =
                 FakeContactsRepository(
                     listOf(
-                        details(1, "Anna", "111"),
-                        details(2, "Bob", "222"),
+                        testDetails(1, "Anna", "111"),
+                        testDetails(2, "Bob", "222"),
                     ),
                     initialFavorites = setOf(2),
                 )
@@ -686,7 +518,7 @@ class ContactsViewModelTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val repository =
                 FakeContactsRepository(
-                    listOf(details(1, "Anna", "111")),
+                    listOf(testDetails(1, "Anna", "111")),
                 )
             val viewModel = viewModel(repository)
             backgroundScope.launch { viewModel.uiState.collect { } }
@@ -705,7 +537,7 @@ class ContactsViewModelTest {
     fun `quick favorite toggles contact in state`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val repository = FakeContactsRepository(listOf(testDetails(1, "Anna", "111")))
             val viewModel = viewModel(repository)
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
@@ -727,8 +559,8 @@ class ContactsViewModelTest {
             val repository =
                 FakeContactsRepository(
                     listOf(
-                        details(1, "Anna", "111"),
-                        details(2, "Bob", "222"),
+                        testDetails(1, "Anna", "111"),
+                        testDetails(2, "Bob", "222"),
                     ),
                 )
             val viewModel = viewModel(repository)
@@ -752,7 +584,7 @@ class ContactsViewModelTest {
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val settings = FakeSettingsRepository()
-            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val repository = FakeContactsRepository(listOf(testDetails(1, "Anna", "111")))
             val viewModel = viewModel(repository, settings = settings)
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
@@ -784,7 +616,7 @@ class ContactsViewModelTest {
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val settings = FakeSettingsRepository(AppSettings(favoritesFirst = false))
-            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val repository = FakeContactsRepository(listOf(testDetails(1, "Anna", "111")))
             val viewModel = viewModel(repository, settings = settings)
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
@@ -800,8 +632,8 @@ class ContactsViewModelTest {
             val repository =
                 FakeContactsRepository(
                     listOf(
-                        details(1, "Anna", "111"),
-                        details(2, "Bob", "222"),
+                        testDetails(1, "Anna", "111"),
+                        testDetails(2, "Bob", "222"),
                     ),
                 )
             val viewModel = viewModel(repository)
@@ -824,7 +656,7 @@ class ContactsViewModelTest {
     fun `clear selection exits selection mode`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val repository = FakeContactsRepository(listOf(testDetails(1, "Anna", "111")))
             val viewModel = viewModel(repository)
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
@@ -846,8 +678,8 @@ class ContactsViewModelTest {
             val repository =
                 FakeContactsRepository(
                     listOf(
-                        details(1, "Anna", "111"),
-                        details(2, "Bob", "222"),
+                        testDetails(1, "Anna", "111"),
+                        testDetails(2, "Bob", "222"),
                     ),
                 )
             val viewModel = viewModel(repository)
@@ -868,7 +700,7 @@ class ContactsViewModelTest {
     fun `search query change clears selection`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val repository = FakeContactsRepository(listOf(testDetails(1, "Anna", "111")))
             val viewModel = viewModel(repository)
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
@@ -886,7 +718,7 @@ class ContactsViewModelTest {
     fun `favorites toggle clears selection`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val repository = FakeContactsRepository(listOf(testDetails(1, "Anna", "111")))
             val viewModel = viewModel(repository)
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
@@ -907,8 +739,8 @@ class ContactsViewModelTest {
             val repository =
                 FakeContactsRepository(
                     listOf(
-                        details(1, "Anna", "111"),
-                        details(2, "Bob", "222"),
+                        testDetails(1, "Anna", "111"),
+                        testDetails(2, "Bob", "222"),
                     ),
                     initialFavorites = setOf(1, 2),
                 )
@@ -941,8 +773,8 @@ class ContactsViewModelTest {
             val repository =
                 FakeContactsRepository(
                     listOf(
-                        details(1, "Anna", "111"),
-                        details(2, "Bob", "222"),
+                        testDetails(1, "Anna", "111"),
+                        testDetails(2, "Bob", "222"),
                     ),
                 )
             val viewModel = viewModel(repository)
@@ -971,8 +803,8 @@ class ContactsViewModelTest {
             val repository =
                 FakeContactsRepository(
                     listOf(
-                        details(1, "Anna", "111"),
-                        details(2, "Bob", "222"),
+                        testDetails(1, "Anna", "111"),
+                        testDetails(2, "Bob", "222"),
                     ),
                 )
             val viewModel = viewModel(repository)
@@ -1004,8 +836,8 @@ class ContactsViewModelTest {
             val repository =
                 FakeContactsRepository(
                     listOf(
-                        details(1, "Anna", "111"),
-                        details(2, "Bob", "222"),
+                        testDetails(1, "Anna", "111"),
+                        testDetails(2, "Bob", "222"),
                     ),
                 )
             val viewModel = viewModel(repository)
@@ -1031,7 +863,7 @@ class ContactsViewModelTest {
     fun `delete window closes after commit and undo is a no-op then`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val repository = FakeContactsRepository(listOf(testDetails(1, "Anna", "111")))
             val viewModel = viewModel(repository)
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
@@ -1063,8 +895,8 @@ class ContactsViewModelTest {
             val repository =
                 FakeContactsRepository(
                     listOf(
-                        details(1, "Anna", "111"),
-                        details(2, "Bob", "222"),
+                        testDetails(1, "Anna", "111"),
+                        testDetails(2, "Bob", "222"),
                     ),
                 ).apply { failDeleteFor += 2L }
             val viewModel = viewModel(repository)
@@ -1094,8 +926,8 @@ class ContactsViewModelTest {
             val repository =
                 FakeContactsRepository(
                     listOf(
-                        details(1, "Anna", "111"),
-                        details(2, "Bob", "222"),
+                        testDetails(1, "Anna", "111"),
+                        testDetails(2, "Bob", "222"),
                     ),
                 )
             val viewModel = viewModel(repository)
@@ -1130,8 +962,8 @@ class ContactsViewModelTest {
             val repository =
                 FakeContactsRepository(
                     listOf(
-                        details(1, "Anna", "111"),
-                        details(2, "Bob", "222"),
+                        testDetails(1, "Anna", "111"),
+                        testDetails(2, "Bob", "222"),
                     ),
                 )
             val codec = FakeVCardCodec(encoded = "shared-vcard")
@@ -1163,8 +995,8 @@ class ContactsViewModelTest {
             val repository =
                 FakeContactsRepository(
                     listOf(
-                        details(1, "Anna", "111"),
-                        details(2, "Bob", "222"),
+                        testDetails(1, "Anna", "111"),
+                        testDetails(2, "Bob", "222"),
                     ),
                 )
             val codec = FakeVCardCodec(encoded = "exported-vcard")
@@ -1192,8 +1024,8 @@ class ContactsViewModelTest {
             val repository =
                 FakeContactsRepository(
                     listOf(
-                        details(1, "Anna", "111"),
-                        details(2, "Bob", "222"),
+                        testDetails(1, "Anna", "111"),
+                        testDetails(2, "Bob", "222"),
                     ),
                 )
             val codec = FakeVCardCodec(encoded = "selected-vcard")
@@ -1235,7 +1067,7 @@ class ContactsViewModelTest {
     fun `export failure emits failed event`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val repository = FakeContactsRepository(listOf(testDetails(1, "Anna", "111")))
             val viewModel = viewModel(repository)
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
@@ -1252,7 +1084,7 @@ class ContactsViewModelTest {
     fun `clear resets search favorites and failure`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val repository = FakeContactsRepository(listOf(testDetails(1, "Anna", "111")))
             val viewModel = viewModel(repository)
             backgroundScope.launch { viewModel.uiState.collect { } }
             repository.failure = RuntimeException("boom")
@@ -1281,8 +1113,8 @@ class ContactsViewModelTest {
             val repository =
                 FakeContactsRepository(
                     listOf(
-                        details(1, "Anna", "111"),
-                        details(2, "Bob", "222"),
+                        testDetails(1, "Anna", "111"),
+                        testDetails(2, "Bob", "222"),
                     ),
                 )
             val groups =
@@ -1319,8 +1151,8 @@ class ContactsViewModelTest {
                 FakeContactsRepository(
                     contacts =
                         listOf(
-                            details(1, "Anna", "111"),
-                            details(2, "Bob", "222").copy(account = google),
+                            testDetails(1, "Anna", "111"),
+                            testDetails(2, "Bob", "222").copy(account = google),
                         ),
                     accounts = listOf(ContactAccount.Local, google, emptyAccount),
                 )
@@ -1355,7 +1187,7 @@ class ContactsViewModelTest {
     fun `deleted group is dropped from active filter`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val repository = FakeContactsRepository(listOf(testDetails(1, "Anna", "111")))
             val groups = FakeGroupsRepository(groups = listOf(ContactGroup(id = 100, title = "Семья")))
             val viewModel = viewModel(repository, groups)
             backgroundScope.launch { viewModel.uiState.collect { } }
@@ -1378,8 +1210,8 @@ class ContactsViewModelTest {
             val repository =
                 FakeContactsRepository(
                     listOf(
-                        details(1, "Anna", "111"),
-                        details(2, "Bob", "222"),
+                        testDetails(1, "Anna", "111"),
+                        testDetails(2, "Bob", "222"),
                     ),
                 )
             val groups = FakeGroupsRepository(groups = listOf(ContactGroup(id = 100, title = "Семья")))
@@ -1403,7 +1235,7 @@ class ContactsViewModelTest {
     fun `add to group failure emits failed event`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-            val repository = FakeContactsRepository(listOf(details(1, "Anna", "111")))
+            val repository = FakeContactsRepository(listOf(testDetails(1, "Anna", "111")))
             val groups = FakeGroupsRepository(groups = listOf(ContactGroup(id = 100, title = "Семья")))
             val viewModel = viewModel(repository, groups)
             backgroundScope.launch { viewModel.uiState.collect { } }

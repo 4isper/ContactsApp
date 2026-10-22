@@ -55,12 +55,15 @@ internal class ContactsListState(
         }
         _failure.value = null
         _isLoading.value = true
-        safeCall(LIST_TAG, "refresh contacts failed") {
-            loadByPages()
-        }.onFailure { failure ->
-            _failure.value = failure
+        try {
+            safeCall(LIST_TAG, "refresh contacts failed") {
+                loadByPages()
+            }.onFailure { failure ->
+                _failure.value = failure
+            }
+        } finally {
+            _isLoading.value = false
         }
-        _isLoading.value = false
         if (pendingReload) {
             pendingReload = false
             load()

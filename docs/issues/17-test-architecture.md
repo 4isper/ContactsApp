@@ -23,11 +23,29 @@ The test suite is strong at the unit level, but the setup and coverage have gaps
 
 ## Acceptance criteria
 
-- [ ] ViewModel tests use shared fixtures instead of manually constructing 18 dependencies.
-- [ ] Favorites, groups, contacts, and settings data sources have provider-level test coverage.
-- [ ] Repository contract tests cover success and failure paths.
-- [ ] Permission/provider-error/cancellation paths are tested.
-- [ ] Unit tests remain deterministic and do not require a connected device.
+- [x] ViewModel tests use shared fixtures instead of manually constructing 18 dependencies.
+- [x] Favorites, groups, contacts, and settings data sources have provider-level test coverage.
+- [x] Repository contract tests cover success and failure paths.
+- [x] Permission/provider-error/cancellation paths are tested.
+- [x] Unit tests remain deterministic and do not require a connected device.
+
+## Status
+
+Done.
+
+- The shared fixtures live in `app/src/test/java/com/m4isper/contactsapp/testing/`: the contact
+  fixture, the fake of the contacts and the graph of the screen of the list, which builds the parts
+  of the state and the use cases from the common fakes. The test of the list no longer assembles
+  the dependencies by hand.
+- The repositories of the data layer check the failure paths: the revoked permission, the failure
+  of the provider, the empty base and the failed write.
+- The paths of the cancellation are checked: the helper of the safe call does not swallow it, and
+  the screen of the list does not turn it into an error.
+- The provider level: the contacts, the paging and the favorites were covered by the
+  instrumentation tests before, the groups are covered now as well. The instrumentation tests need
+  a device, the unit tests do not - they run without a connected device.
+- Turbine was not added: the flows of the screens are short, and the manual collection keeps the
+  tests free of a new dependency.
 
 ## Technical notes
 

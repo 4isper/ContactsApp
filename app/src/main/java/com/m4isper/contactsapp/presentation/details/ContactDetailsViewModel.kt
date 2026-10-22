@@ -158,15 +158,18 @@ class ContactDetailsViewModel(
         viewModelScope.launch {
             isLoading.value = true
             loadFailure.value = null
-            safeCall(DETAILS_TAG, "load contact details failed") {
-                val details = getContactDetailsUseCase(contactId)
-                loadedDetails.value = details
-                groupsFlow.value = if (details != null) loadGroups(contactId) else emptyList()
-                accountsFlow.value = loadAccounts()
-            }.onFailure { failure ->
-                loadFailure.value = failure
+            try {
+                safeCall(DETAILS_TAG, "load contact details failed") {
+                    val details = getContactDetailsUseCase(contactId)
+                    loadedDetails.value = details
+                    groupsFlow.value = if (details != null) loadGroups(contactId) else emptyList()
+                    accountsFlow.value = loadAccounts()
+                }.onFailure { failure ->
+                    loadFailure.value = failure
+                }
+            } finally {
+                isLoading.value = false
             }
-            isLoading.value = false
         }
     }
 

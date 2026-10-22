@@ -88,14 +88,17 @@ class DuplicatesViewModel(
         if (isMerging.value || sourceIds.isEmpty()) return
         viewModelScope.launch {
             isMerging.value = true
-            safeCall(DUPLICATES_TAG, "merge contacts failed") {
-                val link = mergeContactsUseCase(targetId, sourceIds)
-                lastLink.value = link
-                event.value = DuplicatesEvent.Merged
-            }.onFailure { failure ->
-                event.value = DuplicatesEvent.MergeFailed
+            try {
+                safeCall(DUPLICATES_TAG, "merge contacts failed") {
+                    val link = mergeContactsUseCase(targetId, sourceIds)
+                    lastLink.value = link
+                    event.value = DuplicatesEvent.Merged
+                }.onFailure { failure ->
+                    event.value = DuplicatesEvent.MergeFailed
+                }
+            } finally {
+                isMerging.value = false
             }
-            isMerging.value = false
             load()
         }
     }
@@ -106,14 +109,17 @@ class DuplicatesViewModel(
         if (isMerging.value) return
         viewModelScope.launch {
             isMerging.value = true
-            safeCall(DUPLICATES_TAG, "unmerge contacts failed") {
-                unmergeContactsUseCase(link)
-                lastLink.value = null
-                event.value = DuplicatesEvent.Unmerged
-            }.onFailure { failure ->
-                event.value = DuplicatesEvent.UnmergeFailed
+            try {
+                safeCall(DUPLICATES_TAG, "unmerge contacts failed") {
+                    unmergeContactsUseCase(link)
+                    lastLink.value = null
+                    event.value = DuplicatesEvent.Unmerged
+                }.onFailure { failure ->
+                    event.value = DuplicatesEvent.UnmergeFailed
+                }
+            } finally {
+                isMerging.value = false
             }
-            isMerging.value = false
             load()
         }
     }

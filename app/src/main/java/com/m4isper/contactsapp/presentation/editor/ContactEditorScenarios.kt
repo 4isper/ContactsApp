@@ -75,20 +75,23 @@ internal suspend fun save(
     id: Long?,
     form: ContactForm,
 ) {
-    state.update { it.copy(isBusy = true, error = null, fieldErrors = emptyMap()) }
-    safeCall(EDITOR_TAG, "save contact failed") {
-        val result =
-            if (id == null) {
-                createContact(form, state.value.selectedAccount ?: ContactAccount.Local)
-            } else {
-                updateContact(id, form)
+    try {
+        state.update { it.copy(isBusy = true, error = null, fieldErrors = emptyMap()) }
+        safeCall(EDITOR_TAG, "save contact failed") {
+            val result =
+                if (id == null) {
+                    createContact(form, state.value.selectedAccount ?: ContactAccount.Local)
+                } else {
+                    updateContact(id, form)
+                }
+            when (result) {
+                is SaveResult.Saved -> state.update { it.copy(closeScreen = true) }
+                is SaveResult.Invalid -> state.update { it.copy(formError = result.error) }
             }
-        when (result) {
-            is SaveResult.Saved -> state.update { it.copy(closeScreen = true) }
-            is SaveResult.Invalid -> state.update { it.copy(formError = result.error) }
+        }.onFailure { failure ->
+            state.update { it.copy(error = AppError.SAVE_FAILED) }
         }
-    }.onFailure { failure ->
-        state.update { it.copy(error = AppError.SAVE_FAILED) }
+    } finally {
+        state.update { it.copy(isBusy = false) }
     }
-    state.update { it.copy(isBusy = false) }
 }

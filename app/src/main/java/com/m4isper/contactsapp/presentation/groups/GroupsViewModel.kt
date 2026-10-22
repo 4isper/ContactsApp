@@ -90,12 +90,15 @@ class GroupsViewModel(
         if (isBusy.value) return
         viewModelScope.launch {
             isBusy.value = true
-            safeCall(GROUPS_TAG, "group mutation failed") {
-                block()
-            }.onFailure { failure ->
-                error.value = AppError.from(failure)
+            try {
+                safeCall(GROUPS_TAG, "group mutation failed") {
+                    block()
+                }.onFailure { failure ->
+                    error.value = AppError.from(failure)
+                }
+            } finally {
+                isBusy.value = false
             }
-            isBusy.value = false
             load()
         }
     }

@@ -336,6 +336,35 @@ class ContactsRepositoryImplTest {
     }
 
     @Test
+    fun `a failed read of the contacts is propagated`() {
+        val repository = ContactsRepositoryImpl(FakeReader(failure = SecurityException("denied")), FakeWriter())
+
+        val failure = runCatching { runBlocking { repository.getContacts() } }.exceptionOrNull()
+
+        assertTrue(failure is SecurityException)
+    }
+
+    @Test
+    fun `an empty base gives an empty list`() {
+        val repository = ContactsRepositoryImpl(FakeReader(), FakeWriter())
+
+        val contacts = runBlocking { repository.getContacts() }
+
+        assertTrue(contacts.isEmpty())
+    }
+
+    @Test
+    fun `a failed write is propagated`() {
+        val repository = ContactsRepositoryImpl(FakeReader(), FakeWriter(failure = RuntimeException("boom")))
+
+        val failure =
+            runCatching { runBlocking { repository.createContact(ContactForm(), ContactAccount.Local) } }
+                .exceptionOrNull()
+
+        assertTrue(failure is RuntimeException)
+    }
+
+    @Test
     fun `unmerge detaches the linked raw contacts`() {
         val writer = FakeWriter()
         val repository = ContactsRepositoryImpl(FakeReader(details), writer)
@@ -378,11 +407,17 @@ private class FakeReader(
     private val details: ContactDetails? = null,
     private val byId: Map<Long, ContactDetails> = emptyMap(),
     private val account: ContactAccount = ContactAccount.Local,
+    private val failure: Throwable? = null,
 ) : ContactsDataSource {
-    override suspend fun loadContacts(): List<ContactDetails> = listOfNotNull(details) + byId.values
+    override suspend fun loadContacts(): List<ContactDetails> {
+        failure?.let { throw it }
+        return listOfNotNull(details) + byId.values
+    }
 
-    override suspend fun loadContact(contactId: Long): ContactDetails? =
-        byId[contactId] ?: details?.takeIf { it.contactId == contactId }
+    override suspend fun loadContact(contactId: Long): ContactDetails? {
+        failure?.let { throw it }
+        return byId[contactId] ?: details?.takeIf { it.contactId == contactId }
+    }
 
     override suspend fun loadContactAccount(contactId: Long): ContactAccount = account
 
@@ -397,6 +432,7 @@ private class FakeWriter(
     private val rows: ContactRows = ContactRows(),
     private val rawContactIdsByContact: Map<Long, Long> = emptyMap(),
     private val rowsByContact: Map<Long, ContactRows> = emptyMap(),
+    private val failure: Throwable? = null,
 ) : ContactsWriterDataSource {
     val created = mutableListOf<ContactForm>()
     val createdAccounts = mutableListOf<ContactAccount>()
@@ -409,6 +445,7 @@ private class FakeWriter(
         form: ContactForm,
         account: ContactAccount,
     ): Long {
+        failure?.let { throw it }
         created += form
         createdAccounts += account
         return created.size.toLong()
@@ -447,6 +484,7 @@ private class FakeWriter(
     ) = Unit
 
     override suspend fun deleteContact(contactId: Long) {
+        failure?.let { throw it }
         deleted += contactId
     }
 }

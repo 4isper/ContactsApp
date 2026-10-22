@@ -218,13 +218,16 @@ class GroupDetailViewModel(
         if (isBusyFlow.value) return
         viewModelScope.launch {
             isBusyFlow.value = true
-            safeCall(GROUP_DETAIL_TAG, "group mutation failed") {
-                block(groupId)
-                eventFlow.value = success
-            }.onFailure { failure ->
-                eventFlow.value = GroupDetailEvent.ActionFailed
+            try {
+                safeCall(GROUP_DETAIL_TAG, "group mutation failed") {
+                    block(groupId)
+                    eventFlow.value = success
+                }.onFailure { failure ->
+                    eventFlow.value = GroupDetailEvent.ActionFailed
+                }
+            } finally {
+                isBusyFlow.value = false
             }
-            isBusyFlow.value = false
             refresh()
         }
     }
