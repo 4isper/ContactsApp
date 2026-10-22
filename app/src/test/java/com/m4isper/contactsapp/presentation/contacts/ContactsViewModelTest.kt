@@ -189,7 +189,7 @@ private class FakeContactsRepository(
 
 @OptIn(ExperimentalCoroutinesApi::class)
 // Подавление осознанное: тест-аггрегатор поведения списка, декомпозиция по файлам не нужна.
-@Suppress("TooManyFunctions", "LargeClass")
+@Suppress("TooManyFunctions", "LargeClass") // Осознанно: тест закрывает весь экран: загрузка, выбор, группы, избранное.
 class ContactsViewModelTest {
     @After
     fun tearDown() {

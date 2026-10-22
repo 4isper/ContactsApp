@@ -69,7 +69,7 @@ class DuplicatesViewModel(
         )
 
     // Catch-all осознанный: любая ошибка загрузки превращается в Error-стейт.
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой поиска дублей показывается пустым списком.
     fun load() {
         viewModelScope.launch {
             try {
@@ -85,7 +85,7 @@ class DuplicatesViewModel(
     }
 
     // Catch-all осознанный: ошибка слияния показывается тостом, список перезагружается.
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой слияния показывается тостом.
     fun onMerge(
         targetId: Long,
         sourceIds: List<Long>,

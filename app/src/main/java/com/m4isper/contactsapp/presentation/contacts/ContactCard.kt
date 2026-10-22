@@ -141,7 +141,7 @@ internal fun ContactCard(
     }
 }
 
-@Suppress("LongMethod")
+@Suppress("LongMethod") // Осознанно: карточка рисует аватар, имя, метки и действия в одной composable-функции.
 @Composable
 private fun ContactCardSurface(
     contact: ContactDetails,

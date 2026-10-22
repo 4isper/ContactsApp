@@ -229,7 +229,7 @@ private const val TYPE_KEY = "TYPE"
 private const val QUOTED_PRINTABLE = "QUOTED-PRINTABLE"
 
 // Подавление осознанное: накопитель держит по маленькому обработчику на тип свойства.
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions") // Осознанно: у разборщика vCard есть своя функция на каждое поле карточки.
 private class VCardAccumulator {
     private var displayName = ""
     private var parts: NameParts? = null

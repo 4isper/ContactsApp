@@ -56,7 +56,7 @@ private const val EDITOR_TAG = "ContactEditor"
 @ViewModelKey
 @ContributesIntoMap(AppScope::class)
 // Подавление осознанное: фасад формы, тонкие сеттеры на каждое поле; декомпозиция не даёт выгоды.
-@Suppress("TooManyFunctions", "LargeClass")
+@Suppress("TooManyFunctions", "LargeClass") // Осознанно: редактор держит форму, группы и аккаунты (issue 14).
 class ContactEditorViewModel(
     private val getContactFormUseCase: GetContactFormUseCase,
     private val createContactUseCase: CreateContactUseCase,
@@ -81,7 +81,7 @@ class ContactEditorViewModel(
     internal val uiState: StateFlow<EditorUiState> = state.asStateFlow()
 
     // Catch-all осознанный: любая ошибка превращается в Error-стейт.
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: любая ошибка загрузки превращается в Error-стейт.
     fun load(
         id: Long?,
         sessionId: Long = 0L,
@@ -460,7 +460,7 @@ class ContactEditorViewModel(
         }
 
     /** Создаёт группу прямо из пикера и сразу отмечает её: метку создают, чтобы назначить контакту. */
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой создания группы показывается в форме.
     fun onCreateGroup(title: String) {
         if (title.isBlank()) return
         val account = state.value.selectedAccount ?: ContactAccount.Local
@@ -560,7 +560,7 @@ class ContactEditorViewModel(
     fun isDirty(): Boolean = state.value.isDirty()
 
     // Catch-all осознанный: любая ошибка превращается в Error-стейт.
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: ошибка сохранения показывается в поле формы.
     fun onSave() {
         val id = state.value.contactId
         val form = state.value.toForm()
@@ -629,7 +629,7 @@ class ContactEditorViewModel(
     }
 
     // Catch-all осознанный: любая ошибка превращается в Error-стейт.
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой удаления показывается тостом.
     fun onDelete() {
         val id = state.value.contactId ?: return
         viewModelScope.launch {
@@ -658,7 +658,7 @@ class ContactEditorViewModel(
     }
 
     /** Список групп для пикера: сбой чтения не должен ломать редактирование контакта. */
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой списка групп не мешает форме.
     private suspend fun loadGroups(): List<ContactGroup> =
         try {
             getGroupsUseCase()
@@ -670,7 +670,7 @@ class ContactEditorViewModel(
         }
 
     /** Аккаунты для нового контакта: сбой чтения оставляет только локальный. */
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: без списка аккаунтов форма остаётся локальной.
     private suspend fun loadAccounts(): List<ContactAccount> {
         val loaded =
             try {
@@ -685,7 +685,7 @@ class ContactEditorViewModel(
     }
 
     /** Аккаунт существующего контакта: сбой чтения не мешает редактированию. */
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: аккаунт контакта не мешает форме.
     private suspend fun loadContactAccount(contactId: Long): ContactAccount =
         try {
             getContactAccountUseCase(contactId)
@@ -697,7 +697,7 @@ class ContactEditorViewModel(
         }
 
     /** Последний выбранный аккаунт: сбой настроек не мешает созданию контакта. */
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: без аккаунта по умолчанию форма остаётся локальной.
     private suspend fun loadDefaultAccount(): ContactAccount =
         try {
             getDefaultContactAccountUseCase()
@@ -708,7 +708,7 @@ class ContactEditorViewModel(
             ContactAccount.Local
         }
 
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: последний аккаунт - удобство, его сбой не важен.
     private suspend fun persistLastAccount(account: ContactAccount) {
         try {
             setLastContactAccountUseCase(account)

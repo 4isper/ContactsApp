@@ -46,7 +46,7 @@ private val REMINDER_LEAD_DAYS = intPreferencesKey("reminder_lead_days")
  *
  * Подавление осознанное: по одной маленькой функции на настройку.
  */
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions") // Осознанно: у хранилища настроек есть своя функция на каждую настройку.
 @Inject
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)

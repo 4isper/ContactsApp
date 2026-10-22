@@ -26,7 +26,7 @@ private const val GROUP_TITLE_SORT_ORDER = "${Groups.TITLE} ASC"
  * Работа с [ContactsContract.Groups] и строками GroupMembership: только запросы
  * к провайдеру и операции над ним, без логики слияния и диспетчеров.
  */
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions") // Осознанно: у провайдера групп есть своя функция на каждую операцию.
 @Inject
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)

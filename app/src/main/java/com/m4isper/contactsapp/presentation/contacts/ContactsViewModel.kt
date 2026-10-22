@@ -193,7 +193,7 @@ private fun shouldPinFavorites(
 // Подавление осознанное: фасад сценариев списка — тонкие делегаты в координаторы
 // (удаление, файлы); декомпозиция по файлам не даёт выгоды, а лимит функций уже
 // перешагнут законченными сценариями (поиск, выделение, избранное, обновление).
-@Suppress("TooManyFunctions", "LargeClass")
+@Suppress("TooManyFunctions", "LargeClass") // Осознанно: список держит контакты, группы, аккаунты и выбор (issue 14).
 class ContactsViewModel(
     private val getContactsUseCase: GetContactsUseCase,
     private val getContactsPageUseCase: GetContactsPageUseCase,
@@ -417,7 +417,7 @@ class ContactsViewModel(
     }
 
     /** Быстрое избранное из строки списка. */
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: неудачная правка показывается тостом.
     fun onToggleFavorite(contactId: Long) {
         viewModelScope.launch {
             try {
@@ -434,7 +434,7 @@ class ContactsViewModel(
      * Пакетное избранное: если выбраны только избранные — снимаем отметку,
      * иначе добавляем все ещё не избранные контакты.
      */
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: неудачная правка показывается тостом.
     fun onToggleSelectedFavorite() {
         val ids = selectionFlow.value
         if (ids.isEmpty()) return
@@ -483,7 +483,7 @@ class ContactsViewModel(
     fun onExportSelection() = files.onExportSelection(selectionFlow.value.toList())
 
     /** Догружает полные детали выделенных контактов: в списке они облегчённые, для vCard этого мало. */
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: неудачное share показывается тостом.
     fun onShareSelected() {
         val ids = selectionFlow.value.toList()
         if (ids.isEmpty()) return
@@ -508,7 +508,7 @@ class ContactsViewModel(
     }
 
     /** Создаёт группу из фильтра: список групп и членство перечитываются. */
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: неудачное создание группы показывается тостом.
     fun onCreateGroup(title: String) {
         if (title.isBlank()) return
         viewModelScope.launch {
@@ -525,7 +525,7 @@ class ContactsViewModel(
     }
 
     /** Добавляет выделенные контакты в выбранные группы. */
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: неудачное добавление в группу показывается тостом.
     fun onAddSelectedToGroup(groupIds: Set<Long>) {
         val contactIds = selectionFlow.value.toList()
         if (contactIds.isEmpty() || groupIds.isEmpty()) return
@@ -545,7 +545,7 @@ class ContactsViewModel(
     }
 
     /** Перечитывает группы и членство: фильтр и пикер живут на свежих данных. */
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой списка групп не мешает списку контактов.
     private fun refreshGroups() {
         viewModelScope.launch {
             try {
@@ -673,7 +673,7 @@ class ContactsViewModel(
     }
 
     // Catch-all осознанный: любая ошибка загрузки превращается в Error-стейт.
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой загрузки показывается ошибкой.
     private suspend fun loadContacts(clearSelection: Boolean) {
         loadFailure.value = null
         if (clearSelection) selectionFlow.value = emptySet()

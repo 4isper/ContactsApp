@@ -188,7 +188,7 @@ class ImportPreviewViewModel(
             emptyList()
         }
 
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: без списка аккаунтов импорт остаётся локальным.
     private suspend fun loadAccounts(): List<ContactAccount> =
         try {
             getContactAccounts()

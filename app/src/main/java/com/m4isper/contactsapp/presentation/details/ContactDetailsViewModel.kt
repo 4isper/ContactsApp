@@ -133,7 +133,7 @@ class ContactDetailsViewModel(
     }
 
     // Catch-all осознанный: сбой записи избранного не должен ронять экран.
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: неудачная правка показывается тостом.
     fun toggleFavorite() {
         val contactId = selectedContactId.value ?: return
         viewModelScope.launch {
@@ -157,7 +157,7 @@ class ContactDetailsViewModel(
     }
 
     // Catch-all осознанный: любая ошибка загрузки превращается в Error-стейт.
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой обновления показывается тостом.
     fun refresh() {
         val contactId = selectedContactId.value ?: return
         if (isLoading.value) return
@@ -180,7 +180,7 @@ class ContactDetailsViewModel(
     }
 
     /** Сбой чтения групп не отменяет показ контакта: детали важнее состава групп. */
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой списка групп не мешает карточке.
     private suspend fun loadGroups(contactId: Long): List<ContactGroup> =
         try {
             getContactGroupsUseCase(contactId)
@@ -192,7 +192,7 @@ class ContactDetailsViewModel(
         }
 
     /** Аккаунты для копирования и переноса: сбой не мешает смотреть контакт. */
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: без списка аккаунтов карточка остаётся локальной.
     private suspend fun loadAccounts(): List<ContactAccount> =
         try {
             getContactAccountsUseCase()
@@ -218,7 +218,7 @@ class ContactDetailsViewModel(
         }
 
     /** Смена аккаунта: ошибка показывается тостом, контакт остаётся на месте. */
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: неудачная смена аккаунта показывается тостом.
     private fun changeAccount(
         account: ContactAccount,
         action: suspend (Long, ContactAccount) -> Pair<Long, DetailsEvent>,

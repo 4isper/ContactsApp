@@ -29,11 +29,11 @@ As a result, the build can stay green while boundary violations and oversized cl
 - [x] Custom thresholds are active and visible in CI output.
 - [x] Architecture tests enforce the module dependency rule.
 - [x] CI runs static analysis and tests on every change.
-- [ ] Remaining suppressions are documented and limited to justified cases.
+- [x] Remaining suppressions are documented and limited to justified cases.
 
 ## Status
 
-Mostly done. What is in place:
+Done. What is in place:
 
 - `config/detekt/detekt.yml` is wired into every module through the root `subprojects` block,
   so the custom thresholds (`LargeClass` 450, `LongParameterList` 6, `TooManyFunctions` 11,
@@ -45,14 +45,15 @@ Mostly done. What is in place:
 - `.github/workflows/ci.yml` runs detekt, ktlint, `checkArchitecture`, the unit tests of all
   three modules and `:app:lintDebug` on every push and pull request.
 
-What is left:
+What was left and is done now:
 
-- `:domain` still uses the Metro annotations (`@Inject` in 47 use cases). The check forbids
-  `android*`, `:data`, `:app` and `di` imports, but the DI annotations are still allowed; the
-  rule is switched on after issue 09 removes the annotations from the domain.
-- The audit of the 65 `@Suppress` annotations is not finished: the new suppressions
-  (`TooManyFunctions` in the group provider) are justified in a comment, the old ones are not
-  reviewed yet.
+- `:domain` has no Metro import any more: the use cases are plain classes, the composition root
+  of the app lists how they are built (issue 09). The architecture check rejects a DI import in
+  the domain, the same way it rejects Android or the data layer.
+- Every `@Suppress` in the project has a comment that says why it is there: the catch-all
+  handlers of the view models (the error is shown to the user), the classes that are too big
+  (the split is tracked in issue 14) and the adapters with one method per field of the
+  provider.
 
 ## Technical notes
 

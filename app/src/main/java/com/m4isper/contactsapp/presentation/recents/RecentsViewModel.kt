@@ -56,7 +56,7 @@ class RecentsViewModel(
         )
 
     // Catch-all осознанный: любая ошибка загрузки превращается в Error-стейт.
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой чтения показывается пустым списком.
     fun load() {
         viewModelScope.launch {
             try {
@@ -75,7 +75,7 @@ class RecentsViewModel(
         content.value = Loadable.Empty
     }
 
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой правки показывается тостом.
     fun toggleFavorite(contactId: Long) {
         viewModelScope.launch {
             try {

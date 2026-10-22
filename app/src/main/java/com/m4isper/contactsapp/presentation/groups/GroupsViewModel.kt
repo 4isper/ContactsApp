@@ -61,7 +61,7 @@ class GroupsViewModel(
         )
 
     // Catch-all осознанный: любая ошибка загрузки превращается в Error-стейт.
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой загрузки показывается пустым списком.
     fun load() {
         viewModelScope.launch {
             try {
@@ -90,7 +90,7 @@ class GroupsViewModel(
     }
 
     // Catch-all осознанный: ошибка изменения показывается тостом, список перезагружается.
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: неудачная правка показывается тостом.
     private fun mutate(block: suspend () -> Unit) {
         if (isBusy.value) return
         viewModelScope.launch {

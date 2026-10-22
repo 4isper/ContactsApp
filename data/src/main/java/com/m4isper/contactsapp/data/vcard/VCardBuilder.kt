@@ -99,7 +99,7 @@ internal fun escapeVCard(value: String): String =
  *
  * Подавление осознанное: писатель держит по маленькому методу на тип свойства.
  */
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions") // Осознанно: у сборщика vCard есть своя функция на каждое поле карточки.
 private class VCardWriter {
     private val lines = mutableListOf<String>()
     private var group = 0

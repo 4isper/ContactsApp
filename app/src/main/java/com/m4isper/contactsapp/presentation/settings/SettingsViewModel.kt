@@ -45,7 +45,7 @@ data class SettingsUiState(
 )
 
 // Подавление осознанное: набор настроек растёт, разбивать по файлам неудобно.
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions") // Осознанно: у экрана настроек есть своя функция на каждую настройку.
 @Inject
 @ViewModelKey
 @ContributesIntoMap(AppScope::class)
@@ -152,7 +152,7 @@ class SettingsViewModel(
         }
 
     // Catch-all осознанный: ошибка записи настроек не должна ронять экран.
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // Осознанно: неудачная правка показывается тостом.
     private fun update(block: suspend () -> Unit) {
         viewModelScope.launch {
             try {

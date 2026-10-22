@@ -76,7 +76,7 @@ private const val IDS_PER_QUERY = 500
  * Список читается по таблице Contacts (видны и контакты без номера),
  * детали — по data-строкам контакта.
  */
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions") // Осознанно: у читателя контактов есть своя функция на каждый запрос к провайдеру.
 @Inject
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
