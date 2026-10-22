@@ -2,6 +2,7 @@ package com.m4isper.contactsapp.presentation.contacts
 
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.longClick
@@ -41,6 +42,7 @@ import com.m4isper.contactsapp.domain.usecase.RemoveFavoriteUseCase
 import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.testDetails
+import kotlinx.coroutines.launch
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -60,35 +62,49 @@ class ContactListUiTest {
         repository: FakeAndroidRepository,
         groups: FakeGroupsRepository = FakeGroupsRepository(),
         settings: FakeSettingsRepository = FakeSettingsRepository(),
-    ) = ContactsViewModel(
-        GetContactsUseCase(repository),
-        GetContactsPageUseCase(repository),
-        GetContactAccountsUseCase(repository),
-        ObserveFavoritesUseCase(repository),
-        ObserveSettingsUseCase(settings),
-        GetContactDetailsUseCase(repository),
-        DeleteContactsUseCase(repository, repository),
-        ExportContactsUseCase(
-            getContactDetails = GetContactDetailsUseCase(repository),
-            loadContactPhoto = LoadContactPhotoUseCase(repository),
-            getGroups = GetGroupsUseCase(groups),
-            getGroupMembership = GetGroupMembershipUseCase(groups),
-            codec = FakeVCardCodec(),
-        ),
-        GetGroupsUseCase(groups),
-        GetGroupMembershipUseCase(groups),
-        CreateGroupUseCase(groups),
-        AddContactsToGroupUseCase(groups),
-        ToggleFavoriteUseCase(repository),
-        RemoveFavoriteUseCase(repository),
-        RefreshFavoritesUseCase(repository),
-        GetProfileContactIdUseCase(repository),
-        FakeContactsChangeSource(),
-    )
+    ): ContactsViewModel {
+        val selection = ContactsSelectionState()
+        val filters = ContactsFilterState(selection)
+        return ContactsViewModel(
+            list = ContactsListState(GetContactsPageUseCase(repository), FakeContactsChangeSource()),
+            filters = filters,
+            selection = selection,
+            favorites =
+                ContactsFavoriteState(
+                    observeFavorites = ObserveFavoritesUseCase(repository),
+                    toggleFavorite = ToggleFavoriteUseCase(repository),
+                    removeFavorite = RemoveFavoriteUseCase(repository),
+                    refreshFavorites = RefreshFavoritesUseCase(repository),
+                ),
+            groups =
+                ContactsGroupState(
+                    getGroups = GetGroupsUseCase(groups),
+                    getMembership = GetGroupMembershipUseCase(groups),
+                    getAccounts = GetContactAccountsUseCase(repository),
+                    getProfileContactId = GetProfileContactIdUseCase(repository),
+                    createGroup = CreateGroupUseCase(groups),
+                    addContactsToGroup = AddContactsToGroupUseCase(groups),
+                    filters = filters,
+                    selection = selection,
+                ),
+            deleteContactsUseCase = DeleteContactsUseCase(repository, repository),
+            exportContactsUseCase =
+                ExportContactsUseCase(
+                    getContactDetails = GetContactDetailsUseCase(repository),
+                    loadContactPhoto = LoadContactPhotoUseCase(repository),
+                    getGroups = GetGroupsUseCase(groups),
+                    getGroupMembership = GetGroupMembershipUseCase(groups),
+                    codec = FakeVCardCodec(),
+                ),
+            getContactsUseCase = GetContactsUseCase(repository),
+            observeSettingsUseCase = ObserveSettingsUseCase(settings),
+        )
+    }
 
     @Test
     fun showsContactNames() {
         compose.setContent {
+            val scope = rememberCoroutineScope()
             ContactList(
                 uiState = ContactsUiState(content = Loadable.Content(listOf(anna, bob))),
                 onSearchQueryChange = {},
@@ -128,6 +144,7 @@ class ContactListUiTest {
                     ),
             )
         compose.setContent {
+            val scope = rememberCoroutineScope()
             ContactList(
                 uiState = ContactsUiState(content = Loadable.Content(listOf(contact))),
                 onSearchQueryChange = {},
@@ -157,6 +174,7 @@ class ContactListUiTest {
     fun contactRowClickReportsContactId() {
         val clicked = AtomicReference<Long?>(null)
         compose.setContent {
+            val scope = rememberCoroutineScope()
             ContactList(
                 uiState = ContactsUiState(content = Loadable.Content(listOf(anna, bob))),
                 onSearchQueryChange = {},
@@ -188,6 +206,7 @@ class ContactListUiTest {
     fun favoritesChipClickReportsToggle() {
         val toggled = AtomicBoolean(false)
         compose.setContent {
+            val scope = rememberCoroutineScope()
             ContactList(
                 uiState = ContactsUiState(content = Loadable.Content(listOf(anna))),
                 onSearchQueryChange = {},
@@ -220,22 +239,23 @@ class ContactListUiTest {
         val repository = FakeAndroidRepository(listOf(anna, bob))
         val viewModel = viewModel(repository)
         compose.setContent {
+            val scope = rememberCoroutineScope()
             val uiState by viewModel.uiState.collectAsState()
             ContactList(
                 uiState = uiState,
-                onSearchQueryChange = viewModel::onSearchQueryChange,
-                onFavoritesOnlyChange = viewModel::onToggleFavoritesOnly,
+                onSearchQueryChange = viewModel.filters::onSearchQueryChange,
+                onFavoritesOnlyChange = viewModel.filters::onToggleFavoritesOnly,
                 onContactClick = {},
                 onAddClick = {},
                 onRetry = viewModel::refresh,
                 onRefresh = viewModel::refresh,
-                onContactSelected = viewModel::onContactSelected,
-                onClearSelection = viewModel::onClearSelection,
-                onSelectAll = viewModel::onSelectAll,
+                onContactSelected = viewModel.selection::onContactSelected,
+                onClearSelection = viewModel.selection::clear,
+                onSelectAll = viewModel.selection::selectAll,
                 onDeleteSelected = viewModel::onDeleteSelected,
                 onUndoDelete = viewModel::onUndoDelete,
                 onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
-                onShareSelected = viewModel::onShareSelected,
+                onShareSelected = { scope.launch { viewModel.onShareSelected() } },
                 onImportText = {},
                 onExportRequested = viewModel.files::onExportRequested,
                 onExportSelectionRequested = viewModel::onExportSelection,
@@ -262,6 +282,7 @@ class ContactListUiTest {
     fun addFabClickReportsAdd() {
         val added = AtomicBoolean(false)
         compose.setContent {
+            val scope = rememberCoroutineScope()
             ContactList(
                 uiState = ContactsUiState(content = Loadable.Content(listOf(anna))),
                 onSearchQueryChange = {},
@@ -294,22 +315,23 @@ class ContactListUiTest {
         val repository = FakeAndroidRepository(listOf(anna, bob))
         val viewModel = viewModel(repository)
         compose.setContent {
+            val scope = rememberCoroutineScope()
             val uiState by viewModel.uiState.collectAsState()
             ContactList(
                 uiState = uiState,
-                onSearchQueryChange = viewModel::onSearchQueryChange,
-                onFavoritesOnlyChange = viewModel::onToggleFavoritesOnly,
+                onSearchQueryChange = viewModel.filters::onSearchQueryChange,
+                onFavoritesOnlyChange = viewModel.filters::onToggleFavoritesOnly,
                 onContactClick = {},
                 onAddClick = {},
                 onRetry = viewModel::refresh,
                 onRefresh = viewModel::refresh,
-                onContactSelected = viewModel::onContactSelected,
-                onClearSelection = viewModel::onClearSelection,
-                onSelectAll = viewModel::onSelectAll,
+                onContactSelected = viewModel.selection::onContactSelected,
+                onClearSelection = viewModel.selection::clear,
+                onSelectAll = viewModel.selection::selectAll,
                 onDeleteSelected = viewModel::onDeleteSelected,
                 onUndoDelete = viewModel::onUndoDelete,
                 onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
-                onShareSelected = viewModel::onShareSelected,
+                onShareSelected = { scope.launch { viewModel.onShareSelected() } },
                 onImportText = {},
                 onExportRequested = viewModel.files::onExportRequested,
                 onExportSelectionRequested = viewModel::onExportSelection,
@@ -347,31 +369,32 @@ class ContactListUiTest {
         val groups = FakeGroupsRepository(groups = listOf(ContactGroup(id = 100, title = "Семья")))
         val viewModel = viewModel(repository, groups)
         compose.setContent {
+            val scope = rememberCoroutineScope()
             val uiState by viewModel.uiState.collectAsState()
             ContactList(
                 uiState = uiState,
-                onSearchQueryChange = viewModel::onSearchQueryChange,
-                onFavoritesOnlyChange = viewModel::onToggleFavoritesOnly,
+                onSearchQueryChange = viewModel.filters::onSearchQueryChange,
+                onFavoritesOnlyChange = viewModel.filters::onToggleFavoritesOnly,
                 onContactClick = {},
                 onAddClick = {},
                 onRetry = viewModel::refresh,
                 onRefresh = viewModel::refresh,
-                onContactSelected = viewModel::onContactSelected,
-                onClearSelection = viewModel::onClearSelection,
-                onSelectAll = viewModel::onSelectAll,
+                onContactSelected = viewModel.selection::onContactSelected,
+                onClearSelection = viewModel.selection::clear,
+                onSelectAll = viewModel.selection::selectAll,
                 onDeleteSelected = viewModel::onDeleteSelected,
                 onUndoDelete = viewModel::onUndoDelete,
                 onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
-                onShareSelected = viewModel::onShareSelected,
+                onShareSelected = { scope.launch { viewModel.onShareSelected() } },
                 onImportText = {},
                 onExportRequested = viewModel.files::onExportRequested,
                 onExportSelectionRequested = viewModel::onExportSelection,
                 onEventHandled = viewModel::onEventHandled,
                 groups = uiState.groups,
-                onGroupSelected = viewModel::onGroupSelected,
-                onCreateGroup = viewModel::onCreateGroup,
+                onGroupSelected = viewModel.filters::onGroupSelected,
+                onCreateGroup = { title -> scope.launch { viewModel.groups.onCreateGroup(title) } },
                 onManageGroupsClick = {},
-                onAddSelectedToGroup = viewModel::onAddSelectedToGroup,
+                onAddSelectedToGroup = { ids -> scope.launch { viewModel.groups.onAddSelectedToGroup(ids) } },
             )
         }
         viewModel.refresh()
@@ -400,22 +423,23 @@ class ContactListUiTest {
         val repository = FakeAndroidRepository(listOf(anna, bob))
         val viewModel = viewModel(repository)
         compose.setContent {
+            val scope = rememberCoroutineScope()
             val uiState by viewModel.uiState.collectAsState()
             ContactList(
                 uiState = uiState,
-                onSearchQueryChange = viewModel::onSearchQueryChange,
-                onFavoritesOnlyChange = viewModel::onToggleFavoritesOnly,
+                onSearchQueryChange = viewModel.filters::onSearchQueryChange,
+                onFavoritesOnlyChange = viewModel.filters::onToggleFavoritesOnly,
                 onContactClick = {},
                 onAddClick = {},
                 onRetry = viewModel::refresh,
                 onRefresh = viewModel::refresh,
-                onContactSelected = viewModel::onContactSelected,
-                onClearSelection = viewModel::onClearSelection,
-                onSelectAll = viewModel::onSelectAll,
+                onContactSelected = viewModel.selection::onContactSelected,
+                onClearSelection = viewModel.selection::clear,
+                onSelectAll = viewModel.selection::selectAll,
                 onDeleteSelected = viewModel::onDeleteSelected,
                 onUndoDelete = viewModel::onUndoDelete,
                 onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
-                onShareSelected = viewModel::onShareSelected,
+                onShareSelected = { scope.launch { viewModel.onShareSelected() } },
                 onImportText = {},
                 onExportRequested = viewModel.files::onExportRequested,
                 onExportSelectionRequested = viewModel::onExportSelection,
@@ -460,22 +484,23 @@ class ContactListUiTest {
         val repository = FakeAndroidRepository(listOf(anna, bob))
         val viewModel = viewModel(repository)
         compose.setContent {
+            val scope = rememberCoroutineScope()
             val uiState by viewModel.uiState.collectAsState()
             ContactList(
                 uiState = uiState,
-                onSearchQueryChange = viewModel::onSearchQueryChange,
-                onFavoritesOnlyChange = viewModel::onToggleFavoritesOnly,
+                onSearchQueryChange = viewModel.filters::onSearchQueryChange,
+                onFavoritesOnlyChange = viewModel.filters::onToggleFavoritesOnly,
                 onContactClick = {},
                 onAddClick = {},
                 onRetry = viewModel::refresh,
                 onRefresh = viewModel::refresh,
-                onContactSelected = viewModel::onContactSelected,
-                onClearSelection = viewModel::onClearSelection,
-                onSelectAll = viewModel::onSelectAll,
+                onContactSelected = viewModel.selection::onContactSelected,
+                onClearSelection = viewModel.selection::clear,
+                onSelectAll = viewModel.selection::selectAll,
                 onDeleteSelected = viewModel::onDeleteSelected,
                 onUndoDelete = viewModel::onUndoDelete,
                 onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
-                onShareSelected = viewModel::onShareSelected,
+                onShareSelected = { scope.launch { viewModel.onShareSelected() } },
                 onImportText = {},
                 onExportRequested = viewModel.files::onExportRequested,
                 onExportSelectionRequested = viewModel::onExportSelection,
@@ -508,6 +533,7 @@ class ContactListUiTest {
     @Test
     fun moreMenuShowsImportAndExport() {
         compose.setContent {
+            val scope = rememberCoroutineScope()
             ContactList(
                 uiState = ContactsUiState(content = Loadable.Content(listOf(anna))),
                 onSearchQueryChange = {},
@@ -542,6 +568,7 @@ class ContactListUiTest {
     @Test
     fun quickActionsShowCallAndSmsForContactWithPhone() {
         compose.setContent {
+            val scope = rememberCoroutineScope()
             ContactList(
                 uiState = ContactsUiState(content = Loadable.Content(listOf(anna))),
                 onSearchQueryChange = {},
@@ -573,6 +600,7 @@ class ContactListUiTest {
     @Test
     fun quickCallShowsExistingConfirmationDialog() {
         compose.setContent {
+            val scope = rememberCoroutineScope()
             ContactList(
                 uiState = ContactsUiState(content = Loadable.Content(listOf(anna))),
                 onSearchQueryChange = {},
@@ -605,6 +633,7 @@ class ContactListUiTest {
     fun contactWithoutPhoneHasNoCallOrSmsActions() {
         val noPhone = testDetails(3, "Cara")
         compose.setContent {
+            val scope = rememberCoroutineScope()
             ContactList(
                 uiState = ContactsUiState(content = Loadable.Content(listOf(noPhone))),
                 onSearchQueryChange = {},
@@ -636,28 +665,29 @@ class ContactListUiTest {
         val repository = FakeAndroidRepository(listOf(anna))
         val viewModel = viewModel(repository)
         compose.setContent {
+            val scope = rememberCoroutineScope()
             val uiState by viewModel.uiState.collectAsState()
             ContactList(
                 uiState = uiState,
-                onSearchQueryChange = viewModel::onSearchQueryChange,
-                onFavoritesOnlyChange = viewModel::onToggleFavoritesOnly,
+                onSearchQueryChange = viewModel.filters::onSearchQueryChange,
+                onFavoritesOnlyChange = viewModel.filters::onToggleFavoritesOnly,
                 onContactClick = {},
                 onAddClick = {},
                 onRetry = viewModel::refresh,
                 onRefresh = viewModel::refresh,
-                onContactSelected = viewModel::onContactSelected,
-                onClearSelection = viewModel::onClearSelection,
-                onSelectAll = viewModel::onSelectAll,
+                onContactSelected = viewModel.selection::onContactSelected,
+                onClearSelection = viewModel.selection::clear,
+                onSelectAll = viewModel.selection::selectAll,
                 onDeleteSelected = viewModel::onDeleteSelected,
                 onUndoDelete = viewModel::onUndoDelete,
                 onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
-                onShareSelected = viewModel::onShareSelected,
+                onShareSelected = { scope.launch { viewModel.onShareSelected() } },
                 onImportText = {},
                 onExportRequested = viewModel.files::onExportRequested,
                 onExportSelectionRequested = viewModel::onExportSelection,
                 onEventHandled = viewModel::onEventHandled,
-                onToggleFavorite = viewModel::onToggleFavorite,
-                onToggleFavoriteSelected = viewModel::onToggleSelectedFavorite,
+                onToggleFavorite = { id -> scope.launch { viewModel.favorites.onToggleFavorite(id) } },
+                onToggleFavoriteSelected = { scope.launch { viewModel.onToggleSelectedFavorite() } },
             )
         }
         viewModel.refresh()
@@ -678,28 +708,29 @@ class ContactListUiTest {
         val repository = FakeAndroidRepository(listOf(anna, bob))
         val viewModel = viewModel(repository)
         compose.setContent {
+            val scope = rememberCoroutineScope()
             val uiState by viewModel.uiState.collectAsState()
             ContactList(
                 uiState = uiState,
-                onSearchQueryChange = viewModel::onSearchQueryChange,
-                onFavoritesOnlyChange = viewModel::onToggleFavoritesOnly,
+                onSearchQueryChange = viewModel.filters::onSearchQueryChange,
+                onFavoritesOnlyChange = viewModel.filters::onToggleFavoritesOnly,
                 onContactClick = {},
                 onAddClick = {},
                 onRetry = viewModel::refresh,
                 onRefresh = viewModel::refresh,
-                onContactSelected = viewModel::onContactSelected,
-                onClearSelection = viewModel::onClearSelection,
-                onSelectAll = viewModel::onSelectAll,
+                onContactSelected = viewModel.selection::onContactSelected,
+                onClearSelection = viewModel.selection::clear,
+                onSelectAll = viewModel.selection::selectAll,
                 onDeleteSelected = viewModel::onDeleteSelected,
                 onUndoDelete = viewModel::onUndoDelete,
                 onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
-                onShareSelected = viewModel::onShareSelected,
+                onShareSelected = { scope.launch { viewModel.onShareSelected() } },
                 onImportText = {},
                 onExportRequested = viewModel.files::onExportRequested,
                 onExportSelectionRequested = viewModel::onExportSelection,
                 onEventHandled = viewModel::onEventHandled,
-                onToggleFavorite = viewModel::onToggleFavorite,
-                onToggleFavoriteSelected = viewModel::onToggleSelectedFavorite,
+                onToggleFavorite = { id -> scope.launch { viewModel.favorites.onToggleFavorite(id) } },
+                onToggleFavoriteSelected = { scope.launch { viewModel.onToggleSelectedFavorite() } },
             )
         }
         viewModel.refresh()
@@ -729,28 +760,29 @@ class ContactListUiTest {
         val repository = FakeAndroidRepository(listOf(anna, bob), initialFavorites = setOf(1))
         val viewModel = viewModel(repository)
         compose.setContent {
+            val scope = rememberCoroutineScope()
             val uiState by viewModel.uiState.collectAsState()
             ContactList(
                 uiState = uiState,
-                onSearchQueryChange = viewModel::onSearchQueryChange,
-                onFavoritesOnlyChange = viewModel::onToggleFavoritesOnly,
+                onSearchQueryChange = viewModel.filters::onSearchQueryChange,
+                onFavoritesOnlyChange = viewModel.filters::onToggleFavoritesOnly,
                 onContactClick = {},
                 onAddClick = {},
                 onRetry = viewModel::refresh,
                 onRefresh = viewModel::refresh,
-                onContactSelected = viewModel::onContactSelected,
-                onClearSelection = viewModel::onClearSelection,
-                onSelectAll = viewModel::onSelectAll,
+                onContactSelected = viewModel.selection::onContactSelected,
+                onClearSelection = viewModel.selection::clear,
+                onSelectAll = viewModel.selection::selectAll,
                 onDeleteSelected = viewModel::onDeleteSelected,
                 onUndoDelete = viewModel::onUndoDelete,
                 onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
-                onShareSelected = viewModel::onShareSelected,
+                onShareSelected = { scope.launch { viewModel.onShareSelected() } },
                 onImportText = {},
                 onExportRequested = viewModel.files::onExportRequested,
                 onExportSelectionRequested = viewModel::onExportSelection,
                 onEventHandled = viewModel::onEventHandled,
-                onToggleFavorite = viewModel::onToggleFavorite,
-                onToggleFavoriteSelected = viewModel::onToggleSelectedFavorite,
+                onToggleFavorite = { id -> scope.launch { viewModel.favorites.onToggleFavorite(id) } },
+                onToggleFavoriteSelected = { scope.launch { viewModel.onToggleSelectedFavorite() } },
             )
         }
         viewModel.refresh()

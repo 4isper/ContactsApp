@@ -9,23 +9,10 @@ import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.ListDensity
-import com.m4isper.contactsapp.domain.repository.ContactsChangeSource
-import com.m4isper.contactsapp.domain.usecase.AddContactsToGroupUseCase
-import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.ExportContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactsPageUseCase
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
-import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetProfileContactIdUseCase
-import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
-import com.m4isper.contactsapp.domain.usecase.RefreshFavoritesUseCase
-import com.m4isper.contactsapp.domain.usecase.RemoveFavoriteUseCase
-import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.logw
 import dev.zacsweers.metro.AppScope
@@ -110,9 +97,6 @@ internal const val CONTACTS_CHANGE_DEBOUNCE_MILLIS = 500L
 
 private const val LIST_TAG = "ContactsList"
 
-/** Размер страницы контактов: столько грузим за один запрос к провайдеру. */
-private const val CONTACTS_PAGE_SIZE = 200
-
 private data class ContactsLoad(
     val all: List<ContactDetails>,
     val loading: Boolean,
@@ -137,15 +121,6 @@ private data class GroupsState(
 
 /** Аккаунты и профиль: часть состояния списка. */
 private data class AccountsState(
-    val accounts: List<ContactAccount>,
-    val selectedAccount: ContactAccount?,
-    val profileContactId: Long?,
-)
-
-private data class ContactsGroupsMiddle(
-    val groups: List<ContactGroup>,
-    val selectedGroupId: Long?,
-    val membership: Map<Long, Set<Long>>,
     val accounts: List<ContactAccount>,
     val selectedAccount: ContactAccount?,
     val profileContactId: Long?,
@@ -176,6 +151,46 @@ private fun contactsContent(
         else -> Loadable.Content(visible)
     }
 
+/** Собирает состояние экрана из частей: загрузка, середина и настройки. */
+private fun contactsUiState(
+    load: ContactsLoad,
+    middle: ContactsMiddle,
+    settings: AppSettings,
+): ContactsUiState {
+    val pending = middle.window?.contactIds.orEmpty()
+    val visible =
+        filterContacts(
+            contacts = load.all,
+            query = load.query,
+            favoritesOnly = middle.favoritesOnly,
+            favorites = middle.favorites,
+            selectedGroupId = middle.selectedGroupId,
+            membership = middle.membership,
+            groups = middle.groups,
+            selectedAccount = middle.selectedAccount,
+        ).filterNot { it.contactId in pending }
+    val content = contactsContent(load, visible)
+    return ContactsUiState(
+        searchQuery = load.query,
+        showFavoritesOnly = middle.favoritesOnly,
+        favorites = middle.favorites,
+        isRefreshing = load.loading,
+        content = content,
+        selection = middle.selection,
+        pendingDeleteIds = pending,
+        deleteClosing = middle.window?.closing == true,
+        groups = middle.groups,
+        selectedGroupId = middle.selectedGroupId,
+        accounts = middle.accounts,
+        selectedAccount = middle.selectedAccount,
+        sortOrder = settings.sortOrder,
+        listDensity = settings.listDensity,
+        pinFavorites = shouldPinFavorites(load, middle, settings),
+        profileContactId = middle.profileContactId,
+        event = middle.event,
+    )
+}
+
 private fun shouldPinFavorites(
     load: ContactsLoad,
     middle: ContactsMiddle,
@@ -187,47 +202,74 @@ private fun shouldPinFavorites(
         middle.selectedGroupId == null &&
         middle.selectedAccount == null
 
+/** Перечитывает список и связанные с ним группы и избранное. */
+private suspend fun reloadScreen(
+    list: ContactsListState,
+    groups: ContactsGroupState,
+    favorites: ContactsFavoriteState,
+) {
+    list.load()
+    groups.refresh()
+    favorites.refresh()
+}
+
+/** События сценариев групп показываются пользователю как события экрана. */
+private suspend fun observeGroupEvents(
+    groups: ContactsGroupState,
+    events: MutableStateFlow<ContactsEvent?>,
+) {
+    groups.events.collect { event -> events.value = event }
+}
+
+/**
+ * Итоги отложенного удаления: успевшие удалиться контакты убираем из локального списка
+ * и перечитываем провайдера; не удалённые честно остаются в списке с тостом об ошибке.
+ */
+private suspend fun observeDeleteOutcome(
+    deletes: PendingDeleteCoordinator,
+    list: ContactsListState,
+    events: MutableStateFlow<ContactsEvent?>,
+    refresh: () -> Unit,
+) {
+    deletes.finished.collect { finished ->
+        if (finished != null) {
+            list.remove(finished.deletedIds)
+            deletes.finishedHandled()
+            if (!finished.allDeleted) {
+                events.value = ContactsEvent.DeleteFailed
+            }
+            refresh()
+        }
+    }
+    deletes.failure.collect { failed ->
+        if (failed) {
+            deletes.failureHandled()
+            events.value = ContactsEvent.DeleteFailed
+        }
+    }
+}
+
+/**
+ * Сценарии списка контактов: фасад над частями состояния экрана.
+ * Загрузка, фильтры, выделение, избранное и группы живут в своих кусках,
+ * здесь только состояние экрана и действия, которые их связывают.
+ */
 @Inject
 @ViewModelKey
 @ContributesIntoMap(AppScope::class)
-// Подавление осознанное: фасад сценариев списка — тонкие делегаты в координаторы
-// (удаление, файлы); декомпозиция по файлам не даёт выгоды, а лимит функций уже
-// перешагнут законченными сценариями (поиск, выделение, избранное, обновление).
-@Suppress("TooManyFunctions", "LargeClass") // Осознанно: список держит контакты, группы, аккаунты и выбор (issue 14).
-class ContactsViewModel(
-    private val getContactsUseCase: GetContactsUseCase,
-    private val getContactsPageUseCase: GetContactsPageUseCase,
-    private val getContactAccountsUseCase: GetContactAccountsUseCase,
-    observeFavoritesUseCase: ObserveFavoritesUseCase,
-    observeSettingsUseCase: ObserveSettingsUseCase,
-    private val getContactDetailsUseCase: GetContactDetailsUseCase,
+internal class ContactsViewModel(
+    val list: ContactsListState,
+    val filters: ContactsFilterState,
+    val selection: ContactsSelectionState,
+    val favorites: ContactsFavoriteState,
+    val groups: ContactsGroupState,
     deleteContactsUseCase: DeleteContactsUseCase,
-    private val exportContactsUseCase: ExportContactsUseCase,
-    private val getGroupsUseCase: GetGroupsUseCase,
-    private val getGroupMembershipUseCase: GetGroupMembershipUseCase,
-    private val createGroupUseCase: CreateGroupUseCase,
-    private val addContactsToGroupUseCase: AddContactsToGroupUseCase,
-    private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
-    private val removeFavoriteUseCase: RemoveFavoriteUseCase,
-    private val refreshFavoritesUseCase: RefreshFavoritesUseCase,
-    private val getProfileContactIdUseCase: GetProfileContactIdUseCase,
-    private val contactsChangeSource: ContactsChangeSource,
+    exportContactsUseCase: ExportContactsUseCase,
+    getContactsUseCase: GetContactsUseCase,
+    observeSettingsUseCase: ObserveSettingsUseCase,
 ) : ViewModel() {
-    private val allContacts = MutableStateFlow<List<ContactDetails>>(emptyList())
-    private val isLoading = MutableStateFlow(false)
-    private val searchQueryFlow = MutableStateFlow("")
-    private val loadFailure = MutableStateFlow<Throwable?>(null)
-    private val favoritesOnlyFlow = MutableStateFlow(false)
-    private val selectionFlow = MutableStateFlow<Set<Long>>(emptySet())
     private val eventFlow = MutableStateFlow<ContactsEvent?>(null)
-    private val groupsFlow = MutableStateFlow<List<ContactGroup>>(emptyList())
-    private val selectedGroupFlow = MutableStateFlow<Long?>(null)
-    private val membershipFlow = MutableStateFlow<Map<Long, Set<Long>>>(emptyMap())
-    private val accountsFlow = MutableStateFlow<List<ContactAccount>>(emptyList())
-    private val profileContactIdFlow = MutableStateFlow<Long?>(null)
-    private val selectedAccountFlow = MutableStateFlow<ContactAccount?>(null)
     private var changesJob: Job? = null
-    private var pendingProviderRefresh = false
 
     /** Отложенное удаление: окно отмены живёт в [PendingDeleteCoordinator]. */
     internal val deletes =
@@ -236,8 +278,17 @@ class ContactsViewModel(
             deleteContacts = deleteContactsUseCase,
         )
 
+    /** Экспорт .vcf: сценарии вынесены в [ContactsFileActions]. */
+    internal val files =
+        ContactsFileActions(
+            scope = viewModelScope,
+            events = eventFlow,
+            exportContacts = exportContactsUseCase,
+            getContacts = { getContactsUseCase() },
+        )
+
     private val favoritesFlow: StateFlow<Set<Long>> =
-        observeFavoritesUseCase()
+        favorites.favorites
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(SUBSCRIBE_TIMEOUT_MILLIS),
@@ -254,30 +305,25 @@ class ContactsViewModel(
 
     val uiState: StateFlow<ContactsUiState> =
         combine(
-            combine(allContacts, isLoading, searchQueryFlow, loadFailure, ::ContactsLoad),
+            combine(
+                list.contacts,
+                list.isLoading,
+                filters.searchQuery,
+                list.failure,
+                ::ContactsLoad,
+            ),
             combine(
                 combine(
                     favoritesFlow,
-                    favoritesOnlyFlow,
-                    selectionFlow,
+                    filters.favoritesOnly,
+                    selection.selected,
                     deletes.window,
                     eventFlow,
                     ::ContactsMiddleBase,
                 ),
-                combine(
-                    combine(groupsFlow, selectedGroupFlow, membershipFlow, ::GroupsState),
-                    combine(accountsFlow, selectedAccountFlow, profileContactIdFlow, ::AccountsState),
-                ) { groups, accounts ->
-                    ContactsGroupsMiddle(
-                        groups = groups.groups,
-                        selectedGroupId = groups.selectedGroupId,
-                        membership = groups.membership,
-                        accounts = accounts.accounts,
-                        selectedAccount = accounts.selectedAccount,
-                        profileContactId = accounts.profileContactId,
-                    )
-                },
-            ) { base, groups ->
+                combine(groups.groups, filters.selectedGroupId, groups.membership, ::GroupsState),
+                combine(groups.accounts, filters.selectedAccount, groups.profileContactId, ::AccountsState),
+            ) { base, groups, accounts ->
                 ContactsMiddle(
                     favorites = base.favorites,
                     favoritesOnly = base.favoritesOnly,
@@ -287,9 +333,9 @@ class ContactsViewModel(
                     groups = groups.groups,
                     selectedGroupId = groups.selectedGroupId,
                     membership = groups.membership,
-                    accounts = groups.accounts,
-                    selectedAccount = groups.selectedAccount,
-                    profileContactId = groups.profileContactId,
+                    accounts = accounts.accounts,
+                    selectedAccount = accounts.selectedAccount,
+                    profileContactId = accounts.profileContactId,
                 )
             },
             settingsFlow,
@@ -300,170 +346,16 @@ class ContactsViewModel(
                 initialValue = ContactsUiState(),
             )
 
-    private fun contactsUiState(
-        load: ContactsLoad,
-        middle: ContactsMiddle,
-        settings: AppSettings,
-    ): ContactsUiState {
-        val pending = middle.window?.contactIds.orEmpty()
-        val visible =
-            filterContacts(
-                contacts = load.all,
-                query = load.query,
-                favoritesOnly = middle.favoritesOnly,
-                favorites = middle.favorites,
-                selectedGroupId = middle.selectedGroupId,
-                membership = middle.membership,
-                groups = middle.groups,
-                selectedAccount = middle.selectedAccount,
-            ).filterNot { it.contactId in pending }
-        val content = contactsContent(load, visible)
-        return ContactsUiState(
-            searchQuery = load.query,
-            showFavoritesOnly = middle.favoritesOnly,
-            favorites = middle.favorites,
-            isRefreshing = load.loading,
-            content = content,
-            selection = middle.selection,
-            pendingDeleteIds = pending,
-            deleteClosing = middle.window?.closing == true,
-            groups = middle.groups,
-            selectedGroupId = middle.selectedGroupId,
-            accounts = middle.accounts,
-            selectedAccount = middle.selectedAccount,
-            sortOrder = settings.sortOrder,
-            listDensity = settings.listDensity,
-            pinFavorites = shouldPinFavorites(load, middle, settings),
-            profileContactId = middle.profileContactId,
-            event = middle.event,
-        )
-    }
-
     init {
-        observeDeleteOutcome()
+        viewModelScope.launch { observeGroupEvents(groups, eventFlow) }
+        viewModelScope.launch { observeDeleteOutcome(deletes, list, eventFlow) { refresh() } }
     }
 
-    /** Экспорт .vcf: сценарии вынесены в [ContactsFileActions]. */
-    internal val files =
-        ContactsFileActions(
-            scope = viewModelScope,
-            events = eventFlow,
-            exportContacts = exportContactsUseCase,
-            getContacts = { getContactsUseCase() },
-        )
-
-    /**
-     * Итоги отложенного удаления: успевшие удалиться контакты убираем из локального списка
-     * и перечитываем провайдера; не удалённые честно остаются в списке с тостом об ошибке.
-     */
-    private fun observeDeleteOutcome() {
-        viewModelScope.launch {
-            deletes.finished.collect { finished ->
-                if (finished != null) {
-                    allContacts.value = allContacts.value.filterNot { it.contactId in finished.deletedIds }
-                    deletes.finishedHandled()
-                    if (!finished.allDeleted) {
-                        eventFlow.value = ContactsEvent.DeleteFailed
-                    }
-                    refresh()
-                }
-            }
-        }
-        viewModelScope.launch {
-            deletes.failure.collect { failed ->
-                if (failed) {
-                    deletes.failureHandled()
-                    eventFlow.value = ContactsEvent.DeleteFailed
-                }
-            }
-        }
-    }
-
-    fun onSearchQueryChange(query: String) {
-        selectionFlow.value = emptySet()
-        searchQueryFlow.value = query
-    }
-
-    /** Включает фильтр избранного (без переключения). */
-    fun onShowFavoritesOnly() {
-        if (!favoritesOnlyFlow.value) favoritesOnlyFlow.value = true
-    }
-
-    fun onToggleFavoritesOnly() {
-        selectionFlow.value = emptySet()
-        favoritesOnlyFlow.value = !favoritesOnlyFlow.value
-    }
-
-    /** Фильтр по группе; null — показать все контакты. */
-    fun onGroupSelected(groupId: Long?) {
-        selectionFlow.value = emptySet()
-        selectedGroupFlow.value = groupId
-    }
-
-    /** Фильтр по аккаунту; null — показать контакты всех аккаунтов. */
-    fun onAccountSelected(account: ContactAccount?) {
-        selectionFlow.value = emptySet()
-        selectedAccountFlow.value = account
-    }
-
-    /** Тап по карточке в режиме выделения и long-press в любом режиме переключают выделение. */
-    fun onContactSelected(contactId: Long) {
-        val current = selectionFlow.value
-        selectionFlow.value = if (contactId in current) current - contactId else current + contactId
-    }
-
-    fun onClearSelection() {
-        selectionFlow.value = emptySet()
-    }
-
-    /** Быстрое избранное из строки списка. */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: неудачная правка показывается тостом.
-    fun onToggleFavorite(contactId: Long) {
-        viewModelScope.launch {
-            try {
-                toggleFavoriteUseCase(contactId)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logw(LIST_TAG, "toggle favorite failed", e)
-            }
-        }
-    }
-
-    /**
-     * Пакетное избранное: если выбраны только избранные — снимаем отметку,
-     * иначе добавляем все ещё не избранные контакты.
-     */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: неудачная правка показывается тостом.
-    fun onToggleSelectedFavorite() {
-        val ids = selectionFlow.value
-        if (ids.isEmpty()) return
-        val favorites = favoritesFlow.value
-        val allFavorite = ids.all { it in favorites }
-        val toRemove = if (allFavorite) ids else emptySet()
-        val toAdd = if (allFavorite) emptySet() else ids - favorites
-        viewModelScope.launch {
-            try {
-                toRemove.forEach { removeFavoriteUseCase(it) }
-                toAdd.forEach { toggleFavoriteUseCase(it) }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logw(LIST_TAG, "batch favorite update failed", e)
-            }
-        }
-    }
-
-    /** Повторный вызов «выбрать все» снимает выделение. */
-    fun onSelectAll(contactIds: List<Long>) {
-        val all = contactIds.toSet()
-        selectionFlow.value = if (selectionFlow.value.containsAll(all)) emptySet() else all
-    }
-
+    /** Удаляет выделенные контакты: окно отмены показывает snackbar. */
     fun onDeleteSelected() {
-        val ids = selectionFlow.value
+        val ids = selection.selected.value
         if (ids.isEmpty()) return
-        selectionFlow.value = emptySet()
+        selection.clear()
         deletes.stage(ids)
     }
 
@@ -477,157 +369,53 @@ class ContactsViewModel(
         deletes.windowClosed()
     }
 
-    fun onExportRequested() = files.onExportRequested()
-
     /** Экспорт выделенных контактов в .vcf. */
-    fun onExportSelection() = files.onExportSelection(selectionFlow.value.toList())
+    fun onExportSelection() = files.onExportSelection(selection.selected.value.toList())
 
     /** Догружает полные детали выделенных контактов: в списке они облегчённые, для vCard этого мало. */
     @Suppress("TooGenericExceptionCaught") // Осознанно: неудачное share показывается тостом.
-    fun onShareSelected() {
-        val ids = selectionFlow.value.toList()
+    suspend fun onShareSelected() {
+        val ids = selection.selected.value.toList()
         if (ids.isEmpty()) return
-        viewModelScope.launch {
-            val content =
-                try {
-                    exportContactsUseCase(ids)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    logw(LIST_TAG, "share vCard encode failed", e)
-                    null
-                }
-            if (content != null) {
-                eventFlow.value = ContactsEvent.Share(content)
+        val content =
+            try {
+                files.exportContent(ids)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logw(LIST_TAG, "share vCard encode failed", e)
+                null
             }
+        if (content != null) {
+            eventFlow.value = ContactsEvent.Share(content)
         }
+    }
+
+    /**
+     * Пакетное избранное: если выбраны только избранные — снимаем отметку,
+     * иначе добавляем все ещё не избранные контакты.
+     */
+    suspend fun onToggleSelectedFavorite() {
+        favorites.onToggleSelectedFavorite(selection.selected.value, favoritesFlow.value)
     }
 
     fun onEventHandled() {
         eventFlow.value = null
     }
 
-    /** Создаёт группу из фильтра: список групп и членство перечитываются. */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: неудачное создание группы показывается тостом.
-    fun onCreateGroup(title: String) {
-        if (title.isBlank()) return
-        viewModelScope.launch {
-            try {
-                createGroupUseCase(title)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logw(LIST_TAG, "create group failed", e)
-                eventFlow.value = ContactsEvent.GroupActionFailed
-            }
-            refreshGroups()
-        }
+    /** Перечитывает список и связанные с ним группы, аккаунты и избранное. */
+    fun refresh() {
+        selection.clear()
+        viewModelScope.launch { reloadScreen(list, groups, favorites) }
     }
 
-    /** Добавляет выделенные контакты в выбранные группы. */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: неудачное добавление в группу показывается тостом.
-    fun onAddSelectedToGroup(groupIds: Set<Long>) {
-        val contactIds = selectionFlow.value.toList()
-        if (contactIds.isEmpty() || groupIds.isEmpty()) return
-        viewModelScope.launch {
-            try {
-                groupIds.forEach { groupId -> addContactsToGroupUseCase(groupId, contactIds) }
-                eventFlow.value = ContactsEvent.GroupAddFinished(contactIds.size)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logw(LIST_TAG, "add contacts to group failed", e)
-                eventFlow.value = ContactsEvent.GroupActionFailed
-            }
-            selectionFlow.value = emptySet()
-            refresh()
-        }
-    }
-
-    /** Перечитывает группы и членство: фильтр и пикер живут на свежих данных. */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой списка групп не мешает списку контактов.
-    private fun refreshGroups() {
-        viewModelScope.launch {
-            try {
-                val groups = getGroupsUseCase()
-                groupsFlow.value = groups
-                membershipFlow.value = getGroupMembershipUseCase()
-                // Удалённая группа не должна оставаться активным фильтром.
-                if (selectedGroupFlow.value?.let { selected -> groups.none { it.id == selected } } == true) {
-                    selectedGroupFlow.value = null
-                }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logw(LIST_TAG, "refresh groups failed", e)
-            }
-        }
-    }
-
-    /** Контакт «Мой профиль» есть не на всех устройствах: ищем его при загрузке. */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: отсутствие профиля не мешает списку.
-    private fun refreshProfile() {
-        viewModelScope.launch {
-            try {
-                profileContactIdFlow.value = getProfileContactIdUseCase()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logw(LIST_TAG, "load profile failed", e)
-                profileContactIdFlow.value = null
-            }
-        }
-    }
-
-    /** Избранное читается из провайдера: перечитываем его вместе с контактами. */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой чтения избранного не мешает списку.
-    private fun refreshFavorites() {
-        viewModelScope.launch {
-            try {
-                refreshFavoritesUseCase()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logw(LIST_TAG, "refresh favorites failed", e)
-            }
-        }
-    }
-
-    /** Аккаунты для фильтра и создания: сбой не мешает списку. */
-    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой чтения аккаунтов не мешает списку.
-    private fun refreshAccounts() {
-        viewModelScope.launch {
-            try {
-                val accounts = getContactAccountsUseCase()
-                accountsFlow.value = accounts
-                // Удалённый аккаунт не должен оставаться активным фильтром.
-                if (selectedAccountFlow.value?.let { selected -> selected !in accounts } == true) {
-                    selectedAccountFlow.value = null
-                }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logw(LIST_TAG, "refresh accounts failed", e)
-            }
-        }
-    }
-
-    /**
-     * Контакты грузятся страницами: первая страница показывается сразу,
-     * остальные добавляются следом. Список остаётся отзывчивым на больших базах.
-     */
-    private suspend fun loadContactsByPages() {
-        var offset = 0
-        var first = true
-        var hasMore = true
-        while (hasMore) {
-            val page = getContactsPageUseCase(offset, CONTACTS_PAGE_SIZE)
-            allContacts.value = if (first) page else allContacts.value + page
-            first = false
-            offset += page.size
-            hasMore = page.size == CONTACTS_PAGE_SIZE
-        }
-        if (first) allContacts.value = emptyList()
+    /** Очищает список: экран закрыт, состояние не нужно. */
+    fun clear() {
+        list.clear()
+        filters.onSearchQueryChange("")
+        filters.onToggleFavoritesOnly()
+        selection.clear()
+        groups.clear()
     }
 
     /**
@@ -639,74 +427,14 @@ class ContactsViewModel(
         if (changesJob?.isActive == true) return
         changesJob =
             viewModelScope.launch {
-                contactsChangeSource
-                    .observeChanges()
+                list.providerChanges
                     .debounce(CONTACTS_CHANGE_DEBOUNCE_MILLIS)
-                    .collect { refreshSilently() }
+                    .collect { viewModelScope.launch { reloadScreen(list, groups, favorites) } }
             }
     }
 
     fun stopObservingChanges() {
         changesJob?.cancel()
         changesJob = null
-        pendingProviderRefresh = false
-    }
-
-    /** Фоновое обновление сохраняет выделение: пользователь не теряет контекст. */
-    private fun refreshSilently() {
-        launchLoad(clearSelection = false)
-    }
-
-    fun refresh() {
-        launchLoad(clearSelection = true)
-    }
-
-    private fun launchLoad(clearSelection: Boolean) {
-        if (isLoading.value) {
-            if (!clearSelection) pendingProviderRefresh = true
-            return
-        }
-        isLoading.value = true
-        viewModelScope.launch {
-            loadContacts(clearSelection)
-        }
-    }
-
-    // Catch-all осознанный: любая ошибка загрузки превращается в Error-стейт.
-    @Suppress("TooGenericExceptionCaught") // Осознанно: сбой загрузки показывается ошибкой.
-    private suspend fun loadContacts(clearSelection: Boolean) {
-        loadFailure.value = null
-        if (clearSelection) selectionFlow.value = emptySet()
-        try {
-            loadContactsByPages()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            logw(LIST_TAG, "refresh contacts failed", e)
-            loadFailure.value = e
-        } finally {
-            isLoading.value = false
-        }
-        refreshGroups()
-        refreshAccounts()
-        refreshFavorites()
-        refreshProfile()
-        if (pendingProviderRefresh) {
-            pendingProviderRefresh = false
-            launchLoad(clearSelection = false)
-        }
-    }
-
-    fun clear() {
-        allContacts.value = emptyList()
-        searchQueryFlow.value = ""
-        favoritesOnlyFlow.value = false
-        loadFailure.value = null
-        selectionFlow.value = emptySet()
-        groupsFlow.value = emptyList()
-        membershipFlow.value = emptyMap()
-        selectedGroupFlow.value = null
-        accountsFlow.value = emptyList()
-        selectedAccountFlow.value = null
     }
 }

@@ -12,6 +12,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.m4isper.contactsapp.FakeAndroidRepository
 import com.m4isper.contactsapp.FakeSettingsRepository
+import com.m4isper.contactsapp.data.security.Pbkdf2PinHasher
 import com.m4isper.contactsapp.domain.model.AppSettings
 import com.m4isper.contactsapp.domain.model.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.ListDensity
@@ -55,7 +56,7 @@ class SettingsUiTest {
             SetAppLanguageUseCase(repository),
             SetDynamicColorUseCase(repository),
             SetShowPhotosUseCase(repository),
-            SetAppLockUseCase(repository),
+            SetAppLockUseCase(repository, Pbkdf2PinHasher()),
             SetSecureWindowUseCase(repository),
             ResetSettingsUseCase(repository),
             SetRemindersUseCase(repository),

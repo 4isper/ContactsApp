@@ -53,18 +53,25 @@ internal class ContactsFileActions(
         }
     }
 
+    /**
+     * Содержимое .vcf для контактов: null, если сборка не удалась.
+     * Экран делит этот текст с пользователем напрямую.
+     */
+    @Suppress("TooGenericExceptionCaught") // Осознанно: любую ошибку сборки показываем как ExportFailed.
+    suspend fun exportContent(contactIds: List<Long>): String? =
+        try {
+            exportContacts(contactIds).takeIf { it.isNotEmpty() }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logw(FILES_TAG, "export vcard encode failed", e)
+            null
+        }
+
     @Suppress("TooGenericExceptionCaught") // Осознанно: любую ошибку сборки показываем как ExportFailed.
     private suspend fun exportReady(contactIds: List<Long>): ContactsEvent {
-        val content =
-            try {
-                exportContacts(contactIds)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logw(FILES_TAG, "export vcard encode failed", e)
-                null
-            }
-        return if (content.isNullOrEmpty()) {
+        val content = exportContent(contactIds)
+        return if (content == null) {
             ContactsEvent.ExportFailed
         } else {
             ContactsEvent.ExportReady(content = content, count = contactIds.size)

@@ -9,6 +9,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -20,9 +21,10 @@ import com.m4isper.contactsapp.presentation.common.permissions.openAppSettings
 import com.m4isper.contactsapp.presentation.import.ImportPreviewViewModel
 import com.m4isper.contactsapp.presentation.widget.ContactsWidgetProvider
 import dev.zacsweers.metrox.viewmodel.metroViewModel
+import kotlinx.coroutines.launch
 
 @Composable
-fun ContactsScreen(
+internal fun ContactsScreen(
     onContactClick: (Long) -> Unit,
     onAddClick: () -> Unit,
     onGroupsClick: () -> Unit,
@@ -36,11 +38,12 @@ fun ContactsScreen(
     viewModel: ContactsViewModel = metroViewModel(),
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(showFavorites) {
         // Ярлык «Избранное» сразу включает фильтр избранного.
-        if (showFavorites) viewModel.onShowFavoritesOnly()
+        if (showFavorites) viewModel.filters.onShowFavoritesOnly()
     }
     val importViewModel: ImportPreviewViewModel = metroViewModel()
 
@@ -73,7 +76,7 @@ fun ContactsScreen(
     }
 
     BackHandler(enabled = uiState.isSelectionMode) {
-        viewModel.onClearSelection()
+        viewModel.selection.clear()
     }
 
     if (!hasReadPermission) {
@@ -87,42 +90,42 @@ fun ContactsScreen(
     } else {
         ContactList(
             uiState = uiState,
-            onSearchQueryChange = viewModel::onSearchQueryChange,
-            onFavoritesOnlyChange = viewModel::onToggleFavoritesOnly,
+            onSearchQueryChange = viewModel.filters::onSearchQueryChange,
+            onFavoritesOnlyChange = viewModel.filters::onToggleFavoritesOnly,
             onContactClick = onContactClick,
             onAddClick = onAddClick,
             onRetry = viewModel::refresh,
             onRefresh = viewModel::refresh,
-            onContactSelected = viewModel::onContactSelected,
-            onClearSelection = viewModel::onClearSelection,
-            onSelectAll = viewModel::onSelectAll,
+            onContactSelected = viewModel.selection::onContactSelected,
+            onClearSelection = viewModel.selection::clear,
+            onSelectAll = viewModel.selection::selectAll,
             onDeleteSelected = viewModel::onDeleteSelected,
             onUndoDelete = viewModel::onUndoDelete,
             onDeleteWindowClosed = viewModel::onDeleteWindowClosed,
-            onShareSelected = viewModel::onShareSelected,
+            onShareSelected = { scope.launch { viewModel.onShareSelected() } },
             onImportText = { text ->
                 importViewModel.prepare(text)
                 onImportPreviewReady()
             },
-            onExportRequested = viewModel::onExportRequested,
+            onExportRequested = viewModel.files::onExportRequested,
             onExportSelectionRequested = viewModel::onExportSelection,
             onEventHandled = viewModel::onEventHandled,
             groups = uiState.groups,
-            onGroupSelected = viewModel::onGroupSelected,
+            onGroupSelected = viewModel.filters::onGroupSelected,
             accounts = uiState.accounts,
-            onAccountSelected = viewModel::onAccountSelected,
-            onCreateGroup = viewModel::onCreateGroup,
+            onAccountSelected = viewModel.filters::onAccountSelected,
+            onCreateGroup = { title -> scope.launch { viewModel.groups.onCreateGroup(title) } },
             onManageGroupsClick = onGroupsClick,
-            onAddSelectedToGroup = viewModel::onAddSelectedToGroup,
+            onAddSelectedToGroup = { groupIds -> scope.launch { viewModel.groups.onAddSelectedToGroup(groupIds) } },
             onDuplicatesClick = onDuplicatesClick,
             onRecentsClick = onRecentsClick,
             onSettingsClick = onSettingsClick,
             onToggleFavorite = { contactId ->
-                viewModel.onToggleFavorite(contactId)
+                scope.launch { viewModel.favorites.onToggleFavorite(contactId) }
                 ContactsWidgetProvider.refresh(context)
             },
             onToggleFavoriteSelected = {
-                viewModel.onToggleSelectedFavorite()
+                scope.launch { viewModel.onToggleSelectedFavorite() }
                 ContactsWidgetProvider.refresh(context)
             },
             profileContactId = uiState.profileContactId,

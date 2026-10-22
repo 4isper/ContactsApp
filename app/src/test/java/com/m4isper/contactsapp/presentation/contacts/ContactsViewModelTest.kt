@@ -202,31 +202,44 @@ class ContactsViewModelTest {
         codec: FakeVCardCodec = FakeVCardCodec(),
         settings: FakeSettingsRepository = FakeSettingsRepository(),
         changes: FakeContactsChangeSource = FakeContactsChangeSource(),
-    ) = ContactsViewModel(
-        GetContactsUseCase(repository),
-        GetContactsPageUseCase(repository),
-        GetContactAccountsUseCase(repository),
-        ObserveFavoritesUseCase(repository),
-        ObserveSettingsUseCase(settings),
-        GetContactDetailsUseCase(repository),
-        DeleteContactsUseCase(repository, repository),
-        ExportContactsUseCase(
-            getContactDetails = GetContactDetailsUseCase(repository),
-            loadContactPhoto = LoadContactPhotoUseCase(repository),
-            getGroups = GetGroupsUseCase(groups),
-            getGroupMembership = GetGroupMembershipUseCase(groups),
-            codec = codec,
-        ),
-        GetGroupsUseCase(groups),
-        GetGroupMembershipUseCase(groups),
-        CreateGroupUseCase(groups),
-        AddContactsToGroupUseCase(groups),
-        ToggleFavoriteUseCase(repository),
-        RemoveFavoriteUseCase(repository),
-        RefreshFavoritesUseCase(repository),
-        GetProfileContactIdUseCase(repository),
-        changes,
-    )
+    ): ContactsViewModel {
+        val selection = ContactsSelectionState()
+        val filters = ContactsFilterState(selection)
+        return ContactsViewModel(
+            list = ContactsListState(GetContactsPageUseCase(repository), changes),
+            filters = filters,
+            selection = selection,
+            favorites =
+                ContactsFavoriteState(
+                    observeFavorites = ObserveFavoritesUseCase(repository),
+                    toggleFavorite = ToggleFavoriteUseCase(repository),
+                    removeFavorite = RemoveFavoriteUseCase(repository),
+                    refreshFavorites = RefreshFavoritesUseCase(repository),
+                ),
+            groups =
+                ContactsGroupState(
+                    getGroups = GetGroupsUseCase(groups),
+                    getMembership = GetGroupMembershipUseCase(groups),
+                    getAccounts = GetContactAccountsUseCase(repository),
+                    getProfileContactId = GetProfileContactIdUseCase(repository),
+                    createGroup = CreateGroupUseCase(groups),
+                    addContactsToGroup = AddContactsToGroupUseCase(groups),
+                    filters = filters,
+                    selection = selection,
+                ),
+            deleteContactsUseCase = DeleteContactsUseCase(repository, repository),
+            exportContactsUseCase =
+                ExportContactsUseCase(
+                    getContactDetails = GetContactDetailsUseCase(repository),
+                    loadContactPhoto = LoadContactPhotoUseCase(repository),
+                    getGroups = GetGroupsUseCase(groups),
+                    getGroupMembership = GetGroupMembershipUseCase(groups),
+                    codec = codec,
+                ),
+            getContactsUseCase = GetContactsUseCase(repository),
+            observeSettingsUseCase = ObserveSettingsUseCase(settings),
+        )
+    }
 
     @Test
     fun `contacts are loaded page by page`() =
@@ -315,7 +328,7 @@ class ContactsViewModelTest {
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
             advanceUntilIdle()
-            viewModel.onContactSelected(1)
+            viewModel.selection.onContactSelected(1)
             advanceUntilIdle()
 
             viewModel.startObservingChanges()
@@ -389,7 +402,7 @@ class ContactsViewModelTest {
             viewModel.refresh()
             advanceUntilIdle()
 
-            viewModel.onSearchQueryChange("ANN")
+            viewModel.filters.onSearchQueryChange("ANN")
             advanceUntilIdle()
 
             val content = viewModel.uiState.value.content
@@ -416,7 +429,7 @@ class ContactsViewModelTest {
             viewModel.refresh()
             advanceUntilIdle()
 
-            viewModel.onSearchQueryChange("222")
+            viewModel.filters.onSearchQueryChange("222")
             advanceUntilIdle()
 
             val content = viewModel.uiState.value.content
@@ -447,7 +460,7 @@ class ContactsViewModelTest {
             viewModel.refresh()
             advanceUntilIdle()
 
-            viewModel.onSearchQueryChange("bob@")
+            viewModel.filters.onSearchQueryChange("bob@")
             advanceUntilIdle()
 
             val content = viewModel.uiState.value.content
@@ -478,7 +491,7 @@ class ContactsViewModelTest {
             viewModel.refresh()
             advanceUntilIdle()
 
-            viewModel.onSearchQueryChange("петрович")
+            viewModel.filters.onSearchQueryChange("петрович")
             advanceUntilIdle()
 
             val content = viewModel.uiState.value.content
@@ -514,7 +527,7 @@ class ContactsViewModelTest {
             viewModel.refresh()
             advanceUntilIdle()
 
-            viewModel.onSearchQueryChange("ivan")
+            viewModel.filters.onSearchQueryChange("ivan")
             advanceUntilIdle()
 
             val content = viewModel.uiState.value.content
@@ -546,7 +559,7 @@ class ContactsViewModelTest {
             viewModel.refresh()
             advanceUntilIdle()
 
-            viewModel.onSearchQueryChange("нюша")
+            viewModel.filters.onSearchQueryChange("нюша")
             advanceUntilIdle()
             val byNickname = viewModel.uiState.value.content
             assertTrue(byNickname is Loadable.Content)
@@ -555,7 +568,7 @@ class ContactsViewModelTest {
                 (byNickname as Loadable.Content).data.map { it.name },
             )
 
-            viewModel.onSearchQueryChange("михаил")
+            viewModel.filters.onSearchQueryChange("михаил")
             advanceUntilIdle()
             val byRelation = viewModel.uiState.value.content
             assertTrue(byRelation is Loadable.Content)
@@ -578,7 +591,7 @@ class ContactsViewModelTest {
             viewModel.refresh()
             advanceUntilIdle()
 
-            viewModel.onSearchQueryChange("zzz")
+            viewModel.filters.onSearchQueryChange("zzz")
             advanceUntilIdle()
 
             val content = viewModel.uiState.value.content
@@ -656,7 +669,7 @@ class ContactsViewModelTest {
             viewModel.refresh()
             advanceUntilIdle()
 
-            viewModel.onToggleFavoritesOnly()
+            viewModel.filters.onToggleFavoritesOnly()
             advanceUntilIdle()
 
             val state = viewModel.uiState.value
@@ -679,7 +692,7 @@ class ContactsViewModelTest {
             viewModel.refresh()
             advanceUntilIdle()
 
-            viewModel.onToggleFavoritesOnly()
+            viewModel.filters.onToggleFavoritesOnly()
             advanceUntilIdle()
 
             val state = viewModel.uiState.value
@@ -697,11 +710,11 @@ class ContactsViewModelTest {
             viewModel.refresh()
             advanceUntilIdle()
 
-            viewModel.onToggleFavorite(1)
+            viewModel.favorites.onToggleFavorite(1)
             advanceUntilIdle()
             assertEquals(setOf(1L), viewModel.uiState.value.favorites)
 
-            viewModel.onToggleFavorite(1)
+            viewModel.favorites.onToggleFavorite(1)
             advanceUntilIdle()
             assertEquals(emptySet<Long>(), viewModel.uiState.value.favorites)
         }
@@ -721,8 +734,8 @@ class ContactsViewModelTest {
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
             advanceUntilIdle()
-            viewModel.onContactSelected(1)
-            viewModel.onContactSelected(2)
+            viewModel.selection.onContactSelected(1)
+            viewModel.selection.onContactSelected(2)
 
             viewModel.onToggleSelectedFavorite()
             advanceUntilIdle()
@@ -745,22 +758,22 @@ class ContactsViewModelTest {
             advanceUntilIdle()
             assertTrue(viewModel.uiState.value.pinFavorites)
 
-            viewModel.onSearchQueryChange("Anna")
+            viewModel.filters.onSearchQueryChange("Anna")
             advanceUntilIdle()
             assertEquals(false, viewModel.uiState.value.pinFavorites)
 
-            viewModel.onSearchQueryChange("")
-            viewModel.onToggleFavoritesOnly()
+            viewModel.filters.onSearchQueryChange("")
+            viewModel.filters.onToggleFavoritesOnly()
             advanceUntilIdle()
             assertEquals(false, viewModel.uiState.value.pinFavorites)
 
-            viewModel.onToggleFavoritesOnly()
-            viewModel.onGroupSelected(42)
+            viewModel.filters.onToggleFavoritesOnly()
+            viewModel.filters.onGroupSelected(42)
             advanceUntilIdle()
             assertEquals(false, viewModel.uiState.value.pinFavorites)
 
-            viewModel.onGroupSelected(null)
-            viewModel.onAccountSelected(ContactAccount(name = "Work", type = "com.example"))
+            viewModel.filters.onGroupSelected(null)
+            viewModel.filters.onAccountSelected(ContactAccount(name = "Work", type = "com.example"))
             advanceUntilIdle()
             assertEquals(false, viewModel.uiState.value.pinFavorites)
         }
@@ -795,13 +808,13 @@ class ContactsViewModelTest {
             viewModel.refresh()
             advanceUntilIdle()
 
-            viewModel.onContactSelected(1)
+            viewModel.selection.onContactSelected(1)
             advanceUntilIdle()
             assertEquals(setOf(1L), viewModel.uiState.value.selection)
             assertTrue(viewModel.uiState.value.isSelectionMode)
 
-            viewModel.onContactSelected(2)
-            viewModel.onContactSelected(1)
+            viewModel.selection.onContactSelected(2)
+            viewModel.selection.onContactSelected(1)
             advanceUntilIdle()
             assertEquals(setOf(2L), viewModel.uiState.value.selection)
         }
@@ -815,10 +828,10 @@ class ContactsViewModelTest {
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
             advanceUntilIdle()
-            viewModel.onContactSelected(1)
+            viewModel.selection.onContactSelected(1)
             advanceUntilIdle()
 
-            viewModel.onClearSelection()
+            viewModel.selection.clear()
             advanceUntilIdle()
 
             assertEquals(emptySet<Long>(), viewModel.uiState.value.selection)
@@ -841,11 +854,11 @@ class ContactsViewModelTest {
             viewModel.refresh()
             advanceUntilIdle()
 
-            viewModel.onSelectAll(listOf(1, 2))
+            viewModel.selection.selectAll(listOf(1, 2))
             advanceUntilIdle()
             assertEquals(setOf(1L, 2L), viewModel.uiState.value.selection)
 
-            viewModel.onSelectAll(listOf(1, 2))
+            viewModel.selection.selectAll(listOf(1, 2))
             advanceUntilIdle()
             assertEquals(emptySet<Long>(), viewModel.uiState.value.selection)
         }
@@ -859,10 +872,10 @@ class ContactsViewModelTest {
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
             advanceUntilIdle()
-            viewModel.onContactSelected(1)
+            viewModel.selection.onContactSelected(1)
             advanceUntilIdle()
 
-            viewModel.onSearchQueryChange("ann")
+            viewModel.filters.onSearchQueryChange("ann")
             advanceUntilIdle()
 
             assertEquals(emptySet<Long>(), viewModel.uiState.value.selection)
@@ -877,10 +890,10 @@ class ContactsViewModelTest {
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
             advanceUntilIdle()
-            viewModel.onContactSelected(1)
+            viewModel.selection.onContactSelected(1)
             advanceUntilIdle()
 
-            viewModel.onToggleFavoritesOnly()
+            viewModel.filters.onToggleFavoritesOnly()
             advanceUntilIdle()
 
             assertEquals(emptySet<Long>(), viewModel.uiState.value.selection)
@@ -903,8 +916,8 @@ class ContactsViewModelTest {
             viewModel.refresh()
             advanceUntilIdle()
 
-            viewModel.onContactSelected(1)
-            viewModel.onContactSelected(2)
+            viewModel.selection.onContactSelected(1)
+            viewModel.selection.onContactSelected(2)
             advanceUntilIdle()
             viewModel.onDeleteSelected()
             runCurrent()
@@ -935,7 +948,7 @@ class ContactsViewModelTest {
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
             advanceUntilIdle()
-            viewModel.onContactSelected(1)
+            viewModel.selection.onContactSelected(1)
             runCurrent()
 
             viewModel.onDeleteSelected()
@@ -965,7 +978,7 @@ class ContactsViewModelTest {
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
             advanceUntilIdle()
-            viewModel.onContactSelected(1)
+            viewModel.selection.onContactSelected(1)
             viewModel.onDeleteSelected()
             runCurrent()
             assertEquals(setOf(1L), viewModel.uiState.value.pendingDeleteIds)
@@ -998,8 +1011,8 @@ class ContactsViewModelTest {
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
             advanceUntilIdle()
-            viewModel.onContactSelected(1)
-            viewModel.onContactSelected(2)
+            viewModel.selection.onContactSelected(1)
+            viewModel.selection.onContactSelected(2)
             viewModel.onDeleteSelected()
             runCurrent()
             assertEquals(setOf(1L, 2L), viewModel.uiState.value.pendingDeleteIds)
@@ -1022,7 +1035,7 @@ class ContactsViewModelTest {
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
             advanceUntilIdle()
-            viewModel.onContactSelected(1)
+            viewModel.selection.onContactSelected(1)
             viewModel.onDeleteSelected()
             runCurrent()
 
@@ -1057,8 +1070,8 @@ class ContactsViewModelTest {
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
             advanceUntilIdle()
-            viewModel.onContactSelected(1)
-            viewModel.onContactSelected(2)
+            viewModel.selection.onContactSelected(1)
+            viewModel.selection.onContactSelected(2)
             viewModel.onDeleteSelected()
             runCurrent()
 
@@ -1088,13 +1101,13 @@ class ContactsViewModelTest {
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
             advanceUntilIdle()
-            viewModel.onContactSelected(1)
+            viewModel.selection.onContactSelected(1)
             viewModel.onDeleteSelected()
             runCurrent()
             advanceTimeBy(DELETE_UNDO_TIMEOUT_MILLIS / 2)
             runCurrent()
 
-            viewModel.onContactSelected(2)
+            viewModel.selection.onContactSelected(2)
             viewModel.onDeleteSelected()
             runCurrent()
             assertEquals(setOf(1L, 2L), viewModel.uiState.value.pendingDeleteIds)
@@ -1125,7 +1138,7 @@ class ContactsViewModelTest {
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
             advanceUntilIdle()
-            viewModel.onContactSelected(2)
+            viewModel.selection.onContactSelected(2)
             advanceUntilIdle()
 
             viewModel.onShareSelected()
@@ -1187,7 +1200,7 @@ class ContactsViewModelTest {
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
             advanceUntilIdle()
-            viewModel.onContactSelected(2)
+            viewModel.selection.onContactSelected(2)
             advanceUntilIdle()
 
             viewModel.onExportSelection()
@@ -1246,8 +1259,8 @@ class ContactsViewModelTest {
             advanceUntilIdle()
             assertTrue(viewModel.uiState.value.content is Loadable.Error)
 
-            viewModel.onSearchQueryChange("ann")
-            viewModel.onToggleFavoritesOnly()
+            viewModel.filters.onSearchQueryChange("ann")
+            viewModel.filters.onToggleFavoritesOnly()
             advanceUntilIdle()
 
             viewModel.clear()
@@ -1281,7 +1294,7 @@ class ContactsViewModelTest {
             viewModel.refresh()
             advanceUntilIdle()
 
-            viewModel.onGroupSelected(100)
+            viewModel.filters.onGroupSelected(100)
             advanceUntilIdle()
 
             val filtered = viewModel.uiState.value
@@ -1289,7 +1302,7 @@ class ContactsViewModelTest {
             assertEquals(100L, filtered.selectedGroupId)
             assertEquals(listOf("Anna"), (filtered.content as Loadable.Content).data.map { it.name })
 
-            viewModel.onGroupSelected(null)
+            viewModel.filters.onGroupSelected(null)
             advanceUntilIdle()
 
             assertEquals(2, (viewModel.uiState.value.content as Loadable.Content).data.size)
@@ -1319,19 +1332,19 @@ class ContactsViewModelTest {
             assertEquals(listOf(ContactAccount.Local, google, emptyAccount), loaded.accounts)
             assertEquals(2, (loaded.content as Loadable.Content).data.size)
 
-            viewModel.onAccountSelected(google)
+            viewModel.filters.onAccountSelected(google)
             advanceUntilIdle()
 
             val filtered = viewModel.uiState.value
             assertEquals(google, filtered.selectedAccount)
             assertEquals(listOf("Bob"), (filtered.content as Loadable.Content).data.map { it.name })
 
-            viewModel.onAccountSelected(emptyAccount)
+            viewModel.filters.onAccountSelected(emptyAccount)
             advanceUntilIdle()
 
             assertTrue(viewModel.uiState.value.content is Loadable.Empty)
 
-            viewModel.onAccountSelected(null)
+            viewModel.filters.onAccountSelected(null)
             advanceUntilIdle()
 
             assertEquals(2, (viewModel.uiState.value.content as Loadable.Content).data.size)
@@ -1347,7 +1360,7 @@ class ContactsViewModelTest {
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
             advanceUntilIdle()
-            viewModel.onGroupSelected(100)
+            viewModel.filters.onGroupSelected(100)
             advanceUntilIdle()
 
             groups.groups = emptyList()
@@ -1374,9 +1387,9 @@ class ContactsViewModelTest {
             viewModel.refresh()
             advanceUntilIdle()
 
-            viewModel.onContactSelected(1)
-            viewModel.onContactSelected(2)
-            viewModel.onAddSelectedToGroup(setOf(100))
+            viewModel.selection.onContactSelected(1)
+            viewModel.selection.onContactSelected(2)
+            viewModel.groups.onAddSelectedToGroup(setOf(100))
             advanceUntilIdle()
 
             assertEquals(listOf(100L to listOf(1L, 2L)), groups.addedToGroup)
@@ -1395,10 +1408,10 @@ class ContactsViewModelTest {
             backgroundScope.launch { viewModel.uiState.collect { } }
             viewModel.refresh()
             advanceUntilIdle()
-            viewModel.onContactSelected(1)
+            viewModel.selection.onContactSelected(1)
             groups.failure = RuntimeException("boom")
 
-            viewModel.onAddSelectedToGroup(setOf(100))
+            viewModel.groups.onAddSelectedToGroup(setOf(100))
             advanceUntilIdle()
 
             assertEquals(ContactsEvent.GroupActionFailed, viewModel.uiState.value.event)
@@ -1412,7 +1425,7 @@ class ContactsViewModelTest {
             val viewModel = viewModel(FakeContactsRepository(), groups)
             backgroundScope.launch { viewModel.uiState.collect { } }
 
-            viewModel.onCreateGroup("Семья")
+            viewModel.groups.onCreateGroup("Семья")
             advanceUntilIdle()
 
             assertEquals(listOf(ContactGroup(id = 1, title = "Семья")), viewModel.uiState.value.groups)
@@ -1426,7 +1439,7 @@ class ContactsViewModelTest {
             val viewModel = viewModel(FakeContactsRepository(), groups)
             backgroundScope.launch { viewModel.uiState.collect { } }
 
-            viewModel.onCreateGroup("Семья")
+            viewModel.groups.onCreateGroup("Семья")
             advanceUntilIdle()
 
             assertEquals(ContactsEvent.GroupActionFailed, viewModel.uiState.value.event)
