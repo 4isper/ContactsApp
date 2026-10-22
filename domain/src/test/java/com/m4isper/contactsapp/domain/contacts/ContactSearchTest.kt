@@ -1,4 +1,4 @@
-package com.m4isper.contactsapp.presentation.contacts
+package com.m4isper.contactsapp.domain.contacts
 
 import com.m4isper.contactsapp.domain.model.AddressKind
 import com.m4isper.contactsapp.domain.model.ContactAccount
@@ -17,6 +17,7 @@ import com.m4isper.contactsapp.domain.model.SipKind
 import com.m4isper.contactsapp.domain.model.Website
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import java.util.Locale
 
 private fun search(
     contacts: List<ContactDetails>,
@@ -158,6 +159,19 @@ class ContactSearchTest {
 
         listOf("sister", "side", "dacha", "кум").forEach { query ->
             assertEquals(query, listOf("Anna"), search(listOf(contact), query))
+        }
+    }
+
+    @Test
+    fun `search normalization does not depend on the default locale`() {
+        val previousLocale = Locale.getDefault()
+        try {
+            Locale.setDefault(Locale.forLanguageTag("tr-TR"))
+            val contacts = listOf(ContactDetails(contactId = 1, name = "INFO"))
+
+            assertEquals(listOf("INFO"), search(contacts, "info"))
+        } finally {
+            Locale.setDefault(previousLocale)
         }
     }
 

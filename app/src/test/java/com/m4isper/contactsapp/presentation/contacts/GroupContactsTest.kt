@@ -1,5 +1,9 @@
 package com.m4isper.contactsapp.presentation.contacts
 
+import com.m4isper.contactsapp.domain.contacts.FAVORITES_GROUP
+import com.m4isper.contactsapp.domain.contacts.groupContactsByFirstLetter
+import com.m4isper.contactsapp.domain.contacts.groupContactsWithPinnedFavorites
+import com.m4isper.contactsapp.domain.contacts.letterIndices
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.PhoneKind

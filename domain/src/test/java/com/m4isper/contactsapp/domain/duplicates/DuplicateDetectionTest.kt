@@ -1,4 +1,4 @@
-package com.m4isper.contactsapp.presentation.duplicates
+package com.m4isper.contactsapp.domain.duplicates
 
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.EmailAddress
@@ -9,6 +9,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.Locale
 
 private fun contact(
     id: Long,
@@ -50,6 +51,25 @@ class DuplicateDetectionTest {
 
         assertEquals(1, groups.size)
         assertFalse(groups.single().nameOnly)
+    }
+
+    @Test
+    fun `email matching does not depend on the default locale`() {
+        val previousLocale = Locale.getDefault()
+        try {
+            Locale.setDefault(Locale.forLanguageTag("tr-TR"))
+            val groups =
+                findDuplicateGroups(
+                    listOf(
+                        contact(1, emails = listOf("INFO@X.com")),
+                        contact(2, emails = listOf("info@x.com")),
+                    ),
+                )
+
+            assertEquals(1, groups.size)
+        } finally {
+            Locale.setDefault(previousLocale)
+        }
     }
 
     @Test

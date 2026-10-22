@@ -6,7 +6,6 @@ import android.provider.CalendarContract
 import com.m4isper.contactsapp.presentation.common.logw
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.MonthDay
 import java.time.ZoneId
 
 private const val CALENDAR_TAG = "CalendarIntents"
@@ -43,21 +42,6 @@ internal fun buildCalendarEventIntent(
         putExtra(CalendarContract.EXTRA_EVENT_END_TIME, start + HOUR_MILLIS)
         putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true)
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    }
-}
-
-/** Ближайшая дата с указанным днём и месяцем: в этом году или в следующем. */
-fun nextOccurrence(
-    day: Int,
-    month: Int,
-    today: LocalDate = LocalDate.now(),
-): LocalDate? {
-    val monthDay = runCatching { MonthDay.of(month, day) }.getOrNull()
-    val thisYear = monthDay?.let { runCatching { it.atYear(today.year) }.getOrNull() }
-    return when {
-        thisYear == null -> null
-        !thisYear.isBefore(today) -> thisYear
-        else -> monthDay?.let { runCatching { it.atYear(today.year + 1) }.getOrNull() }
     }
 }
 

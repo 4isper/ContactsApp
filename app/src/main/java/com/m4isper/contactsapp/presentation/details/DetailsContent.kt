@@ -17,12 +17,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.domain.calendar.nextOccurrence
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.PhoneNumber
 import com.m4isper.contactsapp.presentation.common.account.contactAccountLabel
-import com.m4isper.contactsapp.presentation.common.calendar.nextOccurrence
 import com.m4isper.contactsapp.presentation.common.calendar.openCalendarEvent
 import com.m4isper.contactsapp.presentation.common.format.addressKindLabel
 import com.m4isper.contactsapp.presentation.common.format.birthdayText
@@ -36,6 +36,7 @@ import com.m4isper.contactsapp.presentation.common.share.openEmail
 import com.m4isper.contactsapp.presentation.common.share.openInstantMessage
 import com.m4isper.contactsapp.presentation.common.share.openMap
 import com.m4isper.contactsapp.presentation.common.share.openWebsite
+import java.time.LocalDate
 
 @Composable
 internal fun DetailsContent(
@@ -254,7 +255,7 @@ internal fun DetailsContent(
                         listOf(
                             calendarAction(
                                 context = context,
-                                title = context.getString(R.string.calendar_birthday_title, details.name),
+                                title = stringResource(R.string.calendar_birthday_title, details.name),
                                 day = birthday.day,
                                 month = birthday.month,
                             ),
@@ -274,7 +275,7 @@ internal fun DetailsContent(
                     listOf(
                         calendarAction(
                             context = context,
-                            title = context.getString(R.string.calendar_event_title, details.name),
+                            title = stringResource(R.string.calendar_event_title, details.name),
                             day = event.date.day,
                             month = event.date.month,
                         ),
@@ -343,7 +344,7 @@ private fun calendarAction(
         Icons.Filled.Event,
         stringResource(R.string.action_add_to_calendar),
     ) {
-        val date = nextOccurrence(day, month)
+        val date = nextOccurrence(day, month, LocalDate.now())
         if (date != null) {
             openCalendarEvent(context = context, title = title, date = date)
         }

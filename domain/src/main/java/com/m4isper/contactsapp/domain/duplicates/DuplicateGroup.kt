@@ -1,15 +1,15 @@
-package com.m4isper.contactsapp.presentation.duplicates
+package com.m4isper.contactsapp.domain.duplicates
 
 import com.m4isper.contactsapp.domain.model.ContactDetails
-import java.util.Locale
+import com.m4isper.contactsapp.domain.model.normalizeContactText
+import com.m4isper.contactsapp.domain.model.normalizeContactTextForMatch
+import com.m4isper.contactsapp.domain.model.normalizePhoneDigits
 
 /** Минимальная длина номера (в цифрах): короче — совпадение считаем случайным. */
 private const val MIN_PHONE_DIGITS = 5
 
 /** Совпадение имён допускаем только для полных имён: минимум два слова и 5 символов. */
 private const val MIN_NAME_LENGTH = 5
-
-private val WHITESPACE = Regex("\\s+")
 
 /**
  * Группа возможных дубликатов: [nameOnly] — внутри группы нет ни одного общего
@@ -26,7 +26,7 @@ data class DuplicateGroup(
  * имени. В группе первым идёт самый заполненный контакт — он же по умолчанию
  * остаётся основным при слиянии.
  */
-internal fun findDuplicateGroups(contacts: List<ContactDetails>): List<DuplicateGroup> {
+fun findDuplicateGroups(contacts: List<ContactDetails>): List<DuplicateGroup> {
     val parents = IntArray(contacts.size) { it }
 
     fun rootOf(index: Int): Int {
@@ -69,7 +69,7 @@ internal fun findDuplicateGroups(contacts: List<ContactDetails>): List<Duplicate
             group.members
                 .first()
                 .name
-                .lowercase(Locale.ROOT)
+                .let(::normalizeContactText)
         }
 }
 
@@ -82,7 +82,7 @@ private fun duplicateGroup(
             .map { contacts[it] }
             .sortedWith(
                 compareByDescending<ContactDetails> { completeness(it) }
-                    .thenBy { it.name.lowercase(Locale.ROOT) }
+                    .thenBy { normalizeContactText(it.name) }
                     .thenBy { it.contactId },
             )
     return DuplicateGroup(members = members, nameOnly = !hasSharedStrongKey(members))
@@ -101,7 +101,7 @@ private fun hasSharedStrongKey(members: List<ContactDetails>): Boolean {
 private fun strongKeys(contact: ContactDetails): List<String> {
     val keys = mutableSetOf<String>()
     contact.phones.forEach { phone ->
-        val digits = phone.number.filter(Char::isDigit)
+        val digits = normalizePhoneDigits(phone.number)
         if (digits.length >= MIN_PHONE_DIGITS) keys += "p:$digits"
     }
     contact.emails.forEach { email ->
@@ -132,9 +132,4 @@ private fun completeness(contact: ContactDetails): Int =
         (if (!contact.nickname.isNullOrBlank()) 1 else 0) +
         (if (contact.photoUri != null) 1 else 0)
 
-private fun normalizedText(value: String): String? =
-    value
-        .trim()
-        .lowercase(Locale.ROOT)
-        .replace(WHITESPACE, " ")
-        .takeIf(String::isNotEmpty)
+private fun normalizedText(value: String): String? = normalizeContactTextForMatch(value).takeIf(String::isNotEmpty)

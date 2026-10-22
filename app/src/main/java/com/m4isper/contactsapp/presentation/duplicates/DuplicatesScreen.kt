@@ -49,6 +49,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.domain.duplicates.DuplicateGroup
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.contacts.contactSubtitle
@@ -71,6 +72,8 @@ fun DuplicatesScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var pendingMerge by remember { mutableStateOf<PendingMerge?>(null) }
+    val mergedMessage = stringResource(R.string.duplicates_merged)
+    val undoLabel = stringResource(R.string.duplicates_undo)
 
     LaunchedEffect(Unit) {
         viewModel.load()
@@ -81,8 +84,8 @@ fun DuplicatesScreen(
             DuplicatesEvent.Merged -> {
                 val result =
                     snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.duplicates_merged),
-                        actionLabel = context.getString(R.string.duplicates_undo),
+                        message = mergedMessage,
+                        actionLabel = undoLabel,
                         duration = SnackbarDuration.Long,
                     )
                 if (result == SnackbarResult.ActionPerformed) {

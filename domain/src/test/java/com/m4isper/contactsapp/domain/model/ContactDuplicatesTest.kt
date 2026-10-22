@@ -3,6 +3,7 @@ package com.m4isper.contactsapp.domain.model
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.Locale
 
 class ContactDuplicatesTest {
     private val anna =
@@ -25,6 +26,19 @@ class ContactDuplicatesTest {
         val form = ContactForm(emails = listOf(EditableEmail(address = "ANNA@example.com")))
 
         assertEquals(listOf(anna), findSimilarContacts(form, listOf(anna)))
+    }
+
+    @Test
+    fun `email match does not depend on the default locale`() {
+        val previousLocale = Locale.getDefault()
+        try {
+            Locale.setDefault(Locale.forLanguageTag("tr-TR"))
+            val form = ContactForm(emails = listOf(EditableEmail(address = "ANNA@EXAMPLE.COM")))
+
+            assertEquals(listOf(anna), findSimilarContacts(form, listOf(anna)))
+        } finally {
+            Locale.setDefault(previousLocale)
+        }
     }
 
     @Test

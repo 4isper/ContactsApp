@@ -8,10 +8,11 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.m4isper.contactsapp.data.datasource.ContactsDataSourceImpl
+import com.m4isper.contactsapp.domain.contacts.filterContacts
 import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.presentation.contacts.filterContacts
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -35,6 +36,11 @@ class LargeListPerformanceTest {
     @Test
     fun five_thousand_contacts_load_page_by_page() =
         runBlocking {
+            // Нагрузочный тест удлиняет прогон на минуты: включается флагом.
+            assumeTrue(
+                "Замер больших баз выключен: -Pandroid.testInstrumentationRunnerArguments.contacts.perf=true",
+                InstrumentationRegistry.getArguments().getString("contacts.perf") == "true",
+            )
             val created = createContacts(CONTACT_COUNT)
             try {
                 awaitIndexed(created.size)

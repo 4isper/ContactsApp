@@ -2,6 +2,8 @@ package com.m4isper.contactsapp.presentation.duplicates
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.m4isper.contactsapp.domain.duplicates.DuplicateGroup
+import com.m4isper.contactsapp.domain.duplicates.findDuplicateGroups
 import com.m4isper.contactsapp.domain.model.ContactLink
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.MergeContactsUseCase

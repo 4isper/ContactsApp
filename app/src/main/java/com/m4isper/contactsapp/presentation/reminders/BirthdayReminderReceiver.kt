@@ -16,6 +16,9 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.m4isper.contactsapp.ContactsApp
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.domain.reminders.OccasionKind
+import com.m4isper.contactsapp.domain.reminders.UpcomingOccasion
+import com.m4isper.contactsapp.domain.reminders.upcomingOccasions
 import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
 import kotlinx.coroutines.CoroutineScope
@@ -23,6 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 /** Приёмник будильника: собирает праздники и показывает уведомление. */
 class BirthdayReminderReceiver : BroadcastReceiver() {
@@ -46,14 +50,25 @@ class BirthdayReminderReceiver : BroadcastReceiver() {
         val settings = ObserveSettingsUseCase(graph.settingsRepository)().first()
         val upcoming =
             if (settings.remindersEnabled) {
-                upcomingOccasions(GetContactsUseCase(graph.contactsRepository)(), settings.reminderLeadDays)
+                upcomingOccasions(
+                    contacts = GetContactsUseCase(graph.contactsRepository)(),
+                    leadDays = settings.reminderLeadDays,
+                    today = LocalDate.now(),
+                )
             } else {
                 emptyList()
             }
-        if (upcoming.isEmpty() || !canPostNotifications(context)) return
-        createChannel(context)
-        val manager = NotificationManagerCompat.from(context)
-        manager.notify(NOTIFICATION_ID, buildNotification(context, upcoming))
+        // Уведомление показываем только с разрешения: на Android 13+ его нужно запросить.
+        if (upcoming.isNotEmpty()) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+                PackageManager.PERMISSION_GRANTED
+            ) {
+                createChannel(context)
+                val manager = NotificationManagerCompat.from(context)
+                manager.notify(NOTIFICATION_ID, buildNotification(context, upcoming))
+            }
+        }
     }
 
     private fun buildNotification(
@@ -97,11 +112,6 @@ class BirthdayReminderReceiver : BroadcastReceiver() {
             setPackage(context.packageName)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
-
-    private fun canPostNotifications(context: Context): Boolean =
-        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
-            PackageManager.PERMISSION_GRANTED
 
     private fun createChannel(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return

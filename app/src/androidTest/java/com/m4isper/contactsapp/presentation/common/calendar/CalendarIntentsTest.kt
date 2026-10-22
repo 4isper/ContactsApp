@@ -3,6 +3,7 @@ package com.m4isper.contactsapp.presentation.common.calendar
 import android.content.Intent
 import android.provider.CalendarContract
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.m4isper.contactsapp.domain.calendar.nextOccurrence
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull

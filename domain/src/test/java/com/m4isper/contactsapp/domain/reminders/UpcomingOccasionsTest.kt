@@ -1,4 +1,4 @@
-package com.m4isper.contactsapp.presentation.reminders
+package com.m4isper.contactsapp.domain.reminders
 
 import com.m4isper.contactsapp.domain.model.Birthday
 import com.m4isper.contactsapp.domain.model.ContactDetails

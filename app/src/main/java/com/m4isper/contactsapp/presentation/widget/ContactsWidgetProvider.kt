@@ -14,6 +14,7 @@ import android.widget.RemoteViews
 import com.m4isper.contactsapp.ContactsApp
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.normalizeContactText
 import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -51,7 +52,7 @@ class ContactsWidgetProvider : AppWidgetProvider() {
         val ids = ObserveFavoritesUseCase(graph.favoritesRepository)().first()
         return ids
             .mapNotNull { id -> graph.contactsRepository.getContactDetails(id) }
-            .sortedBy { it.name.lowercase() }
+            .sortedBy { normalizeContactText(it.name) }
     }
 
     private fun updateWidget(

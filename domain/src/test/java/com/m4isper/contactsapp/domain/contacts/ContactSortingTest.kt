@@ -1,4 +1,4 @@
-package com.m4isper.contactsapp.presentation.contacts
+package com.m4isper.contactsapp.domain.contacts
 
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactSortOrder

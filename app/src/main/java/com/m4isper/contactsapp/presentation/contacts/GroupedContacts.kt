@@ -25,6 +25,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.domain.contacts.FAVORITES_GROUP
+import com.m4isper.contactsapp.domain.contacts.groupContactsWithPinnedFavorites
+import com.m4isper.contactsapp.domain.contacts.letterIndices
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.ListDensity

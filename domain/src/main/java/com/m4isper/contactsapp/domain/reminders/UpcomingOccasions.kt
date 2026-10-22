@@ -1,8 +1,8 @@
-package com.m4isper.contactsapp.presentation.reminders
+package com.m4isper.contactsapp.domain.reminders
 
+import com.m4isper.contactsapp.domain.calendar.nextOccurrence
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.EventKind
-import com.m4isper.contactsapp.presentation.common.calendar.nextOccurrence
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
@@ -29,7 +29,7 @@ data class UpcomingOccasion(
 fun upcomingOccasions(
     contacts: List<ContactDetails>,
     leadDays: Int,
-    today: LocalDate = LocalDate.now(),
+    today: LocalDate,
 ): List<UpcomingOccasion> {
     val horizon = today.plusDays(leadDays.toLong())
     val occasions = mutableListOf<UpcomingOccasion>()

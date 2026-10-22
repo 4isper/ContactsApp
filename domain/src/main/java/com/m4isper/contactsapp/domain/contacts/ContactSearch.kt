@@ -1,14 +1,15 @@
 // Подавление осознанное: файл разбит на маленькие предикаты поиска по разным полям.
 @file:Suppress("TooManyFunctions")
 
-package com.m4isper.contactsapp.presentation.contacts
+package com.m4isper.contactsapp.domain.contacts
 
 import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactGroup
 import com.m4isper.contactsapp.domain.model.NameParts
 import com.m4isper.contactsapp.domain.model.PhoneNumber
-import java.util.Locale
+import com.m4isper.contactsapp.domain.model.normalizeContactText
+import com.m4isper.contactsapp.domain.model.normalizePhoneDigits
 
 private const val MIN_PHONE_SUFFIX_DIGITS = 7
 private const val MAX_PHONE_SUFFIX_DIGITS = 10
@@ -17,11 +18,11 @@ private const val MAX_PHONE_SUFFIX_DIGITS = 10
  * Фильтр списка: группа, аккаунт, избранное и поиск по всем доступным полям.
  * Телефоны сравниваются по цифрам, чтобы форматирование и код страны не мешали.
  */
-internal fun filterContacts(
+fun filterContacts(
     contacts: List<ContactDetails>,
     query: String,
-    favoritesOnly: Boolean,
-    favorites: Set<Long>,
+    favoritesOnly: Boolean = false,
+    favorites: Set<Long> = emptySet(),
     selectedGroupId: Long? = null,
     membership: Map<Long, Set<Long>> = emptyMap(),
     groups: List<ContactGroup> = emptyList(),
@@ -42,8 +43,8 @@ internal fun filterContacts(
     val base = if (favoritesOnly) byAccount.filter { it.contactId in favorites } else byAccount
     val trimmed = query.trim()
     if (trimmed.isBlank()) return base
-    val normalizedQuery = trimmed.lowercase(Locale.ROOT)
-    val queryDigits = phoneDigits(trimmed)
+    val normalizedQuery = normalizeContactText(trimmed)
+    val queryDigits = normalizePhoneDigits(trimmed)
     val groupTitleById = groups.associate { it.id to it.title }
     return base.filter { contact ->
         contact.matches(
@@ -119,11 +120,11 @@ private fun PhoneNumber.matches(
     queryDigits: String,
 ): Boolean =
     number.containsText(query) ||
-        (queryDigits.isNotEmpty() && phoneDigitsMatch(phoneDigits(number), queryDigits)) ||
+        (queryDigits.isNotEmpty() && phoneDigitsMatch(normalizePhoneDigits(number), queryDigits)) ||
         customLabel.containsText(query)
 
 /** Совпадение цифр номера: подстрока или последние 7–10 цифр с учётом кода страны. */
-internal fun phoneDigitsMatch(
+fun phoneDigitsMatch(
     numberDigits: String,
     queryDigits: String,
 ): Boolean {
@@ -136,11 +137,9 @@ internal fun phoneDigitsMatch(
     return numberDigits.contains(queryDigits) || suffixMatches
 }
 
-internal fun phoneDigits(value: String): String = value.filter(Char::isDigit)
-
-private fun String?.containsText(query: String): Boolean = this?.lowercase(Locale.ROOT)?.contains(query) == true
+private fun String?.containsText(query: String): Boolean = this?.let(::normalizeContactText)?.contains(query) == true
 
 /** Совпадение поискового запроса с любым компонентом структурированного имени. */
 private fun NameParts.matches(query: String): Boolean =
     listOf(given, family, middle, prefix, suffix, phoneticGiven, phoneticMiddle, phoneticFamily)
-        .any { it.lowercase(Locale.ROOT).contains(query) }
+        .any { normalizeContactText(it).contains(query) }

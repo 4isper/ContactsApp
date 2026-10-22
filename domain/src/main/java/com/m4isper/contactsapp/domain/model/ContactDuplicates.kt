@@ -13,21 +13,17 @@ fun findSimilarContacts(
 ): List<ContactDetails> {
     val phones =
         form.phones
-            .map { it.number.digits() }
+            .map { normalizePhoneDigits(it.number) }
             .filter { it.length >= MIN_PHONE_DIGITS }
             .toSet()
     val emails =
         form.emails
-            .map { it.address.normalized() }
+            .map { normalizeContactText(it.address) }
             .filter { it.isNotEmpty() }
             .toSet()
     if (phones.isEmpty() && emails.isEmpty()) return emptyList()
     return contacts.filter { contact ->
-        contact.phones.any { it.number.digits() in phones } ||
-            contact.emails.any { it.address.normalized() in emails }
+        contact.phones.any { normalizePhoneDigits(it.number) in phones } ||
+            contact.emails.any { normalizeContactText(it.address) in emails }
     }
 }
-
-private fun String.digits(): String = filter(Char::isDigit)
-
-private fun String.normalized(): String = trim().lowercase()

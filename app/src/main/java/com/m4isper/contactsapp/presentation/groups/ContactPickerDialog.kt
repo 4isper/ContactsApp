@@ -25,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.domain.contacts.filterContacts
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.ui.components.SearchField
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
@@ -110,17 +111,4 @@ internal fun ContactPickerDialog(
         },
         modifier = Modifier.testTag("contact_picker_dialog"),
     )
-}
-
-/** Контакты, подходящие под запрос: по имени или телефону. */
-internal fun filterContacts(
-    contacts: List<ContactDetails>,
-    query: String,
-): List<ContactDetails> {
-    val needle = query.trim().lowercase()
-    if (needle.isEmpty()) return contacts
-    return contacts.filter { contact ->
-        contact.name.lowercase().contains(needle) ||
-            contact.phones.any { it.number.contains(needle) }
-    }
 }

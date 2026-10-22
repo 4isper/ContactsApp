@@ -1,19 +1,19 @@
-package com.m4isper.contactsapp.presentation.contacts
+package com.m4isper.contactsapp.domain.contacts
 
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.ContactSortOrder
-import java.util.Locale
+import com.m4isper.contactsapp.domain.model.normalizeContactText
 
 private const val RECENTLY_ADDED_GROUP = '#'
 
 /** Синтетический ключ закреплённой секции избранного; не буква, поэтому не попадает в fast scroller. */
-internal const val FAVORITES_GROUP = '★'
+const val FAVORITES_GROUP = '★'
 
 /**
  * Ключ сортировки: полное имя, фамилия или компания. Для недавних контактов
  * ключ не важен, поэтому используется имя — как безопасный fallback.
  */
-internal fun contactSortKey(
+fun contactSortKey(
     contact: ContactDetails,
     sortOrder: ContactSortOrder,
 ): String =
@@ -35,21 +35,21 @@ internal fun contactSortKey(
     }
 
 /** Сортировка контактов с учётом направления; одинаковые ключи упорядочены по имени. */
-internal fun sortContacts(
+fun sortContacts(
     contacts: List<ContactDetails>,
     sortOrder: ContactSortOrder,
 ): List<ContactDetails> {
     val key: (ContactDetails) -> String = {
-        contactSortKey(it, sortOrder).lowercase(Locale.ROOT)
+        normalizeContactText(contactSortKey(it, sortOrder))
     }
     val comparator =
         when (sortOrder) {
             ContactSortOrder.BY_NAME_DESC ->
-                compareByDescending(key).thenByDescending { it.name.lowercase(Locale.ROOT) }
+                compareByDescending(key).thenByDescending { normalizeContactText(it.name) }
             ContactSortOrder.RECENTLY_ADDED ->
                 compareByDescending<ContactDetails> { it.lastUpdated ?: Long.MIN_VALUE }
-                    .thenBy { it.name.lowercase(Locale.ROOT) }
-            else -> compareBy(key).thenBy { it.name.lowercase(Locale.ROOT) }
+                    .thenBy { normalizeContactText(it.name) }
+            else -> compareBy(key).thenBy { normalizeContactText(it.name) }
         }
     return contacts.sortedWith(comparator)
 }
@@ -58,7 +58,7 @@ internal fun sortContacts(
  * Контакты без имени отбрасываются. Для обычных сортировок список группируется
  * по первой букве ключа, для «сначала новые» — остаётся плоским.
  */
-internal fun groupContactsByFirstLetter(
+fun groupContactsByFirstLetter(
     contacts: List<ContactDetails>,
     sortOrder: ContactSortOrder = ContactSortOrder.BY_NAME,
 ): Map<Char, List<ContactDetails>> {
@@ -69,7 +69,7 @@ internal fun groupContactsByFirstLetter(
         else ->
             sorted
                 .groupBy {
-                    val first = contactSortKey(it, sortOrder).trim().first().uppercaseChar()
+                    val first = normalizeContactText(contactSortKey(it, sortOrder)).first().uppercaseChar()
                     if (first.isLetter()) first else '#'
                 }.let { grouped ->
                     if (sortOrder == ContactSortOrder.BY_NAME_DESC) {
@@ -85,7 +85,7 @@ internal fun groupContactsByFirstLetter(
  * Группирует список, при необходимости вынося избранные контакты в отдельную
  * секцию сверху. Остальные контакты сохраняют обычную буквенную группировку.
  */
-internal fun groupContactsWithPinnedFavorites(
+fun groupContactsWithPinnedFavorites(
     contacts: List<ContactDetails>,
     favorites: Set<Long>,
     sortOrder: ContactSortOrder,
@@ -104,7 +104,7 @@ internal fun groupContactsWithPinnedFavorites(
 }
 
 /** Индекс первого элемента (sticky-заголовка) каждой буквы в LazyColumn. */
-internal fun letterIndices(grouped: Map<Char, List<ContactDetails>>): Map<Char, Int> {
+fun letterIndices(grouped: Map<Char, List<ContactDetails>>): Map<Char, Int> {
     var index = 0
     return buildMap {
         grouped.forEach { (letter, group) ->
