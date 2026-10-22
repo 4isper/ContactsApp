@@ -25,6 +25,7 @@ import com.m4isper.contactsapp.domain.model.EventKind
 import com.m4isper.contactsapp.domain.model.ImProtocol
 import com.m4isper.contactsapp.domain.model.NameMode
 import com.m4isper.contactsapp.domain.model.PhoneKind
+import com.m4isper.contactsapp.domain.model.PhotoRef
 import com.m4isper.contactsapp.domain.model.RelationKind
 import com.m4isper.contactsapp.domain.model.SipKind
 import com.m4isper.contactsapp.domain.model.WebsiteKind
@@ -320,7 +321,7 @@ class ContactEditorViewModelTest {
                             organization = EditableOrganization(company = "ACME", title = "CTO"),
                             note = EditableNote(note = "Note"),
                             birthday = EditableBirthday(value = Birthday(day = 24, month = 5, year = 1990)),
-                            photoUri = "content://photo/1",
+                            photo = PhotoRef.of("content://photo/1"),
                         )
                 }
             val viewModel = viewModel(repository)
@@ -483,7 +484,7 @@ class ContactEditorViewModelTest {
             assertEquals("ACME", form.organization.company)
             assertEquals("Note", form.note.note)
             assertEquals(Birthday(day = 24, month = 5, year = 1990), form.birthday.value)
-            assertEquals("content://photo/1", form.photoUri)
+            assertEquals("content://photo/1", form.photo?.uri)
             assertEquals(true, form.photoChanged)
         }
 
@@ -645,7 +646,11 @@ class ContactEditorViewModelTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val repository =
                 FakeEditorRepository().apply {
-                    formToLoad = ContactForm(name = EditableName(display = "Anna"), photoUri = "content://photo/1")
+                    formToLoad =
+                        ContactForm(
+                            name = EditableName(display = "Anna"),
+                            photo = PhotoRef.of("content://photo/1"),
+                        )
                 }
             val viewModel = viewModel(repository)
             viewModel.load(7)
@@ -662,7 +667,7 @@ class ContactEditorViewModelTest {
 
             val (contactId, form) = repository.updated.single()
             assertEquals(7L, contactId)
-            assertEquals(null, form.photoUri)
+            assertEquals(null, form.photo)
             assertEquals(true, form.photoChanged)
         }
 

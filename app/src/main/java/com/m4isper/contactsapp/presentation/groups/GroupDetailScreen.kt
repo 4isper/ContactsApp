@@ -299,7 +299,7 @@ private fun MemberRow(
         ) {
             ListAvatar(
                 name = contact.name,
-                photoUri = contact.photoUri,
+                photoUri = contact.photo?.uri,
             )
             Column(
                 modifier =

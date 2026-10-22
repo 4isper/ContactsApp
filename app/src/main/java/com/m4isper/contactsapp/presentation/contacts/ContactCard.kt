@@ -200,7 +200,7 @@ private fun ContactCardSurface(
         ) {
             ListAvatar(
                 name = contact.name,
-                photoUri = contact.photoUri,
+                photoUri = contact.photo?.uri,
                 size = if (compact) spacing.avatarList - spacing.s else spacing.avatarList,
             )
 

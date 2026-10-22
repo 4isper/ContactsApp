@@ -137,11 +137,11 @@ class AggregateContactsTest {
     @Test
     fun `takes photo uri from header`() {
         val withoutPhoto = aggregateContacts(listOf(header(1, "Anna")), emptyList()).single()
-        assertEquals(null, withoutPhoto.photoUri)
+        assertEquals(null, withoutPhoto.photo)
 
         val withPhoto =
             aggregateContacts(listOf(header(1, "Anna", photoUri = "content://photo/1")), emptyList()).single()
-        assertEquals("content://photo/1", withPhoto.photoUri)
+        assertEquals("content://photo/1", withPhoto.photo?.uri)
     }
 
     @Test

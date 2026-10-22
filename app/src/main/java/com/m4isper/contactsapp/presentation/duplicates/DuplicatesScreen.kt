@@ -358,7 +358,7 @@ private fun DuplicateMemberRow(
         Spacer(modifier = Modifier.width(spacing.m))
         ListAvatar(
             name = member.name,
-            photoUri = member.photoUri,
+            photoUri = member.photo?.uri,
         )
         Spacer(modifier = Modifier.width(spacing.m))
         Column(modifier = Modifier.weight(1f)) {

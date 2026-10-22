@@ -56,7 +56,7 @@ internal fun DetailsHeader(
         ) {
             DetailsAvatar(
                 name = details.name,
-                photoUri = details.photoUri,
+                photoUri = details.photo?.uri,
             )
             Spacer(modifier = Modifier.height(spacing.m))
             Text(

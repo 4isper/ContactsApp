@@ -188,7 +188,10 @@ class ContactsWriterDataSourceImpl(
     /** Байты фото для записи: null, если фото не менялось или его нужно только удалить. */
     private fun preparePhoto(form: ContactForm): ByteArray? =
         if (form.photoChanged) {
-            form.photoUri?.let(Uri::parse)?.let { readDownscaledPhoto(context.contentResolver, it) }
+            form.photo
+                ?.uri
+                ?.let(Uri::parse)
+                ?.let { readDownscaledPhoto(context.contentResolver, it) }
         } else {
             null
         }

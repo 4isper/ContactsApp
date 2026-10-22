@@ -4,6 +4,7 @@ import android.provider.ContactsContract.CommonDataKinds.StructuredName
 import com.m4isper.contactsapp.domain.model.ContactAccount
 import com.m4isper.contactsapp.domain.model.ContactDetails
 import com.m4isper.contactsapp.domain.model.NameParts
+import com.m4isper.contactsapp.domain.model.PhotoRef
 
 /** Полная модель контакта для экрана деталей. */
 internal fun buildContactDetails(
@@ -26,7 +27,7 @@ internal fun buildContactDetails(
         relations = relationsOf(rows),
         events = eventsOf(rows),
         nickname = nicknameOf(rows),
-        photoUri = header.photoUri,
+        photo = PhotoRef.of(header.photoUri),
         nameParts = namePartsOf(rows),
         account = account,
         lastUpdated = header.lastUpdated,
@@ -58,7 +59,7 @@ internal fun aggregateContacts(
             sipAddresses = sipAddressesOf(contactRows),
             organization = organizationOf(contactRows),
             note = noteOf(contactRows),
-            photoUri = header.photoUri,
+            photo = PhotoRef.of(header.photoUri),
             nameParts = namePartsOf(contactRows),
             relations = relationsOf(contactRows),
             nickname = nicknameOf(contactRows),

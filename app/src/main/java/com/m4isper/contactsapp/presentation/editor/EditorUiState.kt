@@ -20,6 +20,7 @@ import com.m4isper.contactsapp.domain.model.EditableWebsite
 import com.m4isper.contactsapp.domain.model.FormError
 import com.m4isper.contactsapp.domain.model.FormField
 import com.m4isper.contactsapp.domain.model.NameMode
+import com.m4isper.contactsapp.domain.model.PhotoRef
 import com.m4isper.contactsapp.domain.model.composeDisplayName
 import com.m4isper.contactsapp.domain.model.normalized
 
@@ -130,7 +131,7 @@ internal data class EditorUiState(
             note = note,
             birthday = birthday,
             groups = selectedGroupIds.toList(),
-            photoUri = photoUri,
+            photo = PhotoRef.of(photoUri),
             photoChanged = photoChanged,
         )
 
@@ -183,7 +184,7 @@ internal fun editorStateFromForm(
         birthday = form.birthday,
         nickname = form.nickname,
         selectedGroupIds = form.groups.toSet(),
-        photoUri = form.photoUri,
+        photoUri = form.photo?.uri,
         photoChanged = false,
         isBusy = false,
         initialForm = form,

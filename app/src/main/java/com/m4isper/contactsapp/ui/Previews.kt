@@ -24,7 +24,7 @@ private val PreviewContacts =
             contactId = 1,
             name = "Anna Ivanova",
             phones = listOf(PhoneNumber("+7 900 111-11-11", PhoneKind.MOBILE)),
-            photoUri = null,
+            photo = null,
         ),
         ContactDetails(
             contactId = 2,
@@ -34,7 +34,7 @@ private val PreviewContacts =
                     PhoneNumber("+7 900 222-22-22", PhoneKind.MOBILE),
                     PhoneNumber("+7 900 333-33-33", PhoneKind.WORK),
                 ),
-            photoUri = null,
+            photo = null,
         ),
     )
 

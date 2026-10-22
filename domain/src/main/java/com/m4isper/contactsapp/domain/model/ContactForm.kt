@@ -191,7 +191,7 @@ data class ContactForm(
     /** Выбранные группы (метки) контакта. */
     val groups: List<Long> = emptyList(),
     /** Текущее фото (thumbnail существующего контакта или выбранный пользователем URI). */
-    val photoUri: String? = null,
+    val photo: PhotoRef? = null,
     /** true, если пользователь сменил или удалил фото — только тогда фото трогаем. */
     val photoChanged: Boolean = false,
 )

@@ -130,6 +130,6 @@ private fun completeness(contact: ContactDetails): Int =
         (if (!contact.note.isNullOrBlank()) 1 else 0) +
         (if (contact.birthday != null) 1 else 0) +
         (if (!contact.nickname.isNullOrBlank()) 1 else 0) +
-        (if (contact.photoUri != null) 1 else 0)
+        (if (contact.photo != null) 1 else 0)
 
 private fun normalizedText(value: String): String? = normalizeContactTextForMatch(value).takeIf(String::isNotEmpty)

@@ -226,7 +226,7 @@ data class ContactDetails(
     val relations: List<ContactRelation> = emptyList(),
     val events: List<ContactEvent> = emptyList(),
     val nickname: String? = null,
-    val photoUri: String? = null,
+    val photo: PhotoRef? = null,
     val nameParts: NameParts? = null,
     /** Аккаунт целевого raw contact; локальный контакт — [ContactAccount.Local]. */
     val account: ContactAccount = ContactAccount.Local,
