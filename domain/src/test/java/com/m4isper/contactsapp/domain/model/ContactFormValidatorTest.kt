@@ -8,9 +8,9 @@ import com.m4isper.contactsapp.domain.model.contact.EditablePhone
 import com.m4isper.contactsapp.domain.model.contact.FormError
 import com.m4isper.contactsapp.domain.model.contact.NameMode
 import com.m4isper.contactsapp.domain.model.contact.validateContactForm
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Test
 
 class ContactFormValidatorTest {
     @Test

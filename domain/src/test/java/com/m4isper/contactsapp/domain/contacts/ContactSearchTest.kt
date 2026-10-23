@@ -15,8 +15,8 @@ import com.m4isper.contactsapp.domain.model.contact.RelationKind
 import com.m4isper.contactsapp.domain.model.contact.SipAddress
 import com.m4isper.contactsapp.domain.model.contact.SipKind
 import com.m4isper.contactsapp.domain.model.contact.Website
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 import java.util.Locale
 
 private fun search(
@@ -83,7 +83,7 @@ class ContactSearchTest {
             )
 
         listOf("acme", "cto", "tverskaya", "anna.dev", "conference").forEach { query ->
-            assertEquals(query, listOf("Anna"), search(contacts, query))
+            assertEquals(listOf("Anna"), search(contacts, query), query)
         }
     }
 
@@ -117,7 +117,7 @@ class ContactSearchTest {
             )
 
         listOf("platform", "engineering", "london", "moscow", "101000", "sip:anna").forEach { query ->
-            assertEquals(query, listOf("Anna"), search(listOf(contact), query))
+            assertEquals(listOf("Anna"), search(listOf(contact), query), query)
         }
     }
 
@@ -158,7 +158,7 @@ class ContactSearchTest {
             )
 
         listOf("sister", "side", "dacha", "кум").forEach { query ->
-            assertEquals(query, listOf("Anna"), search(listOf(contact), query))
+            assertEquals(listOf("Anna"), search(listOf(contact), query), query)
         }
     }
 

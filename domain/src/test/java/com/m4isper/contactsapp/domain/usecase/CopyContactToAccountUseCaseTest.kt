@@ -8,9 +8,9 @@ import com.m4isper.contactsapp.domain.repository.ContactsWriter
 import com.m4isper.contactsapp.domain.usecase.contacts.CopyContactToAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.contacts.MoveContactToAccountUseCase
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 
 /** Копирование и перенос контакта между аккаунтами — правила предметной области. */
 class CopyContactToAccountUseCaseTest {

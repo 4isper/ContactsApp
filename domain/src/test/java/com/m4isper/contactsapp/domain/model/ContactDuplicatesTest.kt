@@ -9,9 +9,9 @@ import com.m4isper.contactsapp.domain.model.contact.EmailKind
 import com.m4isper.contactsapp.domain.model.contact.PhoneKind
 import com.m4isper.contactsapp.domain.model.contact.PhoneNumber
 import com.m4isper.contactsapp.domain.model.contact.findSimilarContacts
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 import java.util.Locale
 
 class ContactDuplicatesTest {

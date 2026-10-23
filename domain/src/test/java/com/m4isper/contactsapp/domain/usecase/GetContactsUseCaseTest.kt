@@ -8,9 +8,9 @@ import com.m4isper.contactsapp.domain.repository.ContactsReader
 import com.m4isper.contactsapp.domain.usecase.contacts.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.contacts.GetContactsUseCase
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Test
 
 private fun details(
     id: Long,

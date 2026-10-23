@@ -34,7 +34,7 @@ private fun ContactDetails.matches(
     phones: Set<String>,
     emails: Set<String>,
 ): Boolean {
-    val existingPhones = phones.map { normalizePhoneDigits(it) }.toSet()
-    val existingEmails = emails.map { normalizeContactText(it) }.toSet()
+    val existingPhones = this.phones.map { normalizePhoneDigits(it.number) }.toSet()
+    val existingEmails = this.emails.map { normalizeContactText(it.address) }.toSet()
     return existingPhones.any { it in phones } || existingEmails.any { it in emails }
 }

@@ -13,8 +13,8 @@ import com.m4isper.contactsapp.domain.model.contact.EditableSipAddress
 import com.m4isper.contactsapp.domain.model.contact.EditableWebsite
 import com.m4isper.contactsapp.domain.model.contact.ImProtocol
 import com.m4isper.contactsapp.domain.model.contact.normalized
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 class ContactFormNormalizationTest {
     @Test

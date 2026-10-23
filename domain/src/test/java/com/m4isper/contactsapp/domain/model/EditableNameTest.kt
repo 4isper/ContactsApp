@@ -2,10 +2,10 @@ package com.m4isper.contactsapp.domain.model
 
 import com.m4isper.contactsapp.domain.model.contact.EditableName
 import com.m4isper.contactsapp.domain.model.contact.NameMode
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 
 class EditableNameTest {
     @Test

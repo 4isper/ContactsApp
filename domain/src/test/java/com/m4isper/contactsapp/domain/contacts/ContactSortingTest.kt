@@ -4,8 +4,8 @@ import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import com.m4isper.contactsapp.domain.model.contact.NameParts
 import com.m4isper.contactsapp.domain.model.contact.Organization
 import com.m4isper.contactsapp.domain.model.settings.ContactSortOrder
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 private fun named(
     id: Long,
