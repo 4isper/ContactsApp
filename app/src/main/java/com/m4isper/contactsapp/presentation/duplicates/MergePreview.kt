@@ -1,6 +1,6 @@
 package com.m4isper.contactsapp.presentation.duplicates
 
-import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 
 /** Поле, которого нет в основном контакте, но появится после слияния. */
 data class MergeAddition(

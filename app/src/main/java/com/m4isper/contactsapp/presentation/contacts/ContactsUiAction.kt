@@ -1,6 +1,6 @@
 package com.m4isper.contactsapp.presentation.contacts
 
-import com.m4isper.contactsapp.domain.model.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 
 /**
  * Действие экрана списка: один контракт вместо десятков колбэков. Экран

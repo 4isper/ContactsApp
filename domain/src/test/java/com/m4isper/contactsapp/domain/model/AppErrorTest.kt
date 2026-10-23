@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp.domain.model
 
+import com.m4isper.contactsapp.domain.model.common.AppError
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.io.IOException

@@ -1,8 +1,8 @@
 package com.m4isper.contactsapp.data.datasource.read
 
 import android.provider.ContactsContract.CommonDataKinds.Event
-import com.m4isper.contactsapp.domain.model.Birthday
-import com.m4isper.contactsapp.domain.model.EventKind
+import com.m4isper.contactsapp.domain.model.contact.Birthday
+import com.m4isper.contactsapp.domain.model.contact.EventKind
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test

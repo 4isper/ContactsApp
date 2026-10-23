@@ -20,7 +20,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.m4isper.contactsapp.domain.model.ThemeMode
+import com.m4isper.contactsapp.domain.model.settings.ThemeMode
 import com.m4isper.contactsapp.presentation.intent.StartAction
 import com.m4isper.contactsapp.presentation.intent.startActionOf
 import com.m4isper.contactsapp.presentation.navigation.ContactsNavHost

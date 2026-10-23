@@ -1,9 +1,9 @@
 package com.m4isper.contactsapp.domain.contacts
 
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactSortOrder
-import com.m4isper.contactsapp.domain.model.NameParts
-import com.m4isper.contactsapp.domain.model.Organization
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.NameParts
+import com.m4isper.contactsapp.domain.model.contact.Organization
+import com.m4isper.contactsapp.domain.model.settings.ContactSortOrder
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

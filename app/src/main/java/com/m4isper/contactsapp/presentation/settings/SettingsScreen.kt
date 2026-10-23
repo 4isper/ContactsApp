@@ -37,10 +37,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.R
-import com.m4isper.contactsapp.domain.model.AppSettings
-import com.m4isper.contactsapp.domain.model.ContactSortOrder
-import com.m4isper.contactsapp.domain.model.ListDensity
-import com.m4isper.contactsapp.domain.model.ThemeMode
+import com.m4isper.contactsapp.domain.model.settings.AppSettings
+import com.m4isper.contactsapp.domain.model.settings.ContactSortOrder
+import com.m4isper.contactsapp.domain.model.settings.ListDensity
+import com.m4isper.contactsapp.domain.model.settings.ThemeMode
 import com.m4isper.contactsapp.presentation.common.account.contactAccountTitle
 import com.m4isper.contactsapp.presentation.common.account.testKey
 import com.m4isper.contactsapp.presentation.common.message

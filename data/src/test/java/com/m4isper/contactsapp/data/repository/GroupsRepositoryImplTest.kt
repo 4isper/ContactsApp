@@ -1,8 +1,8 @@
 package com.m4isper.contactsapp.data.repository
 
 import com.m4isper.contactsapp.data.datasource.GroupsDataSource
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactGroup
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactGroup
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

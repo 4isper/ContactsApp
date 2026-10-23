@@ -19,7 +19,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import com.m4isper.contactsapp.R
-import com.m4isper.contactsapp.domain.model.AppError
+import com.m4isper.contactsapp.domain.model.common.AppError
 import com.m4isper.contactsapp.presentation.common.message
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 

@@ -1,9 +1,11 @@
 package com.m4isper.contactsapp.domain.usecase
 
-import com.m4isper.contactsapp.domain.model.ContactLink
-import com.m4isper.contactsapp.domain.model.RawContactRef
+import com.m4isper.contactsapp.domain.model.contact.ContactLink
+import com.m4isper.contactsapp.domain.model.contact.RawContactRef
 import com.m4isper.contactsapp.domain.repository.ContactsMerger
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
+import com.m4isper.contactsapp.domain.usecase.contacts.MergeContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.UnmergeContactsUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

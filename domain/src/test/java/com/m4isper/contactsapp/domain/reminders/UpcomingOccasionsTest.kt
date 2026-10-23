@@ -1,9 +1,9 @@
 package com.m4isper.contactsapp.domain.reminders
 
-import com.m4isper.contactsapp.domain.model.Birthday
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactEvent
-import com.m4isper.contactsapp.domain.model.EventKind
+import com.m4isper.contactsapp.domain.model.contact.Birthday
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactEvent
+import com.m4isper.contactsapp.domain.model.contact.EventKind
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

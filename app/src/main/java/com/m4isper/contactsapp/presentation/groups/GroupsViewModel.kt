@@ -2,13 +2,13 @@ package com.m4isper.contactsapp.presentation.groups
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.m4isper.contactsapp.domain.model.AppError
-import com.m4isper.contactsapp.domain.model.ContactGroup
-import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
-import com.m4isper.contactsapp.domain.usecase.DeleteGroupUseCase
-import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
-import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
-import com.m4isper.contactsapp.domain.usecase.RenameGroupUseCase
+import com.m4isper.contactsapp.domain.model.common.AppError
+import com.m4isper.contactsapp.domain.model.contact.ContactGroup
+import com.m4isper.contactsapp.domain.usecase.groups.CreateGroupUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.DeleteGroupUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.GetGroupMembershipUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.GetGroupsUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.RenameGroupUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.safeCall
 import com.m4isper.contactsapp.presentation.contacts.SUBSCRIBE_TIMEOUT_MILLIS

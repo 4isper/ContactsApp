@@ -41,7 +41,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.R
-import com.m4isper.contactsapp.domain.model.ContactGroup
+import com.m4isper.contactsapp.domain.model.contact.ContactGroup
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.account.contactAccountLabel
 import com.m4isper.contactsapp.presentation.common.groups.GroupNameDialog

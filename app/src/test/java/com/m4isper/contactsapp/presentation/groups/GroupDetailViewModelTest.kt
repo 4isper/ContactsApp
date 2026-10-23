@@ -1,26 +1,27 @@
 package com.m4isper.contactsapp.presentation.groups
 
 import com.m4isper.contactsapp.FakeGroupsRepository
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactForm
-import com.m4isper.contactsapp.domain.model.ContactLink
-import com.m4isper.contactsapp.domain.model.PhoneKind
-import com.m4isper.contactsapp.domain.model.PhoneNumber
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactForm
+import com.m4isper.contactsapp.domain.model.contact.ContactGroup
+import com.m4isper.contactsapp.domain.model.contact.ContactLink
+import com.m4isper.contactsapp.domain.model.contact.PhoneKind
+import com.m4isper.contactsapp.domain.model.contact.PhoneNumber
 import com.m4isper.contactsapp.domain.repository.ContactsAccounts
 import com.m4isper.contactsapp.domain.repository.ContactsMerger
 import com.m4isper.contactsapp.domain.repository.ContactsReader
 import com.m4isper.contactsapp.domain.repository.ContactsWriter
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
-import com.m4isper.contactsapp.domain.usecase.AddContactsToGroupUseCase
-import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
-import com.m4isper.contactsapp.domain.usecase.DeleteGroupUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
-import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
-import com.m4isper.contactsapp.domain.usecase.MergeGroupsUseCase
-import com.m4isper.contactsapp.domain.usecase.RemoveContactsFromGroupUseCase
-import com.m4isper.contactsapp.domain.usecase.RenameGroupUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.AddContactsToGroupUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.CreateGroupUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.DeleteGroupUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.GetGroupMembershipUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.GetGroupsUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.MergeGroupsUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.RemoveContactsFromGroupUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.RenameGroupUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -85,7 +86,7 @@ private class GroupDetailContactsRepository(
     override suspend fun mergeContacts(
         targetId: Long,
         sourceIds: List<Long>,
-    ): com.m4isper.contactsapp.domain.model.ContactLink? = null
+    ): com.m4isper.contactsapp.domain.model.contact.ContactLink? = null
 
     override fun observeFavorites(): Flow<Set<Long>> = flowOf(emptySet())
 
@@ -133,7 +134,7 @@ class GroupDetailViewModelTest {
                 FakeGroupsRepository(
                     groups =
                         listOf(
-                            com.m4isper.contactsapp.domain.model
+                            com.m4isper.contactsapp.domain.model.contact
                                 .ContactGroup(id = 1, title = "Friends"),
                         ),
                     membership = mapOf(7L to setOf(1L), 8L to setOf(2L)),
@@ -157,7 +158,7 @@ class GroupDetailViewModelTest {
                 FakeGroupsRepository(
                     groups =
                         listOf(
-                            com.m4isper.contactsapp.domain.model
+                            com.m4isper.contactsapp.domain.model.contact
                                 .ContactGroup(id = 1, title = "Friends"),
                         ),
                     membership = mapOf(7L to setOf(1L)),
@@ -182,7 +183,7 @@ class GroupDetailViewModelTest {
                 FakeGroupsRepository(
                     groups =
                         listOf(
-                            com.m4isper.contactsapp.domain.model
+                            com.m4isper.contactsapp.domain.model.contact
                                 .ContactGroup(id = 1, title = "Friends"),
                         ),
                     membership = mapOf(7L to setOf(1L)),
@@ -209,7 +210,7 @@ class GroupDetailViewModelTest {
                 FakeGroupsRepository(
                     groups =
                         listOf(
-                            com.m4isper.contactsapp.domain.model
+                            com.m4isper.contactsapp.domain.model.contact
                                 .ContactGroup(id = 1, title = "Friends"),
                         ),
                     membership = mapOf(7L to setOf(1L)),
@@ -237,9 +238,9 @@ class GroupDetailViewModelTest {
                 FakeGroupsRepository(
                     groups =
                         listOf(
-                            com.m4isper.contactsapp.domain.model
+                            com.m4isper.contactsapp.domain.model.contact
                                 .ContactGroup(id = 1, title = "Friends"),
-                            com.m4isper.contactsapp.domain.model
+                            com.m4isper.contactsapp.domain.model.contact
                                 .ContactGroup(id = 2, title = "Work"),
                         ),
                     membership = mapOf(7L to setOf(1L)),

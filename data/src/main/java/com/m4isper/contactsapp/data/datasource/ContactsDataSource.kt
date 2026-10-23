@@ -1,7 +1,7 @@
 package com.m4isper.contactsapp.data.datasource
 
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 
 /** Чтение контактов: список, один контакт и доступные аккаунты. */
 interface ContactsDataSource {

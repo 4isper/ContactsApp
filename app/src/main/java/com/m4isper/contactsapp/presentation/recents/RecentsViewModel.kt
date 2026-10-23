@@ -2,11 +2,11 @@ package com.m4isper.contactsapp.presentation.recents
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.m4isper.contactsapp.domain.model.AppError
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
-import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
+import com.m4isper.contactsapp.domain.model.common.AppError
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.ObserveFavoritesUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.ToggleFavoriteUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.safeCall
 import com.m4isper.contactsapp.presentation.contacts.SUBSCRIBE_TIMEOUT_MILLIS

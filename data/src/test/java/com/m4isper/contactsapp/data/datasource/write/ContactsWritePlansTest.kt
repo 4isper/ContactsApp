@@ -3,9 +3,13 @@ package com.m4isper.contactsapp.data.datasource.write
 import android.provider.ContactsContract.CommonDataKinds.Event
 import com.m4isper.contactsapp.data.datasource.read.ExistingBirthday
 import com.m4isper.contactsapp.data.datasource.read.ExistingEvent
-import com.m4isper.contactsapp.domain.model.Birthday
-import com.m4isper.contactsapp.domain.model.EditableEvent
-import com.m4isper.contactsapp.domain.model.EventKind
+import com.m4isper.contactsapp.data.datasource.write.contacts.BirthdayWriteOp
+import com.m4isper.contactsapp.data.datasource.write.contacts.EventWriteOp
+import com.m4isper.contactsapp.data.datasource.write.contacts.planBirthdayWrite
+import com.m4isper.contactsapp.data.datasource.write.contacts.planEventWriteOps
+import com.m4isper.contactsapp.domain.model.contact.Birthday
+import com.m4isper.contactsapp.domain.model.contact.EditableEvent
+import com.m4isper.contactsapp.domain.model.contact.EventKind
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

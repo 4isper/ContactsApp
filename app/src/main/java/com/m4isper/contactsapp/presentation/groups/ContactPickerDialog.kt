@@ -26,7 +26,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.contacts.filterContacts
-import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import com.m4isper.contactsapp.ui.components.SearchField
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 

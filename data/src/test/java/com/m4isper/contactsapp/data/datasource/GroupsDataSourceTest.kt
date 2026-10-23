@@ -1,8 +1,8 @@
 package com.m4isper.contactsapp.data.datasource
 
 import android.Manifest
-import com.m4isper.contactsapp.data.datasource.write.planGroupMerge
-import com.m4isper.contactsapp.domain.model.ContactAccount
+import com.m4isper.contactsapp.data.datasource.write.groups.planGroupMerge
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

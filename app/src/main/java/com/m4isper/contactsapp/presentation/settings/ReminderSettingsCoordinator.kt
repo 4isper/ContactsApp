@@ -1,7 +1,7 @@
 package com.m4isper.contactsapp.presentation.settings
 
-import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
-import com.m4isper.contactsapp.domain.usecase.SetRemindersUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.ObserveSettingsUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.SetRemindersUseCase
 import com.m4isper.contactsapp.presentation.common.safeCall
 import com.m4isper.contactsapp.presentation.reminders.ReminderScheduler
 import dev.zacsweers.metro.Inject

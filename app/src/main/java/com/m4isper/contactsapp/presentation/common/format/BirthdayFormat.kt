@@ -2,7 +2,7 @@ package com.m4isper.contactsapp.presentation.common.format
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration
-import com.m4isper.contactsapp.domain.model.Birthday
+import com.m4isper.contactsapp.domain.model.contact.Birthday
 import java.time.LocalDate
 import java.time.MonthDay
 import java.time.format.DateTimeFormatter

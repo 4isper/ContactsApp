@@ -1,8 +1,8 @@
 package com.m4isper.contactsapp.data.datasource.read
 
 import android.provider.ContactsContract.CommonDataKinds.Im
-import com.m4isper.contactsapp.domain.model.ImProtocol
-import com.m4isper.contactsapp.domain.model.InstantMessage
+import com.m4isper.contactsapp.domain.model.contact.ImProtocol
+import com.m4isper.contactsapp.domain.model.contact.InstantMessage
 
 /**
  * Протокол лежит в data5, произвольное название сервиса — в data6.

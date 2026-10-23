@@ -46,9 +46,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.R
-import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import com.m4isper.contactsapp.presentation.common.groups.GroupNameDialog
-import com.m4isper.contactsapp.presentation.contacts.contactSubtitle
+import com.m4isper.contactsapp.presentation.contacts.components.contactSubtitle
 import com.m4isper.contactsapp.ui.components.ConfirmDialog
 import com.m4isper.contactsapp.ui.components.EmptyState
 import com.m4isper.contactsapp.ui.components.ListAvatar

@@ -1,6 +1,6 @@
 package com.m4isper.contactsapp.domain.repository
 
-import com.m4isper.contactsapp.domain.model.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 
 /** Аккаунты контактов: локальный и синхронизируемые. */
 interface ContactsAccounts {

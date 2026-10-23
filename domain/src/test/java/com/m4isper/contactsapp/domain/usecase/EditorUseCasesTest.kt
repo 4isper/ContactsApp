@@ -1,16 +1,23 @@
 package com.m4isper.contactsapp.domain.usecase
 
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactForm
-import com.m4isper.contactsapp.domain.model.EditableName
-import com.m4isper.contactsapp.domain.model.EditablePhone
-import com.m4isper.contactsapp.domain.model.FormError
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactForm
+import com.m4isper.contactsapp.domain.model.contact.ContactLink
+import com.m4isper.contactsapp.domain.model.contact.EditableName
+import com.m4isper.contactsapp.domain.model.contact.EditablePhone
+import com.m4isper.contactsapp.domain.model.contact.FormError
+import com.m4isper.contactsapp.domain.model.contact.RawContactRef
 import com.m4isper.contactsapp.domain.repository.ContactsAccounts
 import com.m4isper.contactsapp.domain.repository.ContactsMerger
 import com.m4isper.contactsapp.domain.repository.ContactsReader
 import com.m4isper.contactsapp.domain.repository.ContactsWriter
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
+import com.m4isper.contactsapp.domain.usecase.contacts.CreateContactUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.DeleteContactsResult
+import com.m4isper.contactsapp.domain.usecase.contacts.DeleteContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.SaveResult
+import com.m4isper.contactsapp.domain.usecase.contacts.UpdateContactUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -30,7 +37,7 @@ private class RecordingRepository :
     FavoritesRepository {
     val created = mutableListOf<ContactForm>()
 
-    override suspend fun unmergeContacts(link: com.m4isper.contactsapp.domain.model.ContactLink) = Unit
+    override suspend fun unmergeContacts(link: com.m4isper.contactsapp.domain.model.contact.ContactLink) = Unit
 
     override suspend fun getContactsPage(
         offset: Int,
@@ -88,15 +95,15 @@ private class RecordingRepository :
     override suspend fun mergeContacts(
         targetId: Long,
         sourceIds: List<Long>,
-    ): com.m4isper.contactsapp.domain.model.ContactLink? {
+    ): com.m4isper.contactsapp.domain.model.contact.ContactLink? {
         merged += targetId to sourceIds
-        return com.m4isper.contactsapp.domain.model.ContactLink(
+        return com.m4isper.contactsapp.domain.model.contact.ContactLink(
             target =
-                com.m4isper.contactsapp.domain.model
+                com.m4isper.contactsapp.domain.model.contact
                     .RawContactRef(targetId),
             sources =
                 sourceIds.map {
-                    com.m4isper.contactsapp.domain.model
+                    com.m4isper.contactsapp.domain.model.contact
                         .RawContactRef(it)
                 },
         )

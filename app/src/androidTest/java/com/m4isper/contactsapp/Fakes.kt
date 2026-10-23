@@ -1,26 +1,25 @@
 package com.m4isper.contactsapp
 
-import com.m4isper.contactsapp.domain.model.AppSettings
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactEvent
-import com.m4isper.contactsapp.domain.model.ContactForm
-import com.m4isper.contactsapp.domain.model.ContactGroup
-import com.m4isper.contactsapp.domain.model.ContactLink
-import com.m4isper.contactsapp.domain.model.ContactRelation
-import com.m4isper.contactsapp.domain.model.ContactSortOrder
-import com.m4isper.contactsapp.domain.model.EditableEvent
-import com.m4isper.contactsapp.domain.model.EditableName
-import com.m4isper.contactsapp.domain.model.EditableNickname
-import com.m4isper.contactsapp.domain.model.EditablePhone
-import com.m4isper.contactsapp.domain.model.EditableRelation
-import com.m4isper.contactsapp.domain.model.InstantMessage
-import com.m4isper.contactsapp.domain.model.ListDensity
-import com.m4isper.contactsapp.domain.model.PhoneKind
-import com.m4isper.contactsapp.domain.model.PhoneNumber
-import com.m4isper.contactsapp.domain.model.ThemeMode
-import com.m4isper.contactsapp.domain.repository.AccountSettings
-import com.m4isper.contactsapp.domain.repository.AppearanceSettings
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactEvent
+import com.m4isper.contactsapp.domain.model.contact.ContactForm
+import com.m4isper.contactsapp.domain.model.contact.ContactGroup
+import com.m4isper.contactsapp.domain.model.contact.ContactLink
+import com.m4isper.contactsapp.domain.model.contact.ContactRelation
+import com.m4isper.contactsapp.domain.model.contact.EditableEvent
+import com.m4isper.contactsapp.domain.model.contact.EditableName
+import com.m4isper.contactsapp.domain.model.contact.EditableNickname
+import com.m4isper.contactsapp.domain.model.contact.EditablePhone
+import com.m4isper.contactsapp.domain.model.contact.EditableRelation
+import com.m4isper.contactsapp.domain.model.contact.InstantMessage
+import com.m4isper.contactsapp.domain.model.contact.PhoneKind
+import com.m4isper.contactsapp.domain.model.contact.PhoneNumber
+import com.m4isper.contactsapp.domain.model.contact.RawContactRef
+import com.m4isper.contactsapp.domain.model.settings.AppSettings
+import com.m4isper.contactsapp.domain.model.settings.ContactSortOrder
+import com.m4isper.contactsapp.domain.model.settings.ListDensity
+import com.m4isper.contactsapp.domain.model.settings.ThemeMode
 import com.m4isper.contactsapp.domain.repository.ContactsAccounts
 import com.m4isper.contactsapp.domain.repository.ContactsChangeSource
 import com.m4isper.contactsapp.domain.repository.ContactsMerger
@@ -28,12 +27,14 @@ import com.m4isper.contactsapp.domain.repository.ContactsReader
 import com.m4isper.contactsapp.domain.repository.ContactsWriter
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
 import com.m4isper.contactsapp.domain.repository.GroupsRepository
-import com.m4isper.contactsapp.domain.repository.LanguageSettings
-import com.m4isper.contactsapp.domain.repository.ListSettings
-import com.m4isper.contactsapp.domain.repository.PrivacySettings
-import com.m4isper.contactsapp.domain.repository.ReminderSettings
-import com.m4isper.contactsapp.domain.repository.SettingsMaintenance
-import com.m4isper.contactsapp.domain.repository.SettingsReader
+import com.m4isper.contactsapp.domain.repository.settings.AccountSettings
+import com.m4isper.contactsapp.domain.repository.settings.AppearanceSettings
+import com.m4isper.contactsapp.domain.repository.settings.LanguageSettings
+import com.m4isper.contactsapp.domain.repository.settings.ListSettings
+import com.m4isper.contactsapp.domain.repository.settings.PrivacySettings
+import com.m4isper.contactsapp.domain.repository.settings.ReminderSettings
+import com.m4isper.contactsapp.domain.repository.settings.SettingsMaintenance
+import com.m4isper.contactsapp.domain.repository.settings.SettingsReader
 import com.m4isper.contactsapp.domain.vcard.VCardCodec
 import com.m4isper.contactsapp.domain.vcard.VCardContact
 import com.m4isper.contactsapp.domain.vcard.VCardExportContact
@@ -157,17 +158,17 @@ internal class FakeAndroidRepository(
     override suspend fun mergeContacts(
         targetId: Long,
         sourceIds: List<Long>,
-    ): com.m4isper.contactsapp.domain.model.ContactLink? {
+    ): com.m4isper.contactsapp.domain.model.contact.ContactLink? {
         failure?.let { throw it }
         merged += targetId to sourceIds
         contacts = contacts.filterNot { it.contactId in sourceIds }
-        return com.m4isper.contactsapp.domain.model.ContactLink(
+        return com.m4isper.contactsapp.domain.model.contact.ContactLink(
             target =
-                com.m4isper.contactsapp.domain.model
+                com.m4isper.contactsapp.domain.model.contact
                     .RawContactRef(targetId),
             sources =
                 sourceIds.map {
-                    com.m4isper.contactsapp.domain.model
+                    com.m4isper.contactsapp.domain.model.contact
                         .RawContactRef(it)
                 },
         )

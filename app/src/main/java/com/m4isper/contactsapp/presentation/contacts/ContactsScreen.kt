@@ -19,6 +19,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.presentation.common.permissions.PermissionRequest
 import com.m4isper.contactsapp.presentation.common.permissions.hasPermission
 import com.m4isper.contactsapp.presentation.common.permissions.openAppSettings
+import com.m4isper.contactsapp.presentation.contacts.components.ContactList
+import com.m4isper.contactsapp.presentation.contacts.effects.syncContactsPermission
 import com.m4isper.contactsapp.presentation.import.ImportPreviewViewModel
 import com.m4isper.contactsapp.presentation.widget.ContactsWidgetProvider
 import dev.zacsweers.metrox.viewmodel.metroViewModel

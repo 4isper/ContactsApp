@@ -2,49 +2,104 @@ package com.m4isper.contactsapp.presentation.editor
 
 import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.FakeSettingsRepository
-import com.m4isper.contactsapp.domain.model.AddressKind
-import com.m4isper.contactsapp.domain.model.AppSettings
-import com.m4isper.contactsapp.domain.model.Birthday
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactForm
-import com.m4isper.contactsapp.domain.model.ContactGroup
-import com.m4isper.contactsapp.domain.model.ContactLink
-import com.m4isper.contactsapp.domain.model.EditableAddress
-import com.m4isper.contactsapp.domain.model.EditableBirthday
-import com.m4isper.contactsapp.domain.model.EditableEmail
-import com.m4isper.contactsapp.domain.model.EditableEvent
-import com.m4isper.contactsapp.domain.model.EditableInstantMessage
-import com.m4isper.contactsapp.domain.model.EditableName
-import com.m4isper.contactsapp.domain.model.EditableNickname
-import com.m4isper.contactsapp.domain.model.EditableNote
-import com.m4isper.contactsapp.domain.model.EditableOrganization
-import com.m4isper.contactsapp.domain.model.EditableRelation
-import com.m4isper.contactsapp.domain.model.EmailKind
-import com.m4isper.contactsapp.domain.model.EventKind
-import com.m4isper.contactsapp.domain.model.ImProtocol
-import com.m4isper.contactsapp.domain.model.NameMode
-import com.m4isper.contactsapp.domain.model.PhoneKind
-import com.m4isper.contactsapp.domain.model.PhotoRef
-import com.m4isper.contactsapp.domain.model.RelationKind
-import com.m4isper.contactsapp.domain.model.SipKind
-import com.m4isper.contactsapp.domain.model.WebsiteKind
+import com.m4isper.contactsapp.domain.model.contact.AddressKind
+import com.m4isper.contactsapp.domain.model.contact.Birthday
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactForm
+import com.m4isper.contactsapp.domain.model.contact.ContactGroup
+import com.m4isper.contactsapp.domain.model.contact.ContactLink
+import com.m4isper.contactsapp.domain.model.contact.EditableAddress
+import com.m4isper.contactsapp.domain.model.contact.EditableBirthday
+import com.m4isper.contactsapp.domain.model.contact.EditableEmail
+import com.m4isper.contactsapp.domain.model.contact.EditableEvent
+import com.m4isper.contactsapp.domain.model.contact.EditableInstantMessage
+import com.m4isper.contactsapp.domain.model.contact.EditableName
+import com.m4isper.contactsapp.domain.model.contact.EditableNickname
+import com.m4isper.contactsapp.domain.model.contact.EditableNote
+import com.m4isper.contactsapp.domain.model.contact.EditableOrganization
+import com.m4isper.contactsapp.domain.model.contact.EditableRelation
+import com.m4isper.contactsapp.domain.model.contact.EmailKind
+import com.m4isper.contactsapp.domain.model.contact.EventKind
+import com.m4isper.contactsapp.domain.model.contact.FormError
+import com.m4isper.contactsapp.domain.model.contact.FormField
+import com.m4isper.contactsapp.domain.model.contact.ImProtocol
+import com.m4isper.contactsapp.domain.model.contact.NameMode
+import com.m4isper.contactsapp.domain.model.contact.PhoneKind
+import com.m4isper.contactsapp.domain.model.contact.PhoneNumber
+import com.m4isper.contactsapp.domain.model.contact.PhotoRef
+import com.m4isper.contactsapp.domain.model.contact.RelationKind
+import com.m4isper.contactsapp.domain.model.contact.SipKind
+import com.m4isper.contactsapp.domain.model.contact.WebsiteKind
+import com.m4isper.contactsapp.domain.model.settings.AppSettings
 import com.m4isper.contactsapp.domain.repository.ContactsAccounts
 import com.m4isper.contactsapp.domain.repository.ContactsMerger
 import com.m4isper.contactsapp.domain.repository.ContactsReader
 import com.m4isper.contactsapp.domain.repository.ContactsWriter
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
-import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
-import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
-import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactAccountUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactFormUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetDefaultContactAccountUseCase
-import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
-import com.m4isper.contactsapp.domain.usecase.SetLastContactAccountUseCase
-import com.m4isper.contactsapp.domain.usecase.UpdateContactUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.CreateContactUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.DeleteContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactAccountUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactAccountsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactFormUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetDefaultContactAccountUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.SetLastContactAccountUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.UpdateContactUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.CreateGroupUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.GetGroupsUseCase
+import com.m4isper.contactsapp.presentation.editor.edits.withAddedAddress
+import com.m4isper.contactsapp.presentation.editor.edits.withAddedEmail
+import com.m4isper.contactsapp.presentation.editor.edits.withAddedEvent
+import com.m4isper.contactsapp.presentation.editor.edits.withAddedIm
+import com.m4isper.contactsapp.presentation.editor.edits.withAddedPhone
+import com.m4isper.contactsapp.presentation.editor.edits.withAddedRelation
+import com.m4isper.contactsapp.presentation.editor.edits.withAddedSip
+import com.m4isper.contactsapp.presentation.editor.edits.withAddedWebsite
+import com.m4isper.contactsapp.presentation.editor.edits.withAddress
+import com.m4isper.contactsapp.presentation.editor.edits.withAddressCity
+import com.m4isper.contactsapp.presentation.editor.edits.withAddressCountry
+import com.m4isper.contactsapp.presentation.editor.edits.withAddressKind
+import com.m4isper.contactsapp.presentation.editor.edits.withAddressPostcode
+import com.m4isper.contactsapp.presentation.editor.edits.withAddressRegion
+import com.m4isper.contactsapp.presentation.editor.edits.withAddressStreet
+import com.m4isper.contactsapp.presentation.editor.edits.withBirthday
+import com.m4isper.contactsapp.presentation.editor.edits.withDisplayName
+import com.m4isper.contactsapp.presentation.editor.edits.withEmail
+import com.m4isper.contactsapp.presentation.editor.edits.withEmailKind
+import com.m4isper.contactsapp.presentation.editor.edits.withEventDate
+import com.m4isper.contactsapp.presentation.editor.edits.withEventKind
+import com.m4isper.contactsapp.presentation.editor.edits.withFamilyName
+import com.m4isper.contactsapp.presentation.editor.edits.withGivenName
+import com.m4isper.contactsapp.presentation.editor.edits.withIm
+import com.m4isper.contactsapp.presentation.editor.edits.withImCustomProtocol
+import com.m4isper.contactsapp.presentation.editor.edits.withMiddleName
+import com.m4isper.contactsapp.presentation.editor.edits.withMovedPhone
+import com.m4isper.contactsapp.presentation.editor.edits.withNickname
+import com.m4isper.contactsapp.presentation.editor.edits.withNote
+import com.m4isper.contactsapp.presentation.editor.edits.withOrganizationCompany
+import com.m4isper.contactsapp.presentation.editor.edits.withOrganizationDepartment
+import com.m4isper.contactsapp.presentation.editor.edits.withOrganizationJobDescription
+import com.m4isper.contactsapp.presentation.editor.edits.withOrganizationOfficeLocation
+import com.m4isper.contactsapp.presentation.editor.edits.withPhone
+import com.m4isper.contactsapp.presentation.editor.edits.withPhoneKind
+import com.m4isper.contactsapp.presentation.editor.edits.withPhoneticFamilyName
+import com.m4isper.contactsapp.presentation.editor.edits.withPhoneticGivenName
+import com.m4isper.contactsapp.presentation.editor.edits.withPhoto
+import com.m4isper.contactsapp.presentation.editor.edits.withPrimaryEmail
+import com.m4isper.contactsapp.presentation.editor.edits.withPrimaryPhone
+import com.m4isper.contactsapp.presentation.editor.edits.withRelationKind
+import com.m4isper.contactsapp.presentation.editor.edits.withRelationName
+import com.m4isper.contactsapp.presentation.editor.edits.withSip
+import com.m4isper.contactsapp.presentation.editor.edits.withSipKind
+import com.m4isper.contactsapp.presentation.editor.edits.withToggledGroup
+import com.m4isper.contactsapp.presentation.editor.edits.withToggledNameMode
+import com.m4isper.contactsapp.presentation.editor.edits.withWebsite
+import com.m4isper.contactsapp.presentation.editor.edits.withWebsiteKind
+import com.m4isper.contactsapp.presentation.editor.edits.withoutEmail
+import com.m4isper.contactsapp.presentation.editor.edits.withoutEvent
+import com.m4isper.contactsapp.presentation.editor.edits.withoutPhoto
+import com.m4isper.contactsapp.presentation.editor.edits.withoutRelation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -67,7 +122,7 @@ import org.junit.Test
 private fun formOf(displayName: String): ContactForm =
     ContactForm(
         name =
-            com.m4isper.contactsapp.domain.model
+            com.m4isper.contactsapp.domain.model.contact
                 .EditableName(display = displayName),
     )
 
@@ -96,7 +151,7 @@ private class FakeEditorRepository :
     val deleted = mutableListOf<Long>()
     var deleteFails = false
     var formToLoad: ContactForm? = null
-    var existingContacts: List<com.m4isper.contactsapp.domain.model.ContactDetails> = emptyList()
+    var existingContacts: List<com.m4isper.contactsapp.domain.model.contact.ContactDetails> = emptyList()
 
     override suspend fun getContacts() = existingContacts
 
@@ -137,7 +192,7 @@ private class FakeEditorRepository :
     override suspend fun mergeContacts(
         targetId: Long,
         sourceIds: List<Long>,
-    ): com.m4isper.contactsapp.domain.model.ContactLink? = null
+    ): com.m4isper.contactsapp.domain.model.contact.ContactLink? = null
 
     override fun observeFavorites(): Flow<Set<Long>> = MutableStateFlow(emptySet<Long>()).asStateFlow()
 
@@ -586,14 +641,14 @@ class ContactEditorViewModelTest {
                 FakeEditorRepository().apply {
                     existingContacts =
                         listOf(
-                            com.m4isper.contactsapp.domain.model.ContactDetails(
+                            com.m4isper.contactsapp.domain.model.contact.ContactDetails(
                                 contactId = 7,
                                 name = "Anna",
                                 phones =
                                     listOf(
-                                        com.m4isper.contactsapp.domain.model.PhoneNumber(
+                                        com.m4isper.contactsapp.domain.model.contact.PhoneNumber(
                                             "+79161234567",
-                                            com.m4isper.contactsapp.domain.model.PhoneKind.MOBILE,
+                                            com.m4isper.contactsapp.domain.model.contact.PhoneKind.MOBILE,
                                         ),
                                     ),
                             ),
@@ -640,8 +695,8 @@ class ContactEditorViewModelTest {
             advanceUntilIdle()
 
             assertEquals(
-                com.m4isper.contactsapp.domain.model.FormError.INVALID_EMAIL,
-                viewModel.uiState.value.fieldErrors[com.m4isper.contactsapp.domain.model.FormField.EMAIL],
+                com.m4isper.contactsapp.domain.model.contact.FormError.INVALID_EMAIL,
+                viewModel.uiState.value.fieldErrors[com.m4isper.contactsapp.domain.model.contact.FormField.EMAIL],
             )
             assertTrue(repository.created.isEmpty())
         }

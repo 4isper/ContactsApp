@@ -22,9 +22,9 @@ import com.m4isper.contactsapp.data.datasource.read.DataColumns
 import com.m4isper.contactsapp.data.datasource.read.DataRow
 import com.m4isper.contactsapp.data.datasource.read.aggregateContacts
 import com.m4isper.contactsapp.data.datasource.read.buildContactDetails
-import com.m4isper.contactsapp.data.datasource.write.readContactPhotoBytes
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.data.datasource.write.contacts.readContactPhotoBytes
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject

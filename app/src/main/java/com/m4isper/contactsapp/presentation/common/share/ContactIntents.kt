@@ -7,8 +7,9 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import com.m4isper.contactsapp.R
-import com.m4isper.contactsapp.domain.model.ImProtocol
-import com.m4isper.contactsapp.domain.model.InstantMessage
+import com.m4isper.contactsapp.domain.model.contact.ImProtocol
+import com.m4isper.contactsapp.domain.model.contact.InstantMessage
+import com.m4isper.contactsapp.domain.model.contact.normalized
 import com.m4isper.contactsapp.presentation.common.logw
 
 private const val INTENTS_TAG = "ContactIntents"

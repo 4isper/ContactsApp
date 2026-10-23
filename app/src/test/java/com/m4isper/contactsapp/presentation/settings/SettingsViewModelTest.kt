@@ -2,25 +2,27 @@ package com.m4isper.contactsapp.presentation.settings
 
 import com.m4isper.contactsapp.FakeSettingsRepository
 import com.m4isper.contactsapp.data.security.Pbkdf2PinHasher
-import com.m4isper.contactsapp.domain.model.AppError
-import com.m4isper.contactsapp.domain.model.AppSettings
-import com.m4isper.contactsapp.domain.model.ContactSortOrder
-import com.m4isper.contactsapp.domain.model.ListDensity
-import com.m4isper.contactsapp.domain.model.ThemeMode
-import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
-import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
-import com.m4isper.contactsapp.domain.usecase.ResetSettingsUseCase
-import com.m4isper.contactsapp.domain.usecase.SetAppLanguageUseCase
-import com.m4isper.contactsapp.domain.usecase.SetAppLockUseCase
-import com.m4isper.contactsapp.domain.usecase.SetDefaultContactAccountUseCase
-import com.m4isper.contactsapp.domain.usecase.SetDynamicColorUseCase
-import com.m4isper.contactsapp.domain.usecase.SetFavoritesFirstUseCase
-import com.m4isper.contactsapp.domain.usecase.SetListDensityUseCase
-import com.m4isper.contactsapp.domain.usecase.SetRemindersUseCase
-import com.m4isper.contactsapp.domain.usecase.SetSecureWindowUseCase
-import com.m4isper.contactsapp.domain.usecase.SetShowPhotosUseCase
-import com.m4isper.contactsapp.domain.usecase.SetSortOrderUseCase
-import com.m4isper.contactsapp.domain.usecase.SetThemeModeUseCase
+import com.m4isper.contactsapp.domain.model.common.AppError
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.settings.AppSettings
+import com.m4isper.contactsapp.domain.model.settings.ContactSortOrder
+import com.m4isper.contactsapp.domain.model.settings.ListDensity
+import com.m4isper.contactsapp.domain.model.settings.ThemeMode
+import com.m4isper.contactsapp.domain.repository.ContactsAccounts
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactAccountsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.SetDefaultContactAccountUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.ObserveSettingsUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.ResetSettingsUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.SetAppLanguageUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.SetAppLockUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.SetDynamicColorUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.SetFavoritesFirstUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.SetListDensityUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.SetRemindersUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.SetSecureWindowUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.SetShowPhotosUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.SetSortOrderUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.SetThemeModeUseCase
 import com.m4isper.contactsapp.presentation.reminders.ReminderScheduler
 import com.m4isper.contactsapp.presentation.settings.SettingsResetCoordinator
 import kotlinx.coroutines.Dispatchers
@@ -41,11 +43,13 @@ import org.junit.Test
 
 /** Аккаунты для выбора аккаунта по умолчанию: в тесте настроек важен только список. */
 private class SettingsFakeContactsRepository : com.m4isper.contactsapp.domain.repository.ContactsAccounts {
-    override suspend fun getContactAccount(contactId: Long): com.m4isper.contactsapp.domain.model.ContactAccount =
-        com.m4isper.contactsapp.domain.model.ContactAccount.Local
+    override suspend fun getContactAccount(
+        contactId: Long,
+    ): com.m4isper.contactsapp.domain.model.contact.ContactAccount =
+        com.m4isper.contactsapp.domain.model.contact.ContactAccount.Local
 
-    override suspend fun getContactAccounts(): List<com.m4isper.contactsapp.domain.model.ContactAccount> =
-        listOf(com.m4isper.contactsapp.domain.model.ContactAccount.Local)
+    override suspend fun getContactAccounts(): List<com.m4isper.contactsapp.domain.model.contact.ContactAccount> =
+        listOf(com.m4isper.contactsapp.domain.model.contact.ContactAccount.Local)
 }
 
 /** Хранилище языка в памяти: настройки проверяются без Android-контекста. */

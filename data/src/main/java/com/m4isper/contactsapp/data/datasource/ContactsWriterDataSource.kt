@@ -1,8 +1,8 @@
 package com.m4isper.contactsapp.data.datasource
 
 import com.m4isper.contactsapp.data.datasource.read.ContactRows
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactForm
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactForm
 
 /** Запись контактов и чтение сырых строк для diff при обновлении. */
 interface ContactsWriterDataSource {

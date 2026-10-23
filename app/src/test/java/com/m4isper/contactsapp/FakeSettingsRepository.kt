@@ -1,18 +1,18 @@
 package com.m4isper.contactsapp
 
-import com.m4isper.contactsapp.domain.model.AppSettings
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactSortOrder
-import com.m4isper.contactsapp.domain.model.ListDensity
-import com.m4isper.contactsapp.domain.model.ThemeMode
-import com.m4isper.contactsapp.domain.repository.AccountSettings
-import com.m4isper.contactsapp.domain.repository.AppearanceSettings
-import com.m4isper.contactsapp.domain.repository.LanguageSettings
-import com.m4isper.contactsapp.domain.repository.ListSettings
-import com.m4isper.contactsapp.domain.repository.PrivacySettings
-import com.m4isper.contactsapp.domain.repository.ReminderSettings
-import com.m4isper.contactsapp.domain.repository.SettingsMaintenance
-import com.m4isper.contactsapp.domain.repository.SettingsReader
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.settings.AppSettings
+import com.m4isper.contactsapp.domain.model.settings.ContactSortOrder
+import com.m4isper.contactsapp.domain.model.settings.ListDensity
+import com.m4isper.contactsapp.domain.model.settings.ThemeMode
+import com.m4isper.contactsapp.domain.repository.settings.AccountSettings
+import com.m4isper.contactsapp.domain.repository.settings.AppearanceSettings
+import com.m4isper.contactsapp.domain.repository.settings.LanguageSettings
+import com.m4isper.contactsapp.domain.repository.settings.ListSettings
+import com.m4isper.contactsapp.domain.repository.settings.PrivacySettings
+import com.m4isper.contactsapp.domain.repository.settings.ReminderSettings
+import com.m4isper.contactsapp.domain.repository.settings.SettingsMaintenance
+import com.m4isper.contactsapp.domain.repository.settings.SettingsReader
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 

@@ -1,8 +1,8 @@
 package com.m4isper.contactsapp.data.repository
 
 import com.m4isper.contactsapp.data.datasource.SettingsDataSource
-import com.m4isper.contactsapp.domain.model.AppSettings
-import com.m4isper.contactsapp.domain.repository.SettingsReader
+import com.m4isper.contactsapp.domain.model.settings.AppSettings
+import com.m4isper.contactsapp.domain.repository.settings.SettingsReader
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject

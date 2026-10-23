@@ -1,24 +1,24 @@
 package com.m4isper.contactsapp.data.vcard
 
 import com.m4isper.contactsapp.data.format.birthdayToString
-import com.m4isper.contactsapp.domain.model.AddressKind
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactEvent
-import com.m4isper.contactsapp.domain.model.ContactRelation
-import com.m4isper.contactsapp.domain.model.EmailAddress
-import com.m4isper.contactsapp.domain.model.EmailKind
-import com.m4isper.contactsapp.domain.model.EventKind
-import com.m4isper.contactsapp.domain.model.ImProtocol
-import com.m4isper.contactsapp.domain.model.InstantMessage
-import com.m4isper.contactsapp.domain.model.Organization
-import com.m4isper.contactsapp.domain.model.PhoneKind
-import com.m4isper.contactsapp.domain.model.PhoneNumber
-import com.m4isper.contactsapp.domain.model.PostalAddress
-import com.m4isper.contactsapp.domain.model.RelationKind
-import com.m4isper.contactsapp.domain.model.SipAddress
-import com.m4isper.contactsapp.domain.model.SipKind
-import com.m4isper.contactsapp.domain.model.Website
-import com.m4isper.contactsapp.domain.model.WebsiteKind
+import com.m4isper.contactsapp.domain.model.contact.AddressKind
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactEvent
+import com.m4isper.contactsapp.domain.model.contact.ContactRelation
+import com.m4isper.contactsapp.domain.model.contact.EmailAddress
+import com.m4isper.contactsapp.domain.model.contact.EmailKind
+import com.m4isper.contactsapp.domain.model.contact.EventKind
+import com.m4isper.contactsapp.domain.model.contact.ImProtocol
+import com.m4isper.contactsapp.domain.model.contact.InstantMessage
+import com.m4isper.contactsapp.domain.model.contact.Organization
+import com.m4isper.contactsapp.domain.model.contact.PhoneKind
+import com.m4isper.contactsapp.domain.model.contact.PhoneNumber
+import com.m4isper.contactsapp.domain.model.contact.PostalAddress
+import com.m4isper.contactsapp.domain.model.contact.RelationKind
+import com.m4isper.contactsapp.domain.model.contact.SipAddress
+import com.m4isper.contactsapp.domain.model.contact.SipKind
+import com.m4isper.contactsapp.domain.model.contact.Website
+import com.m4isper.contactsapp.domain.model.contact.WebsiteKind
 import com.m4isper.contactsapp.domain.vcard.VCardExportContact
 
 /** Сборка vCard 3.0 из контактов: обратная сторона [parseVCards]. */

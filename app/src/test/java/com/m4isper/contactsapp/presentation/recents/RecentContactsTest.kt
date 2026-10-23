@@ -1,6 +1,6 @@
 package com.m4isper.contactsapp.presentation.recents
 
-import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

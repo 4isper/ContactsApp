@@ -1,6 +1,6 @@
 package com.m4isper.contactsapp.presentation.settings
 
-import com.m4isper.contactsapp.domain.usecase.ResetSettingsUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.ResetSettingsUseCase
 import dev.zacsweers.metro.Inject
 
 /**

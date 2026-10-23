@@ -1,5 +1,14 @@
 package com.m4isper.contactsapp.domain.model
 
+import com.m4isper.contactsapp.domain.model.contact.ContactForm
+import com.m4isper.contactsapp.domain.model.contact.EditableEmail
+import com.m4isper.contactsapp.domain.model.contact.EditableEvent
+import com.m4isper.contactsapp.domain.model.contact.EditableName
+import com.m4isper.contactsapp.domain.model.contact.EditablePhone
+import com.m4isper.contactsapp.domain.model.contact.EditableWebsite
+import com.m4isper.contactsapp.domain.model.contact.FormError
+import com.m4isper.contactsapp.domain.model.contact.FormField
+import com.m4isper.contactsapp.domain.model.contact.validateContactFields
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

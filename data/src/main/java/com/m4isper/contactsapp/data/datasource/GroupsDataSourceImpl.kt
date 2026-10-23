@@ -1,8 +1,8 @@
 package com.m4isper.contactsapp.data.datasource
 
-import com.m4isper.contactsapp.data.datasource.write.planGroupMerge
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactGroup
+import com.m4isper.contactsapp.data.datasource.write.groups.planGroupMerge
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactGroup
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject

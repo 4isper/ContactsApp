@@ -1,7 +1,7 @@
 package com.m4isper.contactsapp.domain.repository
 
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactGroup
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactGroup
 
 /** Группы (метки) контактов: чтение, управление и членство. */
 interface GroupsRepository {

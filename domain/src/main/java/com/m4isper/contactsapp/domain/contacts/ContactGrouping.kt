@@ -1,8 +1,8 @@
 package com.m4isper.contactsapp.domain.contacts
 
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactSortOrder
-import com.m4isper.contactsapp.domain.model.normalizeContactText
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.normalizeContactText
+import com.m4isper.contactsapp.domain.model.settings.ContactSortOrder
 
 private const val RECENTLY_ADDED_GROUP = '#'
 

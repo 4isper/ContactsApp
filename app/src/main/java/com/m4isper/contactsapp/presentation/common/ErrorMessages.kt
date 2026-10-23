@@ -4,7 +4,7 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.m4isper.contactsapp.R
-import com.m4isper.contactsapp.domain.model.AppError
+import com.m4isper.contactsapp.domain.model.common.AppError
 
 /**
  * Текст ошибки для пользователя: один словарь на все экраны, технические

@@ -1,11 +1,12 @@
 package com.m4isper.contactsapp.testing
 
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactForm
-import com.m4isper.contactsapp.domain.model.ContactLink
-import com.m4isper.contactsapp.domain.model.PhoneKind
-import com.m4isper.contactsapp.domain.model.PhoneNumber
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactForm
+import com.m4isper.contactsapp.domain.model.contact.ContactLink
+import com.m4isper.contactsapp.domain.model.contact.PhoneKind
+import com.m4isper.contactsapp.domain.model.contact.PhoneNumber
+import com.m4isper.contactsapp.domain.model.contact.RawContactRef
 import com.m4isper.contactsapp.domain.repository.ContactsAccounts
 import com.m4isper.contactsapp.domain.repository.ContactsMerger
 import com.m4isper.contactsapp.domain.repository.ContactsReader
@@ -130,16 +131,16 @@ internal class FakeContactsRepository(
     override suspend fun mergeContacts(
         targetId: Long,
         sourceIds: List<Long>,
-    ): com.m4isper.contactsapp.domain.model.ContactLink? {
+    ): com.m4isper.contactsapp.domain.model.contact.ContactLink? {
         failure?.let { throw it }
         contacts = contacts.filterNot { it.contactId in sourceIds }
-        return com.m4isper.contactsapp.domain.model.ContactLink(
+        return com.m4isper.contactsapp.domain.model.contact.ContactLink(
             target =
-                com.m4isper.contactsapp.domain.model
+                com.m4isper.contactsapp.domain.model.contact
                     .RawContactRef(targetId),
             sources =
                 sourceIds.map {
-                    com.m4isper.contactsapp.domain.model
+                    com.m4isper.contactsapp.domain.model.contact
                         .RawContactRef(it)
                 },
         )

@@ -1,5 +1,8 @@
 package com.m4isper.contactsapp.domain.model
 
+import com.m4isper.contactsapp.domain.model.contact.Email
+import com.m4isper.contactsapp.domain.model.contact.Phone
+import com.m4isper.contactsapp.domain.model.contact.Url
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test

@@ -3,15 +3,15 @@
 
 package com.m4isper.contactsapp.data.vcard
 
-import com.m4isper.contactsapp.domain.model.AddressKind
-import com.m4isper.contactsapp.domain.model.Birthday
-import com.m4isper.contactsapp.domain.model.EditableInstantMessage
-import com.m4isper.contactsapp.domain.model.EmailKind
-import com.m4isper.contactsapp.domain.model.ImProtocol
-import com.m4isper.contactsapp.domain.model.NameParts
-import com.m4isper.contactsapp.domain.model.PhoneKind
-import com.m4isper.contactsapp.domain.model.SipKind
-import com.m4isper.contactsapp.domain.model.WebsiteKind
+import com.m4isper.contactsapp.domain.model.contact.AddressKind
+import com.m4isper.contactsapp.domain.model.contact.Birthday
+import com.m4isper.contactsapp.domain.model.contact.EditableInstantMessage
+import com.m4isper.contactsapp.domain.model.contact.EmailKind
+import com.m4isper.contactsapp.domain.model.contact.ImProtocol
+import com.m4isper.contactsapp.domain.model.contact.NameParts
+import com.m4isper.contactsapp.domain.model.contact.PhoneKind
+import com.m4isper.contactsapp.domain.model.contact.SipKind
+import com.m4isper.contactsapp.domain.model.contact.WebsiteKind
 import java.io.ByteArrayOutputStream
 import java.nio.charset.Charset
 import java.util.Locale

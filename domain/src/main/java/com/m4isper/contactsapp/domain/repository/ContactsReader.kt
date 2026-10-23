@@ -1,7 +1,7 @@
 package com.m4isper.contactsapp.domain.repository
 
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactForm
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactForm
 
 /**
  * Чтение контактов: список, страница, карточка, форма редактора и фото.

@@ -20,9 +20,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.R
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.PhoneNumber
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.PhoneNumber
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.account.contactAccountTitle
 import com.m4isper.contactsapp.presentation.common.call.ConfirmCallDialog
@@ -34,7 +34,7 @@ import com.m4isper.contactsapp.presentation.common.share.openSms
 import com.m4isper.contactsapp.presentation.common.share.shareContact
 import com.m4isper.contactsapp.presentation.common.share.shareContactAsQr
 import com.m4isper.contactsapp.presentation.common.share.shareContactAsText
-import com.m4isper.contactsapp.presentation.editor.AccountPickerDialog
+import com.m4isper.contactsapp.presentation.editor.components.AccountPickerDialog
 import com.m4isper.contactsapp.presentation.widget.ContactsWidgetProvider
 import com.m4isper.contactsapp.ui.components.ConfirmDialog
 import com.m4isper.contactsapp.ui.components.EmptyState

@@ -3,9 +3,9 @@
 
 package com.m4isper.contactsapp.data.datasource
 
-import com.m4isper.contactsapp.data.datasource.write.GroupMergePlan
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactGroup
+import com.m4isper.contactsapp.data.datasource.write.groups.GroupMergePlan
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactGroup
 
 /**
  * Провайдер групп: чтение и запись в провайдер контактов.

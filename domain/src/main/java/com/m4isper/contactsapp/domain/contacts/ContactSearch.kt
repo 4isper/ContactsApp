@@ -3,13 +3,13 @@
 
 package com.m4isper.contactsapp.domain.contacts
 
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactGroup
-import com.m4isper.contactsapp.domain.model.NameParts
-import com.m4isper.contactsapp.domain.model.PhoneNumber
-import com.m4isper.contactsapp.domain.model.normalizeContactText
-import com.m4isper.contactsapp.domain.model.normalizePhoneDigits
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactGroup
+import com.m4isper.contactsapp.domain.model.contact.NameParts
+import com.m4isper.contactsapp.domain.model.contact.PhoneNumber
+import com.m4isper.contactsapp.domain.model.contact.normalizeContactText
+import com.m4isper.contactsapp.domain.model.contact.normalizePhoneDigits
 
 private const val MIN_PHONE_SUFFIX_DIGITS = 7
 private const val MAX_PHONE_SUFFIX_DIGITS = 10

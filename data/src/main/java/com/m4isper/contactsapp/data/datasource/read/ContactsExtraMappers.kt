@@ -4,11 +4,11 @@ import android.provider.ContactsContract.CommonDataKinds.Event
 import android.provider.ContactsContract.CommonDataKinds.Nickname
 import android.provider.ContactsContract.CommonDataKinds.Relation
 import com.m4isper.contactsapp.data.format.birthdayFromString
-import com.m4isper.contactsapp.domain.model.ContactEvent
-import com.m4isper.contactsapp.domain.model.ContactRelation
-import com.m4isper.contactsapp.domain.model.EditableEvent
-import com.m4isper.contactsapp.domain.model.EventKind
-import com.m4isper.contactsapp.domain.model.RelationKind
+import com.m4isper.contactsapp.domain.model.contact.ContactEvent
+import com.m4isper.contactsapp.domain.model.contact.ContactRelation
+import com.m4isper.contactsapp.domain.model.contact.EditableEvent
+import com.m4isper.contactsapp.domain.model.contact.EventKind
+import com.m4isper.contactsapp.domain.model.contact.RelationKind
 
 /**
  * Тип связи лежит в data2; константы провайдера сопоставляются с [RelationKind]

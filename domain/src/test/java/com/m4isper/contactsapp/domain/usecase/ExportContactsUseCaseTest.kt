@@ -1,10 +1,15 @@
 package com.m4isper.contactsapp.domain.usecase
 
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactForm
-import com.m4isper.contactsapp.domain.model.ContactGroup
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactForm
+import com.m4isper.contactsapp.domain.model.contact.ContactGroup
 import com.m4isper.contactsapp.domain.repository.ContactsReader
 import com.m4isper.contactsapp.domain.repository.GroupsRepository
+import com.m4isper.contactsapp.domain.usecase.contacts.ExportContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactDetailsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.LoadContactPhotoUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.GetGroupMembershipUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.GetGroupsUseCase
 import com.m4isper.contactsapp.domain.vcard.VCardCodec
 import com.m4isper.contactsapp.domain.vcard.VCardExportContact
 import com.m4isper.contactsapp.domain.vcard.VCardParseResult

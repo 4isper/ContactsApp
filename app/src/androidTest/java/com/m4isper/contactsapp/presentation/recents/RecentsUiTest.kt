@@ -10,9 +10,9 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.m4isper.contactsapp.FakeAndroidRepository
 import com.m4isper.contactsapp.R
-import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
-import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.ObserveFavoritesUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.ToggleFavoriteUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.testDetails
 import org.junit.Rule

@@ -6,12 +6,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.PhoneKind
-import com.m4isper.contactsapp.domain.model.PhoneNumber
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.PhoneKind
+import com.m4isper.contactsapp.domain.model.contact.PhoneNumber
 import com.m4isper.contactsapp.presentation.common.Loadable
-import com.m4isper.contactsapp.presentation.contacts.ContactList
 import com.m4isper.contactsapp.presentation.contacts.ContactsUiState
+import com.m4isper.contactsapp.presentation.contacts.components.ContactList
 import com.m4isper.contactsapp.ui.components.ContactAvatar
 import com.m4isper.contactsapp.ui.components.EmptyState
 import com.m4isper.contactsapp.ui.components.SearchField

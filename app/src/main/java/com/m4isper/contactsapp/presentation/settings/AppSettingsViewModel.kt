@@ -2,8 +2,8 @@ package com.m4isper.contactsapp.presentation.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.m4isper.contactsapp.domain.model.ThemeMode
-import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
+import com.m4isper.contactsapp.domain.model.settings.ThemeMode
+import com.m4isper.contactsapp.domain.usecase.settings.ObserveSettingsUseCase
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject

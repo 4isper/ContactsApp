@@ -1,9 +1,9 @@
 package com.m4isper.contactsapp.data.repository
 
 import com.m4isper.contactsapp.data.datasource.SettingsDataSource
-import com.m4isper.contactsapp.domain.repository.PrivacySettings
-import com.m4isper.contactsapp.domain.repository.ReminderSettings
-import com.m4isper.contactsapp.domain.repository.SettingsMaintenance
+import com.m4isper.contactsapp.domain.repository.settings.PrivacySettings
+import com.m4isper.contactsapp.domain.repository.settings.ReminderSettings
+import com.m4isper.contactsapp.domain.repository.settings.SettingsMaintenance
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject

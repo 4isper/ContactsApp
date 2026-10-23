@@ -6,9 +6,9 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.m4isper.contactsapp.FakeAndroidRepository
-import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.MergeContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.UnmergeContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.MergeContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.UnmergeContactsUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.testDetails
 import org.junit.Assert.assertEquals

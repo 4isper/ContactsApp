@@ -9,18 +9,18 @@ import android.provider.ContactsContract.CommonDataKinds.Note
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import com.m4isper.contactsapp.data.format.birthdayFromString
-import com.m4isper.contactsapp.domain.model.AddressKind
-import com.m4isper.contactsapp.domain.model.Birthday
-import com.m4isper.contactsapp.domain.model.EmailAddress
-import com.m4isper.contactsapp.domain.model.EmailKind
-import com.m4isper.contactsapp.domain.model.Organization
-import com.m4isper.contactsapp.domain.model.PhoneKind
-import com.m4isper.contactsapp.domain.model.PhoneNumber
-import com.m4isper.contactsapp.domain.model.PostalAddress
-import com.m4isper.contactsapp.domain.model.SipAddress
-import com.m4isper.contactsapp.domain.model.SipKind
-import com.m4isper.contactsapp.domain.model.Website
-import com.m4isper.contactsapp.domain.model.WebsiteKind
+import com.m4isper.contactsapp.domain.model.contact.AddressKind
+import com.m4isper.contactsapp.domain.model.contact.Birthday
+import com.m4isper.contactsapp.domain.model.contact.EmailAddress
+import com.m4isper.contactsapp.domain.model.contact.EmailKind
+import com.m4isper.contactsapp.domain.model.contact.Organization
+import com.m4isper.contactsapp.domain.model.contact.PhoneKind
+import com.m4isper.contactsapp.domain.model.contact.PhoneNumber
+import com.m4isper.contactsapp.domain.model.contact.PostalAddress
+import com.m4isper.contactsapp.domain.model.contact.SipAddress
+import com.m4isper.contactsapp.domain.model.contact.SipKind
+import com.m4isper.contactsapp.domain.model.contact.Website
+import com.m4isper.contactsapp.domain.model.contact.WebsiteKind
 import android.provider.ContactsContract.CommonDataKinds.Organization as OrganizationData
 import android.provider.ContactsContract.CommonDataKinds.SipAddress as SipAddressData
 import android.provider.ContactsContract.CommonDataKinds.Website as WebsiteData

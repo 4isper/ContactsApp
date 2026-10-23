@@ -3,8 +3,8 @@
 
 package com.m4isper.contactsapp.data.datasource
 
-import com.m4isper.contactsapp.domain.model.AppSettings
-import com.m4isper.contactsapp.domain.model.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.settings.AppSettings
 import kotlinx.coroutines.flow.Flow
 
 /** Настройки приложения в локальном хранилище. */

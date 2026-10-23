@@ -1,6 +1,6 @@
 package com.m4isper.contactsapp.data.format
 
-import com.m4isper.contactsapp.domain.model.Birthday
+import com.m4isper.contactsapp.domain.model.contact.Birthday
 import java.util.Locale
 
 /**

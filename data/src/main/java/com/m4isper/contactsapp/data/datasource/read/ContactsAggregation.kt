@@ -1,10 +1,10 @@
 package com.m4isper.contactsapp.data.datasource.read
 
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.NameParts
-import com.m4isper.contactsapp.domain.model.PhotoRef
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.NameParts
+import com.m4isper.contactsapp.domain.model.contact.PhotoRef
 
 /** Полная модель контакта для экрана деталей. */
 internal fun buildContactDetails(

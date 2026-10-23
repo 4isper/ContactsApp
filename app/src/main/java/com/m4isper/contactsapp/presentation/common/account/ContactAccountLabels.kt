@@ -3,7 +3,7 @@ package com.m4isper.contactsapp.presentation.common.account
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.m4isper.contactsapp.R
-import com.m4isper.contactsapp.domain.model.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 
 /** Короткое имя аккаунта: локальное хранилище, почта или тип. */
 @Composable

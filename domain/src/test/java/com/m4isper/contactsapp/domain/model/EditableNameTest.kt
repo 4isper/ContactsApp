@@ -1,5 +1,7 @@
 package com.m4isper.contactsapp.domain.model
 
+import com.m4isper.contactsapp.domain.model.contact.EditableName
+import com.m4isper.contactsapp.domain.model.contact.NameMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

@@ -1,9 +1,10 @@
 package com.m4isper.contactsapp.domain.duplicates
 
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.normalizeContactText
-import com.m4isper.contactsapp.domain.model.normalizeContactTextForMatch
-import com.m4isper.contactsapp.domain.model.normalizePhoneDigits
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.normalizeContactText
+import com.m4isper.contactsapp.domain.model.contact.normalizeContactTextForMatch
+import com.m4isper.contactsapp.domain.model.contact.normalizePhoneDigits
+import com.m4isper.contactsapp.domain.model.contact.normalized
 
 /** Минимальная длина номера (в цифрах): короче — совпадение считаем случайным. */
 private const val MIN_PHONE_DIGITS = 5
