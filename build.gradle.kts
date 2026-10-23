@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.metro) apply false
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.ktlint) apply false
+    alias(libs.plugins.kover)
 }
 
 subprojects {
@@ -77,4 +78,10 @@ subprojects {
     tasks.configureEach {
         if (name == "check") dependsOn(checkArchitecture)
     }
+}
+
+dependencies {
+    kover(project(":app"))
+    kover(project(":domain"))
+    kover(project(":data"))
 }
