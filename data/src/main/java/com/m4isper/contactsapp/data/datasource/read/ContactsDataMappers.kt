@@ -3,6 +3,8 @@
 
 package com.m4isper.contactsapp.data.datasource.read
 
+import com.m4isper.contactsapp.data.datasource.ContactsContractLegacy
+
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Event
 import android.provider.ContactsContract.CommonDataKinds.Note
@@ -63,8 +65,8 @@ internal fun mapWebsiteKind(type: Int): WebsiteKind =
 
 internal fun mapSipKind(type: Int): SipKind =
     when (type) {
-        SipAddressData.TYPE_HOME -> SipKind.HOME
-        SipAddressData.TYPE_WORK -> SipKind.WORK
+        ContactsContractLegacy.Sip.TYPE_HOME -> SipKind.HOME
+        ContactsContractLegacy.Sip.TYPE_WORK -> SipKind.WORK
         else -> SipKind.OTHER
     }
 
@@ -131,13 +133,13 @@ internal fun websitesOf(rows: List<DataRow>): List<Website> =
 
 internal fun sipAddressesOf(rows: List<DataRow>): List<SipAddress> =
     rows
-        .filter { it.mimetype == SipAddressData.CONTENT_ITEM_TYPE }
+        .filter { it.mimetype == ContactsContractLegacy.Sip.CONTENT_ITEM_TYPE }
         .mapNotNull { row ->
             row.data1?.trim()?.takeIf { it.isNotEmpty() }?.let { address ->
                 SipAddress(
                     address = address,
                     kind = mapSipKind(row.data2Int),
-                    customLabel = customLabelOf(row.data2Int, row.data3, SipAddressData.TYPE_CUSTOM),
+                    customLabel = customLabelOf(row.data2Int, row.data3, ContactsContractLegacy.Sip.TYPE_CUSTOM),
                 )
             }
         }.distinctBy { it.address }

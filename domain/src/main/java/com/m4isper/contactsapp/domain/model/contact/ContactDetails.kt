@@ -234,8 +234,6 @@ data class ContactDetails(
     val lastUpdated: Long? = null,
     /** Время последнего контакта с этим человеком по данным устройства, мс; null, если его не было. */
     val lastContacted: Long? = null,
-    /** Сколько раз контакт был использован для звонка/сообщения по данным устройства. */
-    val timesContacted: Int = 0,
 ) {
     /** Основной телефон: явно помеченный или первый доступный. */
     val primaryPhone: PhoneNumber?

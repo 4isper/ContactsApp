@@ -3,6 +3,8 @@
 
 package com.m4isper.contactsapp.data.repository
 
+import com.m4isper.contactsapp.data.datasource.ContactsContractLegacy
+
 import android.provider.ContactsContract
 import com.m4isper.contactsapp.data.datasource.ContactsDataSource
 import com.m4isper.contactsapp.data.datasource.ContactsWriterDataSource
@@ -275,7 +277,7 @@ private fun ExistingSipAddress.toEditable(): EditableSipAddress =
             customLabelOf(
                 type,
                 label,
-                ContactsContract.CommonDataKinds.SipAddress.TYPE_CUSTOM,
+                ContactsContractLegacy.Sip.TYPE_CUSTOM,
             ),
     )
 

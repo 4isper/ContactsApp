@@ -1,5 +1,7 @@
 package com.m4isper.contactsapp.data.datasource.write.contacts
 
+import com.m4isper.contactsapp.data.datasource.ContactsContractLegacy
+
 import android.content.ContentValues
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Event
@@ -33,10 +35,10 @@ private fun contactListValues(form: ContactForm): List<Pair<String, ContentValue
             .forEach { add(Email.CONTENT_ITEM_TYPE to emailValues(it)) }
         form.instantMessages
             .filter { it.address.isNotBlank() }
-            .forEach { add(Im.CONTENT_ITEM_TYPE to instantMessageValues(it)) }
+            .forEach { add(ContactsContractLegacy.Im.CONTENT_ITEM_TYPE to instantMessageValues(it)) }
         form.sipAddresses
             .filter { it.address.isNotBlank() }
-            .forEach { add(SipAddress.CONTENT_ITEM_TYPE to sipValues(it)) }
+            .forEach { add(ContactsContractLegacy.Sip.CONTENT_ITEM_TYPE to sipValues(it)) }
         form.addresses
             .filter { it.hasValue }
             .forEach { add(StructuredPostal.CONTENT_ITEM_TYPE to addressValues(it)) }

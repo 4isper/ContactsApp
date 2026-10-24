@@ -30,7 +30,7 @@ class RecentsViewModelTest {
         FakeContactsRepository(
             contacts =
                 listOf(
-                    ContactDetails(contactId = 1L, name = "Anna", lastContacted = 100L, timesContacted = 1),
+                    ContactDetails(contactId = 1L, name = "Anna", lastContacted = 100L),
                 ),
         )
 

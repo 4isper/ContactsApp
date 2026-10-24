@@ -1,5 +1,7 @@
 package com.m4isper.contactsapp.data.datasource.read
 
+import com.m4isper.contactsapp.data.datasource.ContactsContractLegacy
+
 import android.database.Cursor
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Event
@@ -56,9 +58,9 @@ private class ContactRowsAccumulator {
             Email.CONTENT_ITEM_TYPE,
             StructuredPostal.CONTENT_ITEM_TYPE,
             Website.CONTENT_ITEM_TYPE,
-            SipAddress.CONTENT_ITEM_TYPE,
+            ContactsContractLegacy.Sip.CONTENT_ITEM_TYPE,
             -> addCommunicationRow(mime, cursor, columns, dataId, rawId, data1)
-            Im.CONTENT_ITEM_TYPE -> addInstantMessageRow(cursor, columns, dataId, rawId, data1)
+            ContactsContractLegacy.Im.CONTENT_ITEM_TYPE -> addInstantMessageRow(cursor, columns, dataId, rawId, data1)
             Relation.CONTENT_ITEM_TYPE -> relations += existingRelation(cursor, columns, dataId, rawId)
             Event.CONTENT_ITEM_TYPE -> addEventRow(cursor, columns, dataId, rawId, data1)
             GroupMembership.CONTENT_ITEM_TYPE ->
@@ -82,7 +84,7 @@ private class ContactRowsAccumulator {
             Email.CONTENT_ITEM_TYPE -> addEmailRow(cursor, columns, dataId, rawId, data1)
             StructuredPostal.CONTENT_ITEM_TYPE -> addresses += existingAddress(cursor, columns, dataId, rawId)
             Website.CONTENT_ITEM_TYPE -> addWebsiteRow(cursor, columns, dataId, rawId, data1)
-            SipAddress.CONTENT_ITEM_TYPE -> addSipRow(cursor, columns, dataId, rawId, data1)
+            ContactsContractLegacy.Sip.CONTENT_ITEM_TYPE -> addSipRow(cursor, columns, dataId, rawId, data1)
         }
     }
 

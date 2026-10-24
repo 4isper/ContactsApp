@@ -68,13 +68,11 @@ class BuildContactDetailsTest {
                     1,
                     "Anna",
                     lastContacted = 1_700_000_000_000L,
-                    timesContacted = 4,
                 ),
                 emptyList(),
             )
 
         assertEquals(1_700_000_000_000L, details.lastContacted)
-        assertEquals(4, details.timesContacted)
     }
 
     @Test

@@ -32,7 +32,6 @@ internal fun buildContactDetails(
         account = account,
         lastUpdated = header.lastUpdated,
         lastContacted = header.lastContacted,
-        timesContacted = header.timesContacted,
     )
 
 /**
@@ -69,7 +68,6 @@ internal fun aggregateContacts(
             account = accounts[header.contactId] ?: ContactAccount.Local,
             lastUpdated = header.lastUpdated,
             lastContacted = header.lastContacted,
-            timesContacted = header.timesContacted,
         )
     }
 }

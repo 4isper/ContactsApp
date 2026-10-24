@@ -39,8 +39,8 @@ class RecentsUiTest {
         val repository =
             FakeAndroidRepository(
                 listOf(
-                    testDetails(1, "Anna", "111").copy(lastContacted = 200, timesContacted = 2),
-                    testDetails(2, "Bob", "222").copy(lastContacted = 100, timesContacted = 1),
+                    testDetails(1, "Anna", "111").copy(lastContacted = 200),
+                    testDetails(2, "Bob", "222").copy(lastContacted = 100),
                     testDetails(3, "Cara", "333"),
                 ),
             )

@@ -3,6 +3,8 @@
 
 package com.m4isper.contactsapp.data.datasource.write.contacts
 
+import com.m4isper.contactsapp.data.datasource.ContactsContractLegacy
+
 import android.content.ContentValues
 import android.provider.ContactsContract
 import android.provider.ContactsContract.CommonDataKinds.Email
@@ -85,12 +87,12 @@ internal fun websiteTypeInt(website: EditableWebsite): Int =
 
 internal fun sipTypeInt(sip: EditableSipAddress): Int =
     if (sip.kind == SipKind.OTHER && !sip.customLabel.isNullOrBlank()) {
-        SipAddress.TYPE_CUSTOM
+        ContactsContractLegacy.Sip.TYPE_CUSTOM
     } else {
         when (sip.kind) {
-            SipKind.HOME -> SipAddress.TYPE_HOME
-            SipKind.WORK -> SipAddress.TYPE_WORK
-            SipKind.OTHER -> SipAddress.TYPE_OTHER
+            SipKind.HOME -> ContactsContractLegacy.Sip.TYPE_HOME
+            SipKind.WORK -> ContactsContractLegacy.Sip.TYPE_WORK
+            SipKind.OTHER -> ContactsContractLegacy.Sip.TYPE_OTHER
         }
     }
 
@@ -145,10 +147,10 @@ internal fun websiteValues(website: EditableWebsite): ContentValues =
 
 internal fun sipValues(sip: EditableSipAddress): ContentValues =
     ContentValues().apply {
-        put(SipAddress.SIP_ADDRESS, sip.address)
-        put(SipAddress.TYPE, sipTypeInt(sip))
+        put(ContactsContractLegacy.Sip.SIP_ADDRESS, sip.address)
+        put(ContactsContractLegacy.Sip.TYPE, sipTypeInt(sip))
         put(
-            SipAddress.LABEL,
+            ContactsContractLegacy.Sip.LABEL,
             sip.customLabel.takeIf { sip.kind == SipKind.OTHER && !it.isNullOrBlank() },
         )
     }

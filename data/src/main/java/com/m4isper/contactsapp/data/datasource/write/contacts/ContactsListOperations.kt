@@ -1,5 +1,7 @@
 package com.m4isper.contactsapp.data.datasource.write.contacts
 
+import com.m4isper.contactsapp.data.datasource.ContactsContractLegacy
+
 import android.content.ContentProviderOperation
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Phone
@@ -88,7 +90,7 @@ internal fun sipListOperations(
         existingIds = rows.sipAddresses.mapTo(mutableSetOf()) { it.dataId },
         dataIdOf = { it.rowId },
         insert = { sip ->
-            dataInsert(SipAddress.CONTENT_ITEM_TYPE, rawContactId = rawContactId)
+            dataInsert(ContactsContractLegacy.Sip.CONTENT_ITEM_TYPE, rawContactId = rawContactId)
                 .withValues(sipValues(sip))
         },
         update = { dataId, sip -> dataUpdate(dataId).withValues(sipValues(sip)) },

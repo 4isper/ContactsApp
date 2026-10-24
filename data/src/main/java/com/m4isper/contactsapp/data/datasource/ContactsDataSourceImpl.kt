@@ -1,5 +1,7 @@
 package com.m4isper.contactsapp.data.datasource
 
+import com.m4isper.contactsapp.data.datasource.ContactsContractLegacy
+
 import android.accounts.Account
 import android.accounts.AccountManager
 import android.content.ContentResolver
@@ -40,8 +42,7 @@ private val CONTACT_PROJECTION =
         ContactsContract.Contacts.DISPLAY_NAME,
         ContactsContract.Contacts.PHOTO_THUMBNAIL_URI,
         ContactsContract.Contacts.CONTACT_LAST_UPDATED_TIMESTAMP,
-        ContactsContract.Contacts.LAST_TIME_CONTACTED,
-        ContactsContract.Contacts.TIMES_CONTACTED,
+        ContactsContractLegacy.LAST_TIME_CONTACTED,
     )
 
 private const val CONTACT_SORT_ORDER =
@@ -67,9 +68,9 @@ private val DATA_MIMETYPES =
         StructuredPostal.CONTENT_ITEM_TYPE,
         Website.CONTENT_ITEM_TYPE,
         Note.CONTENT_ITEM_TYPE,
-        SipAddress.CONTENT_ITEM_TYPE,
+        ContactsContractLegacy.Sip.CONTENT_ITEM_TYPE,
         Event.CONTENT_ITEM_TYPE,
-        Im.CONTENT_ITEM_TYPE,
+        ContactsContractLegacy.Im.CONTENT_ITEM_TYPE,
     )
 
 /** Сколько id контактов уходит в один запрос к провайдеру. */
@@ -290,8 +291,7 @@ class ContactsDataSourceImpl(
             val nameIndex = it.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME)
             val photoIndex = it.getColumnIndexOrThrow(ContactsContract.Contacts.PHOTO_THUMBNAIL_URI)
             val updatedIndex = it.getColumnIndexOrThrow(ContactsContract.Contacts.CONTACT_LAST_UPDATED_TIMESTAMP)
-            val lastContactedIndex = it.getColumnIndexOrThrow(ContactsContract.Contacts.LAST_TIME_CONTACTED)
-            val timesContactedIndex = it.getColumnIndexOrThrow(ContactsContract.Contacts.TIMES_CONTACTED)
+            val lastContactedIndex = it.getColumnIndexOrThrow(ContactsContractLegacy.LAST_TIME_CONTACTED)
             while (it.moveToNext()) {
                 headers +=
                     ContactHeaderRow(
@@ -301,7 +301,6 @@ class ContactsDataSourceImpl(
                         lastUpdated = if (it.isNull(updatedIndex)) null else it.getLong(updatedIndex),
                         lastContacted =
                             if (it.isNull(lastContactedIndex)) null else it.getLong(lastContactedIndex),
-                        timesContacted = it.getInt(timesContactedIndex),
                     )
             }
         }
