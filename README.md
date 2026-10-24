@@ -14,8 +14,8 @@ A native Android contacts manager built with modern Jetpack libraries and Clean 
 - Groups (labels): a dedicated screen to create, rename, delete and merge groups with member counts and account labels, opened from the list filter or the filter chip menu; members can be removed from the group screen; group pickers and the group filter distinguish same-name groups from different accounts
 - Duplicates: a dedicated screen (list overflow menu) that finds likely duplicates by normalized phone, email or full name, shows name-only matches with a warning, lets you pick the primary contact and merges all data, labels and the photo into it while keeping favorites; the merge is reversible — the sources stay in the provider and can be unmerged
 - Settings (list overflow menu): theme override (system/light/dark), dynamic color toggle, show or hide contact photos, app language (system/English/Russian), contact sorting (full name or last name, with matching letter sections), list density (comfortable/compact), favorites first, the default account for new contacts, birthday and event reminders (on/off plus how many days in advance), app lock with a PIN code, hiding the window in the recent apps list, resetting all settings, and an "About" section with the version and a privacy note
-- Privacy: the PIN lock covers the whole app and asks again after the app goes to the background; the PIN is stored as a PBKDF2-HMAC-SHA256 hash with a random salt, not in clear text; after a few wrong attempts the input is blocked for a while; the window can be hidden from the recent apps list with `FLAG_SECURE`
-- Reminders: a daily local notification lists the birthdays and events that are coming up; tapping the notification opens the contact
+- Privacy: the PIN lock covers the whole app and asks again when the app is genuinely backgrounded; the PIN is stored as a PBKDF2-HMAC-SHA256 hash with a random salt, not in clear text; after a few wrong attempts the input is blocked for a while; the window can be hidden from the recent apps list with `FLAG_SECURE`
+- Reminders: a daily local notification lists the birthdays and events that are coming up; tapping the notification opens the contact; reminders are restored after reboot and request `POST_NOTIFICATIONS` on Android 13+
 - Home screen: launcher shortcuts (new contact, favorites) and a widget with the favorite contacts
 - Favorites are stored as `STARRED` rows in the provider, so they survive a sync; Material You dynamic color; adaptive two-pane layout on wide screens
 
@@ -54,7 +54,7 @@ ContactsApp/
 | ZXing (QR codes) | 3.5.3 |
 | Detekt / ktlint-gradle | 2.0.0-alpha.6 / 14.2.0 |
 
-Android permissions used: `READ_CONTACTS` (list), `WRITE_CONTACTS` (editor), `CALL_PHONE` (direct calls, with dialer fallback), `POST_NOTIFICATIONS` (birthday and event reminders).
+Android permissions used: `READ_CONTACTS` (list), `WRITE_CONTACTS` (editing and contact mutations), `CALL_PHONE` (direct calls, with dialer fallback), `POST_NOTIFICATIONS` (birthday and event reminders).
 
 ## Build & verify
 
