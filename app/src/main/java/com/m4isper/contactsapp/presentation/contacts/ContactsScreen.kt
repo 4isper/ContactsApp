@@ -48,6 +48,21 @@ internal fun ContactsScreen(
     var hasReadPermission by remember {
         mutableStateOf(hasPermission(context, Manifest.permission.READ_CONTACTS))
     }
+    var hasWritePermission by remember {
+        mutableStateOf(hasPermission(context, Manifest.permission.WRITE_CONTACTS))
+    }
+    var pendingWriteAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+    val writePermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+        ) { isGranted ->
+            hasWritePermission = isGranted
+            if (isGranted) {
+                pendingWriteAction?.invoke()
+                pendingWriteAction = null
+            }
+        }
 
     val readPermissionLauncher =
         rememberLauncherForActivityResult(
@@ -56,11 +71,22 @@ internal fun ContactsScreen(
             hasReadPermission = isGranted
             if (isGranted) {
                 viewModel.refresh()
+                if (!hasPermission(context, Manifest.permission.WRITE_CONTACTS)) {
+                    writePermissionLauncher.launch(Manifest.permission.WRITE_CONTACTS)
+                }
             }
         }
 
+    LaunchedEffect(hasWritePermission) {
+        if (hasWritePermission) {
+            pendingWriteAction?.invoke()
+            pendingWriteAction = null
+        }
+    }
+
     LifecycleResumeEffect(context) {
         syncContactsPermission(context, viewModel) { hasReadPermission = it }
+        hasWritePermission = hasPermission(context, Manifest.permission.WRITE_CONTACTS)
         onPauseOrDispose { /* no-op */ }
     }
 
@@ -97,7 +123,35 @@ internal fun ContactsScreen(
             )
         ContactList(
             uiState = uiState,
-            onAction = { action -> actions.handle(action) },
+            onAction = { action ->
+                when (action) {
+                    is ContactsListAction.ToggleFavorite ->
+                        if (hasWritePermission) {
+                            actions.handle(action)
+                        } else {
+                            pendingWriteAction = { actions.handle(action) }
+                            writePermissionLauncher.launch(Manifest.permission.WRITE_CONTACTS)
+                        }
+
+                    ContactsListAction.ToggleFavoriteSelected ->
+                        if (hasWritePermission) {
+                            actions.handle(action)
+                        } else {
+                            pendingWriteAction = { actions.handle(action) }
+                            writePermissionLauncher.launch(Manifest.permission.WRITE_CONTACTS)
+                        }
+
+                    ContactsFileAction.DeleteSelected ->
+                        if (hasWritePermission) {
+                            actions.handle(action)
+                        } else {
+                            pendingWriteAction = { actions.handle(action) }
+                            writePermissionLauncher.launch(Manifest.permission.WRITE_CONTACTS)
+                        }
+
+                    else -> actions.handle(action)
+                }
+            },
             groups = uiState.groups,
             accounts = uiState.accounts,
             profileContactId = uiState.profileContactId,

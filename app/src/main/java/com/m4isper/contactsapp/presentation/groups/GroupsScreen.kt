@@ -1,6 +1,10 @@
 package com.m4isper.contactsapp.presentation.groups
 
+import android.Manifest
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.m4isper.contactsapp.presentation.common.permissions.hasPermission
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -68,8 +72,13 @@ fun GroupsScreen(
     var renameTarget by remember { mutableStateOf<ContactGroup?>(null) }
     var deleteTarget by remember { mutableStateOf<ContactGroup?>(null) }
 
+    val writePermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { /* no-op */ }
     LaunchedEffect(Unit) {
         viewModel.load()
+        if (!hasPermission(context, Manifest.permission.WRITE_CONTACTS)) {
+            writePermissionLauncher.launch(Manifest.permission.WRITE_CONTACTS)
+        }
     }
 
     val errorText = uiState.error?.message()

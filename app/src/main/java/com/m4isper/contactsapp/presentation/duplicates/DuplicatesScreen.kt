@@ -1,6 +1,10 @@
 package com.m4isper.contactsapp.presentation.duplicates
 
+import android.Manifest
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.m4isper.contactsapp.presentation.common.permissions.hasPermission
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -72,6 +76,14 @@ fun DuplicatesScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var pendingMerge by remember { mutableStateOf<PendingMerge?>(null) }
+
+    val writePermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { /* no-op */ }
+    LaunchedEffect(Unit) {
+        if (!hasPermission(context, Manifest.permission.WRITE_CONTACTS)) {
+            writePermissionLauncher.launch(Manifest.permission.WRITE_CONTACTS)
+        }
+    }
     val mergedMessage = stringResource(R.string.duplicates_merged)
     val undoLabel = stringResource(R.string.duplicates_undo)
 

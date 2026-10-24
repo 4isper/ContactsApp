@@ -24,10 +24,21 @@ This can cause `SecurityException`, silent failures, or generic error messages.
 
 ## Acceptance criteria
 
-- [ ] Favorite toggle requests `WRITE_CONTACTS` when missing.
-- [ ] Delete, group, and merge actions request `WRITE_CONTACTS` when missing.
-- [ ] Denied permission produces a clear user-facing message.
-- [ ] No unhandled `SecurityException` occurs during these actions.
+- [x] Favorite toggle requests `WRITE_CONTACTS` when missing.
+- [x] Delete, group, and merge actions request `WRITE_CONTACTS` when missing.
+- [x] Denied permission produces a clear user-facing message.
+- [x] No unhandled `SecurityException` occurs during these actions.
+
+## Status
+
+Done.
+
+What changed:
+
+- Contacts list now tracks `WRITE_CONTACTS` and requests it when read permission is granted.
+- Favorite and delete actions are gated on write permission and retried after grant.
+- Groups, group details, and duplicates request `WRITE_CONTACTS` on entry.
+- Write permission is resynced on resume.
 
 ## Technical notes
 
