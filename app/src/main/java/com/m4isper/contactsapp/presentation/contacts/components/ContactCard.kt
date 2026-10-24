@@ -19,8 +19,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.Icon
 import com.m4isper.contactsapp.ui.theme.BrandIcon
 import com.m4isper.contactsapp.ui.theme.BrandIcons
-import com.m4isper.contactsapp.ui.theme.BrandAccentColor
-import com.m4isper.contactsapp.ui.theme.BrandPrimaryColor
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -257,7 +255,7 @@ private fun ContactCardSurface(
                             BrandIcon(
                                 imageVector = BrandIcons.Settings,
                                 contentDescription = stringResource(R.string.action_more),
-                                brandColor = BrandPrimaryColor,
+                                color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(spacing.xl),
                             )
                         }
@@ -288,7 +286,7 @@ private fun FavoriteQuickAction(
             BrandIcon(
                 imageVector = BrandIcons.Favorite,
                 contentDescription = null,
-                brandColor = BrandAccentColor,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(spacing.xl),
             )
         }
@@ -311,8 +309,8 @@ private fun FavoriteQuickAction(
                 stringResource(
                     if (isFavorite) R.string.action_remove_favorite else R.string.action_add_favorite,
                 ),
-            brandColor =
-                if (isFavorite) BrandAccentColor else BrandPrimaryColor,
+            color =
+                if (isFavorite) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
             enabled = isFavorite,
             modifier = Modifier.size(spacing.xl),
         )
@@ -342,7 +340,7 @@ private fun QuickActionsMenu(
                     BrandIcon(
                         imageVector = BrandIcons.Call,
                         contentDescription = stringResource(R.string.action_call),
-                        brandColor = BrandPrimaryColor,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp),
                     )
                 },
@@ -360,7 +358,7 @@ private fun QuickActionsMenu(
                     BrandIcon(
                         imageVector = BrandIcons.Message,
                         contentDescription = stringResource(R.string.action_send_sms),
-                        brandColor = BrandAccentColor,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp),
                     )
                 },
@@ -394,7 +392,7 @@ private fun SwipeActionBackground(
                 stringResource(
                     if (isCall) R.string.action_call else R.string.action_send_sms,
                 ),
-            brandColor = color,
+            color = color,
             modifier = Modifier.size(20.dp),
         )
     }

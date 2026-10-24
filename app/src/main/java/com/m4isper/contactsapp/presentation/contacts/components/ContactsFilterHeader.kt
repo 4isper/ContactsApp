@@ -24,8 +24,6 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import com.m4isper.contactsapp.ui.theme.BrandIcon
 import com.m4isper.contactsapp.ui.theme.BrandIcons
-import com.m4isper.contactsapp.ui.theme.BrandAccentColor
-import com.m4isper.contactsapp.ui.theme.BrandPrimaryColor
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
@@ -184,7 +182,7 @@ internal fun FilterHeader(
                             BrandIcon(
                                 imageVector = BrandIcons.ImportExport,
                                 contentDescription = null,
-                                brandColor = BrandAccentColor,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(20.dp),
                             )
                         },
@@ -200,7 +198,7 @@ internal fun FilterHeader(
                             BrandIcon(
                                 imageVector = BrandIcons.ImportExport,
                                 contentDescription = null,
-                                brandColor = BrandAccentColor,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(20.dp),
                             )
                         },
@@ -246,7 +244,7 @@ internal fun FilterHeader(
                             BrandIcon(
                                 imageVector = BrandIcons.Settings,
                                 contentDescription = null,
-                                brandColor = BrandPrimaryColor,
+                                color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp),
                             )
                         },

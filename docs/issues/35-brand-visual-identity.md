@@ -30,20 +30,22 @@ Done.
 
 - `app/src/main/java/com/m4isper/contactsapp/ui/theme/Type.kt` — добавлен `BrandTypography` (data class с `brandHeadline`, `brandSectionTitle`, `brandBodyAccent`) и `LocalBrandTypography` CompositionLocal. Брендовые заголовки выразительнее Material-дефолта (жирный шрифт, отрицательный letter-spacing).
 - `app/src/main/java/com/m4isper/contactsapp/ui/theme/Theme.kt` — `ContactsAppTheme` предоставляет `LocalBrandTypography` через `CompositionLocalProvider`.
-- `app/src/main/java/com/m4isper/contactsapp/ui/theme/BrandIcons.kt` — новый файл: `BrandIcons` объект с 8 материальными иконками (Call, Message, Favorite, FavoriteBorder, Group, Settings, Search, ImportExport), `BrandPrimaryColor` (тейл), `BrandAccentColor` (янтарь), компоузابل `BrandIcon()` для отрисовки иконки в фирменном цвете с поддержкой disabled-состояния.
-- `app/src/main/java/com/m4isper/contactsapp/presentation/contacts/components/ContactCard.kt` — Favorite-звёздочка (активная = янтарь, неактивная = тейл), MoreVert, звонок (тейл), СМС (янтарь) заменены на `BrandIcon`.
-- `app/src/main/java/com/m4isper/contactsapp/presentation/contacts/components/ContactsFilterHeader.kt` — иконки импорта/экспорта (янтарь) и настроек (тейл) в меню заменены на `BrandIcon`.
-- `app/src/main/java/com/m4isper/contactsapp/ui/components/SearchField.kt` — иконка поиска заменена на `BrandIcon` (тейл).
+- `app/src/main/java/com/m4isper/contactsapp/ui/theme/BrandIcons.kt` — новый файл: `BrandIcons` объект с 8 материальными иконками (Call, Message, Favorite, FavoriteBorder, Group, Settings, Search, ImportExport), компоузابل `BrandIcon()` для отрисовки иконки в цвете текущей цветовой схемы (`colorScheme.primary` по умолчанию, `colorScheme.onSurfaceVariant` для вторичных действий). Жёсткие брендовые цвета `BrandPrimaryColor` / `BrandAccentColor` удалены — иконки подчиняются светлой/тёмной теме и динамическим цветам Material You.
+- `app/src/main/java/com/m4isper/contactsapp/ui/theme/Type.kt` — добавлен `BrandTypography` (data class с `brandHeadline`, `brandSectionTitle`, `brandBodyAccent`) и `LocalBrandTypography` CompositionLocal. Брендовые заголовки выразительнее Material-дефолта (жирный шрифт, отрицательный letter-spacing).
+- `app/src/main/java/com/m4isper/contactsapp/ui/theme/Theme.kt` — `ContactsAppTheme` предоставляет `LocalBrandTypography` через `CompositionLocalProvider`.
+- `app/src/main/java/com/m4isper/contactsapp/presentation/contacts/components/ContactCard.kt` — Favorite-звёздочка, MoreVert, звонок, СМС заменены на `BrandIcon` с цветами из `colorScheme` (primary / onSurfaceVariant).
+- `app/src/main/java/com/m4isper/contactsapp/presentation/contacts/components/ContactsFilterHeader.kt` — иконки импорта/экспорта и настроек в меню заменены на `BrandIcon` с цветами из `colorScheme`.
+- `app/src/main/java/com/m4isper/contactsapp/ui/components/SearchField.kt` — иконка поиска заменена на `BrandIcon` с `colorScheme.primary`.
 
 ## Verification
 
 - `:app:compileDebugKotlin` passes.
 - `:app:detekt` / `:app:ktlintCheck` — нет новых проблем (только 2 предсуществующие: DuplicatesScreen сложность, SettingsScreen длина строки).
-- Брендовые цвета (тейл 0xFF00696B / янтарь 0xFF7E5700) используются последовательно для основных и акцентных действий.
+- Иконки используют `colorScheme.primary` / `colorScheme.onSurfaceVariant`, поэтому корректно отображаются в светлой, тёмной и динамической темах.
 
 ## Out of scope
 
-- Кастомные SVG-пути для иконок (используются Material-иконки с фирменной окраской — прагматичный подход).
+- Кастомные SVG-пути для иконок (используются Material-иконки с окраской из цветовой схемы — прагматичный подход).
 - Подключение кастомного шрифта (используется системный шрифт с насыщенными начертаниями для заголовков).
 
 ## Technical notes

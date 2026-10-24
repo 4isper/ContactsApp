@@ -23,7 +23,6 @@ import androidx.compose.ui.text.input.ImeAction
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.ui.theme.BrandIcon
 import com.m4isper.contactsapp.ui.theme.BrandIcons
-import com.m4isper.contactsapp.ui.theme.BrandPrimaryColor
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 
 @Composable
@@ -42,7 +41,7 @@ fun SearchField(
             BrandIcon(
                 imageVector = BrandIcons.Search,
                 contentDescription = null,
-                brandColor = BrandPrimaryColor,
+                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(20.dp),
             )
         },

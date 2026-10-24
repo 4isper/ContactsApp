@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.ImportExport
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -19,18 +20,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * Брендовые иконки: стандартные Material-иконки в фирменных цветах (тейл / янтарь).
- * Используются вместо неокрашенных Material-иконок в наиболее заметных местах UI,
- * чтобы приложение приобрело собственную визуальную идентичность.
- *
- * Цвета по бренд-гайдлайну:
- * - primary (тейл 0xFF00696B / 0xFF80D5C6) — основные действия
- * - tertiary (янтарь 0xFF7E5700 / 0xFFFFBE2E) — второстепенные и акцентные
+ * Иконки действий: стандартные Material-иконки в цветах текущей цветовой схемы.
+ * Цвета берутся из [MaterialTheme.colorScheme], поэтому иконки подчиняются
+ * светлой/тёмной теме и динамическим цветам (Material You).
  *
  * Правила использования:
- * - Call, Favorite (активный), Group — primary (тейл)
- * - Message, Import, Export, Settings — tertiary (янтарь) или onSurfaceVariant
- * - Favorite (неактивный), Search — onSurfaceVariant (декоративные)
+ * - Основные действия (звонок, активное избранное) — colorScheme.primary
+ * - Вторичные/акцентные действия (сообщение, импорт, экспорт, настройки) — colorScheme.onSurfaceVariant
+ * - Декоративные иконки (неактивное избранное, поиск) — colorScheme.onSurfaceVariant
  * - Размер иконок: 24 dp (кроме мелких acción-кнопок — 20 dp)
  */
 
@@ -45,28 +42,22 @@ object BrandIcons {
     val ImportExport = Icons.Filled.ImportExport
 }
 
-/** Брендовый цвет для основных действий (тейл). */
-val BrandPrimaryColor = Color(0xFF00696B)
-
-/** Брендовый цвет для акцентных действий (янтарь). */
-val BrandAccentColor = Color(0xFF7E5700)
-
 /**
- * Брендовая иконка действия: отображает материал-иконку в фирменном цвете.
- * [brandColor] — основной цвет иконки (primary или accent).
- * [enabled] — если false, иконка окрашивается в выключенный оттенок.
+ * Иконка действия: отображает материал-иконку в цвете текущей цветовой схемы.
+ * [color] — цвет иконки (по умолчанию colorScheme.primary).
+ * [enabled] — если false, иконка окрашивается в выключенный оттенок onSurfaceVariant.
  */
 @Composable
 fun BrandIcon(
     imageVector: ImageVector,
     contentDescription: String?,
-    brandColor: Color = BrandPrimaryColor,
+    color: Color = MaterialTheme.colorScheme.primary,
     enabled: Boolean = true,
     modifier: Modifier = Modifier,
     size: Dp = 24.dp,
 ) {
-    val disabledTint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-    val tint = if (enabled) brandColor else disabledTint
+    val disabledTint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+    val tint = if (enabled) color else disabledTint
     Icon(
         imageVector = imageVector,
         contentDescription = contentDescription,
