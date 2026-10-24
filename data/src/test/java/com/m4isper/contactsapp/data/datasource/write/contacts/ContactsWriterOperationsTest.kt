@@ -20,7 +20,11 @@ class ContactsWriterOperationsTest {
 
     @Test
     fun dataInsert_createsInsertBuilder() {
-        val builder = dataInsert(ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE, rawContactBackRef = 0)
+        val builder =
+            dataInsert(
+                ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE,
+                rawContactBackRef = 0,
+            )
         assertTrue(builder is ContentProviderOperation.Builder)
     }
 

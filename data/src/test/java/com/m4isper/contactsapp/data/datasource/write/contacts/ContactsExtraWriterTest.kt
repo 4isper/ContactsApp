@@ -27,7 +27,10 @@ class ContactsExtraWriterTest {
     fun relationValues_otherUsesCustomLabel() {
         val relation = EditableRelation(name = "Друг", kind = RelationKind.OTHER, customLabel = "Друг")
         val cv = relationValues(relation)
-        assertEquals(ContactsContract.CommonDataKinds.Relation.TYPE_CUSTOM, cv.getAsInteger(ContactsContract.CommonDataKinds.Relation.TYPE))
+        assertEquals(
+            ContactsContract.CommonDataKinds.Relation.TYPE_CUSTOM,
+            cv.getAsInteger(ContactsContract.CommonDataKinds.Relation.TYPE),
+        )
         assertEquals("Друг", cv.getAsString(ContactsContract.CommonDataKinds.Relation.LABEL))
     }
 
@@ -63,7 +66,10 @@ class ContactsExtraWriterTest {
         val event = EditableEvent(kind = EventKind.OTHER, customLabel = "День")
         val cv = preservedEventValues("2020-01-01", event)
         assertEquals("2020-01-01", cv.getAsString(ContactsContract.CommonDataKinds.Event.START_DATE))
-        assertEquals(ContactsContract.CommonDataKinds.Event.TYPE_CUSTOM, cv.getAsInteger(ContactsContract.CommonDataKinds.Event.TYPE))
+        assertEquals(
+            ContactsContract.CommonDataKinds.Event.TYPE_CUSTOM,
+            cv.getAsInteger(ContactsContract.CommonDataKinds.Event.TYPE),
+        )
         assertEquals("День", cv.getAsString(ContactsContract.CommonDataKinds.Event.LABEL))
     }
 
@@ -100,7 +106,10 @@ class ContactsExtraWriterTest {
     fun nicknameValues_setsNameAndType() {
         val cv = nicknameValues("Johnny")
         assertEquals("Johnny", cv.getAsString(ContactsContract.CommonDataKinds.Nickname.NAME))
-        assertEquals(ContactsContract.CommonDataKinds.Nickname.TYPE_DEFAULT, cv.getAsInteger(ContactsContract.CommonDataKinds.Nickname.TYPE))
+        assertEquals(
+            ContactsContract.CommonDataKinds.Nickname.TYPE_DEFAULT,
+            cv.getAsInteger(ContactsContract.CommonDataKinds.Nickname.TYPE),
+        )
     }
 
     @Test
