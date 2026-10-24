@@ -6,27 +6,31 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Merge
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.UploadFile
+import com.m4isper.contactsapp.ui.theme.BrandIcon
+import com.m4isper.contactsapp.ui.theme.BrandIcons
+import com.m4isper.contactsapp.ui.theme.BrandAccentColor
+import com.m4isper.contactsapp.ui.theme.BrandPrimaryColor
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Text
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,6 +47,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.domain.model.contact.AccountSyncInfo
+import com.m4isper.contactsapp.domain.model.contact.AccountSyncStatus
 import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 import com.m4isper.contactsapp.domain.model.contact.ContactGroup
 import com.m4isper.contactsapp.presentation.common.account.contactAccountLabel
@@ -74,6 +80,7 @@ internal fun FilterHeader(
     onSettingsClick: () -> Unit = {},
     profileContactId: Long? = null,
     onProfileClick: () -> Unit = {},
+    accountSyncInfos: List<AccountSyncInfo> = emptyList(),
 ) {
     val spacing = LocalSpacing.current
     var menuOpen by remember { mutableStateOf(false) }
@@ -131,6 +138,7 @@ internal fun FilterHeader(
                         accounts = accounts,
                         selectedAccount = selectedAccount,
                         onAccountSelected = onAccountSelected,
+                        accountSyncInfos = accountSyncInfos,
                         modifier =
                             Modifier
                                 .padding(top = spacing.xs, end = spacing.m, bottom = spacing.xs)
@@ -173,9 +181,11 @@ internal fun FilterHeader(
                             onImportClick()
                         },
                         leadingIcon = {
-                            Icon(
-                                Icons.Filled.UploadFile,
+                            BrandIcon(
+                                imageVector = BrandIcons.ImportExport,
                                 contentDescription = null,
+                                brandColor = BrandAccentColor,
+                                modifier = Modifier.size(20.dp),
                             )
                         },
                         modifier = Modifier.testTag("import_menu_item"),
@@ -187,9 +197,11 @@ internal fun FilterHeader(
                             onExportClick()
                         },
                         leadingIcon = {
-                            Icon(
-                                Icons.Filled.Download,
+                            BrandIcon(
+                                imageVector = BrandIcons.ImportExport,
                                 contentDescription = null,
+                                brandColor = BrandAccentColor,
+                                modifier = Modifier.size(20.dp),
                             )
                         },
                         modifier = Modifier.testTag("export_menu_item"),
@@ -231,9 +243,11 @@ internal fun FilterHeader(
                             onSettingsClick()
                         },
                         leadingIcon = {
-                            Icon(
-                                Icons.Filled.Settings,
+                            BrandIcon(
+                                imageVector = BrandIcons.Settings,
                                 contentDescription = null,
+                                brandColor = BrandPrimaryColor,
+                                modifier = Modifier.size(20.dp),
                             )
                         },
                         modifier = Modifier.testTag("settings_menu_item"),
@@ -371,21 +385,32 @@ private fun AccountFilterChip(
     accounts: List<ContactAccount>,
     selectedAccount: ContactAccount?,
     onAccountSelected: (ContactAccount?) -> Unit,
+    accountSyncInfos: List<AccountSyncInfo> = emptyList(),
     modifier: Modifier = Modifier,
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val syncInfo = accountSyncInfos.firstOrNull { it.account == selectedAccount }
     Box(modifier = modifier) {
         FilterChip(
             selected = selectedAccount != null,
             onClick = { expanded = true },
             label = {
-                Text(
-                    text =
-                        selectedAccount?.let { contactAccountTitle(it) }
-                            ?: stringResource(R.string.filter_accounts),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Column {
+                    Text(
+                        text =
+                            selectedAccount?.let { contactAccountTitle(it) }
+                                ?: stringResource(R.string.filter_accounts),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (syncInfo != null && selectedAccount != null && !selectedAccount.isLocal) {
+                        Text(
+                            text = syncStatusText(syncInfo),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
             },
             leadingIcon =
                 if (selectedAccount != null) {
@@ -448,6 +473,24 @@ private fun ContactAccount.testKey(): String =
         "local"
     } else {
         "${type.orEmpty()}_${name.orEmpty()}"
+    }
+
+/** Текст статуса синхронизации для отображения под названием аккаунта. */
+private fun syncStatusText(info: AccountSyncInfo): String =
+    when (info.syncStatus) {
+        AccountSyncStatus.SYNCED -> {
+            val time = info.lastSyncTimeMs?.let { ms ->
+                val minutes = (System.currentTimeMillis() - ms) / (1000 * 60)
+                if (minutes < 1) "только что"
+                else if (minutes < 60) "$minutes мин назад"
+                else if (minutes < 1440) "${minutes / 60} ч назад"
+                else "${minutes / 1440} дн назад"
+            }
+            time?.let { "Синхр.: $it" } ?: "Синхронизировано"
+        }
+        AccountSyncStatus.SYNCING -> "Синхронизация…"
+        AccountSyncStatus.STALE -> "Устарело"
+        AccountSyncStatus.ERROR -> "Ошибка синхр."
     }
 
 @Composable
