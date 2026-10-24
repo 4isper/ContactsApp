@@ -17,7 +17,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Label
-import androidx.compose.material.icons.filled.CallMerge
+import androidx.compose.material.icons.automirrored.filled.CallMerge
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PersonAdd
@@ -122,7 +122,7 @@ fun GroupDetailScreen(
                         modifier = Modifier.testTag("merge_group_button"),
                     ) {
                         Icon(
-                            Icons.Filled.CallMerge,
+                            Icons.AutoMirrored.Filled.CallMerge,
                             contentDescription = stringResource(R.string.group_merge),
                         )
                     }

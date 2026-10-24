@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Event
@@ -146,7 +146,7 @@ internal fun DetailsContent(
                 actions =
                     listOf(
                         RowAction(
-                            Icons.Filled.Chat,
+                            Icons.AutoMirrored.Filled.Chat,
                             stringResource(R.string.action_open_messenger),
                         ) {
                             // Нет приложения для протокола — копируем адрес, как раньше.
