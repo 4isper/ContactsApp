@@ -202,7 +202,8 @@ fun EmptyState(
                 Button(
                     onClick = onSecondaryClick,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                     ),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
