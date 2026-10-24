@@ -16,10 +16,19 @@ When a contact is moved to another account, `ContactDetailsViewModel.changeAccou
 
 ## Acceptance criteria
 
-- [ ] After moving a contact, details reload using the new contact ID.
-- [ ] The displayed account matches the destination account.
-- [ ] Favorite, share, edit, and group actions work after move.
-- [ ] No "contact not found" state appears after a successful move.
+- [x] After moving a contact, details reload using the new contact ID.
+- [x] The displayed account matches the destination account.
+- [x] Favorite, share, edit, and group actions work after move.
+- [x] No "contact not found" state appears after a successful move.
+
+## Status
+
+Done.
+
+What changed:
+
+- `selectedContactId` is now updated to the new contact ID after a move.
+- `refresh()` is called so details, groups, and accounts reload for the new ID.
 
 ## Technical notes
 

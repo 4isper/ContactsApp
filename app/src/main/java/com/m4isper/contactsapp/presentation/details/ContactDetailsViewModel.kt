@@ -210,7 +210,9 @@ class ContactDetailsViewModel(
                 val (newId, event) = action(contactId, account)
                 eventFlow.value = event
                 if (newId != contactId) {
-                    loadedDetails.value = loadedDetails.value?.copy(contactId = newId)
+                    // Перенос создаёт новый контакт: дальше работаем только с его id.
+                    selectedContactId.value = newId
+                    refresh()
                 }
             }.onFailure { failure ->
                 eventFlow.value = DetailsEvent.AccountActionFailed
