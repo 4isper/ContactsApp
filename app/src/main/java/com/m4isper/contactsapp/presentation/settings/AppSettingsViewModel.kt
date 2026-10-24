@@ -46,6 +46,8 @@ class AppSettingsViewModel(
             }.stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.Eagerly,
-                initialValue = AppUiSettings(),
+                // До первой эмиссии DataStore считаем защиту включённой: так контакты
+                // не показываются до загрузки реальных настроек.
+                initialValue = AppUiSettings(appLockEnabled = true),
             )
 }

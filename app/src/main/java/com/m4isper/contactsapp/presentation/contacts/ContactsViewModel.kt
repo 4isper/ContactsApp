@@ -416,7 +416,7 @@ internal class ContactsViewModel(
     fun clear() {
         list.clear()
         filters.onSearchQueryChange("")
-        filters.onToggleFavoritesOnly()
+        filters.resetFavoritesOnly()
         selection.clear()
         groups.clear()
     }

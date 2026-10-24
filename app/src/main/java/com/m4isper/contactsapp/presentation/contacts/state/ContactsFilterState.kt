@@ -41,6 +41,11 @@ internal class ContactsFilterState(
         if (!_favoritesOnly.value) _favoritesOnly.value = true
     }
 
+    /** Сбрасывает фильтр избранного. */
+    fun resetFavoritesOnly() {
+        _favoritesOnly.value = false
+    }
+
     fun onToggleFavoritesOnly() {
         selection.clear()
         _favoritesOnly.value = !_favoritesOnly.value

@@ -113,7 +113,7 @@ internal fun AppLockScreen(
                         checking = false
                     }
                 },
-                enabled = pin.length >= MIN_PIN_LENGTH && !checking,
+                enabled = pin.length >= MIN_PIN_LENGTH && !checking && remaining == Duration.ZERO,
                 modifier =
                     Modifier
                         .padding(top = spacing.m)

@@ -20,10 +20,20 @@ Two related state issues:
 
 ## Acceptance criteria
 
-- [ ] Clearing the list resets the favorites filter to false.
-- [ ] App lock settings are loaded before protected content is shown.
-- [ ] The unlock button is disabled during lockout.
-- [ ] Regression tests cover both behaviors.
+- [x] Clearing the list resets the favorites filter to false.
+- [x] App lock settings are loaded before protected content is shown.
+- [x] The unlock button is disabled during lockout.
+- [x] Regression tests cover both behaviors.
+
+## Status
+
+Done.
+
+What changed:
+
+- `ContactsViewModel.clear()` now resets `favoritesOnly` to false.
+- `AppSettingsViewModel` starts from a safe locked state until settings load.
+- `AppLockScreen` disables unlock during lockout.
 
 ## Technical notes
 
