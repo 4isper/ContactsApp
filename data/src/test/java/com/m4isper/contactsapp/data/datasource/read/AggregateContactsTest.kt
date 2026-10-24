@@ -68,6 +68,18 @@ class AggregateContactsTest {
     }
 
     @Test
+    fun `aggregates birthdays for reminder consumers`() {
+        val headers = listOf(header(1, "Anna"))
+        val rows = listOf(birthdayRow(1, "1990-05-24"))
+
+        val result = aggregateContacts(headers, rows)
+
+        assertEquals(1990, result.single().birthday?.year)
+        assertEquals(5, result.single().birthday?.month)
+        assertEquals(24, result.single().birthday?.day)
+    }
+
+    @Test
     fun `preserves header order`() {
         val headers = listOf(header(2, "Bob"), header(1, "Anna"))
 

@@ -7,6 +7,8 @@ import android.content.Context
 import android.net.Uri
 import android.provider.ContactsContract
 import android.provider.ContactsContract.CommonDataKinds.Email
+import android.provider.ContactsContract.CommonDataKinds.Event
+import android.provider.ContactsContract.CommonDataKinds.Im
 import android.provider.ContactsContract.CommonDataKinds.Nickname
 import android.provider.ContactsContract.CommonDataKinds.Note
 import android.provider.ContactsContract.CommonDataKinds.Organization
@@ -66,6 +68,8 @@ private val DATA_MIMETYPES =
         Website.CONTENT_ITEM_TYPE,
         Note.CONTENT_ITEM_TYPE,
         SipAddress.CONTENT_ITEM_TYPE,
+        Event.CONTENT_ITEM_TYPE,
+        Im.CONTENT_ITEM_TYPE,
     )
 
 /** Сколько id контактов уходит в один запрос к провайдеру. */
@@ -317,7 +321,7 @@ class ContactsDataSourceImpl(
                 queryData(
                     selection =
                         "${ContactsContract.Data.CONTACT_ID} IN ($placeholders) AND " +
-                            "${ContactsContract.Data.MIMETYPE} IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                            "${ContactsContract.Data.MIMETYPE} IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     args = chunk.map(Long::toString).toTypedArray() + DATA_MIMETYPES,
                 )
         }

@@ -30,6 +30,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -44,6 +48,7 @@ import com.m4isper.contactsapp.domain.model.settings.ThemeMode
 import com.m4isper.contactsapp.presentation.common.account.contactAccountTitle
 import com.m4isper.contactsapp.presentation.common.account.testKey
 import com.m4isper.contactsapp.presentation.common.message
+import com.m4isper.contactsapp.presentation.common.permissions.hasPermission
 import com.m4isper.contactsapp.ui.components.ConfirmDialog
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 import dev.zacsweers.metrox.viewmodel.metroViewModel
@@ -261,12 +266,21 @@ private fun RemindersSection(
     settings: AppSettings,
     viewModel: SettingsViewModel,
 ) {
+    val context = LocalContext.current
+    val notificationPermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { /* no-op: receiver checks permission */ }
+
     SettingsSection(title = stringResource(R.string.settings_reminders)) {
         SettingsSwitch(
             label = stringResource(R.string.settings_reminders),
             description = stringResource(R.string.settings_reminders_desc),
             checked = settings.remindersEnabled,
             onCheckedChange = { enabled ->
+                if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                    !hasPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+                ) {
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
                 viewModel.onRemindersChanged(enabled, settings.reminderLeadDays)
             },
             testTag = "reminders_switch",

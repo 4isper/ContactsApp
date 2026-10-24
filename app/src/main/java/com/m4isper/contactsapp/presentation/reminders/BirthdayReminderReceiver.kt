@@ -44,6 +44,11 @@ class BirthdayReminderReceiver : BroadcastReceiver() {
     }
 
     private suspend fun showReminder(context: Context) {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
         val graph = (context.applicationContext as? ContactsApp)?.appGraph ?: return
         val settings = graph.observeSettings().first()
         val upcoming =
