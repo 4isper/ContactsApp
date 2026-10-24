@@ -3,12 +3,12 @@ package com.m4isper.contactsapp.presentation.settings
 import com.m4isper.contactsapp.FakeSettingsRepository
 import com.m4isper.contactsapp.data.security.Pbkdf2PinHasher
 import com.m4isper.contactsapp.domain.model.common.AppError
+import com.m4isper.contactsapp.domain.model.contact.AccountSyncInfo
 import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 import com.m4isper.contactsapp.domain.model.settings.AppSettings
 import com.m4isper.contactsapp.domain.model.settings.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.settings.ListDensity
 import com.m4isper.contactsapp.domain.model.settings.ThemeMode
-import com.m4isper.contactsapp.domain.model.contact.AccountSyncInfo
 import com.m4isper.contactsapp.domain.repository.ContactsAccounts
 import com.m4isper.contactsapp.domain.usecase.contacts.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.contacts.SetDefaultContactAccountUseCase

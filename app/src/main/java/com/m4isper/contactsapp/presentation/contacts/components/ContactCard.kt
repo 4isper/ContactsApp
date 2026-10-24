@@ -3,8 +3,6 @@ package com.m4isper.contactsapp.presentation.contacts.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
-import com.m4isper.contactsapp.ui.components.performHapticFeedback
-import com.m4isper.contactsapp.ui.components.HapticImpact
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,19 +10,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.material3.Icon
-import com.m4isper.contactsapp.ui.theme.BrandIcon
-import com.m4isper.contactsapp.ui.theme.BrandIcons
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SwipeToDismissBox
@@ -51,7 +45,11 @@ import androidx.compose.ui.unit.dp
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import com.m4isper.contactsapp.domain.model.settings.ListDensity
+import com.m4isper.contactsapp.ui.components.HapticImpact
 import com.m4isper.contactsapp.ui.components.ListAvatar
+import com.m4isper.contactsapp.ui.components.performHapticFeedback
+import com.m4isper.contactsapp.ui.theme.BrandIcon
+import com.m4isper.contactsapp.ui.theme.BrandIcons
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 import kotlinx.coroutines.launch
 

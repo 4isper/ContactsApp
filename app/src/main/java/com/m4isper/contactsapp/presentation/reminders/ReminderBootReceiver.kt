@@ -1,10 +1,10 @@
 package com.m4isper.contactsapp.presentation.reminders
 
+import android.Manifest
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.Manifest
 import androidx.core.content.ContextCompat
 import com.m4isper.contactsapp.ContactsApp
 import kotlinx.coroutines.CoroutineScope

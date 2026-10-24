@@ -4,7 +4,6 @@ import android.Manifest
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import com.m4isper.contactsapp.presentation.common.permissions.hasPermission
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -50,6 +49,7 @@ import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.account.contactAccountLabel
 import com.m4isper.contactsapp.presentation.common.groups.GroupNameDialog
 import com.m4isper.contactsapp.presentation.common.message
+import com.m4isper.contactsapp.presentation.common.permissions.hasPermission
 import com.m4isper.contactsapp.ui.components.ConfirmDialog
 import com.m4isper.contactsapp.ui.components.EmptyState
 import com.m4isper.contactsapp.ui.components.ErrorState

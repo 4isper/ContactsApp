@@ -5,8 +5,6 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
-import com.m4isper.contactsapp.ui.components.performHapticFeedback
-import com.m4isper.contactsapp.ui.components.HapticImpact
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -26,6 +24,8 @@ import com.m4isper.contactsapp.presentation.common.permissions.hasPermission
 import com.m4isper.contactsapp.presentation.common.permissions.openAppSettings
 import com.m4isper.contactsapp.presentation.editor.components.EditorTopBar
 import com.m4isper.contactsapp.ui.components.ConfirmDialog
+import com.m4isper.contactsapp.ui.components.HapticImpact
+import com.m4isper.contactsapp.ui.components.performHapticFeedback
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
 @Composable

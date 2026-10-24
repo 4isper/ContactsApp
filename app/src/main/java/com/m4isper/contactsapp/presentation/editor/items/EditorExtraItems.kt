@@ -20,7 +20,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.contact.FormField
 import com.m4isper.contactsapp.presentation.editor.EditorUiState
-import com.m4isper.contactsapp.presentation.editor.fieldMessage
 import com.m4isper.contactsapp.presentation.editor.components.SectionHeader
 import com.m4isper.contactsapp.presentation.editor.edits.withAddedEvent
 import com.m4isper.contactsapp.presentation.editor.edits.withAddedRelation
@@ -39,6 +38,7 @@ import com.m4isper.contactsapp.presentation.editor.edits.withRelationLabel
 import com.m4isper.contactsapp.presentation.editor.edits.withRelationName
 import com.m4isper.contactsapp.presentation.editor.edits.withoutEvent
 import com.m4isper.contactsapp.presentation.editor.edits.withoutRelation
+import com.m4isper.contactsapp.presentation.editor.fieldMessage
 import com.m4isper.contactsapp.presentation.editor.rows.BirthdayEditorRow
 import com.m4isper.contactsapp.presentation.editor.rows.EventEditorRow
 import com.m4isper.contactsapp.presentation.editor.rows.RelationEditorRow

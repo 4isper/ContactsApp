@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.AccountCircle
@@ -22,13 +21,10 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Merge
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
-import com.m4isper.contactsapp.ui.theme.BrandIcon
-import com.m4isper.contactsapp.ui.theme.BrandIcons
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Text
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -54,6 +50,8 @@ import com.m4isper.contactsapp.presentation.common.account.contactAccountSubtitl
 import com.m4isper.contactsapp.presentation.common.account.contactAccountTitle
 import com.m4isper.contactsapp.presentation.common.groups.GroupNameDialog
 import com.m4isper.contactsapp.ui.components.SearchField
+import com.m4isper.contactsapp.ui.theme.BrandIcon
+import com.m4isper.contactsapp.ui.theme.BrandIcons
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 
 @Composable
@@ -477,13 +475,19 @@ private fun ContactAccount.testKey(): String =
 private fun syncStatusText(info: AccountSyncInfo): String =
     when (info.syncStatus) {
         AccountSyncStatus.SYNCED -> {
-            val time = info.lastSyncTimeMs?.let { ms ->
-                val minutes = (System.currentTimeMillis() - ms) / (1000 * 60)
-                if (minutes < 1) "только что"
-                else if (minutes < 60) "$minutes мин назад"
-                else if (minutes < 1440) "${minutes / 60} ч назад"
-                else "${minutes / 1440} дн назад"
-            }
+            val time =
+                info.lastSyncTimeMs?.let { ms ->
+                    val minutes = (System.currentTimeMillis() - ms) / (1000 * 60)
+                    if (minutes < 1) {
+                        "только что"
+                    } else if (minutes < 60) {
+                        "$minutes мин назад"
+                    } else if (minutes < 1440) {
+                        "${minutes / 60} ч назад"
+                    } else {
+                        "${minutes / 1440} дн назад"
+                    }
+                }
             time?.let { "Синхр.: $it" } ?: "Синхронизировано"
         }
         AccountSyncStatus.SYNCING -> "Синхронизация…"

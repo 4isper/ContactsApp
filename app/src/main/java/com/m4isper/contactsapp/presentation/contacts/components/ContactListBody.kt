@@ -101,8 +101,11 @@ private fun EmptyPlaceholder(
         onPrimaryClick =
             if (isCompletelyEmpty) onCreateContact else null,
         secondaryLabel =
-            if (isCompletelyEmpty && onImportClick != null) stringResource(R.string.contacts_empty_cta_import)
-            else null,
+            if (isCompletelyEmpty && onImportClick != null) {
+                stringResource(R.string.contacts_empty_cta_import)
+            } else {
+                null
+            },
         onSecondaryClick =
             if (isCompletelyEmpty) onImportClick else null,
     )

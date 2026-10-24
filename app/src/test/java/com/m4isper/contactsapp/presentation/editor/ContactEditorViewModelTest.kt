@@ -2,6 +2,7 @@ package com.m4isper.contactsapp.presentation.editor
 
 import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.FakeSettingsRepository
+import com.m4isper.contactsapp.domain.model.contact.AccountSyncInfo
 import com.m4isper.contactsapp.domain.model.contact.AddressKind
 import com.m4isper.contactsapp.domain.model.contact.Birthday
 import com.m4isper.contactsapp.domain.model.contact.ContactAccount
@@ -32,7 +33,6 @@ import com.m4isper.contactsapp.domain.model.contact.RelationKind
 import com.m4isper.contactsapp.domain.model.contact.SipKind
 import com.m4isper.contactsapp.domain.model.contact.WebsiteKind
 import com.m4isper.contactsapp.domain.model.settings.AppSettings
-import com.m4isper.contactsapp.domain.model.contact.AccountSyncInfo
 import com.m4isper.contactsapp.domain.repository.ContactsAccounts
 import com.m4isper.contactsapp.domain.repository.ContactsMerger
 import com.m4isper.contactsapp.domain.repository.ContactsReader

@@ -2,8 +2,6 @@ package com.m4isper.contactsapp.presentation.contacts.components
 
 import android.net.Uri
 import androidx.compose.foundation.layout.Column
-import com.m4isper.contactsapp.ui.components.performHapticFeedback
-import com.m4isper.contactsapp.ui.components.HapticImpact
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -44,6 +42,8 @@ import com.m4isper.contactsapp.presentation.contacts.ContactsUiState
 import com.m4isper.contactsapp.presentation.contacts.effects.handleContactsEvent
 import com.m4isper.contactsapp.presentation.contacts.effects.rememberVCardLaunchers
 import com.m4isper.contactsapp.ui.components.ConfirmDialog
+import com.m4isper.contactsapp.ui.components.HapticImpact
+import com.m4isper.contactsapp.ui.components.performHapticFeedback
 
 private data class QuickCallTarget(
     val name: String,

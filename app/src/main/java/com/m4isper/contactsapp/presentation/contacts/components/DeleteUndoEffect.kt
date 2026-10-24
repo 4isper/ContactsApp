@@ -2,8 +2,6 @@ package com.m4isper.contactsapp.presentation.contacts.components
 
 import android.widget.Toast
 import androidx.compose.material3.SnackbarDuration
-import com.m4isper.contactsapp.ui.components.performHapticFeedback
-import com.m4isper.contactsapp.ui.components.HapticImpact
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
@@ -13,6 +11,8 @@ import androidx.compose.ui.platform.LocalResources
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.presentation.contacts.effects.DeleteWindow
 import com.m4isper.contactsapp.presentation.contacts.effects.PendingDeleteCoordinator
+import com.m4isper.contactsapp.ui.components.HapticImpact
+import com.m4isper.contactsapp.ui.components.performHapticFeedback
 
 /**
  * Пока окно удаления открыто, показывает snackbar с действием «Отменить» на всё окно.
