@@ -1,10 +1,10 @@
 package com.m4isper.contactsapp.presentation.duplicates
 
 import android.Manifest
+import android.content.Context
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import com.m4isper.contactsapp.presentation.common.permissions.hasPermission
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -56,6 +56,7 @@ import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.duplicates.DuplicateGroup
 import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import com.m4isper.contactsapp.presentation.common.Loadable
+import com.m4isper.contactsapp.presentation.common.permissions.hasPermission
 import com.m4isper.contactsapp.presentation.contacts.components.contactSubtitle
 import com.m4isper.contactsapp.ui.components.EmptyState
 import com.m4isper.contactsapp.ui.components.ErrorState
@@ -91,28 +92,14 @@ fun DuplicatesScreen(
         viewModel.load()
     }
 
-    LaunchedEffect(uiState.event) {
-        when (uiState.event) {
-            DuplicatesEvent.Merged -> {
-                val result =
-                    snackbarHostState.showSnackbar(
-                        message = mergedMessage,
-                        actionLabel = undoLabel,
-                        duration = SnackbarDuration.Long,
-                    )
-                if (result == SnackbarResult.ActionPerformed) {
-                    viewModel.onUndoMerge()
-                }
-            }
-            DuplicatesEvent.Unmerged -> Toast.makeText(context, R.string.duplicates_unmerged, Toast.LENGTH_SHORT).show()
-            DuplicatesEvent.MergeFailed ->
-                Toast.makeText(context, R.string.duplicates_action_failed, Toast.LENGTH_SHORT).show()
-            DuplicatesEvent.UnmergeFailed ->
-                Toast.makeText(context, R.string.duplicates_action_failed, Toast.LENGTH_SHORT).show()
-            null -> Unit
-        }
-        viewModel.onEventHandled()
-    }
+    DuplicatesScreenEvents(
+        event = uiState.event,
+        snackbarHostState = snackbarHostState,
+        context = context,
+        mergedMessage = mergedMessage,
+        undoLabel = undoLabel,
+        viewModel = viewModel,
+    )
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -175,6 +162,40 @@ fun DuplicatesScreen(
             },
             onDismiss = { pendingMerge = null },
         )
+    }
+}
+
+/** Обрабатывает события экрана дубликатов: показывает Snackbar/Toast после слияния или ошибки. */
+@Composable
+private fun DuplicatesScreenEvents(
+    event: DuplicatesEvent?,
+    snackbarHostState: SnackbarHostState,
+    context: Context,
+    mergedMessage: String,
+    undoLabel: String,
+    viewModel: DuplicatesViewModel,
+) {
+    LaunchedEffect(event) {
+        when (event) {
+            DuplicatesEvent.Merged -> {
+                val result =
+                    snackbarHostState.showSnackbar(
+                        message = mergedMessage,
+                        actionLabel = undoLabel,
+                        duration = SnackbarDuration.Long,
+                    )
+                if (result == SnackbarResult.ActionPerformed) {
+                    viewModel.onUndoMerge()
+                }
+            }
+            DuplicatesEvent.Unmerged -> Toast.makeText(context, R.string.duplicates_unmerged, Toast.LENGTH_SHORT).show()
+            DuplicatesEvent.MergeFailed ->
+                Toast.makeText(context, R.string.duplicates_action_failed, Toast.LENGTH_SHORT).show()
+            DuplicatesEvent.UnmergeFailed ->
+                Toast.makeText(context, R.string.duplicates_action_failed, Toast.LENGTH_SHORT).show()
+            null -> Unit
+        }
+        viewModel.onEventHandled()
     }
 }
 
