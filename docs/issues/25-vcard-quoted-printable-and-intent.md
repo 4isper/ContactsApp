@@ -20,10 +20,21 @@ Two vCard import paths are broken:
 
 ## Acceptance criteria
 
-- [ ] `ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8` values are decoded correctly.
-- [ ] `ACTION_SEND` with `EXTRA_STREAM` imports the shared vCard.
-- [ ] Large shared vCard files do not block the main thread.
-- [ ] Existing vCard tests remain green.
+- [x] `ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8` values are decoded correctly.
+- [x] `ACTION_SEND` with `EXTRA_STREAM` imports the shared vCard.
+- [x] Large shared vCard files do not block the main thread.
+- [x] Existing vCard tests remain green.
+
+## Status
+
+Done.
+
+What changed:
+
+- `decodeIfQuotedPrintable` now detects `ENCODING=QUOTED-PRINTABLE` and uses `CHARSET` for decoding.
+- `vCardText` reads `EXTRA_STREAM` URIs.
+- `MainActivity.publishStartAction` parses intents on `Dispatchers.IO`.
+- Added a regression test for standard quoted-printable encoding.
 
 ## Technical notes
 

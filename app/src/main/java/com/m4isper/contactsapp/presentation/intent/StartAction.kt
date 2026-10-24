@@ -111,9 +111,10 @@ private fun Intent.isContactUri(): Boolean {
 /** id контакта из URI: у lookup-контакта он тоже последний сегмент. */
 private fun Uri.contactId(): Long = lastPathSegment?.toLongOrNull() ?: 0L
 
-/** Текст .vcf из intent: либо данные, либо переданный файл. */
+/** Текст .vcf из intent: либо данные, либо переданный файл, либо EXTRA_STREAM. */
 private fun Intent.vCardText(resolver: ContentResolver): String =
     data?.let { uri -> uri.readText(resolver) }
+        ?: getParcelableExtra<Uri>(Intent.EXTRA_STREAM)?.let { uri -> uri.readText(resolver) }
         ?: getStringExtra(Intent.EXTRA_TEXT)
         ?: ""
 

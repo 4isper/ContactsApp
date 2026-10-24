@@ -533,6 +533,21 @@ class VCardParserTest {
     }
 
     @Test
+    fun `parses standard quoted-printable encoding`() {
+        val forms =
+            parseForms(
+                """
+                BEGIN:VCARD
+                VERSION:2.1
+                FN;ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:Anna M=C3=BCller
+                END:VCARD
+                """.trimIndent(),
+            )
+
+        assertEquals("Anna Müller", forms.single().name.display)
+    }
+
+    @Test
     fun `parses google and apple style vcards`() {
         val google =
             parseVCards(

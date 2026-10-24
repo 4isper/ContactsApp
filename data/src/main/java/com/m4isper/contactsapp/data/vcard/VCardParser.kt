@@ -209,15 +209,21 @@ private fun decodeIfQuotedPrintable(
     value: String,
     params: Map<String, String>,
 ): String {
+    val isQuotedPrintable =
+        params[ENCODING_KEY]?.contains(QUOTED_PRINTABLE, ignoreCase = true) == true ||
+            params[CHARSET_KEY]?.equals(QUOTED_PRINTABLE, ignoreCase = true) == true ||
+            params[TYPE_KEY]?.contains(QUOTED_PRINTABLE, ignoreCase = true) == true
+    if (!isQuotedPrintable) return value
+    val charsetName =
+        params[CHARSET_KEY]?.takeIf { !it.equals(QUOTED_PRINTABLE, ignoreCase = true) }
+            ?: "UTF-8"
     val charset =
-        params[CHARSET_KEY]?.takeIf { it.equals(QUOTED_PRINTABLE, ignoreCase = true) }
-            ?: params[TYPE_KEY]?.takeIf { it.contains(QUOTED_PRINTABLE, ignoreCase = true) }
-            ?: return value
-    val encoding =
-        runCatching { Charset.forName(charset.takeIf { !it.equals(QUOTED_PRINTABLE, true) } ?: "UTF-8") }
-            .getOrDefault(Charsets.UTF_8)
-    return decodeQuotedPrintable(value, encoding)
+        runCatching { Charset.forName(charsetName) }.getOrDefault(Charsets.UTF_8)
+    return decodeQuotedPrintable(value, charset)
 }
+
+/** Параметр ENCODING, например quoted-printable. */
+private const val ENCODING_KEY = "ENCODING"
 
 /** Кодировка значения из параметра CHARSET. */
 private const val CHARSET_KEY = "CHARSET"

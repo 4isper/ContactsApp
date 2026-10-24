@@ -26,6 +26,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import com.m4isper.contactsapp.domain.model.settings.ThemeMode
 import com.m4isper.contactsapp.presentation.intent.StartAction
 import com.m4isper.contactsapp.presentation.intent.startActionOf
@@ -38,9 +39,11 @@ import com.m4isper.contactsapp.ui.components.LocalShowPhotos
 import com.m4isper.contactsapp.ui.theme.ContactsAppTheme
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 import dev.zacsweers.metrox.viewmodel.metroViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.util.Locale
@@ -86,7 +89,14 @@ class MainActivity : ComponentActivity() {
     /** Новое действие от системы: показываем его экрану даже если оно повторяет прежнее. */
     private fun publishStartAction(intent: Intent?) {
         requestCounter += 1
-        startRequests.value = StartRequest(requestCounter, startActionOf(intent, contentResolver))
+        val requestId = requestCounter
+        lifecycleScope.launch {
+            val action =
+                withContext(Dispatchers.IO) {
+                    startActionOf(intent, contentResolver)
+                }
+            startRequests.value = StartRequest(requestId, action)
+        }
     }
 }
 
