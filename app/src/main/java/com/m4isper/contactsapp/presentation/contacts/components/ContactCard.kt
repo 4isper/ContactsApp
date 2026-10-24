@@ -1,6 +1,7 @@
 package com.m4isper.contactsapp.presentation.contacts.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,7 +17,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.IconButton
@@ -168,16 +168,27 @@ private fun ContactCardSurface(
     var menuOpen by remember { mutableStateOf(false) }
     val hasCallOrSms = onCall != null || onSms != null
 
+    val containerColor =
+        if (selected) {
+            MaterialTheme.colorScheme.secondaryContainer
+        } else {
+            MaterialTheme.colorScheme.surfaceContainerLow
+        }
+    val subtitleColor =
+        if (selected) {
+            MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.78f)
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        }
+
     Card(
-        colors =
-            CardDefaults.cardColors(
-                containerColor =
-                    if (selected) {
-                        MaterialTheme.colorScheme.primaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.surfaceContainerLow
-                    },
-            ),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        border =
+            if (selected) {
+                BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+            } else {
+                null
+            },
         modifier =
             modifier
                 .clip(MaterialTheme.shapes.medium)
@@ -209,6 +220,7 @@ private fun ContactCardSurface(
                 name = contact.name,
                 photoUri = contact.photo?.uri,
                 size = if (compact) spacing.avatarList - spacing.s else spacing.avatarList,
+                selected = selected && isSelectionMode,
             )
 
             Spacer(modifier = Modifier.width(spacing.m))
@@ -223,17 +235,15 @@ private fun ContactCardSurface(
                 Text(
                     text = contactSubtitle(contact),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = subtitleColor,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
 
             if (isSelectionMode) {
-                Checkbox(
-                    checked = selected,
-                    onCheckedChange = null,
-                )
+                // Выбор теперь считывается через аватар (фон primary + галочку)
+                // и рамку карточки; отдельный Checkbox убран, чтобы не дублировать признак.
             } else {
                 FavoriteQuickAction(
                     context = ctx,

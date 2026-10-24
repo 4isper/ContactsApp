@@ -25,6 +25,7 @@ import com.m4isper.contactsapp.domain.model.contact.PhoneKind
 import com.m4isper.contactsapp.domain.model.contact.PhoneNumber
 import com.m4isper.contactsapp.domain.usecase.contacts.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.contacts.ExportContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetAccountSyncInfosUseCase
 import com.m4isper.contactsapp.domain.usecase.contacts.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.contacts.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.contacts.GetContactsPageUseCase
@@ -87,6 +88,7 @@ class ContactListUiTest {
                     getGroups = GetGroupsUseCase(groups),
                     getMembership = GetGroupMembershipUseCase(groups),
                     getAccounts = GetContactAccountsUseCase(repository),
+                    getAccountSyncInfos = GetAccountSyncInfosUseCase(repository),
                     getProfileContactId = GetProfileContactIdUseCase(repository),
                     createGroup = CreateGroupUseCase(groups),
                     addContactsToGroup = AddContactsToGroupUseCase(groups),

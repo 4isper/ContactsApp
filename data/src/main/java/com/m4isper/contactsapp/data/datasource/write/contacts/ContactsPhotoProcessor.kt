@@ -46,16 +46,18 @@ internal fun compressPhoto(bytes: ByteArray): ByteArray {
         BitmapFactory.Options().apply {
             inSampleSize = sampleSize(bounds.outWidth, bounds.outHeight, MAX_PHOTO_PX)
         }
-    val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
-    val scaled = scaleDown(decoded ?: throw IllegalArgumentException("Can't decode image"), MAX_PHOTO_PX)
+    val decoded =
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
+            ?: throw IllegalArgumentException("Can't decode image")
+    val scaled = scaleDown(decoded, MAX_PHOTO_PX)
     return try {
         ByteArrayOutputStream().use { out ->
             scaled.compress(Bitmap.CompressFormat.JPEG, PHOTO_QUALITY, out)
             out.toByteArray()
         }
     } finally {
-        scaled.recycle()
-        if (scaled !== decoded) decoded?.recycle()
+        if (scaled !== decoded) scaled.recycle()
+        decoded.recycle()
     }
 }
 
