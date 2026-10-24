@@ -16,7 +16,7 @@ import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.contacts.ContactsUiState
 import com.m4isper.contactsapp.ui.components.EmptyState
 import com.m4isper.contactsapp.ui.components.ErrorState
-import com.m4isper.contactsapp.ui.components.LoadingState
+import com.m4isper.contactsapp.ui.components.ListSkeleton
 
 @Composable
 internal fun ContactListBody(
@@ -29,6 +29,8 @@ internal fun ContactListBody(
     onCallContact: ((ContactDetails) -> Unit)? = null,
     onSmsContact: ((ContactDetails) -> Unit)? = null,
     onToggleFavorite: ((Long) -> Unit)? = null,
+    onCreateContact: (() -> Unit)? = null,
+    onImportClick: (() -> Unit)? = null,
 ) {
     val pullState = rememberPullToRefreshState()
     PullToRefreshBox(
@@ -38,11 +40,13 @@ internal fun ContactListBody(
         modifier = modifier.fillMaxSize(),
     ) {
         when (val content = uiState.content) {
-            is Loadable.Loading -> LoadingState()
+            is Loadable.Loading -> ListSkeleton()
             is Loadable.Empty ->
                 EmptyPlaceholder(
                     showFavoritesOnly = uiState.showFavoritesOnly,
                     isSearching = uiState.isSearching,
+                    onCreateContact = onCreateContact,
+                    onImportClick = onImportClick,
                 )
             is Loadable.Error ->
                 ErrorState(
@@ -68,11 +72,15 @@ internal fun ContactListBody(
     }
 }
 
+@Suppress("CyclomaticComplexMethod")
 @Composable
 private fun EmptyPlaceholder(
     showFavoritesOnly: Boolean,
     isSearching: Boolean,
+    onCreateContact: (() -> Unit)? = null,
+    onImportClick: (() -> Unit)? = null,
 ) {
+    val isCompletelyEmpty = !showFavoritesOnly && !isSearching
     EmptyState(
         icon =
             when {
@@ -88,5 +96,14 @@ private fun EmptyPlaceholder(
                     stringResource(R.string.contacts_nothing_found)
                 else -> stringResource(R.string.contacts_empty)
             },
+        primaryLabel =
+            if (isCompletelyEmpty) stringResource(R.string.contacts_empty_cta_create) else null,
+        onPrimaryClick =
+            if (isCompletelyEmpty) onCreateContact else null,
+        secondaryLabel =
+            if (isCompletelyEmpty && onImportClick != null) stringResource(R.string.contacts_empty_cta_import)
+            else null,
+        onSecondaryClick =
+            if (isCompletelyEmpty) onImportClick else null,
     )
 }

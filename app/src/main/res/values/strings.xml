@@ -8,6 +8,8 @@
     <string name="search_label">Search</string>
     <string name="action_clear_search">Clear search</string>
     <string name="contacts_empty">No contacts found</string>
+    <string name="contacts_empty_cta_create">Create contact</string>
+    <string name="contacts_empty_cta_import">Import from file</string>
     <string name="contacts_nothing_found">Nothing found</string>
     <string name="contacts_load_error">Couldn\'t load contacts</string>
     <string name="action_retry">Retry</string>
@@ -159,6 +161,12 @@
     <string name="filter_accounts">Accounts</string>
     <string name="filter_accounts_all">All accounts</string>
     <string name="favorites_empty">No favorite contacts</string>
+    <string name="selection_mode_entered">Selection mode, %1$d contacts selected</string>
+    <plurals name="selection_mode_announce">
+        <item quantity="one">Selection mode, %1$d contact selected</item>
+        <item quantity="other">Selection mode, %1$d contacts selected</item>
+    </plurals>
+    <string name="selection_mode_exited">Selection mode exited</string>
     <string name="action_add_favorite">Add to favorites</string>
     <string name="action_remove_favorite">Remove from favorites</string>
     <string name="share_contact">Share contact</string>

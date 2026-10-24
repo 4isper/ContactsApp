@@ -2,6 +2,8 @@ package com.m4isper.contactsapp.presentation.contacts.components
 
 import android.net.Uri
 import androidx.compose.foundation.layout.Column
+import com.m4isper.contactsapp.ui.components.performHapticFeedback
+import com.m4isper.contactsapp.ui.components.HapticImpact
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -23,6 +25,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.domain.model.contact.AccountSyncInfo
 import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import com.m4isper.contactsapp.domain.model.contact.ContactGroup
@@ -47,6 +50,7 @@ private data class QuickCallTarget(
     val phone: PhoneNumber,
 )
 
+@Suppress("UnusedParameter")
 @Composable
 internal fun ContactList(
     uiState: ContactsUiState,
@@ -55,7 +59,11 @@ internal fun ContactList(
     groups: List<ContactGroup> = emptyList(),
     accounts: List<ContactAccount> = emptyList(),
     profileContactId: Long? = null,
+    accountSyncInfos: List<AccountSyncInfo> = emptyList(),
+    onCreateContact: (() -> Unit)? = null,
+    onImportClick: (() -> Unit)? = null,
 ) {
+    val ctx = LocalContext.current
     // Листья получают свои лямбды, а контракт экрана остаётся один.
     val onSearchQueryChange: (String) -> Unit = { onAction(ContactsListAction.SearchQueryChanged(it)) }
     val onFavoritesOnlyChange: () -> Unit = { onAction(ContactsListAction.FavoritesOnlyToggled) }
@@ -82,11 +90,16 @@ internal fun ContactList(
     val onDuplicatesClick: () -> Unit = { onAction(ContactsNavigationAction.DuplicatesClicked) }
     val onRecentsClick: () -> Unit = { onAction(ContactsNavigationAction.RecentsClicked) }
     val onSettingsClick: () -> Unit = { onAction(ContactsNavigationAction.SettingsClicked) }
-    val onToggleFavorite: (Long) -> Unit = { onAction(ContactsListAction.ToggleFavorite(it)) }
-    val onToggleFavoriteSelected: () -> Unit = { onAction(ContactsListAction.ToggleFavoriteSelected) }
+    val onToggleFavorite: (Long) -> Unit = { contactId ->
+        performHapticFeedback(ctx, HapticImpact.Light)
+        onAction(ContactsListAction.ToggleFavorite(contactId))
+    }
+    val onToggleFavoriteSelected: () -> Unit = {
+        performHapticFeedback(ctx, HapticImpact.Light)
+        onAction(ContactsListAction.ToggleFavoriteSelected)
+    }
     val onProfileClick: (Long) -> Unit = { onAction(ContactsNavigationAction.ProfileClicked(it)) }
 
-    val context = LocalContext.current
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showGroupPicker by remember { mutableStateOf(false) }
     var pendingGroupIds by remember { mutableStateOf(emptySet<Long>()) }
@@ -113,7 +126,7 @@ internal fun ContactList(
         if (event != null) {
             val exportUri = pendingExportUri
             pendingExportUri = null
-            handleContactsEvent(context, event, exportUri, onEventHandled)
+            handleContactsEvent(ctx, event, exportUri, onEventHandled)
         }
     }
 
@@ -188,7 +201,7 @@ internal fun ContactList(
                     showFavoritesOnly = uiState.showFavoritesOnly,
                     onSearchQueryChange = onSearchQueryChange,
                     onFavoritesOnlyChange = onFavoritesOnlyChange,
-                    onImportClick = { vCardLaunchers.startImport(context) },
+                    onImportClick = { vCardLaunchers.startImport(ctx) },
                     onExportClick = { vCardLaunchers.startExport() },
                     profileContactId = profileContactId,
                     onProfileClick = { profileContactId?.let { onProfileClick(it) } },
@@ -219,9 +232,11 @@ internal fun ContactList(
                 onRefresh = onRefresh,
                 onCallContact = { contact -> pendingQuickCall = contact.toQuickCallTarget() },
                 onSmsContact = { contact ->
-                    contact.primaryPhone?.let { openSms(context, it.number) }
+                    contact.primaryPhone?.let { openSms(ctx, it.number) }
                 },
                 onToggleFavorite = onToggleFavorite,
+                onCreateContact = onCreateContact,
+                onImportClick = onImportClick ?: { vCardLaunchers.startImport(ctx) },
             )
         }
     }

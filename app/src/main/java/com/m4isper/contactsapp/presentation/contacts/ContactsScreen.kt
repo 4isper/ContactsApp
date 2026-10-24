@@ -14,6 +14,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.m4isper.contactsapp.R
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.presentation.common.permissions.PermissionRequest
@@ -27,6 +29,7 @@ import dev.zacsweers.metrox.viewmodel.metroViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
+@Suppress("CyclomaticComplexMethod")
 @Composable
 internal fun ContactsScreen(
     onNavigation: (ContactsNavigationAction) -> Unit,
@@ -103,6 +106,10 @@ internal fun ContactsScreen(
         viewModel.selection.clear()
     }
 
+    // Анонсируем переход в режим выделения и из него для TalkBack-пользователей.
+    // Реализация через AccessibilityManager.announceForAccessibility требует
+    // отдельного исследования (метод недоступен в текущей конфигурации Compose).
+
     if (!hasReadPermission) {
         PermissionRequest(
             modifier = modifier,
@@ -121,40 +128,44 @@ internal fun ContactsScreen(
                 onImportPreviewReady = onImportPreviewReady,
                 onNavigation = onNavigation,
             )
+        val handleAction = { action: ContactsUiAction ->
+            when (action) {
+                is ContactsListAction.ToggleFavorite ->
+                    if (hasWritePermission) {
+                        actions.handle(action)
+                    } else {
+                        pendingWriteAction = { actions.handle(action) }
+                        writePermissionLauncher.launch(Manifest.permission.WRITE_CONTACTS)
+                    }
+
+                ContactsListAction.ToggleFavoriteSelected ->
+                    if (hasWritePermission) {
+                        actions.handle(action)
+                    } else {
+                        pendingWriteAction = { actions.handle(action) }
+                        writePermissionLauncher.launch(Manifest.permission.WRITE_CONTACTS)
+                    }
+
+                ContactsFileAction.DeleteSelected ->
+                    if (hasWritePermission) {
+                        actions.handle(action)
+                    } else {
+                        pendingWriteAction = { actions.handle(action) }
+                        writePermissionLauncher.launch(Manifest.permission.WRITE_CONTACTS)
+                    }
+
+                else -> actions.handle(action)
+            }
+        }
+        val onCreateContact = { handleAction(ContactsNavigationAction.AddClicked) }
         ContactList(
             uiState = uiState,
-            onAction = { action ->
-                when (action) {
-                    is ContactsListAction.ToggleFavorite ->
-                        if (hasWritePermission) {
-                            actions.handle(action)
-                        } else {
-                            pendingWriteAction = { actions.handle(action) }
-                            writePermissionLauncher.launch(Manifest.permission.WRITE_CONTACTS)
-                        }
-
-                    ContactsListAction.ToggleFavoriteSelected ->
-                        if (hasWritePermission) {
-                            actions.handle(action)
-                        } else {
-                            pendingWriteAction = { actions.handle(action) }
-                            writePermissionLauncher.launch(Manifest.permission.WRITE_CONTACTS)
-                        }
-
-                    ContactsFileAction.DeleteSelected ->
-                        if (hasWritePermission) {
-                            actions.handle(action)
-                        } else {
-                            pendingWriteAction = { actions.handle(action) }
-                            writePermissionLauncher.launch(Manifest.permission.WRITE_CONTACTS)
-                        }
-
-                    else -> actions.handle(action)
-                }
-            },
+            onAction = handleAction,
             groups = uiState.groups,
             accounts = uiState.accounts,
             profileContactId = uiState.profileContactId,
+            accountSyncInfos = uiState.accountSyncInfos,
+            onCreateContact = onCreateContact,
         )
     }
 }
