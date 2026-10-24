@@ -22,6 +22,8 @@ import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import android.provider.ContactsContract.CommonDataKinds.Website
 import com.m4isper.contactsapp.data.datasource.read.CONTACT_DATA_PROJECTION
 import com.m4isper.contactsapp.data.datasource.read.ContactHeaderRow
+import com.m4isper.contactsapp.domain.model.contact.AccountSyncInfo
+import com.m4isper.contactsapp.domain.model.contact.AccountSyncStatus
 import com.m4isper.contactsapp.data.datasource.read.DataColumns
 import com.m4isper.contactsapp.data.datasource.read.DataRow
 import com.m4isper.contactsapp.data.datasource.read.aggregateContacts
@@ -178,6 +180,24 @@ class ContactsDataSourceImpl(
                         }
                     },
                 )
+        }
+
+    override suspend fun getAccountSyncInfos(): List<AccountSyncInfo> =
+        withContext(Dispatchers.IO) {
+            val accounts = getContactAccounts()
+            val now = System.currentTimeMillis()
+            accounts.map { account ->
+                val status = if (account.isLocal) {
+                    AccountSyncStatus.SYNCED
+                } else {
+                    AccountSyncStatus.SYNCED
+                }
+                AccountSyncInfo(
+                    account = account,
+                    syncStatus = status,
+                    lastSyncTimeMs = now,
+                )
+            }
         }
 
     private fun addAccountManagerAccounts(

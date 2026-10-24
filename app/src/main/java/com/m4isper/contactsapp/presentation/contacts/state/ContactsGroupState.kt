@@ -1,7 +1,9 @@
 package com.m4isper.contactsapp.presentation.contacts.state
 
+import com.m4isper.contactsapp.domain.model.contact.AccountSyncInfo
 import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 import com.m4isper.contactsapp.domain.model.contact.ContactGroup
+import com.m4isper.contactsapp.domain.usecase.contacts.GetAccountSyncInfosUseCase
 import com.m4isper.contactsapp.domain.usecase.contacts.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.contacts.GetProfileContactIdUseCase
 import com.m4isper.contactsapp.domain.usecase.groups.AddContactsToGroupUseCase
@@ -29,6 +31,7 @@ internal class ContactsGroupState(
     private val getGroups: GetGroupsUseCase,
     private val getMembership: GetGroupMembershipUseCase,
     private val getAccounts: GetContactAccountsUseCase,
+    private val getAccountSyncInfos: GetAccountSyncInfosUseCase,
     private val getProfileContactId: GetProfileContactIdUseCase,
     private val createGroup: CreateGroupUseCase,
     private val addContactsToGroup: AddContactsToGroupUseCase,
@@ -52,6 +55,10 @@ internal class ContactsGroupState(
 
     /** Аккаунты для фильтра и создания. */
     val accounts: StateFlow<List<ContactAccount>> = _accounts.asStateFlow()
+    private val _accountSyncInfos = MutableStateFlow<List<AccountSyncInfo>>(emptyList())
+
+    /** Статус синхронизации аккаунтов для индикатора в UI. */
+    val accountSyncInfos: StateFlow<List<AccountSyncInfo>> = _accountSyncInfos.asStateFlow()
     private val _profileContactId = MutableStateFlow<Long?>(null)
 
     /** id контакта «Мой профиль»; null, если профиля нет. */
@@ -120,6 +127,12 @@ internal class ContactsGroupState(
             if (filters.selectedAccount.value?.let { selected -> selected !in accounts } == true) {
                 filters.onAccountMissing()
             }
+        }
+        safeCall(GROUPS_TAG, "refresh account sync infos failed") {
+            val syncInfos = getAccountSyncInfos()
+            _accountSyncInfos.value = syncInfos
+        }.onFailure { failure ->
+            _accountSyncInfos.value = emptyList()
         }
     }
 

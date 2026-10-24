@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.m4isper.contactsapp.domain.contacts.filterContacts
 import com.m4isper.contactsapp.domain.model.common.AppError
+import com.m4isper.contactsapp.domain.model.contact.AccountSyncInfo
 import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import com.m4isper.contactsapp.domain.model.contact.ContactGroup
@@ -51,6 +52,7 @@ data class ContactsUiState(
     val selectedGroupId: Long? = null,
     val accounts: List<ContactAccount> = emptyList(),
     val selectedAccount: ContactAccount? = null,
+    val accountSyncInfos: List<AccountSyncInfo> = emptyList(),
     val sortOrder: ContactSortOrder = ContactSortOrder.BY_NAME,
     val listDensity: ListDensity = ListDensity.COMFORTABLE,
     val pinFavorites: Boolean = false,
@@ -132,6 +134,7 @@ private data class AccountsState(
     val accounts: List<ContactAccount>,
     val selectedAccount: ContactAccount?,
     val profileContactId: Long?,
+    val accountSyncInfos: List<AccountSyncInfo>,
 )
 
 private data class ContactsMiddle(
@@ -146,6 +149,7 @@ private data class ContactsMiddle(
     val accounts: List<ContactAccount>,
     val selectedAccount: ContactAccount?,
     val profileContactId: Long?,
+    val accountSyncInfos: List<AccountSyncInfo>,
 )
 
 private fun contactsContent(
@@ -191,6 +195,7 @@ private fun contactsUiState(
         selectedGroupId = middle.selectedGroupId,
         accounts = middle.accounts,
         selectedAccount = middle.selectedAccount,
+        accountSyncInfos = middle.accountSyncInfos,
         sortOrder = settings.sortOrder,
         listDensity = settings.listDensity,
         pinFavorites = shouldPinFavorites(load, middle, settings),
@@ -330,7 +335,13 @@ internal class ContactsViewModel(
                     ::ContactsMiddleBase,
                 ),
                 combine(groups.groups, filters.selectedGroupId, groups.membership, ::GroupsState),
-                combine(groups.accounts, filters.selectedAccount, groups.profileContactId, ::AccountsState),
+                combine(
+                    groups.accounts,
+                    filters.selectedAccount,
+                    groups.profileContactId,
+                    groups.accountSyncInfos,
+                    ::AccountsState,
+                ),
             ) { base, groups, accounts ->
                 ContactsMiddle(
                     favorites = base.favorites,
@@ -344,6 +355,7 @@ internal class ContactsViewModel(
                     accounts = accounts.accounts,
                     selectedAccount = accounts.selectedAccount,
                     profileContactId = accounts.profileContactId,
+                    accountSyncInfos = accounts.accountSyncInfos,
                 )
             },
             settingsFlow,

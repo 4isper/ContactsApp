@@ -19,6 +19,7 @@ import com.m4isper.contactsapp.domain.usecase.contacts.CopyContactToAccountUseCa
 import com.m4isper.contactsapp.domain.usecase.contacts.CreateContactUseCase
 import com.m4isper.contactsapp.domain.usecase.contacts.DeleteContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.contacts.ExportContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetAccountSyncInfosUseCase
 import com.m4isper.contactsapp.domain.usecase.contacts.GetContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.contacts.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.contacts.GetContactDetailsUseCase
@@ -128,6 +129,12 @@ interface UseCaseProviders {
             getGroupsUseCase,
             getGroupMembershipUseCase,
             vCardCodec,
+        )
+
+    @Provides
+    fun provideGetAccountSyncInfosUseCase(contactsAccounts: ContactsAccounts): GetAccountSyncInfosUseCase =
+        GetAccountSyncInfosUseCase(
+            contactsAccounts,
         )
 
     @Provides

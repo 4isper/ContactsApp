@@ -30,6 +30,7 @@ import com.m4isper.contactsapp.data.datasource.read.mapRelationKind
 import com.m4isper.contactsapp.data.datasource.read.mapSipKind
 import com.m4isper.contactsapp.data.datasource.read.mapWebsiteKind
 import com.m4isper.contactsapp.data.format.birthdayFromString
+import com.m4isper.contactsapp.domain.model.contact.AccountSyncInfo
 import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import com.m4isper.contactsapp.domain.model.contact.ContactForm
@@ -112,6 +113,8 @@ class ContactsRepositoryImpl(
     }
 
     override suspend fun getContactAccounts(): List<ContactAccount> = dataSource.getContactAccounts()
+
+    override suspend fun getAccountSyncInfos(): List<AccountSyncInfo> = dataSource.getAccountSyncInfos()
 
     override suspend fun createContact(
         form: ContactForm,
