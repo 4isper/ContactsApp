@@ -3,6 +3,8 @@ package com.m4isper.contactsapp.presentation.contacts.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import com.m4isper.contactsapp.ui.components.performHapticFeedback
+import com.m4isper.contactsapp.ui.components.HapticImpact
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,15 +12,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Message
-import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Icon
+import com.m4isper.contactsapp.ui.theme.BrandIcon
+import com.m4isper.contactsapp.ui.theme.BrandIcons
+import com.m4isper.contactsapp.ui.theme.BrandAccentColor
+import com.m4isper.contactsapp.ui.theme.BrandPrimaryColor
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -41,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -69,6 +72,7 @@ internal fun ContactCard(
     onSms: (() -> Unit)? = null,
     onToggleFavorite: (() -> Unit)? = null,
 ) {
+    val ctx = LocalContext.current
     val spacing = LocalSpacing.current
     val call = onCall?.takeIf { contact.phones.isNotEmpty() }
     val sms = onSms?.takeIf { contact.phones.isNotEmpty() }
@@ -101,8 +105,14 @@ internal fun ContactCard(
         remember(swipeState, scope) {
             { direction: SwipeToDismissBoxValue ->
                 when (direction) {
-                    SwipeToDismissBoxValue.StartToEnd -> currentSms?.invoke()
-                    SwipeToDismissBoxValue.EndToStart -> currentCall?.invoke()
+                    SwipeToDismissBoxValue.StartToEnd -> {
+                        performHapticFeedback(ctx, HapticImpact.Light)
+                        currentSms?.invoke()
+                    }
+                    SwipeToDismissBoxValue.EndToStart -> {
+                        performHapticFeedback(ctx, HapticImpact.Medium)
+                        currentCall?.invoke()
+                    }
                     SwipeToDismissBoxValue.Settled -> Unit
                 }
                 scope.launch { swipeState.reset() }
@@ -157,6 +167,7 @@ private fun ContactCardSurface(
     modifier: Modifier = Modifier,
 ) {
     val spacing = LocalSpacing.current
+    val ctx = LocalContext.current
     val compact = density == ListDensity.COMPACT
     var menuOpen by remember { mutableStateOf(false) }
     val hasCallOrSms = onCall != null || onSms != null
@@ -229,6 +240,7 @@ private fun ContactCardSurface(
                 )
             } else {
                 FavoriteQuickAction(
+                    context = ctx,
                     contactId = contact.contactId,
                     isFavorite = isFavorite,
                     onToggleFavorite = onToggleFavorite,
@@ -239,12 +251,14 @@ private fun ContactCardSurface(
                             onClick = { menuOpen = true },
                             modifier =
                                 Modifier
-                                    .size(QuickActionSize)
+                                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                                     .testTag("quick_actions_${contact.contactId}"),
                         ) {
-                            Icon(
-                                Icons.Filled.MoreVert,
+                            BrandIcon(
+                                imageVector = BrandIcons.Settings,
                                 contentDescription = stringResource(R.string.action_more),
+                                brandColor = BrandPrimaryColor,
+                                modifier = Modifier.size(spacing.xl),
                             )
                         }
                         QuickActionsMenu(
@@ -263,6 +277,7 @@ private fun ContactCardSurface(
 
 @Composable
 private fun FavoriteQuickAction(
+    context: android.content.Context,
     contactId: Long,
     isFavorite: Boolean,
     onToggleFavorite: (() -> Unit)?,
@@ -270,29 +285,35 @@ private fun FavoriteQuickAction(
     val spacing = LocalSpacing.current
     if (onToggleFavorite == null) {
         if (isFavorite) {
-            Icon(
-                Icons.Filled.Favorite,
+            BrandIcon(
+                imageVector = BrandIcons.Favorite,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.tertiary,
+                brandColor = BrandAccentColor,
                 modifier = Modifier.size(spacing.xl),
             )
         }
         return
     }
     IconButton(
-        onClick = onToggleFavorite,
+        onClick = {
+            performHapticFeedback(context, HapticImpact.Light)
+            onToggleFavorite()
+        },
         modifier =
             Modifier
-                .size(QuickActionSize)
+                .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                 .testTag("quick_favorite_$contactId"),
     ) {
-        Icon(
-            imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+        BrandIcon(
+            imageVector =
+                if (isFavorite) BrandIcons.Favorite else BrandIcons.FavoriteBorder,
             contentDescription =
                 stringResource(
                     if (isFavorite) R.string.action_remove_favorite else R.string.action_add_favorite,
                 ),
-            tint = if (isFavorite) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant,
+            brandColor =
+                if (isFavorite) BrandAccentColor else BrandPrimaryColor,
+            enabled = isFavorite,
             modifier = Modifier.size(spacing.xl),
         )
     }
@@ -318,9 +339,11 @@ private fun QuickActionsMenu(
                     onCall()
                 },
                 leadingIcon = {
-                    Icon(
-                        Icons.Filled.Call,
-                        contentDescription = null,
+                    BrandIcon(
+                        imageVector = BrandIcons.Call,
+                        contentDescription = stringResource(R.string.action_call),
+                        brandColor = BrandPrimaryColor,
+                        modifier = Modifier.size(20.dp),
                     )
                 },
                 modifier = Modifier.testTag("quick_call_$contactId"),
@@ -334,9 +357,11 @@ private fun QuickActionsMenu(
                     onSms()
                 },
                 leadingIcon = {
-                    Icon(
-                        Icons.AutoMirrored.Filled.Message,
-                        contentDescription = null,
+                    BrandIcon(
+                        imageVector = BrandIcons.Message,
+                        contentDescription = stringResource(R.string.action_send_sms),
+                        brandColor = BrandAccentColor,
+                        modifier = Modifier.size(20.dp),
                     )
                 },
                 modifier = Modifier.testTag("quick_sms_$contactId"),
@@ -363,13 +388,14 @@ private fun SwipeActionBackground(
         horizontalArrangement = if (isCall) Arrangement.End else Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(
-            imageVector = if (isCall) Icons.Filled.Call else Icons.AutoMirrored.Filled.Message,
+        BrandIcon(
+            imageVector = if (isCall) BrandIcons.Call else BrandIcons.Message,
             contentDescription =
                 stringResource(
                     if (isCall) R.string.action_call else R.string.action_send_sms,
                 ),
-            tint = color,
+            brandColor = color,
+            modifier = Modifier.size(20.dp),
         )
     }
 }

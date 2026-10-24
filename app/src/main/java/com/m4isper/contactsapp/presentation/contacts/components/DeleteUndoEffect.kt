@@ -2,6 +2,8 @@ package com.m4isper.contactsapp.presentation.contacts.components
 
 import android.widget.Toast
 import androidx.compose.material3.SnackbarDuration
+import com.m4isper.contactsapp.ui.components.performHapticFeedback
+import com.m4isper.contactsapp.ui.components.HapticImpact
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
@@ -32,6 +34,7 @@ internal fun DeleteUndoEffect(
     LaunchedEffect(pendingDeleteIds.size) {
         if (pendingDeleteIds.isEmpty()) return@LaunchedEffect
         val count = pendingDeleteIds.size
+        performHapticFeedback(context, HapticImpact.Medium)
         val result =
             snackbarHostState.showSnackbar(
                 message = resources.getQuantityString(R.plurals.batch_delete_undo, count, count),
@@ -43,6 +46,7 @@ internal fun DeleteUndoEffect(
         // возвращать контакты в этом случае нельзя.
         if (result == SnackbarResult.ActionPerformed && !deleteClosing) {
             onUndoDelete()
+            performHapticFeedback(context, HapticImpact.Light)
             val message = resources.getQuantityString(R.plurals.batch_delete_undone, count, count)
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }

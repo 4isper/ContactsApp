@@ -5,6 +5,8 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
+import com.m4isper.contactsapp.ui.components.performHapticFeedback
+import com.m4isper.contactsapp.ui.components.HapticImpact
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -119,7 +121,10 @@ fun ContactEditorScreen(
                     },
                 saveEnabled = !uiState.isBusy,
                 onBack = ::tryBack,
-                onSave = viewModel::onSave,
+                onSave = {
+                    performHapticFeedback(context, HapticImpact.Medium)
+                    viewModel.onSave()
+                },
             )
         },
     ) { innerPadding ->
@@ -153,6 +158,7 @@ fun ContactEditorScreen(
             confirmLabel = stringResource(R.string.action_delete),
             onConfirm = {
                 showDeleteDialog = false
+                performHapticFeedback(context, HapticImpact.Medium)
                 viewModel.onDelete()
             },
             onDismiss = { showDeleteDialog = false },
