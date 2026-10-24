@@ -80,3 +80,23 @@ These issues come from a runtime/correctness bug audit. They are separate from t
 - 24 should land before or together with 23, 26, and 27 because those flows write contacts.
 - 25 is independent and can be scheduled separately.
 - 28 is independent and low-risk.
+
+## UX/UI audit backlog (2026-10-24)
+
+These issues come from a UX/UI audit of the app. They are separate from the feature roadmap, architecture audit, and bug audit above. Each file is self-contained with a problem statement, proposed scope, acceptance criteria, and technical notes.
+
+| # | File | Title | Priority | Status |
+|---|---|---|---|---|
+| 30 | [30-empty-state-cta.md](30-empty-state-cta.md) | Add clear calls-to-action to the empty contacts state | P1 | Open |
+| 31 | [31-inline-field-validation.md](31-inline-field-validation.md) | Show validation errors inline next to the invalid editor field | P1 | Open |
+| 32 | [32-haptic-feedback.md](32-haptic-feedback.md) | Add haptic feedback to key contact actions | P3 | Open |
+| 33 | [33-loading-skeleton-for-contact-list.md](33-loading-skeleton-for-contact-list.md) | Add skeleton placeholders while the contact list loads | P2 | Open |
+| 34 | [34-accessibility-a11y-improvements.md](34-accessibility-a11y-improvements.md) | Improve accessibility (TalkBack, contrast, touch targets, keyboard focus) | P1 | Open |
+| 35 | [35-brand-visual-identity.md](35-brand-visual-identity.md) | Strengthen brand visual identity (icons, typography, accents) | P3 | Open |
+| 36 | [36-account-sync-status-indicator.md](36-account-sync-status-indicator.md) | Show account sync status in the contacts list header | P2 | Open |
+
+### UX/UI audit dependencies
+
+- 31 depends on 20 (hardened validation) for the underlying field-level error data.
+- 36 depends on 01 (live updates / provider observer) for real-time sync status.
+- 30, 32, 33, 34, 35 are independent and can be scheduled in any order.
