@@ -45,7 +45,7 @@ private val CONTACT_PROJECTION =
     )
 
 private const val CONTACT_SORT_ORDER =
-    "${ContactsContract.Contacts.DISPLAY_NAME} ASC"
+    "${ContactsContract.Contacts.DISPLAY_NAME} ASC, ${ContactsContract.Contacts._ID} ASC"
 
 /**
  * Контакты без имени в список не попадают. Фильтр уходит в провайдер, а не в

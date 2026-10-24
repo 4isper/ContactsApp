@@ -15,9 +15,17 @@ Contact paging uses `DISPLAY_NAME ASC` only, with `LIMIT/OFFSET`. Contacts with 
 
 ## Acceptance criteria
 
-- [ ] Contacts with equal names are ordered consistently across pages.
-- [ ] No contact is skipped or duplicated during paging.
-- [ ] Existing list tests remain green.
+- [x] Contacts with equal names are ordered consistently across pages.
+- [x] No contact is skipped or duplicated during paging.
+- [x] Existing list tests remain green.
+
+## Status
+
+Done.
+
+What changed:
+
+- Added `${ContactsContract.Contacts._ID} ASC` as a deterministic tiebreaker to `CONTACT_SORT_ORDER`.
 
 ## Technical notes
 
