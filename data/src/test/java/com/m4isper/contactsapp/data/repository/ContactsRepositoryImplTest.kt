@@ -462,7 +462,11 @@ private class FakeWriter(
     override suspend fun loadContactRows(contactId: Long): ContactRows = rowsByContact[contactId] ?: rows
 
     override suspend fun loadRawContactId(contactId: Long): Long? =
-        rawContactIdsByContact[contactId] ?: if (rawContactIdsByContact.isEmpty()) rawContactId else null
+        loadRawContactIds(contactId).firstOrNull()
+
+    override suspend fun loadRawContactIds(contactId: Long): List<Long> =
+        rawContactIdsByContact[contactId]?.let(::listOf)
+            ?: if (rawContactIdsByContact.isEmpty() && rawContactId != null) listOf(rawContactId) else emptyList()
 
     override suspend fun linkRawContacts(
         targetRawContactId: Long,

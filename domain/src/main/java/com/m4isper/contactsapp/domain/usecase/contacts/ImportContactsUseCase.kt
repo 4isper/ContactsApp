@@ -138,8 +138,7 @@ class ImportContactsUseCase(
         sourceId: Long,
     ): Boolean =
         try {
-            mergeContacts(targetId, listOf(sourceId))
-            true
+            mergeContacts(targetId, listOf(sourceId)) != null
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {

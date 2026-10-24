@@ -67,22 +67,25 @@ class ContactsWriterDataSourceImpl(
         }
 
     override suspend fun loadRawContactId(contactId: Long): Long? =
+        loadRawContactIds(contactId).firstOrNull()
+
+    override suspend fun loadRawContactIds(contactId: Long): List<Long> =
         withContext(Dispatchers.IO) {
-            val cursor =
-                context.contentResolver.query(
+            val ids = mutableListOf<Long>()
+            context.contentResolver
+                .query(
                     ContactsContract.RawContacts.CONTENT_URI,
                     arrayOf(ContactsContract.RawContacts._ID),
                     "${ContactsContract.RawContacts.CONTACT_ID}=?",
                     arrayOf(contactId.toString()),
                     "${ContactsContract.RawContacts._ID} ASC",
-                )
-            cursor?.use {
-                if (it.moveToFirst()) {
-                    it.getLong(it.getColumnIndexOrThrow(ContactsContract.RawContacts._ID))
-                } else {
-                    null
+                )?.use { cursor ->
+                    val idIndex = cursor.getColumnIndexOrThrow(ContactsContract.RawContacts._ID)
+                    while (cursor.moveToNext()) {
+                        ids += cursor.getLong(idIndex)
+                    }
                 }
-            }
+            ids
         }
 
     override suspend fun setContactPhoto(

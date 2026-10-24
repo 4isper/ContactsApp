@@ -22,6 +22,9 @@ interface ContactsWriterDataSource {
 
     suspend fun loadRawContactId(contactId: Long): Long?
 
+    /** Все raw-контакты агрегированного контакта, отсортированные по id. */
+    suspend fun loadRawContactIds(contactId: Long): List<Long>
+
     suspend fun deleteContact(contactId: Long)
 
     /** Заменяет фото контакта готовыми байтами. */

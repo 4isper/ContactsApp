@@ -21,10 +21,21 @@ In addition, merge links only the first raw contact per aggregated contact. Cont
 
 ## Acceptance criteria
 
-- [ ] A null merge result is reported as failure.
-- [ ] Undo is available only after a successful merge.
-- [ ] Imported contacts are cleaned up when merge fails.
-- [ ] Multi-raw source contacts are fully merged.
+- [x] A null merge result is reported as failure.
+- [x] Undo is available only after a successful merge.
+- [x] Imported contacts are cleaned up when merge fails.
+- [x] Multi-raw source contacts are fully merged.
+
+## Status
+
+Done.
+
+What changed:
+
+- `DuplicatesViewModel` checks the merge result and emits `MergeFailed` on null.
+- `ImportContactsUseCase.mergeInto` returns whether the merge actually succeeded.
+- `ContactsWriterDataSource` can load all raw contact IDs.
+- Repository merge now links every raw contact of each source.
 
 ## Technical notes
 

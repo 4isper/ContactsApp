@@ -91,8 +91,12 @@ class DuplicatesViewModel(
             try {
                 safeCall(DUPLICATES_TAG, "merge contacts failed") {
                     val link = mergeContactsUseCase(targetId, sourceIds)
-                    lastLink.value = link
-                    event.value = DuplicatesEvent.Merged
+                    if (link == null) {
+                        event.value = DuplicatesEvent.MergeFailed
+                    } else {
+                        lastLink.value = link
+                        event.value = DuplicatesEvent.Merged
+                    }
                 }.onFailure { failure ->
                     event.value = DuplicatesEvent.MergeFailed
                 }

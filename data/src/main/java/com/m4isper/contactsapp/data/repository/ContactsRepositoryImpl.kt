@@ -147,7 +147,7 @@ class ContactsRepositoryImpl(
         val sourceRawIds =
             sourceIds
                 .filter { it != targetId }
-                .mapNotNull { id -> writer.loadRawContactId(id) }
+                .flatMap { id -> writer.loadRawContactIds(id) }
         return if (targetRawId != null && sourceRawIds.isNotEmpty()) {
             writer.linkRawContacts(targetRawId, sourceRawIds)
             ContactLink(
