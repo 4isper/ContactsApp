@@ -20,6 +20,7 @@ import com.m4isper.contactsapp.domain.model.settings.AppSettings
 import com.m4isper.contactsapp.domain.model.settings.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.settings.ListDensity
 import com.m4isper.contactsapp.domain.model.settings.ThemeMode
+import com.m4isper.contactsapp.domain.model.contact.AccountSyncInfo
 import com.m4isper.contactsapp.domain.repository.ContactsAccounts
 import com.m4isper.contactsapp.domain.repository.ContactsChangeSource
 import com.m4isper.contactsapp.domain.repository.ContactsMerger
@@ -136,6 +137,8 @@ internal class FakeAndroidRepository(
     }
 
     override suspend fun getContactAccounts(): List<ContactAccount> = accounts
+
+    override suspend fun getAccountSyncInfos(): List<AccountSyncInfo> = emptyList()
 
     override suspend fun updateContact(
         contactId: Long,

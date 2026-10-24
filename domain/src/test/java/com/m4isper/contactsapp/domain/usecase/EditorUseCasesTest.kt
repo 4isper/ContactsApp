@@ -8,6 +8,7 @@ import com.m4isper.contactsapp.domain.model.contact.EditableName
 import com.m4isper.contactsapp.domain.model.contact.EditablePhone
 import com.m4isper.contactsapp.domain.model.contact.FormError
 import com.m4isper.contactsapp.domain.model.contact.RawContactRef
+import com.m4isper.contactsapp.domain.model.contact.AccountSyncInfo
 import com.m4isper.contactsapp.domain.repository.ContactsAccounts
 import com.m4isper.contactsapp.domain.repository.ContactsMerger
 import com.m4isper.contactsapp.domain.repository.ContactsReader
@@ -51,6 +52,8 @@ private class RecordingRepository :
     override suspend fun getContactAccount(contactId: Long): ContactAccount = ContactAccount.Local
 
     override suspend fun getContactAccounts(): List<ContactAccount> = listOf(ContactAccount.Local)
+
+    override suspend fun getAccountSyncInfos(): List<AccountSyncInfo> = emptyList()
 
     val createdAccounts = mutableListOf<ContactAccount>()
     val updated = mutableListOf<Pair<Long, ContactForm>>()

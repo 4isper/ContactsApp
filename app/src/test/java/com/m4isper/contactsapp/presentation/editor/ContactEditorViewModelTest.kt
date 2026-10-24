@@ -32,6 +32,7 @@ import com.m4isper.contactsapp.domain.model.contact.RelationKind
 import com.m4isper.contactsapp.domain.model.contact.SipKind
 import com.m4isper.contactsapp.domain.model.contact.WebsiteKind
 import com.m4isper.contactsapp.domain.model.settings.AppSettings
+import com.m4isper.contactsapp.domain.model.contact.AccountSyncInfo
 import com.m4isper.contactsapp.domain.repository.ContactsAccounts
 import com.m4isper.contactsapp.domain.repository.ContactsMerger
 import com.m4isper.contactsapp.domain.repository.ContactsReader
@@ -162,6 +163,8 @@ private class FakeEditorRepository :
     override suspend fun getContactAccount(contactId: Long): ContactAccount = accountToLoad
 
     override suspend fun getContactAccounts(): List<ContactAccount> = accounts
+
+    override suspend fun getAccountSyncInfos(): List<AccountSyncInfo> = emptyList()
 
     override suspend fun createContact(
         form: ContactForm,

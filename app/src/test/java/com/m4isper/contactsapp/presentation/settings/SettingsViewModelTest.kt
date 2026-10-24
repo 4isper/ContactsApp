@@ -8,6 +8,7 @@ import com.m4isper.contactsapp.domain.model.settings.AppSettings
 import com.m4isper.contactsapp.domain.model.settings.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.settings.ListDensity
 import com.m4isper.contactsapp.domain.model.settings.ThemeMode
+import com.m4isper.contactsapp.domain.model.contact.AccountSyncInfo
 import com.m4isper.contactsapp.domain.repository.ContactsAccounts
 import com.m4isper.contactsapp.domain.usecase.contacts.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.contacts.SetDefaultContactAccountUseCase
@@ -50,6 +51,8 @@ private class SettingsFakeContactsRepository : com.m4isper.contactsapp.domain.re
 
     override suspend fun getContactAccounts(): List<com.m4isper.contactsapp.domain.model.contact.ContactAccount> =
         listOf(com.m4isper.contactsapp.domain.model.contact.ContactAccount.Local)
+
+    override suspend fun getAccountSyncInfos(): List<AccountSyncInfo> = emptyList()
 }
 
 /** Хранилище языка в памяти: настройки проверяются без Android-контекста. */

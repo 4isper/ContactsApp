@@ -7,6 +7,7 @@ import com.m4isper.contactsapp.domain.model.contact.ContactLink
 import com.m4isper.contactsapp.domain.model.contact.PhoneKind
 import com.m4isper.contactsapp.domain.model.contact.PhoneNumber
 import com.m4isper.contactsapp.domain.model.contact.RawContactRef
+import com.m4isper.contactsapp.domain.model.contact.AccountSyncInfo
 import com.m4isper.contactsapp.domain.repository.ContactsAccounts
 import com.m4isper.contactsapp.domain.repository.ContactsMerger
 import com.m4isper.contactsapp.domain.repository.ContactsReader
@@ -82,6 +83,8 @@ internal class FakeContactsRepository(
         failure?.let { throw it }
         return accounts
     }
+
+    override suspend fun getAccountSyncInfos(): List<AccountSyncInfo> = emptyList()
 
     override fun observeFavorites(): Flow<Set<Long>> = favoritesFlow.asStateFlow()
 

@@ -11,6 +11,7 @@ import com.m4isper.contactsapp.domain.model.contact.EditablePhone
 import com.m4isper.contactsapp.domain.model.contact.ImportDecision
 import com.m4isper.contactsapp.domain.model.contact.PhoneKind
 import com.m4isper.contactsapp.domain.model.contact.PhoneNumber
+import com.m4isper.contactsapp.domain.model.contact.AccountSyncInfo
 import com.m4isper.contactsapp.domain.repository.ContactsAccounts
 import com.m4isper.contactsapp.domain.repository.ContactsMerger
 import com.m4isper.contactsapp.domain.repository.ContactsReader
@@ -71,6 +72,8 @@ private class PreviewContactsRepository(
     override suspend fun getContactForm(contactId: Long): ContactForm? = null
 
     override suspend fun getContactAccounts(): List<ContactAccount> = listOf(ContactAccount.Local)
+
+    override suspend fun getAccountSyncInfos(): List<AccountSyncInfo> = emptyList()
 
     override suspend fun createContact(
         form: ContactForm,

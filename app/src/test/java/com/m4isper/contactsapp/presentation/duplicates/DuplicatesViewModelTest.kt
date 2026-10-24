@@ -7,6 +7,7 @@ import com.m4isper.contactsapp.domain.model.contact.ContactLink
 import com.m4isper.contactsapp.domain.model.contact.PhoneKind
 import com.m4isper.contactsapp.domain.model.contact.PhoneNumber
 import com.m4isper.contactsapp.domain.model.contact.RawContactRef
+import com.m4isper.contactsapp.domain.model.contact.AccountSyncInfo
 import com.m4isper.contactsapp.domain.repository.ContactsAccounts
 import com.m4isper.contactsapp.domain.repository.ContactsMerger
 import com.m4isper.contactsapp.domain.repository.ContactsReader
@@ -58,6 +59,8 @@ private class FakeDuplicatesRepository(
     override suspend fun getContactAccount(contactId: Long): ContactAccount = ContactAccount.Local
 
     override suspend fun getContactAccounts(): List<ContactAccount> = listOf(ContactAccount.Local)
+
+    override suspend fun getAccountSyncInfos(): List<AccountSyncInfo> = emptyList()
 
     override suspend fun unmergeContacts(link: ContactLink) = Unit
 
