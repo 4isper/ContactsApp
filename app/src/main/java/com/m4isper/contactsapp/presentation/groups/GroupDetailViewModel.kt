@@ -191,10 +191,24 @@ class GroupDetailViewModel(
     /** Отменяет удаление: группа создаётся заново вместе с участниками. */
     fun onUndoDelete() {
         val deleted = deletedGroupFlow.value ?: return
-        mutate(GroupDetailEvent.GroupRestored) {
-            val group = createGroupUseCase(deleted.title, deleted.account)
-            if (deleted.memberIds.isNotEmpty()) {
-                addContactsToGroupUseCase(group.id, deleted.memberIds)
+        if (isBusyFlow.value) return
+        viewModelScope.launch {
+            isBusyFlow.value = true
+            try {
+                safeCall(GROUP_DETAIL_TAG, "restore group failed") {
+                    val group = createGroupUseCase(deleted.title, deleted.account)
+                    if (deleted.memberIds.isNotEmpty()) {
+                        addContactsToGroupUseCase(group.id, deleted.memberIds)
+                    }
+                    groupIdFlow.value = group.id
+                    deletedGroupFlow.value = null
+                    refresh()
+                    eventFlow.value = GroupDetailEvent.GroupRestored
+                }.onFailure { failure ->
+                    eventFlow.value = GroupDetailEvent.ActionFailed
+                }
+            } finally {
+                isBusyFlow.value = false
             }
         }
     }

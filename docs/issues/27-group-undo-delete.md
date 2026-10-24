@@ -16,10 +16,20 @@ When a group is deleted, `GroupDetailViewModel` stores the deleted group and emi
 
 ## Acceptance criteria
 
-- [ ] Undo delete shows the restored group.
-- [ ] Membership is restored to the new group.
-- [ ] Repeated undo does not reuse stale deleted-group state.
-- [ ] Group details no longer show "group not found" after undo.
+- [x] Undo delete shows the restored group.
+- [x] Membership is restored to the new group.
+- [x] Repeated undo does not reuse stale deleted-group state.
+- [x] Group details no longer show "group not found" after undo.
+
+## Status
+
+Done.
+
+What changed:
+
+- `onUndoDelete` now updates `groupIdFlow` to the restored group ID.
+- `deletedGroupFlow` is cleared after restore.
+- Group details are refreshed after restore.
 
 ## Technical notes
 
