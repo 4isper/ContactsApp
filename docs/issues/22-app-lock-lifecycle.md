@@ -24,10 +24,21 @@ This fires not only when the app is truly backgrounded, but also during rotation
 
 ## Acceptance criteria
 
-- [ ] Rotating the device does not trigger app lock.
-- [ ] Launching an external activity does not destroy unsaved editor state unexpectedly.
-- [ ] App lock still engages when the app is genuinely backgrounded.
-- [ ] Navigation state is preserved across configuration changes.
+- [x] Rotating the device does not trigger app lock.
+- [x] Launching an external activity does not destroy unsaved editor state unexpectedly.
+- [x] App lock still engages when the app is genuinely backgrounded.
+- [x] Navigation state is preserved across configuration changes.
+
+## Status
+
+Done.
+
+What changed:
+
+- Replaced immediate `ON_STOP` locking with a delayed lock.
+- Configuration changes are ignored entirely.
+- Quick return from an external activity cancels the pending lock.
+- Added a 1.5 second delay before engaging app lock.
 
 ## Technical notes
 

@@ -13,12 +13,18 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.domain.model.settings.ThemeMode
 import com.m4isper.contactsapp.presentation.intent.StartAction
@@ -32,6 +38,9 @@ import com.m4isper.contactsapp.ui.components.LocalShowPhotos
 import com.m4isper.contactsapp.ui.theme.ContactsAppTheme
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 import dev.zacsweers.metrox.viewmodel.metroViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.util.Locale
@@ -93,9 +102,37 @@ private fun AppContent(
     val lockRemaining by lockViewModel.lockRemaining.collectAsStateWithLifecycle()
     val startRequest by startRequests.collectAsStateWithLifecycle(initialValue = null)
 
-    // Уход в фон снова включает защиту приложения.
-    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
-        lockViewModel.lock()
+    // Защита включается только при реальном уходе в фон: поворот и быстрый
+    // возврат из внешней активности не должны сбрасывать состояние редактора.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val scope = rememberCoroutineScope()
+    val activity = LocalContext.current as? Activity
+    DisposableEffect(lifecycleOwner) {
+        var lockJob: Job? = null
+        val observer =
+            LifecycleEventObserver { _, event ->
+                when (event) {
+                    Lifecycle.Event.ON_STOP -> {
+                        if (activity?.isChangingConfigurations == true) return@LifecycleEventObserver
+                        lockJob?.cancel()
+                        lockJob =
+                            scope.launch {
+                                delay(APP_LOCK_DELAY_MILLIS)
+                                lockViewModel.lock()
+                            }
+                    }
+                    Lifecycle.Event.ON_START -> {
+                        lockJob?.cancel()
+                        lockJob = null
+                    }
+                    else -> Unit
+                }
+            }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lockJob?.cancel()
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
     SecureWindowEffect(settings.secureWindow)
 
@@ -134,6 +171,8 @@ private fun SecureWindowEffect(enabled: Boolean) {
         }
     }
 }
+
+private const val APP_LOCK_DELAY_MILLIS = 1500L
 
 @Composable
 private fun ThemeMode.isDark(): Boolean =
