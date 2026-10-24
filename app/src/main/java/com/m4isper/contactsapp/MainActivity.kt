@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.activity.compose.LocalActivity
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -116,7 +117,7 @@ private fun AppContent(
     // возврат из внешней активности не должны сбрасывать состояние редактора.
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
-    val activity = LocalContext.current as? Activity
+    val activity = LocalActivity.current
     DisposableEffect(lifecycleOwner) {
         var lockJob: Job? = null
         val observer =
