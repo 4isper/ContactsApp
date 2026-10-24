@@ -18,7 +18,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.domain.model.contact.FormField
 import com.m4isper.contactsapp.presentation.editor.EditorUiState
+import com.m4isper.contactsapp.presentation.editor.fieldMessage
 import com.m4isper.contactsapp.presentation.editor.components.SectionHeader
 import com.m4isper.contactsapp.presentation.editor.edits.withAddedEvent
 import com.m4isper.contactsapp.presentation.editor.edits.withAddedRelation
@@ -148,6 +150,7 @@ private fun LazyListScope.birthdayItems(
     item(key = "birthday") {
         BirthdayEditorRow(
             birthday = uiState.birthday,
+            error = uiState.fieldErrors[FormField.EVENT]?.fieldMessage(),
             onPickClick = onBirthdayClick,
             onBirthdayChange = { value -> edit { it.withBirthday(value) } },
         )
@@ -173,6 +176,7 @@ private fun LazyListScope.eventItems(
     ) { row ->
         EventEditorRow(
             row = row,
+            error = uiState.fieldErrors[FormField.EVENT]?.fieldMessage(),
             onKindChange = { rowId, kind -> edit { it.withEventKind(rowId, kind) } },
             onDatePickClick = onEventDateClick,
             onDateChange = { rowId, date -> edit { it.withEventDate(rowId, date) } },

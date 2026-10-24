@@ -41,6 +41,7 @@ import java.time.LocalDate
 @Composable
 internal fun EventEditorRow(
     row: EditorRow<EditableEvent>,
+    error: String? = null,
     onKindChange: (Long, EventKind) -> Unit,
     onDatePickClick: (Long) -> Unit,
     onDateChange: (Long, Birthday?) -> Unit,
@@ -87,6 +88,15 @@ internal fun EventEditorRow(
                         contentDescription = stringResource(R.string.action_delete_event),
                     )
                 }
+            }
+            if (error != null) {
+                Spacer(modifier = Modifier.height(spacing.xs))
+                Text(
+                    text = error,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
             if (date != null) {
                 Row(

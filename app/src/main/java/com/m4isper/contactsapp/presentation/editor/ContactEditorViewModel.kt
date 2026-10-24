@@ -235,7 +235,14 @@ class ContactEditorViewModel(
 
     /** Меняет состояние формы и снимает прежние ошибки. */
     internal fun update(transform: (EditorUiState) -> EditorUiState) {
-        state.update { transform(it).copy(formError = null, error = null, deleteFailed = false) }
+        state.update {
+            transform(it).copy(
+                formError = null,
+                error = null,
+                deleteFailed = false,
+                fieldErrors = emptyMap(),
+            )
+        }
     }
 
     /** Новая строка со стабильным ключом: счётчик живёт в пределах экрана. */

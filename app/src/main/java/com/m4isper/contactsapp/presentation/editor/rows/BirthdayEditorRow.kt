@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
@@ -30,6 +31,7 @@ import java.time.LocalDate
 @Composable
 internal fun BirthdayEditorRow(
     birthday: EditableBirthday,
+    error: String? = null,
     onPickClick: () -> Unit,
     onBirthdayChange: (Birthday?) -> Unit,
 ) {
@@ -67,6 +69,15 @@ internal fun BirthdayEditorRow(
                     )
                 }
             }
+        }
+        if (error != null) {
+            Spacer(modifier = Modifier.height(spacing.xs))
+            Text(
+                text = error,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
         if (value != null) {
             Row(
