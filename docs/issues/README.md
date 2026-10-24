@@ -57,3 +57,26 @@ These issues are open and come from the Clean Architecture / Clean Code audit. T
 - 14 (ViewModel split) depends on 10 and 15; otherwise the extracted state holders inherit the same mixed responsibilities.
 - 17 (test architecture) depends on 11 and 16 to make provider tests and architecture tests meaningful.
 - 18 and 19 are independent and can be scheduled separately.
+
+## Bug audit backlog (2026-10-24)
+
+These issues come from a runtime/correctness bug audit. They are separate from the completed feature roadmap and architecture audit above. Each file is self-contained with a problem statement, proposed scope, acceptance criteria, and technical notes.
+
+| # | File | Title | Priority | Status |
+|---|---|---|---|---|
+| 21 | [21-reminders-and-notifications.md](21-reminders-and-notifications.md) | Make birthday and event reminders actually work | P1 | Open |
+| 22 | [22-app-lock-lifecycle.md](22-app-lock-lifecycle.md) | Do not lock app on configuration changes and external activities | P1 | Open |
+| 23 | [23-move-contact-account.md](23-move-contact-account.md) | Keep contact details consistent after moving to another account | P1 | Open |
+| 24 | [24-write-contacts-permissions.md](24-write-contacts-permissions.md) | Request WRITE_CONTACTS for favorite, delete, group, and merge actions | P1 | Open |
+| 25 | [25-vcard-quoted-printable-and-intent.md](25-vcard-quoted-printable-and-intent.md) | Support standard quoted-printable vCard and stream-based share intents | P1 | Open |
+| 26 | [26-duplicate-merge-correctness.md](26-duplicate-merge-correctness.md) | Treat null merge result as failure and merge all raw contacts | P2 | Open |
+| 27 | [27-group-undo-delete.md](27-group-undo-delete.md) | Refresh group details after undo delete | P2 | Open |
+| 28 | [28-list-paging-stability.md](28-list-paging-stability.md) | Make contact paging order deterministic | P2 | Open |
+| 29 | [29-clear-and-app-lock-cold-start.md](29-clear-and-app-lock-cold-start.md) | Reset filters and avoid exposing contacts before app-lock settings load | P2 | Open |
+
+### Bug audit dependencies
+
+- 21 should land before any reminder-related UI work; it fixes the data source first.
+- 24 should land before or together with 23, 26, and 27 because those flows write contacts.
+- 25 is independent and can be scheduled separately.
+- 28 is independent and low-risk.
