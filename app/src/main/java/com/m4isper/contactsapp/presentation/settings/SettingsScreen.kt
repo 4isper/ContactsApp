@@ -1,5 +1,9 @@
 package com.m4isper.contactsapp.presentation.settings
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,10 +34,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import android.Manifest
-import android.os.Build
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -268,7 +268,9 @@ private fun RemindersSection(
 ) {
     val context = LocalContext.current
     val notificationPermissionLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { /* no-op: receiver checks permission */ }
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission(),
+        ) { /* no-op: receiver checks permission */ }
 
     SettingsSection(title = stringResource(R.string.settings_reminders)) {
         SettingsSwitch(
@@ -276,7 +278,8 @@ private fun RemindersSection(
             description = stringResource(R.string.settings_reminders_desc),
             checked = settings.remindersEnabled,
             onCheckedChange = { enabled ->
-                if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                if (enabled &&
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                     !hasPermission(context, Manifest.permission.POST_NOTIFICATIONS)
                 ) {
                     notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
