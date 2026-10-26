@@ -328,6 +328,7 @@ class ContactListUiTest {
         }
         compose.onNodeWithTag("selection_top_bar").assertIsDisplayed()
 
+        compose.onNodeWithTag("selection_more_button").performClick()
         compose.onNodeWithTag("delete_selected_button").performClick()
         compose.onNodeWithTag("confirm_batch_delete").performClick()
         // Удаление коммитится по истечении окна отмены (~4 c реального времени).
@@ -416,6 +417,7 @@ class ContactListUiTest {
             viewModel.uiState.value.selection == setOf(1L)
         }
 
+        compose.onNodeWithTag("selection_more_button").performClick()
         compose.onNodeWithTag("add_to_group_button").performClick()
         compose.onNodeWithTag("group_check_row_Семья").performClick()
         compose.onNodeWithTag("group_picker_confirm").performClick()
@@ -480,6 +482,7 @@ class ContactListUiTest {
         compose.waitUntil(timeoutMillis = 5_000) {
             viewModel.uiState.value.selection == setOf(1L)
         }
+        compose.onNodeWithTag("selection_more_button").performClick()
         compose.onNodeWithTag("delete_selected_button").performClick()
         compose.onNodeWithTag("confirm_batch_delete").performClick()
 

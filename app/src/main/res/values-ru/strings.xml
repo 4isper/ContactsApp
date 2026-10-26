@@ -449,10 +449,10 @@
         <item quantity="other">%d email</item>
     </plurals>
     <plurals name="selection_count">
-        <item quantity="one">Выбран %d</item>
-        <item quantity="few">Выбрано %d</item>
-        <item quantity="many">Выбрано %d</item>
-        <item quantity="other">Выбрано %d</item>
+        <item quantity="one">%d выбран</item>
+        <item quantity="few">%d выбрано</item>
+        <item quantity="many">%d выбрано</item>
+        <item quantity="other">%d выбрано</item>
     </plurals>
     <plurals name="batch_delete_title">
         <item quantity="one">Удалить %d контакт?</item>
