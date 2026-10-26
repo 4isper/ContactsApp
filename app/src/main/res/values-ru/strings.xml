@@ -224,6 +224,14 @@
     <string name="import_preview_invalid">Пропущено блоков: %1$d</string>
     <string name="import_entry_unnamed">Без имени</string>
     <string name="import_entry_duplicate">Уже есть в контактах: %1$s</string>
+    <string name="import_entry_merge_target">Объединить с: %1$s</string>
+    <string name="import_entry_merge_target_hint">Выберите, с каким контактом объединить</string>
+    <plurals name="import_entry_duplicate_count">
+        <item quantity="one">Уже в контактах — %1$d кандидат</item>
+        <item quantity="few">Уже в контактах — %1$d кандидата</item>
+        <item quantity="many">Уже в контактах — %1$d кандидатов</item>
+        <item quantity="other">Уже в контактах — %1$d кандидата</item>
+    </plurals>
     <string name="import_entry_photo">В файле есть фото</string>
     <string name="import_entry_categories">Категории: %1$s</string>
     <string name="import_decision_create">Создать</string>

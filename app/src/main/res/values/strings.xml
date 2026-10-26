@@ -216,6 +216,12 @@
     <string name="import_preview_invalid">Skipped entries: %1$d</string>
     <string name="import_entry_unnamed">No name</string>
     <string name="import_entry_duplicate">Already in contacts: %1$s</string>
+    <string name="import_entry_merge_target">Merge into: %1$s</string>
+    <string name="import_entry_merge_target_hint">Choose which contact to merge into</string>
+    <plurals name="import_entry_duplicate_count">
+        <item quantity="one">Already in contacts — %1$d candidate</item>
+        <item quantity="other">Already in contacts — %1$d candidates</item>
+    </plurals>
     <string name="import_entry_photo">Photo in file</string>
     <string name="import_entry_categories">Categories: %1$s</string>
     <string name="import_decision_create">Create</string>

@@ -11,12 +11,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Merge
@@ -46,16 +49,19 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.duplicates.DuplicateGroup
 import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import com.m4isper.contactsapp.presentation.common.Loadable
+import com.m4isper.contactsapp.presentation.common.format.birthdayText
 import com.m4isper.contactsapp.presentation.common.permissions.hasPermission
 import com.m4isper.contactsapp.presentation.contacts.components.contactSubtitle
 import com.m4isper.contactsapp.ui.components.EmptyState
@@ -206,12 +212,20 @@ private fun MergePreviewDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val additions = mergeAdditions(pending.target, pending.sources)
+    val locale = LocalConfiguration.current.locales[0]
+    val additions = mergeAdditions(pending.target, pending.sources, formatBirthday = { birthdayText(it, locale) })
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.duplicates_preview_title)) },
         text = {
-            Column {
+            // Ограниченная высота со скроллом: длинный список добавлений не уводит
+            // текст и кнопки подтверждения за пределы экрана.
+            Column(
+                modifier =
+                    Modifier
+                        .verticalScroll(rememberScrollState())
+                        .heightIn(max = 360.dp),
+            ) {
                 Text(
                     text = stringResource(R.string.duplicates_preview_additions, pending.target.name),
                     style = MaterialTheme.typography.bodyMedium,

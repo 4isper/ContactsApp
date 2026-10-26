@@ -33,14 +33,14 @@ The same problem exists in `EditorForm`'s `SimilarContactsDialog` (`EditorForm.k
 
 ## Acceptance criteria
 
-- [ ] With two or more duplicates, the import card lists all candidates and requires an explicit target choice before Merge.
-- [ ] The merge decision stores and uses the selected contact id, not `duplicates.first()`.
-- [ ] The selected target is visible in the card and survives configuration changes where the screen state is retained.
-- [ ] The merge preview is scrollable and its confirm/cancel buttons remain visible with 20+ additions and at 200% font scale.
-- [ ] The similar-contacts dialog is scrollable and does not push its buttons off-screen.
-- [ ] Birthdays in the merge preview are localized dates, never `Birthday(day=..., month=..., year=...)`.
-- [ ] Decision chips wrap instead of clipping on a 320 dp screen.
-- [ ] Canceling the merge preview leaves the duplicate group unchanged.
+- [x] With two or more duplicates, the import card lists all candidates and requires an explicit target choice before Merge.
+- [x] The merge decision stores and uses the selected contact id, not `duplicates.first()`.
+- [x] The selected target is visible in the card and survives configuration changes where the screen state is retained.
+- [x] The merge preview is scrollable and its confirm/cancel buttons remain visible with 20+ additions and at 200% font scale.
+- [x] The similar-contacts dialog is scrollable and does not push its buttons off-screen.
+- [x] Birthdays in the merge preview are localized dates, never `Birthday(day=..., month=..., year=...)`.
+- [x] Decision chips wrap instead of clipping on a 320 dp screen.
+- [x] Canceling the merge preview leaves the duplicate group unchanged.
 
 ## Technical notes
 
@@ -66,3 +66,24 @@ The same problem exists in `EditorForm`'s `SimilarContactsDialog` (`EditorForm.k
 - Open a duplicate group with many fields at 200% font scale and in landscape.
 - UI tests for target selection, scrolling, and canceled merges.
 - `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest`.
+
+## Status
+
+Done.
+
+### What was implemented
+
+- Import cards with two or more duplicates now render every candidate as a selectable radio row (`import_merge_target_<entry>_<contactId>` tags) with a distinguishing subtitle: primary phone, first email, or the account label when there are no contact points. A hint line asks to choose the target; a summary line names the chosen one ("Merge into: ..."). The Merge chip stays disabled until a target is chosen, so the write can no longer land in `duplicates.first()` silently.
+- The chosen target is stored in `ImportDecision.Merge(targetId)` in the view-model state, so it survives configuration changes, and it is revalidated against the candidate list when rendered: a target that is no longer among the candidates stops counting as chosen and re-arms the requirement to choose.
+- The decision chip row is now a `FlowRow`, so "Create/Merge/Skip" wrap at narrow widths and large font scales instead of clipping.
+- `MergePreviewDialog` (duplicates screen) scrolls its additions inside a bounded-height column (`verticalScroll` + `heightIn(max = 360.dp)`), keeping the confirm/cancel buttons in the dialog footer always reachable.
+- `SimilarContactsDialog` (editor) renders the similar contacts in a `LazyColumn` bounded to 320 dp instead of an unbounded `Column`.
+- Birthdays in the merge preview are formatted with `birthdayText` instead of `Birthday.toString()`. `mergeAdditions` takes a `formatBirthday` parameter to stay a pure, unit-testable function; a non-composable `birthdayText(birthday, locale)` overload was added and the composable one delegates to it.
+- Strings added in en/ru: plural `import_entry_duplicate_count` (with Russian one/few/many forms), `import_entry_merge_target`, `import_entry_merge_target_hint`.
+- Tests: `MergePreviewTest` now feeds a test formatter and asserts the birthday value is formatted; `ImportPreviewUiTest` gained `multipleDuplicates_requireExplicitTargetAndUseChosenId`, which disables Merge before a choice, selects the second of two candidates, and asserts the provider merge used the chosen id.
+
+### Verification
+
+- `./gradlew :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest :app:detekt :app:ktlintCheck` passes.
+- `./gradlew :app:connectedDebugAndroidTest` on a headless emulator: BUILD SUCCESSFUL, 108 tests, 107 passed, 1 skipped by assumption (`LargeListPerformanceTest` benchmark).
+- Manual checks that remain useful: 20+ additions at 200% font scale and chips on a 320 dp screen — the structure (bounded scroll + FlowRow) is in place, but the visual pass was not run on a device.

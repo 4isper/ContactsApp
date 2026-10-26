@@ -9,11 +9,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
@@ -377,12 +379,18 @@ private fun SimilarContactsDialog(
                     text = stringResource(R.string.editor_duplicate_message),
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                contacts.forEach { contact ->
-                    Text(
-                        text = contact.name,
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(top = spacing.s),
-                    )
+                // Ограниченная высота: длинный список похожих контактов скроллится,
+                // а кнопки диалога остаются на экране.
+                LazyColumn(
+                    modifier = Modifier.heightIn(max = 320.dp),
+                ) {
+                    items(contacts, key = { it.contactId }) { contact ->
+                        Text(
+                            text = contact.name,
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(top = spacing.s),
+                        )
+                    }
                 }
             }
         },

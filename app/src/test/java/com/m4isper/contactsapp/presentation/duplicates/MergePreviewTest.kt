@@ -20,6 +20,17 @@ class MergePreviewTest {
             emails = listOf(EmailAddress("anna@example.com", EmailKind.HOME)),
         )
 
+    /** Тестовый форматтер: в UI передают birthdayText, здесь — читаемый дамп. */
+    private fun additions(
+        target: ContactDetails,
+        sources: List<ContactDetails>,
+    ): List<MergeAddition> =
+        mergeAdditions(
+            target,
+            sources,
+            formatBirthday = { birthday -> "${birthday.day}.${birthday.month}.${birthday.year ?: "--"}" },
+        )
+
     @Test
     fun `lists only the fields the target does not have`() {
         val source =
@@ -31,7 +42,7 @@ class MergePreviewTest {
                 note = "Любит кофе",
             )
 
-        val additions = mergeAdditions(target, listOf(source))
+        val additions = additions(target, listOf(source))
 
         assertEquals(
             listOf(
@@ -46,13 +57,13 @@ class MergePreviewTest {
     fun `different name is a new field`() {
         val source = ContactDetails(contactId = 2, name = "Anna Ivanova")
 
-        val additions = mergeAdditions(target, listOf(source))
+        val additions = additions(target, listOf(source))
 
         assertEquals(listOf(MergeAddition(MergeField.NAME, "Anna Ivanova")), additions)
     }
 
     @Test
-    fun `birthday and organization are shown`() {
+    fun `birthday is formatted by the provided formatter`() {
         val source =
             ContactDetails(
                 contactId = 2,
@@ -63,16 +74,16 @@ class MergePreviewTest {
                         .Organization("ACME", "CTO"),
             )
 
-        val additions = mergeAdditions(target, listOf(source))
+        val additions = additions(target, listOf(source))
 
         assertEquals(2, additions.size)
-        assertTrue(additions.any { it.field == MergeField.BIRTHDAY })
+        assertEquals("1.6.1990", additions.first { it.field == MergeField.BIRTHDAY }.value)
         assertTrue(additions.any { it.field == MergeField.ORGANIZATION })
     }
 
     @Test
     fun `identical contacts have nothing to add`() {
-        val additions = mergeAdditions(target, listOf(target.copy(contactId = 2)))
+        val additions = additions(target, listOf(target.copy(contactId = 2)))
 
         assertTrue(additions.isEmpty())
     }
