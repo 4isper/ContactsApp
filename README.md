@@ -60,7 +60,7 @@ Android permissions used: `READ_CONTACTS` (list), `WRITE_CONTACTS` (editing and 
 
 ```bash
 ./gradlew :app:assembleDebug          # debug APK
-./gradlew :domain:test :data:testDebugUnitTest :app:testDebugUnitTest  # 405 unit tests
-./gradlew :app:connectedDebugAndroidTest  # 84 Compose UI tests (needs a running emulator)
+./gradlew :domain:test :data:testDebugUnitTest :app:testDebugUnitTest  # 754 unit tests
+./gradlew :app:connectedDebugAndroidTest  # 102 Compose UI tests (needs a running emulator)
 ./gradlew detekt ktlintCheck          # static analysis, all modules
 ```
