@@ -21,4 +21,21 @@ class AppErrorTest {
     fun `an unknown failure stays unknown`() {
         assertEquals(AppError.UNKNOWN, AppError.from(RuntimeException("boom")))
     }
+
+    @Test
+    fun `a local-or-SIM account rejection means the local account is blocked`() {
+        assertEquals(
+            AppError.LOCAL_ACCOUNT_BLOCKED,
+            AppError.from(
+                IllegalArgumentException(
+                    "Cannot add contacts to local or SIM accounts when default account is set to cloud",
+                ),
+            ),
+        )
+    }
+
+    @Test
+    fun `an unrelated illegal argument stays unknown`() {
+        assertEquals(AppError.UNKNOWN, AppError.from(IllegalArgumentException("bad argument")))
+    }
 }

@@ -263,6 +263,7 @@
     <string name="error_permission_denied">No permission to access contacts</string>
     <string name="error_provider_failed">The contacts provider is unavailable</string>
     <string name="error_save_failed">Could not save the contact</string>
+    <string name="error_local_account_blocked">Cannot save to local storage: the default account is set to cloud. Choose a cloud account or change the default account in system settings.</string>
     <string name="error_delete_failed">Could not delete the contact</string>
     <string name="error_import_failed">Could not read the file</string>
     <string name="error_schedule_failed">Could not schedule the reminder</string>

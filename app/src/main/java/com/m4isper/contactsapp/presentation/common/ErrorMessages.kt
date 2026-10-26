@@ -16,6 +16,7 @@ internal fun AppError.messageRes(): Int =
         AppError.PERMISSION_DENIED -> R.string.error_permission_denied
         AppError.PROVIDER_FAILED -> R.string.error_provider_failed
         AppError.SAVE_FAILED -> R.string.error_save_failed
+        AppError.LOCAL_ACCOUNT_BLOCKED -> R.string.error_local_account_blocked
         AppError.DELETE_FAILED -> R.string.error_delete_failed
         AppError.IMPORT_FAILED -> R.string.error_import_failed
         AppError.SCHEDULE_FAILED -> R.string.error_schedule_failed

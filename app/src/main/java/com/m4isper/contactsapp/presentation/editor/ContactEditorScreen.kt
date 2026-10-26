@@ -7,6 +7,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -19,6 +22,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.presentation.common.messageRes
 import com.m4isper.contactsapp.presentation.common.permissions.PermissionRequest
 import com.m4isper.contactsapp.presentation.common.permissions.hasPermission
 import com.m4isper.contactsapp.presentation.common.permissions.openAppSettings
@@ -39,6 +43,8 @@ fun ContactEditorScreen(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val errorText = uiState.error?.let { stringResource(it.messageRes()) }
 
     var hasWritePermission by remember {
         mutableStateOf(hasPermission(context, Manifest.permission.WRITE_CONTACTS))
@@ -93,6 +99,7 @@ fun ContactEditorScreen(
                     showSave = false,
                 )
             },
+            snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         ) { innerPadding ->
             PermissionRequest(
                 modifier =
@@ -127,6 +134,7 @@ fun ContactEditorScreen(
                 },
             )
         },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { innerPadding ->
         EditorForm(
             viewModel = viewModel,
@@ -136,6 +144,15 @@ fun ContactEditorScreen(
                     .fillMaxSize()
                     .padding(innerPadding),
         )
+    }
+
+    LaunchedEffect(errorText) {
+        if (errorText != null) {
+            snackbarHostState.showSnackbar(
+                message = errorText,
+                duration = SnackbarDuration.Long,
+            )
+        }
     }
 
     if (showDiscardDialog) {

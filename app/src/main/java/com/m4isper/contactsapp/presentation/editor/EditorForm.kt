@@ -119,7 +119,17 @@ internal fun EditorForm(
                 onRemove = { edit { it.withoutPhoto() } },
             )
         }
-        accountItems(uiState = uiState, onClick = { showAccountPicker = true })
+        accountItems(uiState = uiState, onClick = { showAccountPicker = true }, isError = uiState.error != null)
+        if (uiState.formError != null || uiState.deleteFailed) {
+            item(key = "error") {
+                Text(
+                    text = formMessage(uiState),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(horizontal = spacing.m, vertical = spacing.s),
+                )
+            }
+        }
         item(key = "name") {
             NameEditor(
                 mode = uiState.nameMode,
@@ -177,16 +187,6 @@ internal fun EditorForm(
             onBirthdayClick = { showDatePicker = true },
             onEventDateClick = { eventPickerRowId = it },
         )
-        if (uiState.formError != null || uiState.error != null || uiState.deleteFailed) {
-            item(key = "error") {
-                Text(
-                    text = formMessage(uiState),
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(horizontal = spacing.m, vertical = spacing.s),
-                )
-            }
-        }
         if (!uiState.isNew) {
             item(key = "delete") {
                 OutlinedButton(
@@ -274,6 +274,7 @@ internal fun EditorForm(
 private fun LazyListScope.accountItems(
     uiState: EditorUiState,
     onClick: () -> Unit,
+    isError: Boolean = false,
 ) {
     if (uiState.isNew) {
         if (uiState.accounts.size <= 1) return
@@ -281,7 +282,7 @@ private fun LazyListScope.accountItems(
             SectionHeader(titleRes = R.string.editor_section_account)
         }
         item(key = "account") {
-            AccountRow(account = uiState.selectedAccount, onClick = onClick)
+            AccountRow(account = uiState.selectedAccount, onClick = onClick, isError = isError)
         }
     } else {
         val account = uiState.selectedAccount ?: return
@@ -289,7 +290,7 @@ private fun LazyListScope.accountItems(
             SectionHeader(titleRes = R.string.editor_section_account)
         }
         item(key = "account") {
-            AccountRow(account = account, onClick = null)
+            AccountRow(account = account, onClick = null, isError = isError)
         }
     }
 }

@@ -89,7 +89,7 @@ internal suspend fun save(
                 is SaveResult.Invalid -> state.update { it.copy(formError = result.error) }
             }
         }.onFailure { failure ->
-            state.update { it.copy(error = AppError.SAVE_FAILED) }
+            state.update { it.copy(error = AppError.from(failure)) }
         }
     } finally {
         state.update { it.copy(isBusy = false) }

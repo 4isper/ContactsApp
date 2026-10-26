@@ -271,6 +271,7 @@
     <string name="error_permission_denied">Нет доступа к контактам</string>
     <string name="error_provider_failed">Провайдер контактов недоступен</string>
     <string name="error_save_failed">Не удалось сохранить контакт</string>
+    <string name="error_local_account_blocked">Нельзя сохранить в локальное хранилище: системный аккаунт по умолчанию — облачный. Выберите облачный аккаунт или измените аккаунт по умолчанию в настройках системы.</string>
     <string name="error_delete_failed">Не удалось удалить контакт</string>
     <string name="error_import_failed">Не удалось прочитать файл</string>
     <string name="error_schedule_failed">Не удалось запланировать напоминание</string>

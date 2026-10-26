@@ -17,6 +17,9 @@ enum class AppError {
     /** Не удалось сохранить изменения. */
     SAVE_FAILED,
 
+    /** Не удалось создать контакт в локальном хранилище: системный аккаунт по умолчанию — облачный. */
+    LOCAL_ACCOUNT_BLOCKED,
+
     /** Не удалось удалить контакты. */
     DELETE_FAILED,
 
@@ -36,6 +39,8 @@ enum class AppError {
             when (error) {
                 is SecurityException -> PERMISSION_DENIED
                 is IOException -> PROVIDER_FAILED
+                is IllegalArgumentException ->
+                    if (error.message?.contains("local or SIM accounts") == true) LOCAL_ACCOUNT_BLOCKED else UNKNOWN
                 else -> UNKNOWN
             }
     }

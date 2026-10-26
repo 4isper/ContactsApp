@@ -35,11 +35,13 @@ import com.m4isper.contactsapp.presentation.common.account.contactAccountTitle
 import com.m4isper.contactsapp.presentation.common.account.testKey
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 
-/** Строка аккаунта: интерактивная для нового контакта, только для чтения у существующего. */
+/** Строка аккаунта: интерактивная для нового контакта, только для чтения у существующего.
+ * [isError] подсвечивает строку, если сохранение в этот аккаунт заблокировано. */
 @Composable
 internal fun AccountRow(
     account: ContactAccount?,
     onClick: (() -> Unit)?,
+    isError: Boolean = false,
 ) {
     val spacing = LocalSpacing.current
     val selected = account ?: ContactAccount.Local
@@ -47,7 +49,12 @@ internal fun AccountRow(
     Card(
         colors =
             CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                containerColor =
+                    if (isError) {
+                        MaterialTheme.colorScheme.errorContainer
+                    } else {
+                        MaterialTheme.colorScheme.surfaceContainerLow
+                    },
             ),
         modifier =
             Modifier
@@ -63,7 +70,12 @@ internal fun AccountRow(
             Icon(
                 Icons.Filled.AccountCircle,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint =
+                    if (isError) {
+                        MaterialTheme.colorScheme.onErrorContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
             )
             Column(
                 modifier =
@@ -74,7 +86,12 @@ internal fun AccountRow(
                 Text(
                     text = contactAccountTitle(selected),
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color =
+                        if (isError) {
+                            MaterialTheme.colorScheme.onErrorContainer
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
                 )
                 Text(
                     text = contactAccountSubtitle(selected),
@@ -86,7 +103,12 @@ internal fun AccountRow(
                 Icon(
                     Icons.Filled.Edit,
                     contentDescription = stringResource(R.string.editor_account_choose),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint =
+                        if (isError) {
+                            MaterialTheme.colorScheme.onErrorContainer
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
                 )
             }
         }
