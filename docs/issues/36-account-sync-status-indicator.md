@@ -24,7 +24,7 @@ The user can filter contacts by account (local, Google, Exchange, etc.), but the
 
 ## Status
 
-Done.
+Done. The stub data source and hardcoded strings were superseded by issue 37 (`37-wire-and-localize-account-sync-status.md`), which wires the indicator and reports real sync state.
 
 ## Technical notes (implemented)
 

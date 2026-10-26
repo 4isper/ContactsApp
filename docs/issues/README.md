@@ -93,10 +93,54 @@ These issues come from a UX/UI audit of the app. They are separate from the feat
 | 33 | [33-loading-skeleton-for-contact-list.md](33-loading-skeleton-for-contact-list.md) | Add skeleton placeholders while the contact list loads | P2 | Open |
 | 34 | [34-accessibility-a11y-improvements.md](34-accessibility-a11y-improvements.md) | Improve accessibility (TalkBack, contrast, touch targets, keyboard focus) | P1 | Open |
 | 35 | [35-brand-visual-identity.md](35-brand-visual-identity.md) | Strengthen brand visual identity (icons, typography, accents) | P3 | Open |
-| 36 | [36-account-sync-status-indicator.md](36-account-sync-status-indicator.md) | Show account sync status in the contacts list header | P2 | Open |
+| 36 | [36-account-sync-status-indicator.md](36-account-sync-status-indicator.md) | Show account sync status in the contacts list header | P2 | Done |
 
 ### UX/UI audit dependencies
 
 - 31 depends on 20 (hardened validation) for the underlying field-level error data.
 - 36 depends on 01 (live updates / provider observer) for real-time sync status.
 - 30, 32, 33, 34, 35 are independent and can be scheduled in any order.
+
+## UX/UI audit backlog, second pass (2026-10-25)
+
+A second UX/UI pass looked at the implemented screens rather than the feature specification. These issues are follow-ups and regressions found in the current code: dead UI paths, small-screen overflow, broken state round-trips, permission flows, and accessibility work that was scaffolded but not completed. Each file is self-contained with a problem statement, proposed scope, acceptance criteria, and technical notes.
+
+| # | File | Title | Priority | Status |
+|---|---|---|---|---|
+| 37 | [37-wire-and-localize-account-sync-status.md](37-wire-and-localize-account-sync-status.md) | Wire up and localize the account sync status indicator | P2 | Done |
+| 38 | [38-selection-app-bar-overflow.md](38-selection-app-bar-overflow.md) | Stop the selection app bar from overflowing on phones | P1 | Open |
+| 39 | [39-filter-aware-empty-states.md](39-filter-aware-empty-states.md) | Make contact-list empty states aware of group/account filters | P1 | Open |
+| 40 | [40-preserve-birthday-without-year.md](40-preserve-birthday-without-year.md) | Preserve "no year" birthdays and event dates | P1 | Open |
+| 41 | [41-app-lock-ime-and-accessibility.md](41-app-lock-ime-and-accessibility.md) | Make the app-lock screens usable with the keyboard and TalkBack | P1 | Open |
+| 42 | [42-contextual-write-permissions.md](42-contextual-write-permissions.md) | Request contact-write permission when the action happens, not on screen entry | P1 | Open |
+| 43 | [43-duplicate-merge-ux.md](43-duplicate-merge-ux.md) | Make duplicate merging clearer and safe to review | P1 | Open |
+| 44 | [44-group-member-picker.md](44-group-member-picker.md) | Exclude existing members from the group contact picker | P2 | Open |
+| 45 | [45-editor-row-layout-and-validation.md](45-editor-row-layout-and-validation.md) | Make editor field rows readable and validation errors findable | P2 | Open |
+| 46 | [46-photo-editor-crop-ux.md](46-photo-editor-crop-ux.md) | Make photo selection and cropping usable on small screens and with TalkBack | P2 | Open |
+| 47 | [47-contact-row-actions.md](47-contact-row-actions.md) | Use a real overflow icon and make row actions available without swiping | P2 | Open |
+| 48 | [48-talkback-follow-through.md](48-talkback-follow-through.md) | Finish TalkBack support for selection mode, swipes, and fast scrolling | P2 | Open |
+| 49 | [49-reminders-notification-permission.md](49-reminders-notification-permission.md) | Keep the reminders switch in sync with notification permission | P2 | Open |
+| 50 | [50-skeleton-shimmer-animation.md](50-skeleton-shimmer-animation.md) | Make the loading skeleton actually animate | P3 | Open |
+| 51 | [51-system-bars-and-launch-theme.md](51-system-bars-and-launch-theme.md) | Make system bars and the launch window follow the app theme | P2 | Open |
+| 52 | [52-contact-row-density-and-hierarchy.md](52-contact-row-density-and-hierarchy.md) | Rebalance contact-row hierarchy and state feedback | P2 | Open |
+
+### Second-pass dependencies
+
+- 37 is done: it replaced the stub with public `ContentResolver` sync state, wired the indicator, and localized the strings. 38 is the next item.
+- 38 and 48 both touch selection mode; land 38 first so the announcement work targets the final app bar. 48 also overlaps 47 for accessible swipe actions, so those two can share one branch.
+- 39 follows 30. It adds filter-specific recovery actions and replaces the secondary filled button with a true secondary style.
+- 40 is independent, but the shared date dialog is also used by events; test both paths in one change.
+- 41 is independent of 22 (app-lock lifecycle) but both affect the lock experience; avoid changing the same root layout twice.
+- 42 supersedes the entry-time permission prompts introduced for 24. It should land before 43 and 44, which add more write actions to the same screens.
+- 43 should be coordinated with 26 (merge data correctness): choose and validate the target before changing provider write behavior.
+- 44 is independent of 42, but both edit Group Detail; schedule them together if possible.
+- 45 builds on 31 and 20; it changes where inline errors appear and how the user finds them.
+- 46 is independent. 47 and 35 share the row icon work; update `BrandIcons` once.
+- 49 depends on 21 for reliable reminder scheduling, then fixes the settings/permission state on top.
+- 50 is a regression fix for 33 and can ship independently.
+- 51 is independent, but touches the same theme entry point as 35; keep the brand surface colors in one place.
+- 52 complements 47 and 48 rather than replacing them: 47 owns the overflow icon and action availability, 48 owns custom accessibility actions, and 52 owns the remaining name-width, favorite-state, and haptic issues. 52 also refines 47's "keep the favorite visible" rule: favorite visibility becomes width-dependent. Land 47 first, then re-check 52's width budget against the final trailing-button set.
+
+### How to use the second pass
+
+Several issues are UI-visible regressions in features that are already marked Done. Treat their acceptance criteria as the new definition of done, and include before/after screenshots for the layout issues (38, 39, 43, 45, 46, 47, 52) plus a TalkBack recording for 41 and 48.
