@@ -55,6 +55,9 @@ sealed interface ContactsFileAction : ContactsUiAction {
 
     data object Refresh : ContactsFileAction
 
+    /** Повторная синхронизация из индикатора аккаунта: обновляет список и сообщает итог. */
+    data object RetrySync : ContactsFileAction
+
     data object DeleteSelected : ContactsFileAction
 
     data object UndoDelete : ContactsFileAction

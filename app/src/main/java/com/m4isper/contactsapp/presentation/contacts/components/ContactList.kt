@@ -50,7 +50,6 @@ private data class QuickCallTarget(
     val phone: PhoneNumber,
 )
 
-@Suppress("UnusedParameter")
 @Composable
 internal fun ContactList(
     uiState: ContactsUiState,
@@ -71,6 +70,7 @@ internal fun ContactList(
     val onAddClick: () -> Unit = { onAction(ContactsNavigationAction.AddClicked) }
     val onRetry: () -> Unit = { onAction(ContactsFileAction.Retry) }
     val onRefresh: () -> Unit = { onAction(ContactsFileAction.Refresh) }
+    val onRetrySync: () -> Unit = { onAction(ContactsFileAction.RetrySync) }
     val onContactSelected: (Long) -> Unit = { onAction(ContactsListAction.ContactSelected(it)) }
     val onClearSelection: () -> Unit = { onAction(ContactsListAction.ClearSelection) }
     val onSelectAll: (List<Long>) -> Unit = { onAction(ContactsListAction.SelectAll(it)) }
@@ -211,6 +211,8 @@ internal fun ContactList(
                     accounts = accounts,
                     selectedAccount = uiState.selectedAccount,
                     onAccountSelected = onAccountSelected,
+                    accountSyncInfos = accountSyncInfos,
+                    onRetrySync = onRetrySync,
                     onCreateGroup = onCreateGroup,
                     onManageGroupsClick = onManageGroupsClick,
                     onDuplicatesClick = onDuplicatesClick,

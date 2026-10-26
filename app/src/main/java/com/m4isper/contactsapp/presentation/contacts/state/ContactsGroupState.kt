@@ -76,6 +76,7 @@ internal class ContactsGroupState(
         _groups.value = emptyList()
         _membership.value = emptyMap()
         _accounts.value = emptyList()
+        _accountSyncInfos.value = emptyList()
         _profileContactId.value = null
     }
 

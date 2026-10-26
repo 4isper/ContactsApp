@@ -160,6 +160,34 @@
     <string name="filter_favorites">Избранное</string>
     <string name="filter_accounts">Аккаунты</string>
     <string name="filter_accounts_all">Все аккаунты</string>
+    <string name="account_sync_synced">Синхронизировано</string>
+    <string name="account_sync_syncing">Синхронизация…</string>
+    <string name="account_sync_stale">Устарело</string>
+    <string name="account_sync_error">Ошибка синхронизации</string>
+    <string name="account_sync_synced_ago">Синхр. %1$s</string>
+    <string name="account_sync_just_now">только что</string>
+    <plurals name="account_sync_minutes_ago">
+        <item quantity="one">%1$d мин назад</item>
+        <item quantity="few">%1$d мин назад</item>
+        <item quantity="many">%1$d мин назад</item>
+        <item quantity="other">%1$d мин назад</item>
+    </plurals>
+    <plurals name="account_sync_hours_ago">
+        <item quantity="one">%1$d ч назад</item>
+        <item quantity="few">%1$d ч назад</item>
+        <item quantity="many">%1$d ч назад</item>
+        <item quantity="other">%1$d ч назад</item>
+    </plurals>
+    <plurals name="account_sync_days_ago">
+        <item quantity="one">%1$d дн назад</item>
+        <item quantity="few">%1$d дн назад</item>
+        <item quantity="many">%1$d дн назад</item>
+        <item quantity="other">%1$d дн назад</item>
+    </plurals>
+    <string name="account_sync_account_line">%1$s · %2$s</string>
+    <string name="account_sync_retry">Повторить синхронизацию</string>
+    <string name="account_sync_retry_success">Контакты обновлены</string>
+    <string name="account_sync_retry_failed">Не удалось обновить контакты</string>
     <string name="favorites_empty">Нет избранных контактов</string>
     <string name="selection_mode_entered">Режим выделения, %1$d контактов выбрано</string>
     <plurals name="selection_mode_announce">

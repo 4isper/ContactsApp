@@ -32,6 +32,14 @@ internal suspend fun handleContactsEvent(
         }
         ContactsEvent.ExportEmpty -> toast(R.string.export_empty)
         ContactsEvent.ExportFailed -> toast(R.string.export_failed)
+        is ContactsEvent.SyncRetryFinished ->
+            toast(
+                if (event.success) {
+                    R.string.account_sync_retry_success
+                } else {
+                    R.string.account_sync_retry_failed
+                },
+            )
     }
     onEventHandled()
 }

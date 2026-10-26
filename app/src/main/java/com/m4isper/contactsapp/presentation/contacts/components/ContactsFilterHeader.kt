@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Merge
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
@@ -46,7 +47,6 @@ import com.m4isper.contactsapp.domain.model.contact.AccountSyncStatus
 import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 import com.m4isper.contactsapp.domain.model.contact.ContactGroup
 import com.m4isper.contactsapp.presentation.common.account.contactAccountLabel
-import com.m4isper.contactsapp.presentation.common.account.contactAccountSubtitle
 import com.m4isper.contactsapp.presentation.common.account.contactAccountTitle
 import com.m4isper.contactsapp.presentation.common.groups.GroupNameDialog
 import com.m4isper.contactsapp.ui.components.SearchField
@@ -77,6 +77,7 @@ internal fun FilterHeader(
     profileContactId: Long? = null,
     onProfileClick: () -> Unit = {},
     accountSyncInfos: List<AccountSyncInfo> = emptyList(),
+    onRetrySync: () -> Unit = {},
 ) {
     val spacing = LocalSpacing.current
     var menuOpen by remember { mutableStateOf(false) }
@@ -135,6 +136,7 @@ internal fun FilterHeader(
                         selectedAccount = selectedAccount,
                         onAccountSelected = onAccountSelected,
                         accountSyncInfos = accountSyncInfos,
+                        onRetrySync = onRetrySync,
                         modifier =
                             Modifier
                                 .padding(top = spacing.xs, end = spacing.m, bottom = spacing.xs)
@@ -382,51 +384,69 @@ private fun AccountFilterChip(
     selectedAccount: ContactAccount?,
     onAccountSelected: (ContactAccount?) -> Unit,
     accountSyncInfos: List<AccountSyncInfo> = emptyList(),
+    onRetrySync: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val syncInfo = accountSyncInfos.firstOrNull { it.account == selectedAccount }
+    val nowMs = rememberSyncNow(accountSyncInfos)
+    val selectedSyncInfo = selectedAccount.syncInfo(accountSyncInfos)
+    val selectedStatus = selectedSyncInfo?.let { syncStatusText(it, nowMs) }
     Box(modifier = modifier) {
-        FilterChip(
-            selected = selectedAccount != null,
-            onClick = { expanded = true },
-            label = {
-                Column {
-                    Text(
-                        text =
-                            selectedAccount?.let { contactAccountTitle(it) }
-                                ?: stringResource(R.string.filter_accounts),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    if (syncInfo != null && selectedAccount != null && !selectedAccount.isLocal) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            FilterChip(
+                selected = selectedAccount != null,
+                onClick = { expanded = true },
+                label = {
+                    Column {
                         Text(
-                            text = syncStatusText(syncInfo),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            text =
+                                selectedAccount?.let { contactAccountTitle(it) }
+                                    ?: stringResource(R.string.filter_accounts),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
+                        if (selectedStatus != null) {
+                            Text(
+                                text = selectedStatus,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
                     }
-                }
-            },
-            leadingIcon =
-                if (selectedAccount != null) {
-                    {
-                        Icon(
-                            Icons.Filled.AccountCircle,
-                            contentDescription = null,
-                        )
-                    }
-                } else {
-                    null
                 },
-            trailingIcon = {
-                Icon(
-                    Icons.Filled.ArrowDropDown,
-                    contentDescription = null,
-                )
-            },
-            modifier = Modifier.widthIn(max = 220.dp),
-        )
+                leadingIcon =
+                    if (selectedAccount != null) {
+                        {
+                            Icon(
+                                Icons.Filled.AccountCircle,
+                                contentDescription = null,
+                            )
+                        }
+                    } else {
+                        null
+                    },
+                trailingIcon = {
+                    Icon(
+                        Icons.Filled.ArrowDropDown,
+                        contentDescription = null,
+                    )
+                },
+                modifier = Modifier.widthIn(max = 220.dp),
+            )
+            if (selectedSyncInfo?.syncStatus == AccountSyncStatus.ERROR) {
+                IconButton(
+                    onClick = onRetrySync,
+                    modifier = Modifier.testTag("account_sync_retry"),
+                ) {
+                    Icon(
+                        Icons.Filled.Refresh,
+                        contentDescription = stringResource(R.string.account_sync_retry),
+                    )
+                }
+            }
+        }
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
@@ -441,12 +461,14 @@ private fun AccountFilterChip(
                 modifier = Modifier.testTag("account_all_item"),
             )
             accounts.forEach { account ->
+                val syncInfo = account.syncInfo(accountSyncInfos)
+                val status = syncInfo?.let { syncStatusText(it, nowMs) }
                 DropdownMenuItem(
                     text = {
                         Column {
                             Text(contactAccountTitle(account))
                             Text(
-                                text = contactAccountSubtitle(account),
+                                text = accountDetailText(account, status),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -459,40 +481,37 @@ private fun AccountFilterChip(
                     trailingIcon = checkIcon(visible = selectedAccount == account),
                     modifier = Modifier.testTag("account_item_${account.testKey()}"),
                 )
+                if (syncInfo?.syncStatus == AccountSyncStatus.ERROR) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.account_sync_retry)) },
+                        onClick = {
+                            expanded = false
+                            onRetrySync()
+                        },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Filled.Refresh,
+                                contentDescription = null,
+                            )
+                        },
+                        modifier = Modifier.testTag("account_sync_retry_${account.testKey()}"),
+                    )
+                }
             }
         }
     }
 }
+
+private fun ContactAccount?.syncInfo(infos: List<AccountSyncInfo>): AccountSyncInfo? =
+    this
+        ?.takeUnless { it.isLocal }
+        ?.let { account -> infos.firstOrNull { it.account == account } }
 
 private fun ContactAccount.testKey(): String =
     if (isLocal) {
         "local"
     } else {
         "${type.orEmpty()}_${name.orEmpty()}"
-    }
-
-/** Текст статуса синхронизации для отображения под названием аккаунта. */
-private fun syncStatusText(info: AccountSyncInfo): String =
-    when (info.syncStatus) {
-        AccountSyncStatus.SYNCED -> {
-            val time =
-                info.lastSyncTimeMs?.let { ms ->
-                    val minutes = (System.currentTimeMillis() - ms) / (1000 * 60)
-                    if (minutes < 1) {
-                        "только что"
-                    } else if (minutes < 60) {
-                        "$minutes мин назад"
-                    } else if (minutes < 1440) {
-                        "${minutes / 60} ч назад"
-                    } else {
-                        "${minutes / 1440} дн назад"
-                    }
-                }
-            time?.let { "Синхр.: $it" } ?: "Синхронизировано"
-        }
-        AccountSyncStatus.SYNCING -> "Синхронизация…"
-        AccountSyncStatus.STALE -> "Устарело"
-        AccountSyncStatus.ERROR -> "Ошибка синхр."
     }
 
 @Composable

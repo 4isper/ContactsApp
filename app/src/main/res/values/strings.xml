@@ -160,6 +160,28 @@
     <string name="filter_favorites">Favorites</string>
     <string name="filter_accounts">Accounts</string>
     <string name="filter_accounts_all">All accounts</string>
+    <string name="account_sync_synced">Synced</string>
+    <string name="account_sync_syncing">Syncing…</string>
+    <string name="account_sync_stale">Out of date</string>
+    <string name="account_sync_error">Sync error</string>
+    <string name="account_sync_synced_ago">Synced %1$s</string>
+    <string name="account_sync_just_now">just now</string>
+    <plurals name="account_sync_minutes_ago">
+        <item quantity="one">%1$d min ago</item>
+        <item quantity="other">%1$d min ago</item>
+    </plurals>
+    <plurals name="account_sync_hours_ago">
+        <item quantity="one">%1$d h ago</item>
+        <item quantity="other">%1$d h ago</item>
+    </plurals>
+    <plurals name="account_sync_days_ago">
+        <item quantity="one">%1$d d ago</item>
+        <item quantity="other">%1$d d ago</item>
+    </plurals>
+    <string name="account_sync_account_line">%1$s · %2$s</string>
+    <string name="account_sync_retry">Retry sync</string>
+    <string name="account_sync_retry_success">Contacts refreshed</string>
+    <string name="account_sync_retry_failed">Couldn\'t refresh contacts</string>
     <string name="favorites_empty">No favorite contacts</string>
     <string name="selection_mode_entered">Selection mode, %1$d contacts selected</string>
     <plurals name="selection_mode_announce">

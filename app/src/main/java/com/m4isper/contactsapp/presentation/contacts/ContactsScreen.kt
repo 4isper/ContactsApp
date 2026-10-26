@@ -210,6 +210,7 @@ private fun ContactsActionScope.handleFile(action: ContactsFileAction) {
     when (action) {
         ContactsFileAction.Retry -> viewModel.refresh()
         ContactsFileAction.Refresh -> viewModel.refresh()
+        ContactsFileAction.RetrySync -> viewModel.refresh(reportSyncResult = true)
         ContactsFileAction.DeleteSelected -> viewModel.onDeleteSelected()
         ContactsFileAction.UndoDelete -> viewModel.onUndoDelete()
         ContactsFileAction.DeleteWindowClosed -> viewModel.onDeleteWindowClosed()

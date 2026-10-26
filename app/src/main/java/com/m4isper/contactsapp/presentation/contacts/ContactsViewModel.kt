@@ -99,6 +99,11 @@ sealed interface ContactsEvent {
 
     /** Экспорт: не удалось собрать контакты. */
     data object ExportFailed : ContactsEvent
+
+    /** Повторная синхронизация завершена: успех или ошибка загрузки. */
+    data class SyncRetryFinished(
+        val success: Boolean,
+    ) : ContactsEvent
 }
 
 internal const val SUBSCRIBE_TIMEOUT_MILLIS = 5_000L
@@ -419,9 +424,14 @@ internal class ContactsViewModel(
     }
 
     /** Перечитывает список и связанные с ним группы, аккаунты и избранное. */
-    fun refresh() {
+    fun refresh(reportSyncResult: Boolean = false) {
         selection.clear()
-        viewModelScope.launch { reloadScreen(list, groups, favorites) }
+        viewModelScope.launch {
+            reloadScreen(list, groups, favorites)
+            if (reportSyncResult) {
+                eventFlow.value = ContactsEvent.SyncRetryFinished(success = list.failure.value == null)
+            }
+        }
     }
 
     /** Очищает список: экран закрыт, состояние не нужно. */
