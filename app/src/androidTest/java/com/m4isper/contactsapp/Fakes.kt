@@ -72,10 +72,15 @@ internal class FakeAndroidRepository(
     ContactsWriter,
     ContactsMerger,
     FavoritesRepository {
+    // Список экрана грузится постранично: фейк режет contacts тем же способом,
+    // что и реальный провайдер, иначе все ViewModel-тесты видят Loadable.Empty.
     override suspend fun getContactsPage(
         offset: Int,
         limit: Int,
-    ): List<ContactDetails> = emptyList()
+    ): List<ContactDetails> {
+        failure?.let { throw it }
+        return contacts.drop(offset).take(limit)
+    }
 
     override suspend fun loadContactPhoto(contactId: Long): ByteArray? = null
 
