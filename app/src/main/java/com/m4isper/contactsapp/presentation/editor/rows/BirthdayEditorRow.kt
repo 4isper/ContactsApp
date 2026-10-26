@@ -26,7 +26,6 @@ import com.m4isper.contactsapp.domain.model.contact.Birthday
 import com.m4isper.contactsapp.domain.model.contact.EditableBirthday
 import com.m4isper.contactsapp.presentation.common.format.birthdayText
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
-import java.time.LocalDate
 
 @Composable
 internal fun BirthdayEditorRow(
@@ -34,6 +33,7 @@ internal fun BirthdayEditorRow(
     error: String? = null,
     onPickClick: () -> Unit,
     onBirthdayChange: (Birthday?) -> Unit,
+    onAddYearClick: () -> Unit,
 ) {
     val spacing = LocalSpacing.current
     val value = birthday.value
@@ -82,16 +82,23 @@ internal fun BirthdayEditorRow(
         if (value != null) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
+                // Тег на toggleable-строке: Switch с onCheckedChange = null
+                // сам кликов не имеет, клик обрабатывает строка.
                 modifier =
                     Modifier
                         .fillMaxWidth()
+                        .testTag("editor_birthday_switch")
                         .toggleable(
                             value = value.year == null,
                             role = Role.Switch,
+                            // Включение просто сбрасывает год; выключение требует
+                            // явного выбора года в пикере, а не молчаливого текущего.
                             onValueChange = { noYear ->
-                                onBirthdayChange(
-                                    value.copy(year = if (noYear) null else LocalDate.now().year),
-                                )
+                                if (noYear) {
+                                    onBirthdayChange(value.copy(year = null))
+                                } else {
+                                    onAddYearClick()
+                                }
                             },
                         ),
             ) {
@@ -103,7 +110,6 @@ internal fun BirthdayEditorRow(
                 Switch(
                     checked = value.year == null,
                     onCheckedChange = null,
-                    modifier = Modifier.testTag("editor_birthday_switch"),
                 )
             }
         }

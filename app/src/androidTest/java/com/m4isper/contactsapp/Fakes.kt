@@ -1,6 +1,7 @@
 package com.m4isper.contactsapp
 
 import com.m4isper.contactsapp.domain.model.contact.AccountSyncInfo
+import com.m4isper.contactsapp.domain.model.contact.Birthday
 import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import com.m4isper.contactsapp.domain.model.contact.ContactEvent
@@ -8,6 +9,7 @@ import com.m4isper.contactsapp.domain.model.contact.ContactForm
 import com.m4isper.contactsapp.domain.model.contact.ContactGroup
 import com.m4isper.contactsapp.domain.model.contact.ContactLink
 import com.m4isper.contactsapp.domain.model.contact.ContactRelation
+import com.m4isper.contactsapp.domain.model.contact.EditableBirthday
 import com.m4isper.contactsapp.domain.model.contact.EditableEvent
 import com.m4isper.contactsapp.domain.model.contact.EditableName
 import com.m4isper.contactsapp.domain.model.contact.EditableNickname
@@ -53,6 +55,7 @@ internal fun testDetails(
     nickname: String? = null,
     relations: List<ContactRelation> = emptyList(),
     events: List<ContactEvent> = emptyList(),
+    birthday: Birthday? = null,
 ) = ContactDetails(
     contactId = id,
     name = name,
@@ -61,6 +64,7 @@ internal fun testDetails(
     nickname = nickname,
     relations = relations,
     events = events,
+    birthday = birthday,
 )
 
 internal class FakeAndroidRepository(
@@ -108,6 +112,7 @@ internal class FakeAndroidRepository(
             name = EditableName(display = details.name),
             phones = details.phones.map { EditablePhone(number = it.number, kind = it.kind) },
             nickname = EditableNickname(nickname = details.nickname.orEmpty()),
+            birthday = EditableBirthday(value = details.birthday),
             relations =
                 details.relations.map { relation ->
                     EditableRelation(

@@ -81,6 +81,10 @@ internal fun EditorForm(
     var showGroupPicker by remember { mutableStateOf(false) }
     var showAccountPicker by remember { mutableStateOf(false) }
     var eventPickerRowId by remember { mutableStateOf<Long?>(null) }
+    // Режим открытия пикера: из кнопки даты режим берёт само значение,
+    // из switch «Без года» — всегда с годом, чтобы год выбрали явно.
+    var birthdayPickerNoYear by remember { mutableStateOf(false) }
+    var eventPickerNoYear by remember { mutableStateOf(false) }
     val context = LocalContext.current
     var cropSource by remember { mutableStateOf<Uri?>(null) }
 
@@ -184,8 +188,27 @@ internal fun EditorForm(
         editorExtraItems(
             uiState = uiState,
             edit = edit,
-            onBirthdayClick = { showDatePicker = true },
-            onEventDateClick = { eventPickerRowId = it },
+            onBirthdayClick = {
+                birthdayPickerNoYear = uiState.birthday.value?.year == null
+                showDatePicker = true
+            },
+            onEventDateClick = { rowId ->
+                eventPickerNoYear =
+                    uiState.events
+                        .firstOrNull { it.rowId == rowId }
+                        ?.value
+                        ?.date
+                        ?.year == null
+                eventPickerRowId = rowId
+            },
+            onBirthdayAddYear = {
+                birthdayPickerNoYear = false
+                showDatePicker = true
+            },
+            onEventAddYear = { rowId ->
+                eventPickerNoYear = false
+                eventPickerRowId = rowId
+            },
         )
         if (!uiState.isNew) {
             item(key = "delete") {
@@ -220,6 +243,7 @@ internal fun EditorForm(
     if (showDatePicker) {
         BirthdayPickerDialog(
             birthday = uiState.birthday.value,
+            startNoYear = birthdayPickerNoYear,
             onConfirmed = { birthday ->
                 edit { it.withBirthday(birthday) }
                 showDatePicker = false
@@ -232,6 +256,7 @@ internal fun EditorForm(
     if (eventPickerRow != null) {
         BirthdayPickerDialog(
             birthday = eventPickerRow.value.date,
+            startNoYear = eventPickerNoYear,
             confirmTestTag = "editor_event_date_confirm",
             onConfirmed = { birthday ->
                 edit { it.withEventDate(eventPickerRow.rowId, birthday) }

@@ -21,6 +21,7 @@ import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.FakeSettingsRepository
 import com.m4isper.contactsapp.domain.model.contact.Birthday
 import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import com.m4isper.contactsapp.domain.model.contact.ContactEvent
 import com.m4isper.contactsapp.domain.model.contact.ContactGroup
 import com.m4isper.contactsapp.domain.model.contact.EventKind
@@ -43,6 +44,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.LocalDate
 import java.util.concurrent.atomic.AtomicBoolean
 
 @RunWith(AndroidJUnit4::class)
@@ -699,5 +701,142 @@ class ContactEditorUiTest {
 
         compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
         assertEquals(listOf(100L), repository.created.single().groups)
+    }
+
+    /** Открывает редактор контакта [details] и ждёт загрузки формы. */
+    private fun openEditor(
+        details: ContactDetails,
+        viewModel: ContactEditorViewModel,
+    ) {
+        compose.setContent {
+            ContactEditorScreen(
+                contactId = details.contactId,
+                onDone = {},
+                onBack = {},
+                viewModel = viewModel,
+            )
+        }
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.displayName == details.name
+        }
+    }
+
+    @Test
+    fun birthdayNoYear_survivesDialogRoundTrip() {
+        val details =
+            testDetails(7, "Anna", "111", birthday = Birthday(day = 21, month = 7, year = null))
+        val repository = FakeAndroidRepository(listOf(details))
+        val viewModel = viewModel(repository)
+        openEditor(details, viewModel)
+
+        compose
+            .onNodeWithTag("editor_form")
+            .performScrollToNode(hasTestTag("editor_birthday_button"))
+        compose.onNodeWithTag("editor_birthday_button").performClick()
+        compose.onNodeWithTag("editor_no_year_dialog_switch").assertIsDisplayed()
+        compose.onNodeWithTag("editor_birthday_confirm").performClick()
+        compose.onNodeWithTag("editor_save_button").performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
+        compose.waitForIdle()
+        val form = repository.updated.single().second
+        assertEquals(Birthday(day = 21, month = 7, year = null), form.birthday.value)
+    }
+
+    @Test
+    fun birthdaySwitchOff_opensPickerAndStoresChosenYear() {
+        val details =
+            testDetails(7, "Anna", "111", birthday = Birthday(day = 21, month = 7, year = null))
+        val repository = FakeAndroidRepository(listOf(details))
+        val viewModel = viewModel(repository)
+        openEditor(details, viewModel)
+
+        compose
+            .onNodeWithTag("editor_form")
+            .performScrollToNode(hasTestTag("editor_birthday_switch"))
+        compose.onNodeWithTag("editor_birthday_switch").performClick()
+        compose.onNodeWithTag("editor_birthday_confirm").assertIsDisplayed()
+        compose.onNodeWithTag("editor_birthday_confirm").performClick()
+        compose.onNodeWithTag("editor_save_button").performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
+        compose.waitForIdle()
+        val form = repository.updated.single().second
+        assertEquals(Birthday(day = 21, month = 7, year = LocalDate.now().year), form.birthday.value)
+    }
+
+    @Test
+    fun birthdayDialogSwitch_storesNoYear() {
+        val details =
+            testDetails(7, "Anna", "111", birthday = Birthday(day = 21, month = 7, year = 1985))
+        val repository = FakeAndroidRepository(listOf(details))
+        val viewModel = viewModel(repository)
+        openEditor(details, viewModel)
+
+        compose
+            .onNodeWithTag("editor_form")
+            .performScrollToNode(hasTestTag("editor_birthday_button"))
+        compose.onNodeWithTag("editor_birthday_button").performClick()
+        compose.onNodeWithTag("editor_no_year_dialog_switch").performClick()
+        compose.onNodeWithTag("editor_birthday_confirm").performClick()
+        compose.onNodeWithTag("editor_save_button").performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
+        compose.waitForIdle()
+        val form = repository.updated.single().second
+        assertEquals(Birthday(day = 21, month = 7, year = null), form.birthday.value)
+    }
+
+    @Test
+    fun birthdayPickerCancel_keepsNoYearValue() {
+        val details =
+            testDetails(7, "Anna", "111", birthday = Birthday(day = 21, month = 7, year = null))
+        val repository = FakeAndroidRepository(listOf(details))
+        val viewModel = viewModel(repository)
+        openEditor(details, viewModel)
+
+        compose
+            .onNodeWithTag("editor_form")
+            .performScrollToNode(hasTestTag("editor_birthday_switch"))
+        compose.onNodeWithTag("editor_birthday_switch").performClick()
+        compose.onNodeWithTag("editor_birthday_confirm").assertIsDisplayed()
+        Espresso.pressBack()
+        compose.waitForIdle()
+        compose.onNodeWithTag("editor_save_button").performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
+        compose.waitForIdle()
+        val form = repository.updated.single().second
+        assertEquals(Birthday(day = 21, month = 7, year = null), form.birthday.value)
+    }
+
+    @Test
+    fun eventSwitchOff_opensPickerAndStoresChosenYear() {
+        val details =
+            testDetails(
+                7,
+                "Anna",
+                "111",
+                events =
+                    listOf(
+                        ContactEvent(date = Birthday(day = 1, month = 6, year = null)),
+                    ),
+            )
+        val repository = FakeAndroidRepository(listOf(details))
+        val viewModel = viewModel(repository)
+        openEditor(details, viewModel)
+
+        compose
+            .onNodeWithTag("editor_form")
+            .performScrollToNode(hasTestTag("editor_event_switch"))
+        compose.onNodeWithTag("editor_event_switch").performClick()
+        compose.onNodeWithTag("editor_event_date_confirm").assertIsDisplayed()
+        compose.onNodeWithTag("editor_event_date_confirm").performClick()
+        compose.onNodeWithTag("editor_save_button").performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
+        compose.waitForIdle()
+        val form = repository.updated.single().second
+        assertEquals(Birthday(day = 1, month = 6, year = LocalDate.now().year), form.events.single().date)
     }
 }

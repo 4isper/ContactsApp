@@ -36,7 +36,6 @@ import com.m4isper.contactsapp.presentation.common.format.eventKindLabel
 import com.m4isper.contactsapp.presentation.editor.EditorRow
 import com.m4isper.contactsapp.presentation.editor.components.KindMenu
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
-import java.time.LocalDate
 
 @Composable
 internal fun EventEditorRow(
@@ -45,6 +44,7 @@ internal fun EventEditorRow(
     onKindChange: (Long, EventKind) -> Unit,
     onDatePickClick: (Long) -> Unit,
     onDateChange: (Long, Birthday?) -> Unit,
+    onAddYearClick: (Long) -> Unit,
     onCustomLabelChange: (Long, String) -> Unit,
     onRemove: (Long) -> Unit,
 ) {
@@ -101,17 +101,22 @@ internal fun EventEditorRow(
             if (date != null) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
+                    // Тег на toggleable-строке: клик обрабатывает строка, не Switch.
                     modifier =
                         Modifier
                             .fillMaxWidth()
+                            .testTag("editor_event_switch")
                             .toggleable(
                                 value = date.year == null,
                                 role = Role.Switch,
+                                // Как у дня рождения: выключение switch открывает
+                                // пикер для явного выбора года.
                                 onValueChange = { noYear ->
-                                    onDateChange(
-                                        row.rowId,
-                                        date.copy(year = if (noYear) null else LocalDate.now().year),
-                                    )
+                                    if (noYear) {
+                                        onDateChange(row.rowId, date.copy(year = null))
+                                    } else {
+                                        onAddYearClick(row.rowId)
+                                    }
                                 },
                             ),
                 ) {
@@ -123,7 +128,6 @@ internal fun EventEditorRow(
                     Switch(
                         checked = date.year == null,
                         onCheckedChange = null,
-                        modifier = Modifier.testTag("editor_event_switch"),
                     )
                 }
             }

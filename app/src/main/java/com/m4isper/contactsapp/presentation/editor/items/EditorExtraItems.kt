@@ -50,10 +50,12 @@ internal fun LazyListScope.editorExtraItems(
     edit: ((EditorUiState) -> EditorUiState) -> Unit,
     onBirthdayClick: () -> Unit,
     onEventDateClick: (Long) -> Unit,
+    onBirthdayAddYear: () -> Unit,
+    onEventAddYear: (Long) -> Unit,
 ) {
     organizationItems(uiState, edit)
-    birthdayItems(uiState, edit, onBirthdayClick)
-    eventItems(uiState, edit, onEventDateClick)
+    birthdayItems(uiState, edit, onBirthdayClick, onBirthdayAddYear)
+    eventItems(uiState, edit, onEventDateClick, onEventAddYear)
     relationItems(uiState, edit)
     noteItems(uiState, edit)
 }
@@ -143,6 +145,7 @@ private fun LazyListScope.birthdayItems(
     uiState: EditorUiState,
     edit: ((EditorUiState) -> EditorUiState) -> Unit,
     onBirthdayClick: () -> Unit,
+    onBirthdayAddYear: () -> Unit,
 ) {
     item(key = "birthday-header") {
         SectionHeader(titleRes = R.string.editor_section_birthday)
@@ -153,6 +156,7 @@ private fun LazyListScope.birthdayItems(
             error = uiState.fieldErrors[FormField.EVENT]?.fieldMessage(),
             onPickClick = onBirthdayClick,
             onBirthdayChange = { value -> edit { it.withBirthday(value) } },
+            onAddYearClick = onBirthdayAddYear,
         )
     }
 }
@@ -161,6 +165,7 @@ private fun LazyListScope.eventItems(
     uiState: EditorUiState,
     edit: ((EditorUiState) -> EditorUiState) -> Unit,
     onEventDateClick: (Long) -> Unit,
+    onEventAddYear: (Long) -> Unit,
 ) {
     item(key = "events-header") {
         SectionHeader(
@@ -180,6 +185,7 @@ private fun LazyListScope.eventItems(
             onKindChange = { rowId, kind -> edit { it.withEventKind(rowId, kind) } },
             onDatePickClick = onEventDateClick,
             onDateChange = { rowId, date -> edit { it.withEventDate(rowId, date) } },
+            onAddYearClick = onEventAddYear,
             onCustomLabelChange = { rowId, value -> edit { it.withEventLabel(rowId, value) } },
             onRemove = { rowId -> edit { it.withoutEvent(rowId) } },
         )

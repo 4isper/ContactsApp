@@ -25,13 +25,13 @@ This is silent data corruption in a field users expect to be stable. It also cha
 
 ## Acceptance criteria
 
-- [ ] Open a contact with a year-less birthday, press the date button, then Save without changing anything — the birthday still has no year.
-- [ ] Saving a year-less birthday writes `--MM-dd` to the provider, not a year.
-- [ ] Turning "No year" off does not immediately set the current year; the user explicitly chooses or confirms a year.
-- [ ] Canceling the date picker leaves the original value unchanged.
-- [ ] Choosing a date with a year stores and displays that year.
-- [ ] Events with no year behave the same way as birthdays.
-- [ ] UI tests cover: no-year round trip, adding a year, removing a year, cancel.
+- [x] Open a contact with a year-less birthday, press the date button, then Save without changing anything — the birthday still has no year.
+- [x] Saving a year-less birthday writes `--MM-dd` to the provider, not a year.
+- [x] Turning "No year" off does not immediately set the current year; the user explicitly chooses or confirms a year.
+- [x] Canceling the date picker leaves the original value unchanged.
+- [x] Choosing a date with a year stores and displays that year.
+- [x] Events with no year behave the same way as birthdays.
+- [x] UI tests cover: no-year round trip, adding a year, removing a year, cancel.
 
 ## Technical notes
 
@@ -55,3 +55,24 @@ This is silent data corruption in a field users expect to be stable. It also cha
 - Inspect the raw contact row after saving to confirm `--MM-dd` is preserved.
 - Unit tests around the date dialog conversion and the editor row handlers.
 - `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest`.
+
+## Status
+
+Done.
+
+### What was implemented
+
+- `BirthdayPickerDialog` gained an explicit no-year mode with a "No year" switch row placed above the calendar, so the mode is visible before picking. The leap-safe year 2000 is used only to render the calendar for a year-less value; `pickerBirthdayResult` never writes it to the model in no-year mode and drops the year from any picked date while the switch is on.
+- `pickerInitialYear` chooses the display year: the stored year when present, 2000 for a no-year value opened in no-year mode, and the current year when the dialog is opened with the intent to add a year (from the editor-row switch), so confirming is an explicit choice of a visible date.
+- The dialog takes a required `startNoYear` flag. Opening from the date button derives it from the current value (`EditorForm` stores `birthdayPickerNoYear`/`eventPickerNoYear`); opening by turning the row switch off forces it to false. Cancel never touches the value because the switch-off path only opens the dialog.
+- `BirthdayEditorRow` and `EventEditorRow` no longer fabricate `LocalDate.now().year` when the switch turns off: they call a new `onAddYearClick` callback that opens the picker. Switching on still just clears the year.
+- The pure conversion helpers `pickerBirthdayResult`/`pickerInitialYear` are extracted and unit-tested in `BirthdayPickerResultTest` (picked keeps year, picked drops year, fallbacks, empty state, initial-year rules).
+- Instrumented tests in `ContactEditorUiTest`: no-year dialog round trip keeps `--MM-dd` semantics, switch-off opens the picker and stores the chosen year, dialog switch removes the year from a dated birthday, cancel keeps the original no-year value, and the same switch-off flow for events. `testDetails` and the androidTest `FakeAndroidRepository.getContactForm` now carry `birthday`, which they previously dropped.
+- The switch test tags moved from the `Switch` (which has `onCheckedChange = null` and no click action) to the toggleable row, so tests and TalkBack target the same node.
+
+### Verification
+
+- `./gradlew :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest :app:detekt :app:ktlintCheck` passes.
+- `./gradlew :app:connectedDebugAndroidTest` on a headless emulator: BUILD SUCCESSFUL, 107 tests, 106 passed, 1 skipped by assumption (`LargeListPerformanceTest` benchmark).
+- The provider round trip needs no code change: `data/format/BirthdayFormat.kt` already writes `--MM-dd` for `year == null`, and data-module tests cover both `--MM-dd` reading and writing.
+- Manual check still possible but optional: inspect a raw contact row in the provider after an on-device save; the instrumented suite asserts the same model the writer serializes.
