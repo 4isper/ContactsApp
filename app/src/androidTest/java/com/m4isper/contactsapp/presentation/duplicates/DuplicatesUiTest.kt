@@ -1,10 +1,12 @@
 package com.m4isper.contactsapp.presentation.duplicates
 
+import android.Manifest
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.rule.GrantPermissionRule
 import com.m4isper.contactsapp.FakeAndroidRepository
 import com.m4isper.contactsapp.domain.usecase.contacts.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.contacts.MergeContactsUseCase
@@ -20,6 +22,12 @@ import org.junit.runner.RunWith
 class DuplicatesUiTest {
     @get:Rule
     val compose = createComposeRule()
+
+    // Экран запрашивает WRITE_CONTACTS при открытии: выдаём заранее, чтобы
+    // системный диалог не перекрыл тестируемое окно.
+    @get:Rule
+    val permission: GrantPermissionRule =
+        GrantPermissionRule.grant(Manifest.permission.WRITE_CONTACTS)
 
     private fun repository() =
         FakeAndroidRepository(

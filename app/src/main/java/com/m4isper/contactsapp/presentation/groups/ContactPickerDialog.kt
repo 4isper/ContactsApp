@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -32,18 +33,20 @@ import com.m4isper.contactsapp.ui.theme.LocalSpacing
 
 /**
  * Выбор контактов для добавления в группу: поиск и отметки.
- * Пустой список означает, что добавлять нечего.
+ * [excludedIds] убирает уже состоящих в группе: добавлять их заново нельзя.
  */
 @Composable
 internal fun ContactPickerDialog(
     contacts: List<ContactDetails>,
     onConfirm: (List<Long>) -> Unit,
     onDismiss: () -> Unit,
+    excludedIds: Set<Long> = emptySet(),
 ) {
     val spacing = LocalSpacing.current
     var query by remember { mutableStateOf("") }
     var selected by remember { mutableStateOf(emptySet<Long>()) }
-    val visible = remember(contacts, query) { filterContacts(contacts, query) }
+    val eligible = remember(contacts, excludedIds) { contacts.filterNot { it.contactId in excludedIds } }
+    val visible = remember(eligible, query) { filterContacts(eligible, query) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -54,44 +57,60 @@ internal fun ContactPickerDialog(
                     value = query,
                     onValueChange = { query = it },
                 )
-                LazyColumn(
-                    modifier =
-                        Modifier
-                            .heightIn(max = 320.dp)
-                            .testTag("contact_picker_list"),
-                ) {
-                    items(visible, key = { it.contactId }) { contact ->
-                        val checked = contact.contactId in selected
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .testTag("contact_picker_row_${contact.contactId}")
-                                    .toggleable(
-                                        value = checked,
-                                        role = Role.Checkbox,
-                                        onValueChange = { isChecked ->
-                                            selected =
-                                                if (isChecked) {
-                                                    selected + contact.contactId
-                                                } else {
-                                                    selected - contact.contactId
-                                                }
-                                        },
-                                    ).padding(horizontal = spacing.m, vertical = spacing.xs),
+                when {
+                    contacts.isEmpty() ->
+                        PickerMessage(text = stringResource(R.string.picker_no_contacts))
+                    eligible.isEmpty() ->
+                        PickerMessage(text = stringResource(R.string.picker_all_members))
+                    visible.isEmpty() -> {
+                        PickerMessage(text = stringResource(R.string.contacts_search_empty, query))
+                        TextButton(
+                            onClick = { query = "" },
+                            modifier = Modifier.padding(top = spacing.xs),
                         ) {
-                            Checkbox(
-                                checked = checked,
-                                onCheckedChange = null,
-                            )
-                            Text(
-                                text = contact.name,
-                                style = MaterialTheme.typography.bodyLarge,
-                                modifier = Modifier.padding(start = spacing.m),
-                            )
+                            Text(stringResource(R.string.action_clear_search))
                         }
                     }
+                    else ->
+                        LazyColumn(
+                            modifier =
+                                Modifier
+                                    .heightIn(min = 192.dp, max = 320.dp)
+                                    .testTag("contact_picker_list"),
+                        ) {
+                            items(visible, key = { it.contactId }) { contact ->
+                                val checked = contact.contactId in selected
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .testTag("contact_picker_row_${contact.contactId}")
+                                            .toggleable(
+                                                value = checked,
+                                                role = Role.Checkbox,
+                                                onValueChange = { isChecked ->
+                                                    selected =
+                                                        if (isChecked) {
+                                                            selected + contact.contactId
+                                                        } else {
+                                                            selected - contact.contactId
+                                                        }
+                                                },
+                                            ).padding(horizontal = spacing.m, vertical = spacing.xs),
+                                ) {
+                                    Checkbox(
+                                        checked = checked,
+                                        onCheckedChange = null,
+                                    )
+                                    Text(
+                                        text = contact.name,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        modifier = Modifier.padding(start = spacing.m),
+                                    )
+                                }
+                            }
+                        }
                 }
             }
         },
@@ -101,7 +120,18 @@ internal fun ContactPickerDialog(
                 enabled = selected.isNotEmpty(),
                 modifier = Modifier.testTag("contact_picker_confirm"),
             ) {
-                Text(stringResource(R.string.group_add_members_action))
+                Text(
+                    text =
+                        if (selected.isEmpty()) {
+                            stringResource(R.string.group_add_members_action)
+                        } else {
+                            pluralStringResource(
+                                R.plurals.group_add_members_count,
+                                selected.size,
+                                selected.size,
+                            )
+                        },
+                )
             }
         },
         dismissButton = {
@@ -110,5 +140,19 @@ internal fun ContactPickerDialog(
             }
         },
         modifier = Modifier.testTag("contact_picker_dialog"),
+    )
+}
+
+/** Текст пустого состояния пикера: без списка действий. */
+@Composable
+private fun PickerMessage(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier =
+            Modifier
+                .padding(vertical = 24.dp)
+                .testTag("contact_picker_empty"),
     )
 }

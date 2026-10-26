@@ -348,6 +348,12 @@
     <string name="group_label">Group</string>
     <string name="group_add_members">Add contacts</string>
     <string name="group_add_members_action">Add</string>
+    <string name="picker_no_contacts">No contacts to add</string>
+    <string name="picker_all_members">Everyone is already in this group</string>
+    <plurals name="group_add_members_count">
+        <item quantity="one">Add %1$d contact</item>
+        <item quantity="other">Add %1$d contacts</item>
+    </plurals>
     <string name="group_remove_member">Remove from group</string>
     <string name="group_members_empty">No contacts in the group</string>
     <string name="group_not_found">Group not found</string>

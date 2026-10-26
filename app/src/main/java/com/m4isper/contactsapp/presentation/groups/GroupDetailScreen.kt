@@ -140,14 +140,19 @@ fun GroupDetailScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showPicker = true },
-                modifier = Modifier.testTag("add_group_member_fab"),
-            ) {
-                Icon(
-                    Icons.Filled.PersonAdd,
-                    contentDescription = stringResource(R.string.group_add_members),
-                )
+            val memberIds = uiState.members.map { it.contactId }.toSet()
+            val hasEligible = uiState.allContacts.any { it.contactId !in memberIds }
+            // Все контакты уже в группе: добавлять некого — FAB не предлагаем.
+            if (hasEligible) {
+                FloatingActionButton(
+                    onClick = { showPicker = true },
+                    modifier = Modifier.testTag("add_group_member_fab"),
+                ) {
+                    Icon(
+                        Icons.Filled.PersonAdd,
+                        contentDescription = stringResource(R.string.group_add_members),
+                    )
+                }
             }
         },
     ) { innerPadding ->
@@ -177,6 +182,7 @@ fun GroupDetailScreen(
         val memberIds = uiState.members.map { it.contactId }.toSet()
         ContactPickerDialog(
             contacts = uiState.allContacts,
+            excludedIds = memberIds,
             onConfirm = { ids ->
                 showPicker = false
                 viewModel.onAddMembers(ids)

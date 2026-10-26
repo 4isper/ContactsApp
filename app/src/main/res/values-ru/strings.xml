@@ -358,6 +358,14 @@
     <string name="group_label">Группа</string>
     <string name="group_add_members">Добавить контакты</string>
     <string name="group_add_members_action">Добавить</string>
+    <string name="picker_no_contacts">Нет контактов для добавления</string>
+    <string name="picker_all_members">Все контакты уже в этой группе</string>
+    <plurals name="group_add_members_count">
+        <item quantity="one">Добавить %1$d контакт</item>
+        <item quantity="few">Добавить %1$d контакта</item>
+        <item quantity="many">Добавить %1$d контактов</item>
+        <item quantity="other">Добавить %1$d контакта</item>
+    </plurals>
     <string name="group_remove_member">Убрать из группы</string>
     <string name="group_members_empty">В группе нет контактов</string>
     <string name="group_not_found">Группа не найдена</string>

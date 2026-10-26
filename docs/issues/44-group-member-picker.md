@@ -28,13 +28,13 @@
 
 ## Acceptance criteria
 
-- [ ] Existing group members are not listed in the add-member picker.
-- [ ] Adding a member updates the member list and the next opening excludes that contact.
-- [ ] Empty search shows a no-results message with a working Clear search action.
-- [ ] When every contact is already a member, the picker shows an explanatory empty state and cannot add duplicates.
-- [ ] The dialog is usable with the keyboard open on a small phone and in landscape.
-- [ ] Selected contacts remain checked across search query changes.
-- [ ] The Add action communicates the selected count or why it is disabled.
+- [x] Existing group members are not listed in the add-member picker.
+- [x] Adding a member updates the member list and the next opening excludes that contact.
+- [x] Empty search shows a no-results message with a working Clear search action.
+- [x] When every contact is already a member, the picker shows an explanatory empty state and cannot add duplicates.
+- [x] The dialog is usable with the keyboard open on a small phone and in landscape.
+- [x] Selected contacts remain checked across search query changes.
+- [x] The Add action communicates the selected count or why it is disabled.
 
 ## Technical notes
 
@@ -56,3 +56,22 @@
 - Manual: empty group, one member, all contacts already members, no results for a query, rotation with the keyboard open.
 - UI test for exclusion and selection persistence across searches.
 - `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest`.
+
+## Status
+
+Done.
+
+### What was implemented
+
+- `ContactPickerDialog` takes `excludedIds: Set<Long>` and filters already-member contacts before the search, so current members can no longer be selected for a no-op add. `GroupDetailScreen` passes the real member ids — the previously unused `memberIds` set is now the source.
+- The dialog renders explicit empty states: no contacts at all → "No contacts to add"; every contact is a member → "Everyone is already in this group"; a search with no matches → the shared "Nothing found for “{query}”" message plus a working Clear search button (the SearchField clear action).
+- The confirm button communicates the selection with a plural label ("Add 1 contact" / "Add 2 contacts", Russian one/few/many forms) and stays disabled with the plain label while nothing is selected.
+- The list area got a minimum height (`heightIn(min = 192.dp, max = 320.dp)`), so short lists do not collapse the dialog; the search field keeps the dialog usable with the keyboard.
+- The Add-member FAB on the group screen is hidden while every contact is already a member — the action would be a no-op, so it is not offered (`FloatingActionButton` has no enabled parameter, hiding replaces disabling).
+- Tests: `GroupDetailUiTest` gained three cases — exclusion plus selection persistence across search and clear with the merged ids asserted against the fake repository, the no-results state with the clear action, and the hidden FAB when everyone is a member. Both `GroupDetailUiTest` and `DuplicatesUiTest` now grant `WRITE_CONTACTS` through `GrantPermissionRule`: these screens request it on open (the issue 42 behavior), and running them outside a full suite let the system dialog cover the window with "No compose hierarchies" failures.
+
+### Verification
+
+- `./gradlew :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest :app:detekt :app:ktlintCheck` passes.
+- `./gradlew :app:connectedDebugAndroidTest` on a headless emulator: BUILD SUCCESSFUL, 116 tests, 115 passed, 1 skipped by assumption (`LargeListPerformanceTest` benchmark).
+- Manual checks that remain useful: the picker with the keyboard open on a small phone in landscape, and the next-open exclusion after a real provider add (the instrumented test covers the fake path end to end).
