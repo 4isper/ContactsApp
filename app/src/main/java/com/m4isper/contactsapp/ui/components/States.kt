@@ -17,12 +17,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -32,6 +32,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.m4isper.contactsapp.R
@@ -174,7 +175,12 @@ fun EmptyState(
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(spacing.xl),
+            // Причина и действия читаются TalkBack одним фокусом; кнопки остаются
+            // отдельными целями из-за собственной семантики клика.
+            modifier =
+                Modifier
+                    .padding(spacing.xl)
+                    .semantics(mergeDescendants = true) {},
         ) {
             Icon(
                 imageVector = icon,
@@ -200,13 +206,8 @@ fun EmptyState(
             }
             if (secondaryLabel != null && onSecondaryClick != null) {
                 Spacer(modifier = Modifier.height(spacing.s))
-                Button(
+                OutlinedButton(
                     onClick = onSecondaryClick,
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                        ),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(text = secondaryLabel)

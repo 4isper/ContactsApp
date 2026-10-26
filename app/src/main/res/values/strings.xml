@@ -10,7 +10,12 @@
     <string name="contacts_empty">No contacts found</string>
     <string name="contacts_empty_cta_create">Create contact</string>
     <string name="contacts_empty_cta_import">Import from file</string>
-    <string name="contacts_nothing_found">Nothing found</string>
+    <string name="contacts_empty_show_all">Show all contacts</string>
+    <string name="contacts_search_empty">Nothing found for “%1$s”</string>
+    <string name="contacts_group_empty">No contacts in group “%1$s”</string>
+    <string name="contacts_account_empty">No contacts in account “%1$s”</string>
+    <string name="contacts_filters_empty">No contacts match the active filters</string>
+    <string name="action_clear_filters">Clear filters</string>
     <string name="contacts_load_error">Couldn\'t load contacts</string>
     <string name="action_retry">Retry</string>
 

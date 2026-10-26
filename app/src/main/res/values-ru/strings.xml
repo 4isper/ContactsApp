@@ -10,7 +10,12 @@
     <string name="contacts_empty">Контакты не найдены</string>
     <string name="contacts_empty_cta_create">Создать контакт</string>
     <string name="contacts_empty_cta_import">Импортировать из файла</string>
-    <string name="contacts_nothing_found">Ничего не найдено</string>
+    <string name="contacts_empty_show_all">Показать все контакты</string>
+    <string name="contacts_search_empty">По запросу «%1$s» ничего не найдено</string>
+    <string name="contacts_group_empty">В группе «%1$s» нет контактов</string>
+    <string name="contacts_account_empty">В аккаунте «%1$s» нет контактов</string>
+    <string name="contacts_filters_empty">Нет контактов по заданным фильтрам</string>
+    <string name="action_clear_filters">Сбросить фильтры</string>
     <string name="contacts_load_error">Не удалось загрузить контакты</string>
     <string name="action_retry">Повторить</string>
 

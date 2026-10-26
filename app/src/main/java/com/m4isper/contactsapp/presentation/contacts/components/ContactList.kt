@@ -66,6 +66,7 @@ internal fun ContactList(
     // Листья получают свои лямбды, а контракт экрана остаётся один.
     val onSearchQueryChange: (String) -> Unit = { onAction(ContactsListAction.SearchQueryChanged(it)) }
     val onFavoritesOnlyChange: () -> Unit = { onAction(ContactsListAction.FavoritesOnlyToggled) }
+    val onClearSearch: () -> Unit = { onSearchQueryChange("") }
     val onContactClick: (Long) -> Unit = { onAction(ContactsNavigationAction.ContactClicked(it)) }
     val onAddClick: () -> Unit = { onAction(ContactsNavigationAction.AddClicked) }
     val onRetry: () -> Unit = { onAction(ContactsFileAction.Retry) }
@@ -84,6 +85,15 @@ internal fun ContactList(
     val onEventHandled: () -> Unit = { onAction(ContactsFileAction.EventHandled) }
     val onGroupSelected: (Long?) -> Unit = { onAction(ContactsListAction.GroupSelected(it)) }
     val onAccountSelected: (ContactAccount?) -> Unit = { onAction(ContactsListAction.AccountSelected(it)) }
+    val onClearFilters: () -> Unit = {
+        clearAllFilters(
+            showFavoritesOnly = uiState.showFavoritesOnly,
+            onSearchQueryChange = onSearchQueryChange,
+            onFavoritesOnlyChange = onFavoritesOnlyChange,
+            onGroupSelected = onGroupSelected,
+            onAccountSelected = onAccountSelected,
+        )
+    }
     val onCreateGroup: (String) -> Unit = { onAction(ContactsListAction.CreateGroup(it)) }
     val onManageGroupsClick: () -> Unit = { onAction(ContactsNavigationAction.ManageGroupsClicked) }
     val onAddSelectedToGroup: (Set<Long>) -> Unit = { onAction(ContactsListAction.AddSelectedToGroup(it)) }
@@ -239,6 +249,8 @@ internal fun ContactList(
                 onToggleFavorite = onToggleFavorite,
                 onCreateContact = onCreateContact,
                 onImportClick = onImportClick ?: { vCardLaunchers.startImport(ctx) },
+                onClearSearch = onClearSearch,
+                onClearFilters = onClearFilters,
             )
         }
     }
@@ -328,6 +340,20 @@ private fun ContactListDialogs(
 }
 
 private fun Set<Long>.toggle(groupId: Long): Set<Long> = if (groupId in this) this - groupId else this + groupId
+
+/** Сбрасывает все фильтры списка одним действием; избранное выключается только если включено. */
+private fun clearAllFilters(
+    showFavoritesOnly: Boolean,
+    onSearchQueryChange: (String) -> Unit,
+    onFavoritesOnlyChange: () -> Unit,
+    onGroupSelected: (Long?) -> Unit,
+    onAccountSelected: (ContactAccount?) -> Unit,
+) {
+    onSearchQueryChange("")
+    if (showFavoritesOnly) onFavoritesOnlyChange()
+    onGroupSelected(null)
+    onAccountSelected(null)
+}
 
 private fun ContactDetails.toQuickCallTarget(): QuickCallTarget? =
     primaryPhone?.let { QuickCallTarget(name = name, phone = it) }
