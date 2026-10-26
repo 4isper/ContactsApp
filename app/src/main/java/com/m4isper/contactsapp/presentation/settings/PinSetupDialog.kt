@@ -3,8 +3,10 @@ package com.m4isper.contactsapp.presentation.settings
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -14,23 +16,33 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.m4isper.contactsapp.R
 
-/** Диалог настройки PIN-кода: код и его повтор. */
+/**
+ * Диалог настройки PIN-кода: код и его повтор. Next на клавиатуре переводит
+ * на повтор, Done отправляет валидную пару, несовпадение озвучивается.
+ */
 @Composable
 internal fun PinSetupDialog(
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val repeatFocus = remember { FocusRequester() }
     var pin by remember { mutableStateOf("") }
     var repeat by remember { mutableStateOf("") }
     val mismatch = repeat.isNotEmpty() && pin != repeat
+    val valid = pin.length >= MIN_PIN_LENGTH && pin == repeat
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -49,6 +61,7 @@ internal fun PinSetupDialog(
                             keyboardType = KeyboardType.NumberPassword,
                             imeAction = ImeAction.Next,
                         ),
+                    keyboardActions = KeyboardActions(onNext = { repeatFocus.requestFocus() }),
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -66,17 +79,21 @@ internal fun PinSetupDialog(
                             keyboardType = KeyboardType.NumberPassword,
                             imeAction = ImeAction.Done,
                         ),
+                    keyboardActions = KeyboardActions(onDone = { if (valid) onConfirm(pin) }),
                     modifier =
                         Modifier
                             .fillMaxWidth()
                             .padding(top = 8.dp)
+                            .focusRequester(repeatFocus)
                             .testTag("app_lock_pin_repeat_field"),
                 )
                 if (mismatch) {
                     Text(
                         text = stringResource(R.string.app_lock_pin_mismatch),
-                        style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
-                        color = androidx.compose.material3.MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        // Несовпадение появляется динамически: озвучиваем его.
+                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                     )
                 }
             }
@@ -84,7 +101,7 @@ internal fun PinSetupDialog(
         confirmButton = {
             TextButton(
                 onClick = { onConfirm(pin) },
-                enabled = pin.length >= MIN_PIN_LENGTH && pin == repeat,
+                enabled = valid,
                 modifier = Modifier.testTag("app_lock_pin_confirm"),
             ) {
                 Text(stringResource(R.string.editor_save))

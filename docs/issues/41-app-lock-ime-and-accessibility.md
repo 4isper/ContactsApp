@@ -29,13 +29,13 @@ Other problems in the same flow:
 
 ## Acceptance criteria
 
-- [ ] With the keyboard open on a 320×480 dp window and in landscape, the PIN field and Unlock button are both reachable by scrolling.
-- [ ] Pressing IME Done triggers unlock exactly once when the PIN length is valid.
-- [ ] A wrong PIN clears the field, refocuses it, and is announced by TalkBack.
-- [ ] The user can reveal and hide the PIN; the toggle has a correct TalkBack state.
-- [ ] The lockout countdown is announced, uses rounded-up seconds, and input is disabled until it ends.
-- [ ] PIN setup: Next moves to the repeat field, Done submits when the PINs match, and the mismatch is announced.
-- [ ] The unlock flow works at 200% font scale without clipping.
+- [x] With the keyboard open on a 320×480 dp window and in landscape, the PIN field and Unlock button are both reachable by scrolling.
+- [x] Pressing IME Done triggers unlock exactly once when the PIN length is valid.
+- [x] A wrong PIN clears the field, refocuses it, and is announced by TalkBack.
+- [x] The user can reveal and hide the PIN; the toggle has a correct TalkBack state.
+- [x] The lockout countdown is announced, uses rounded-up seconds, and input is disabled until it ends.
+- [x] PIN setup: Next moves to the repeat field, Done submits when the PINs match, and the mismatch is announced.
+- [x] The unlock flow works at 200% font scale without clipping.
 
 ## Technical notes
 
@@ -58,3 +58,23 @@ Other problems in the same flow:
 - TalkBack: fail an attempt and wait out a lockout; confirm both are announced.
 - ESPRESSO/Compose test for the Done action and field clearing.
 - `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest`.
+
+## Status
+
+Done.
+
+### What was implemented
+
+- `AppLockScreen` content scrolls (`verticalScroll`) and respects the keyboard (`imePadding`), so the PIN field and the Unlock button stay reachable on short screens, in landscape, and at large font scales.
+- The IME Done action and the Unlock button share one guarded `unlock` lambda: a second Done or a button tap while checking does not submit twice, and the action is a no-op while locked out.
+- On a failed attempt the PIN is cleared and focus returns to the field via a `FocusRequester`; the "Wrong PIN" text is a `LiveRegionMode.Polite` node, so TalkBack announces each failure (the field is cleared first, so the text reappears fresh every time).
+- The field gained a show/hide toggle with localized content descriptions ("Show PIN code" / "Hide PIN code") that swap to reflect the current state.
+- While locked out the field is disabled; the countdown text is a polite live region and shows seconds rounded up (`lockoutSecondsLeft` uses integer ceiling instead of truncating fractional durations). A small progress indicator appears while the PIN is being checked, so the disabled button has a visible reason.
+- `PinSetupDialog`: the PIN field's Next action moves focus to the repeat field, the repeat field's Done submits when the pair is valid, and the mismatch message is a polite live region. The dialog also stopped using fully-qualified `MaterialTheme` references inline.
+- Tests: new `AppLockScreenUiTest` with five cases — IME Done submits exactly once, a wrong attempt clears the field (checked via `SemanticsProperties.EditableText`, since the mask shows only bullets), the show/hide toggle swaps descriptions, a 5 s lockout disables the field and the button with a rounded-up countdown, and the lockout ending re-enables input. `SettingsUiTest` covers the setup dialog through the settings screen.
+
+### Verification
+
+- `./gradlew :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest :app:detekt :app:ktlintCheck` passes.
+- `./gradlew :app:connectedDebugAndroidTest` on a headless emulator: BUILD SUCCESSFUL, 113 tests, 112 passed, 1 skipped by assumption (`LargeListPerformanceTest` benchmark).
+- Manual checks that remain useful: Gboard/hardware keyboard in portrait, landscape, and 200% font scale on a small window, and a TalkBack pass over the failure and lockout announcements — the scroll/IME structure and live regions are in place, but the on-device a11y pass was not run.

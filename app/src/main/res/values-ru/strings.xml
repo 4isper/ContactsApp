@@ -289,6 +289,8 @@
     <string name="app_lock_wrong_pin">Неверный PIN-код</string>
     <string name="app_lock_too_many_attempts">Слишком много попыток. Повторите через %1$d с</string>
     <string name="app_lock_unlock">Разблокировать</string>
+    <string name="app_lock_show_pin">Показать PIN-код</string>
+    <string name="app_lock_hide_pin">Скрыть PIN-код</string>
     <string name="settings_language">Язык</string>
     <string name="settings_language_system">Язык системы</string>
     <string name="settings_appearance">Оформление</string>
