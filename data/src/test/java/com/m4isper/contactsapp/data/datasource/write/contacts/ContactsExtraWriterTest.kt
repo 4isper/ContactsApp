@@ -1,7 +1,5 @@
 package com.m4isper.contactsapp.data.datasource.write.contacts
 
-import android.content.ContentProviderOperation
-import android.content.ContentValues
 import android.provider.ContactsContract
 import com.m4isper.contactsapp.data.datasource.read.ContactRows
 import com.m4isper.contactsapp.data.datasource.read.ExistingBirthday
@@ -22,7 +20,6 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class ContactsExtraWriterTest {
-
     @Test
     fun relationValues_otherUsesCustomLabel() {
         val relation = EditableRelation(name = "Друг", kind = RelationKind.OTHER, customLabel = "Друг")
@@ -53,12 +50,18 @@ class ContactsExtraWriterTest {
 
     @Test
     fun eventTypeInt_mapsEventKind() {
-        assertEquals(android.provider.ContactsContract.CommonDataKinds.Event.TYPE_ANNIVERSARY,
-            eventTypeInt(EditableEvent(kind = EventKind.ANNIVERSARY)))
-        assertEquals(android.provider.ContactsContract.CommonDataKinds.Event.TYPE_CUSTOM,
-            eventTypeInt(EditableEvent(kind = EventKind.OTHER, customLabel = "День рождения")))
-        assertEquals(android.provider.ContactsContract.CommonDataKinds.Event.TYPE_OTHER,
-            eventTypeInt(EditableEvent(kind = EventKind.OTHER)))
+        assertEquals(
+            android.provider.ContactsContract.CommonDataKinds.Event.TYPE_ANNIVERSARY,
+            eventTypeInt(EditableEvent(kind = EventKind.ANNIVERSARY)),
+        )
+        assertEquals(
+            android.provider.ContactsContract.CommonDataKinds.Event.TYPE_CUSTOM,
+            eventTypeInt(EditableEvent(kind = EventKind.OTHER, customLabel = "День рождения")),
+        )
+        assertEquals(
+            android.provider.ContactsContract.CommonDataKinds.Event.TYPE_OTHER,
+            eventTypeInt(EditableEvent(kind = EventKind.OTHER)),
+        )
     }
 
     @Test

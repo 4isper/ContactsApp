@@ -66,8 +66,7 @@ class ContactsWriterDataSourceImpl(
             cursor?.use { parseContactRows(it) } ?: ContactRows()
         }
 
-    override suspend fun loadRawContactId(contactId: Long): Long? =
-        loadRawContactIds(contactId).firstOrNull()
+    override suspend fun loadRawContactId(contactId: Long): Long? = loadRawContactIds(contactId).firstOrNull()
 
     override suspend fun loadRawContactIds(contactId: Long): List<Long> =
         withContext(Dispatchers.IO) {

@@ -2,11 +2,8 @@ package com.m4isper.contactsapp.data.datasource.write.contacts
 
 import android.content.ContentProviderOperation
 import android.provider.ContactsContract
-import com.m4isper.contactsapp.data.datasource.read.ContactRows
 import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 import com.m4isper.contactsapp.domain.model.contact.ContactForm
-import com.m4isper.contactsapp.domain.model.contact.EditableName
-import com.m4isper.contactsapp.domain.model.contact.NameMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -17,7 +14,6 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class ContactsWriterOperationsTest {
-
     @Test
     fun dataInsert_createsInsertBuilder() {
         val builder =
@@ -56,16 +52,18 @@ class ContactsWriterOperationsTest {
     fun diffListOperations_insertsNewItems() {
         val newItems = listOf("a", "b")
         val existingIds = emptySet<Long>()
-        val ops = diffListOperations(
-            newItems = newItems,
-            existingIds = existingIds,
-            dataIdOf = { null },
-            insert = { item ->
-                ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-                    .withValue(ContactsContract.Data.DATA1, item)
-            },
-            update = { _, _ -> ContentProviderOperation.newUpdate(ContactsContract.Data.CONTENT_URI) }
-        )
+        val ops =
+            diffListOperations(
+                newItems = newItems,
+                existingIds = existingIds,
+                dataIdOf = { null },
+                insert = { item ->
+                    ContentProviderOperation
+                        .newInsert(ContactsContract.Data.CONTENT_URI)
+                        .withValue(ContactsContract.Data.DATA1, item)
+                },
+                update = { _, _ -> ContentProviderOperation.newUpdate(ContactsContract.Data.CONTENT_URI) },
+            )
         assertEquals(2, ops.size)
     }
 

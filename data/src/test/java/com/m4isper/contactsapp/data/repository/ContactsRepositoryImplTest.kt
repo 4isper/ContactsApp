@@ -461,8 +461,7 @@ private class FakeWriter(
 
     override suspend fun loadContactRows(contactId: Long): ContactRows = rowsByContact[contactId] ?: rows
 
-    override suspend fun loadRawContactId(contactId: Long): Long? =
-        loadRawContactIds(contactId).firstOrNull()
+    override suspend fun loadRawContactId(contactId: Long): Long? = loadRawContactIds(contactId).firstOrNull()
 
     override suspend fun loadRawContactIds(contactId: Long): List<Long> =
         rawContactIdsByContact[contactId]?.let(::listOf)

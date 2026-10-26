@@ -1,7 +1,5 @@
 package com.m4isper.contactsapp.data.datasource.read
 
-import com.m4isper.contactsapp.data.datasource.ContactsContractLegacy
-
 import android.database.Cursor
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Event
@@ -12,10 +10,10 @@ import android.provider.ContactsContract.CommonDataKinds.Note
 import android.provider.ContactsContract.CommonDataKinds.Organization
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.Relation
-import android.provider.ContactsContract.CommonDataKinds.SipAddress
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import android.provider.ContactsContract.CommonDataKinds.Website
+import com.m4isper.contactsapp.data.datasource.ContactsContractLegacy
 
 /** Читает сырые строки контакта из курсора по [CONTACT_DATA_PROJECTION]. */
 internal fun parseContactRows(cursor: Cursor): ContactRows {

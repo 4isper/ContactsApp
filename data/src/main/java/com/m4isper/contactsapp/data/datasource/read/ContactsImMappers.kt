@@ -1,8 +1,7 @@
 package com.m4isper.contactsapp.data.datasource.read
 
-import com.m4isper.contactsapp.data.datasource.ContactsContractLegacy
-
 import android.provider.ContactsContract.CommonDataKinds.Im
+import com.m4isper.contactsapp.data.datasource.ContactsContractLegacy
 import com.m4isper.contactsapp.domain.model.contact.ImProtocol
 import com.m4isper.contactsapp.domain.model.contact.InstantMessage
 

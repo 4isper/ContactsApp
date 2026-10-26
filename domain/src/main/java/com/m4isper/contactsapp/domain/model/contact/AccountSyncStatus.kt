@@ -4,10 +4,13 @@ package com.m4isper.contactsapp.domain.model.contact
 enum class AccountSyncStatus {
     /** Аккаунт синхронизирован, данные актуальны. */
     SYNCED,
+
     /** Идёт синхронизация прямо сейчас. */
     SYNCING,
+
     /** Данные устарели, нужна синхронизация. */
     STALE,
+
     /** Ошибка синхронизации. */
     ERROR,
 }

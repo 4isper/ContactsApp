@@ -1,13 +1,11 @@
 package com.m4isper.contactsapp.data.datasource.write.contacts
 
-import com.m4isper.contactsapp.data.datasource.ContactsContractLegacy
-
 import android.content.ContentProviderOperation
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Phone
-import android.provider.ContactsContract.CommonDataKinds.SipAddress
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import android.provider.ContactsContract.CommonDataKinds.Website
+import com.m4isper.contactsapp.data.datasource.ContactsContractLegacy
 import com.m4isper.contactsapp.data.datasource.read.ContactRows
 import com.m4isper.contactsapp.domain.model.contact.ContactForm
 

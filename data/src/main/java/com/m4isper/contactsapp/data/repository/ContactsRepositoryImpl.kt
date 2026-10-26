@@ -3,9 +3,8 @@
 
 package com.m4isper.contactsapp.data.repository
 
-import com.m4isper.contactsapp.data.datasource.ContactsContractLegacy
-
 import android.provider.ContactsContract
+import com.m4isper.contactsapp.data.datasource.ContactsContractLegacy
 import com.m4isper.contactsapp.data.datasource.ContactsDataSource
 import com.m4isper.contactsapp.data.datasource.ContactsWriterDataSource
 import com.m4isper.contactsapp.data.datasource.read.ExistingAddress
@@ -52,7 +51,6 @@ import com.m4isper.contactsapp.domain.model.contact.ImProtocol
 import com.m4isper.contactsapp.domain.model.contact.NameMode
 import com.m4isper.contactsapp.domain.model.contact.Phone
 import com.m4isper.contactsapp.domain.model.contact.RawContactRef
-import com.m4isper.contactsapp.domain.model.contact.SipAddress
 import com.m4isper.contactsapp.domain.model.contact.Website
 import com.m4isper.contactsapp.domain.repository.ContactsAccounts
 import com.m4isper.contactsapp.domain.repository.ContactsMerger
