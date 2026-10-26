@@ -1,7 +1,6 @@
 package com.m4isper.contactsapp.data.datasource
 
 import com.m4isper.contactsapp.domain.model.contact.AccountSyncInfo
-import com.m4isper.contactsapp.domain.model.contact.AccountSyncStatus
 import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 

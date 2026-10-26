@@ -1,10 +1,9 @@
 package com.m4isper.contactsapp.data.datasource.write.contacts
 
-import com.m4isper.contactsapp.data.datasource.ContactsContractLegacy
-
 import android.content.ContentProviderOperation
 import android.content.ContentValues
 import android.provider.ContactsContract.CommonDataKinds.Im
+import com.m4isper.contactsapp.data.datasource.ContactsContractLegacy
 import com.m4isper.contactsapp.data.datasource.read.ContactRows
 import com.m4isper.contactsapp.domain.model.contact.ContactForm
 import com.m4isper.contactsapp.domain.model.contact.EditableInstantMessage
@@ -57,7 +56,9 @@ internal fun imOperations(
                 .withValues(instantMessageValues(im))
         },
         update = { dataId, im ->
-            dataUpdate(dataId).withValues(instantMessageValues(im, typeByDataId[dataId] ?: ContactsContractLegacy.Im.TYPE_OTHER))
+            dataUpdate(dataId).withValues(
+                instantMessageValues(im, typeByDataId[dataId] ?: ContactsContractLegacy.Im.TYPE_OTHER),
+            )
         },
     )
 }

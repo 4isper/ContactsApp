@@ -50,8 +50,11 @@ fun ContactAvatar(
     testTag: String? = null,
 ) {
     val bg by animateColorAsState(
-        if (selected) MaterialTheme.colorScheme.primary
-        else MaterialTheme.colorScheme.primaryContainer,
+        if (selected) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.primaryContainer
+        },
         label = "avatarBg",
     )
     Box(
