@@ -108,7 +108,7 @@ A second UX/UI pass looked at the implemented screens rather than the feature sp
 | # | File | Title | Priority | Status |
 |---|---|---|---|---|
 | 37 | [37-wire-and-localize-account-sync-status.md](37-wire-and-localize-account-sync-status.md) | Wire up and localize the account sync status indicator | P2 | Done |
-| 38 | [38-selection-app-bar-overflow.md](38-selection-app-bar-overflow.md) | Stop the selection app bar from overflowing on phones | P1 | Open |
+| 38 | [38-selection-app-bar-overflow.md](38-selection-app-bar-overflow.md) | Stop the selection app bar from overflowing on phones | P1 | Done |
 | 39 | [39-filter-aware-empty-states.md](39-filter-aware-empty-states.md) | Make contact-list empty states aware of group/account filters | P1 | Open |
 | 40 | [40-preserve-birthday-without-year.md](40-preserve-birthday-without-year.md) | Preserve "no year" birthdays and event dates | P1 | Open |
 | 41 | [41-app-lock-ime-and-accessibility.md](41-app-lock-ime-and-accessibility.md) | Make the app-lock screens usable with the keyboard and TalkBack | P1 | Open |
@@ -126,8 +126,8 @@ A second UX/UI pass looked at the implemented screens rather than the feature sp
 
 ### Second-pass dependencies
 
-- 37 is done: it replaced the stub with public `ContentResolver` sync state, wired the indicator, and localized the strings. 38 is the next item.
-- 38 and 48 both touch selection mode; land 38 first so the announcement work targets the final app bar. 48 also overlaps 47 for accessible swipe actions, so those two can share one branch.
+- 37 and 38 are done: 37 replaced the stub with public `ContentResolver` sync state, wired the indicator, and localized the strings; 38 moved the selection actions into an overflow with a compact count title. 39 is the next item.
+- 38 is done: the selection bar now has a stable title and a single overflow entry point. 48 follows and can target the final app bar. 48 also overlaps 47 for accessible swipe actions, so those two can share one branch.
 - 39 follows 30. It adds filter-specific recovery actions and replaces the secondary filled button with a true secondary style.
 - 40 is independent, but the shared date dialog is also used by events; test both paths in one change.
 - 41 is independent of 22 (app-lock lifecycle) but both affect the lock experience; avoid changing the same root layout twice.
