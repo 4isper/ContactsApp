@@ -112,14 +112,14 @@ A second UX/UI pass looked at the implemented screens rather than the feature sp
 | 39 | [39-filter-aware-empty-states.md](39-filter-aware-empty-states.md) | Make contact-list empty states aware of group/account filters | P1 | Done |
 | 40 | [40-preserve-birthday-without-year.md](40-preserve-birthday-without-year.md) | Preserve "no year" birthdays and event dates | P1 | Done |
 | 41 | [41-app-lock-ime-and-accessibility.md](41-app-lock-ime-and-accessibility.md) | Make the app-lock screens usable with the keyboard and TalkBack | P1 | Done |
-| 42 | [42-contextual-write-permissions.md](42-contextual-write-permissions.md) | Request contact-write permission when the action happens, not on screen entry | P1 | Open |
+| 42 | [42-contextual-write-permissions.md](42-contextual-write-permissions.md) | Request contact-write permission when the action happens, not on screen entry | P1 | Done |
 | 43 | [43-duplicate-merge-ux.md](43-duplicate-merge-ux.md) | Make duplicate merging clearer and safe to review | P1 | Done |
 | 44 | [44-group-member-picker.md](44-group-member-picker.md) | Exclude existing members from the group contact picker | P2 | Done |
-| 45 | [45-editor-row-layout-and-validation.md](45-editor-row-layout-and-validation.md) | Make editor field rows readable and validation errors findable | P2 | Open |
-| 46 | [46-photo-editor-crop-ux.md](46-photo-editor-crop-ux.md) | Make photo selection and cropping usable on small screens and with TalkBack | P2 | Open |
-| 47 | [47-contact-row-actions.md](47-contact-row-actions.md) | Use a real overflow icon and make row actions available without swiping | P2 | Open |
-| 48 | [48-talkback-follow-through.md](48-talkback-follow-through.md) | Finish TalkBack support for selection mode, swipes, and fast scrolling | P2 | Open |
-| 49 | [49-reminders-notification-permission.md](49-reminders-notification-permission.md) | Keep the reminders switch in sync with notification permission | P2 | Open |
+| 45 | [45-editor-row-layout-and-validation.md](45-editor-row-layout-and-validation.md) | Make editor field rows readable and validation errors findable | P2 | Done |
+| 46 | [46-photo-editor-crop-ux.md](46-photo-editor-crop-ux.md) | Make photo selection and cropping usable on small screens and with TalkBack | P2 | Done |
+| 47 | [47-contact-row-actions.md](47-contact-row-actions.md) | Use a real overflow icon and make row actions available without swiping | P2 | Done |
+| 48 | [48-talkback-follow-through.md](48-talkback-follow-through.md) | Finish TalkBack support for selection mode, swipes, and fast scrolling | P2 | Done |
+| 49 | [49-reminders-notification-permission.md](49-reminders-notification-permission.md) | Keep the reminders switch in sync with notification permission | P2 | Done |
 | 50 | [50-skeleton-shimmer-animation.md](50-skeleton-shimmer-animation.md) | Make the loading skeleton actually animate | P3 | Done |
 | 51 | [51-system-bars-and-launch-theme.md](51-system-bars-and-launch-theme.md) | Make system bars and the launch window follow the app theme | P2 | Done |
 | 52 | [52-contact-row-density-and-hierarchy.md](52-contact-row-density-and-hierarchy.md) | Rebalance contact-row hierarchy and state feedback | P2 | Done |
