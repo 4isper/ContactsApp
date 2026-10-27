@@ -79,12 +79,15 @@ internal fun PhoneEditorRow(
                             .weight(1f)
                             .testTag("editor_phone_field"),
                 )
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 KindMenu(
                     current = row.value.kind,
                     options = PhoneKind.entries,
                     label = { phoneKindLabel(it) },
                     onSelect = { onKindChange(row.rowId, it) },
                 )
+                Spacer(modifier = Modifier.weight(1f))
                 if (canRemove) {
                     IconButton(onClick = { onRemove(row.rowId) }) {
                         Icon(

@@ -42,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -70,7 +71,7 @@ fun GroupDetailScreen(
     modifier: Modifier = Modifier,
     viewModel: GroupDetailViewModel = metroViewModel(),
 ) {
-    val context = LocalContext.current
+    val resources = LocalResources.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val snackbarScope = rememberCoroutineScope()
@@ -84,7 +85,9 @@ fun GroupDetailScreen(
         rememberWritePermissionGate(
             onDenied = {
                 snackbarScope.launch {
-                    snackbarHostState.showSnackbar(context.getString(R.string.permission_write_rationale))
+                    snackbarHostState.showSnackbar(
+                        resources.getString(R.string.permission_write_rationale),
+                    )
                 }
             },
         )

@@ -68,12 +68,15 @@ internal fun RelationEditorRow(
                             .weight(1f)
                             .testTag("editor_relation_field"),
                 )
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 KindMenu(
                     current = row.value.kind,
                     options = RelationKind.entries,
                     label = { relationKindLabel(it) },
                     onSelect = { onKindChange(row.rowId, it) },
                 )
+                Spacer(modifier = Modifier.weight(1f))
                 IconButton(onClick = { onRemove(row.rowId) }) {
                     Icon(
                         Icons.Filled.Delete,

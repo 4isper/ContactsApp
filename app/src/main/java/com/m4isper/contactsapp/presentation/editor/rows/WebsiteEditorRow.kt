@@ -71,12 +71,15 @@ internal fun WebsiteEditorRow(
                             .weight(1f)
                             .testTag("editor_website_field"),
                 )
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 KindMenu(
                     current = row.value.kind,
                     options = WebsiteKind.entries,
                     label = { websiteKindLabel(it) },
                     onSelect = { onKindChange(row.rowId, it) },
                 )
+                Spacer(modifier = Modifier.weight(1f))
                 IconButton(onClick = { onRemove(row.rowId) }) {
                     Icon(
                         Icons.Filled.Delete,

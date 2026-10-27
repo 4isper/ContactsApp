@@ -27,6 +27,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.contact.Birthday
 import com.m4isper.contactsapp.domain.model.contact.EditableEvent
@@ -70,7 +71,10 @@ internal fun EventEditorRow(
                 )
                 TextButton(
                     onClick = { onDatePickClick(row.rowId) },
-                    modifier = Modifier.testTag("editor_event_date_button"),
+                    modifier =
+                        Modifier
+                            .testTag("editor_event_date_button")
+                            .weight(1f, fill = false),
                 ) {
                     Text(
                         text =
@@ -79,6 +83,8 @@ internal fun EventEditorRow(
                             } else {
                                 birthdayText(date)
                             },
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
                 Spacer(modifier = Modifier.weight(1f))

@@ -69,12 +69,15 @@ internal fun SipEditorRow(
                             .weight(1f)
                             .testTag("editor_sip_field"),
                 )
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 KindMenu(
                     current = row.value.kind,
                     options = SipKind.entries,
                     label = { sipKindLabel(it) },
                     onSelect = { onKindChange(row.rowId, it) },
                 )
+                Spacer(modifier = Modifier.weight(1f))
                 IconButton(onClick = { onRemove(row.rowId) }) {
                     Icon(
                         Icons.Filled.Delete,

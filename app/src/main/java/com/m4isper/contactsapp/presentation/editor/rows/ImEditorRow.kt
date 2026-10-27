@@ -68,12 +68,15 @@ internal fun ImEditorRow(
                             .weight(1f)
                             .testTag("editor_im_field"),
                 )
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 KindMenu(
                     current = row.value.protocol,
                     options = ImProtocol.entries,
                     label = { imProtocolLabel(it) },
                     onSelect = { onProtocolChange(row.rowId, it) },
                 )
+                Spacer(modifier = Modifier.weight(1f))
                 IconButton(onClick = { onRemove(row.rowId) }) {
                     Icon(
                         Icons.Filled.Delete,
