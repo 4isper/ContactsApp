@@ -40,6 +40,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -85,11 +86,12 @@ fun DuplicatesScreen(
     var pendingMerge by remember { mutableStateOf<PendingMerge?>(null) }
 
     // Отказ в праве объясняем снекбаром: слияние не выполняется молча.
+    val writeRationale = stringResource(R.string.permission_write_rationale)
     val writeGate =
         rememberWritePermissionGate(
             onDenied = {
                 snackbarScope.launch {
-                    snackbarHostState.showSnackbar(context.getString(R.string.permission_write_rationale))
+                    snackbarHostState.showSnackbar(writeRationale)
                 }
             },
         )
@@ -322,7 +324,7 @@ private fun DuplicateGroupCard(
 ) {
     val spacing = LocalSpacing.current
     val defaultPrimaryId = group.members.first().contactId
-    var selectedId by rememberSaveable { mutableStateOf(defaultPrimaryId) }
+    var selectedId by rememberSaveable { mutableLongStateOf(defaultPrimaryId) }
     // Если контакт-основной исчез после слияния, возвращаемся к самому заполненному.
     val primaryId =
         selectedId.takeIf { id -> group.members.any { it.contactId == id } } ?: defaultPrimaryId

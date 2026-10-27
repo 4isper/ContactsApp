@@ -44,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -256,8 +257,9 @@ private fun GroupDetailDialogs(
         ConfirmDialog(
             title = stringResource(R.string.group_delete_title),
             text =
-                stringResource(
-                    R.string.group_delete_with_members,
+                pluralStringResource(
+                    R.plurals.group_delete_with_members,
+                    uiState.members.size,
                     uiState.members.size,
                 ),
             confirmLabel = stringResource(R.string.action_delete),

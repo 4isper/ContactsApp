@@ -51,9 +51,9 @@ object BrandIcons {
 fun BrandIcon(
     imageVector: ImageVector,
     contentDescription: String?,
+    modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier,
     size: Dp = 24.dp,
 ) {
     val disabledTint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)

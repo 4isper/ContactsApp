@@ -231,13 +231,13 @@ private fun LazyListScope.addressItems(
         items = uiState.addresses,
         key = { it.rowId },
     ) { row ->
-        addressRow(row = row, edit = edit)
+        AddressRow(row = row, edit = edit)
     }
 }
 
 /** Строка адреса: у неё больше полей, чем у остальных строк формы. */
 @Composable
-private fun addressRow(
+private fun AddressRow(
     row: EditorRow<EditableAddress>,
     edit: ((EditorUiState) -> EditorUiState) -> Unit,
 ) {

@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import androidx.core.net.toUri
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.contact.ImProtocol
 import com.m4isper.contactsapp.domain.model.contact.InstantMessage
@@ -25,7 +26,7 @@ internal fun openInstantMessage(
     val scheme = im.openScheme() ?: return false
     return runCatching {
         val intent =
-            Intent(Intent.ACTION_VIEW, Uri.parse("$scheme:${im.address}")).apply {
+            Intent(Intent.ACTION_VIEW, "$scheme:${im.address}".toUri()).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
         context.startActivity(intent)
@@ -85,7 +86,7 @@ internal fun openMap(
 ) {
     runCatching {
         val mapIntent =
-            Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=${Uri.encode(address)}")).apply {
+            Intent(Intent.ACTION_VIEW, "geo:0,0?q=${Uri.encode(address)}".toUri()).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
         context.startActivity(mapIntent)
@@ -102,7 +103,7 @@ internal fun openWebsite(
     runCatching {
         val normalized = if (url.contains("://")) url else "https://$url"
         val webIntent =
-            Intent(Intent.ACTION_VIEW, Uri.parse(normalized)).apply {
+            Intent(Intent.ACTION_VIEW, normalized.toUri()).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
         context.startActivity(webIntent)

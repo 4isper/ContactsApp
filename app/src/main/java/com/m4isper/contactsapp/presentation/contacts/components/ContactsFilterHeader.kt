@@ -405,9 +405,9 @@ private fun AccountFilterChip(
     accounts: List<ContactAccount>,
     selectedAccount: ContactAccount?,
     onAccountSelected: (ContactAccount?) -> Unit,
+    modifier: Modifier = Modifier,
     accountSyncInfos: List<AccountSyncInfo> = emptyList(),
     onRetrySync: () -> Unit = {},
-    modifier: Modifier = Modifier,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val nowMs = rememberSyncNow(accountSyncInfos)

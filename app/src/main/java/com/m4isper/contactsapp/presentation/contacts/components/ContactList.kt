@@ -18,9 +18,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -99,10 +99,14 @@ internal fun ContactList(
     val onCreateGroup: (String) -> Unit = { onAction(ContactsListAction.CreateGroup(it)) }
     val onManageGroupsClick: () -> Unit = { onAction(ContactsNavigationAction.ManageGroupsClicked) }
     val onAddSelectedToGroup: (Set<Long>) -> Unit = { onAction(ContactsListAction.AddSelectedToGroup(it)) }
+    // containerSize — фактический размер окна в пикселях: Configuration.screenWidthDp
+    // скругляется и по-разному учитывает вставки в зависимости от targetSdk.
+    val density = LocalDensity.current
+    val containerSize = LocalWindowInfo.current.containerSize
     val showFavoriteQuickAction =
         favoriteQuickActionVisible(
-            screenWidthDp = LocalConfiguration.current.screenWidthDp,
-            fontScale = LocalDensity.current.fontScale,
+            screenWidthDp = (containerSize.width / density.density).toInt(),
+            fontScale = density.fontScale,
         )
     val onDuplicatesClick: () -> Unit = { onAction(ContactsNavigationAction.DuplicatesClicked) }
     val onRecentsClick: () -> Unit = { onAction(ContactsNavigationAction.RecentsClicked) }

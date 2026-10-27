@@ -35,16 +35,17 @@ import dev.zacsweers.metrox.viewmodel.metroViewModel
 @Composable
 fun ContactEditorScreen(
     contactId: Long?,
-    sessionId: Long = 0L,
     onDone: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    sessionId: Long = 0L,
     viewModel: ContactEditorViewModel = metroViewModel(),
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val errorText = uiState.error?.let { stringResource(it.messageRes()) }
+    val checkFieldsMessage = stringResource(R.string.editor_check_fields)
 
     var hasWritePermission by remember {
         mutableStateOf(hasPermission(context, Manifest.permission.WRITE_CONTACTS))
@@ -160,7 +161,7 @@ fun ContactEditorScreen(
     LaunchedEffect(fieldsBlocked) {
         if (fieldsBlocked) {
             snackbarHostState.showSnackbar(
-                message = context.getString(R.string.editor_check_fields),
+                message = checkFieldsMessage,
                 duration = SnackbarDuration.Long,
             )
         }

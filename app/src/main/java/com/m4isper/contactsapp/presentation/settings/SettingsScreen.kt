@@ -52,8 +52,8 @@ import dev.zacsweers.metrox.viewmodel.metroViewModel
 @Composable
 internal fun SettingsScreen(
     onBack: () -> Unit,
-    onRestartRequired: () -> Unit = {},
     modifier: Modifier = Modifier,
+    onRestartRequired: () -> Unit = {},
     viewModel: SettingsViewModel = metroViewModel(),
 ) {
     val context = LocalContext.current

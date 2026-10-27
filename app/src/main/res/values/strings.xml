@@ -196,7 +196,6 @@
     <string name="account_sync_retry_success">Contacts refreshed</string>
     <string name="account_sync_retry_failed">Couldn\'t refresh contacts</string>
     <string name="favorites_empty">No favorite contacts</string>
-    <string name="selection_mode_entered">Selection mode, %1$d contacts selected</string>
     <plurals name="selection_mode_announce">
         <item quantity="one">Selection mode, %1$d contact selected</item>
         <item quantity="other">Selection mode, %1$d contacts selected</item>
@@ -324,8 +323,10 @@
     <string name="settings_reminders_permission">Reminders need the notification permission</string>
     <string name="settings_reminders_blocked">Notifications are turned off for the app. Reminders cannot be delivered</string>
     <string name="settings_reminders_desc">Notify about upcoming birthdays and events</string>
-    <string name="settings_reminder_lead">Remind in advance</string>
-    <string name="settings_reminder_lead_value">%1$d days before</string>
+    <plurals name="settings_reminder_lead_value">
+        <item quantity="one">%1$d day before</item>
+        <item quantity="other">%1$d days before</item>
+    </plurals>
     <string name="shortcut_new_contact">New contact</string>
     <string name="shortcut_favorites">Favorites</string>
     <string name="action_add_to_calendar">Add to calendar</string>
@@ -376,7 +377,10 @@
     <string name="group_not_found">Group not found</string>
     <string name="group_merge">Merge group</string>
     <string name="group_merge_message">Move the contacts to another group:</string>
-    <string name="group_delete_with_members">The group and its %1$d contacts will be deleted. You can undo it right after.</string>
+    <plurals name="group_delete_with_members">
+        <item quantity="one">The group and its %1$d contact will be deleted. You can undo it right after.</item>
+        <item quantity="other">The group and its %1$d contacts will be deleted. You can undo it right after.</item>
+    </plurals>
     <string name="group_deleted">Group deleted</string>
     <string name="group_undo_delete">Undo</string>
     <string name="group_restored">Group restored</string>
@@ -400,7 +404,6 @@
     <string name="editor_add_photo">Add photo</string>
     <string name="editor_change_photo">Change photo</string>
     <string name="editor_remove_photo">Remove photo</string>
-    <string name="editor_photo_desc">Contact photo</string>
     <string name="editor_section_phones">Phones</string>
     <string name="editor_section_account">Account</string>
     <string name="editor_account_local">Local</string>
@@ -433,7 +436,6 @@
     <string name="editor_im_label">Account</string>
     <string name="editor_im_service">Service</string>
     <string name="editor_sip_label">SIP address</string>
-    <string name="editor_address_label">Address</string>
     <string name="editor_address_street">Street</string>
     <string name="editor_address_po_box">PO box</string>
     <string name="editor_address_neighborhood">Neighborhood</string>
@@ -486,10 +488,6 @@
     <plurals name="batch_delete_undone">
         <item quantity="one">%d contact restored</item>
         <item quantity="other">%d contacts restored</item>
-    </plurals>
-    <plurals name="import_success">
-        <item quantity="one">Imported %d contact</item>
-        <item quantity="other">Imported %d contacts</item>
     </plurals>
     <plurals name="export_success">
         <item quantity="one">Exported %d contact</item>

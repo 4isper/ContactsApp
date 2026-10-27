@@ -51,6 +51,14 @@ android {
             isReturnDefaultValues = true
         }
     }
+
+    // Язык переключается внутри приложения, поэтому локали не должны
+    // вырезаться из базового APK в language-splits бандла.
+    bundle {
+        language {
+            enableSplit = false
+        }
+    }
 }
 
 dependencies {

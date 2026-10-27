@@ -16,6 +16,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -135,7 +136,7 @@ private fun RemindersLeadOptions(
     if (!visible) return
     REMINDER_LEAD_OPTIONS.forEach { days ->
         SettingsOption(
-            label = stringResource(R.string.settings_reminder_lead_value, days),
+            label = pluralStringResource(R.plurals.settings_reminder_lead_value, days, days),
             selected = selectedDays == days,
             onSelect = { onSelect(days) },
             testTag = "reminder_lead_$days",

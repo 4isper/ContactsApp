@@ -202,7 +202,6 @@
     <string name="account_sync_retry_success">Контакты обновлены</string>
     <string name="account_sync_retry_failed">Не удалось обновить контакты</string>
     <string name="favorites_empty">Нет избранных контактов</string>
-    <string name="selection_mode_entered">Режим выделения, %1$d контактов выбрано</string>
     <plurals name="selection_mode_announce">
         <item quantity="one">Режим выделения, %1$d контакт выбран</item>
         <item quantity="few">Режим выделения, %1$d контакта выбрано</item>
@@ -334,8 +333,12 @@
     <string name="settings_reminders_permission">Для напоминаний нужно разрешение на уведомления</string>
     <string name="settings_reminders_blocked">Уведомления отключены для приложения. Напоминания не будут доставлены</string>
     <string name="settings_reminders_desc">Уведомлять о ближайших днях рождения и событиях</string>
-    <string name="settings_reminder_lead">Уведомлять заранее</string>
-    <string name="settings_reminder_lead_value">за %1$d дн. до</string>
+    <plurals name="settings_reminder_lead_value">
+        <item quantity="one">за %1$d день до</item>
+        <item quantity="few">за %1$d дня до</item>
+        <item quantity="many">за %1$d дней до</item>
+        <item quantity="other">за %1$d дня до</item>
+    </plurals>
     <string name="shortcut_new_contact">Новый контакт</string>
     <string name="shortcut_favorites">Избранное</string>
     <string name="action_add_to_calendar">В календарь</string>
@@ -388,7 +391,12 @@
     <string name="group_not_found">Группа не найдена</string>
     <string name="group_merge">Объединить группу</string>
     <string name="group_merge_message">Перенести контакты в другую группу:</string>
-    <string name="group_delete_with_members">Группа и её контакты (%1$d) будут удалены. Сразу после этого удаление можно отменить.</string>
+    <plurals name="group_delete_with_members">
+        <item quantity="one">Группа и её %1$d контакт будут удалены. Сразу после этого удаление можно отменить.</item>
+        <item quantity="few">Группа и её %1$d контакта будут удалены. Сразу после этого удаление можно отменить.</item>
+        <item quantity="many">Группа и её %1$d контактов будут удалены. Сразу после этого удаление можно отменить.</item>
+        <item quantity="other">Группа и её %1$d контакта будут удалены. Сразу после этого удаление можно отменить.</item>
+    </plurals>
     <string name="group_deleted">Группа удалена</string>
     <string name="group_undo_delete">Отменить</string>
     <string name="group_restored">Группа восстановлена</string>
@@ -412,7 +420,6 @@
     <string name="editor_add_photo">Добавить фото</string>
     <string name="editor_change_photo">Изменить фото</string>
     <string name="editor_remove_photo">Удалить фото</string>
-    <string name="editor_photo_desc">Фото контакта</string>
     <string name="editor_section_phones">Телефоны</string>
     <string name="editor_section_account">Аккаунт</string>
     <string name="editor_account_local">Локальный</string>
@@ -445,7 +452,6 @@
     <string name="editor_im_label">Аккаунт</string>
     <string name="editor_im_service">Сервис</string>
     <string name="editor_sip_label">SIP-адрес</string>
-    <string name="editor_address_label">Адрес</string>
     <string name="editor_address_street">Улица</string>
     <string name="editor_address_po_box">Абонентский ящик</string>
     <string name="editor_address_neighborhood">Район</string>
@@ -512,12 +518,6 @@
         <item quantity="few">%d контакта восстановлено</item>
         <item quantity="many">%d контактов восстановлено</item>
         <item quantity="other">%d контакта восстановлено</item>
-    </plurals>
-    <plurals name="import_success">
-        <item quantity="one">Импортирован %d контакт</item>
-        <item quantity="few">Импортировано %d контакта</item>
-        <item quantity="many">Импортировано %d контактов</item>
-        <item quantity="other">Импортировано %d контакта</item>
     </plurals>
     <plurals name="export_success">
         <item quantity="one">Экспортирован %d контакт</item>

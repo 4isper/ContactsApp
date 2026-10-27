@@ -58,8 +58,8 @@ fun LoadingState(modifier: Modifier = Modifier) {
 /** Скелетон-карточки контактов: показывают структуру списка пока загружаются реальные данные. */
 @Composable
 fun ListSkeleton(
-    itemCount: Int = 5,
     modifier: Modifier = Modifier,
+    itemCount: Int = 5,
 ) {
     val spacing = LocalSpacing.current
     val loadingText = stringResource(R.string.a11y_loading_contacts)

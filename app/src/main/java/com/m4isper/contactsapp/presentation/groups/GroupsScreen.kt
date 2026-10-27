@@ -59,8 +59,8 @@ import dev.zacsweers.metrox.viewmodel.metroViewModel
 @Composable
 fun GroupsScreen(
     onBack: () -> Unit,
-    onGroupClick: (Long) -> Unit = {},
     modifier: Modifier = Modifier,
+    onGroupClick: (Long) -> Unit = {},
     viewModel: GroupsViewModel = metroViewModel(),
 ) {
     val context = LocalContext.current

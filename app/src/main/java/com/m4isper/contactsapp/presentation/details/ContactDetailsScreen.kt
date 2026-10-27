@@ -238,25 +238,37 @@ private fun DetailsEventToast(
     onHandled: () -> Unit,
 ) {
     val context = LocalContext.current
+
+    // Строки читаем в композиции — они конфигурационно-зависимые
+    // и будут обновлены при смене Configuration.
+    val copyDone = stringResource(R.string.details_copy_done)
+    val moveDone = stringResource(R.string.details_move_done)
+    val accountFailed = stringResource(R.string.details_account_failed)
+    val favoriteFailed = stringResource(R.string.details_favorite_failed)
+    val openSettings = stringResource(R.string.permission_open_settings)
+
     LaunchedEffect(event) {
         when (event) {
             is DetailsEvent.ContactCopied ->
-                Toast.makeText(context, R.string.details_copy_done, Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, copyDone, Toast.LENGTH_SHORT).show()
+
             is DetailsEvent.ContactMoved ->
-                Toast.makeText(context, R.string.details_move_done, Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, moveDone, Toast.LENGTH_SHORT).show()
+
             DetailsEvent.AccountActionFailed ->
-                Toast.makeText(context, R.string.details_account_failed, Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, accountFailed, Toast.LENGTH_SHORT).show()
+
             DetailsEvent.FavoriteWriteFailed -> {
-                val openSettings = context.getString(R.string.permission_open_settings)
                 val result =
                     snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.details_favorite_failed),
+                        message = favoriteFailed,
                         actionLabel = openSettings,
                     )
                 if (result == SnackbarResult.ActionPerformed) {
                     openAppSettings(context)
                 }
             }
+
             null -> return@LaunchedEffect
         }
         onHandled()
