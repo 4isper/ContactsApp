@@ -103,7 +103,7 @@ These issues come from a UX/UI audit of the app and are separate from the featur
 
 ## UX/UI audit backlog, second pass (2026-10-25)
 
-A second UX/UI pass looked at the implemented screens rather than the feature specification. These issues are follow-ups and regressions found in the current code: dead UI paths, small-screen overflow, broken state round-trips, permission flows, and accessibility work that was scaffolded but not completed. Each file is self-contained with a problem statement, proposed scope, acceptance criteria, and technical notes. Implemented so far: 37, 38, 39, 40, 41, 43, and 44. Still open: 42 and 45-52.
+A second UX/UI pass looked at the implemented screens rather than the feature specification. These issues are follow-ups and regressions found in the current code: dead UI paths, small-screen overflow, broken state round-trips, permission flows, and accessibility work that was scaffolded but not completed. Each file is self-contained with a problem statement, proposed scope, acceptance criteria, and technical notes. All sixteen issues are implemented: every file has a `Status` section describing what was built, deviations from the plan, and the verification that ran.
 
 | # | File | Title | Priority | Status |
 |---|---|---|---|---|
@@ -120,9 +120,9 @@ A second UX/UI pass looked at the implemented screens rather than the feature sp
 | 47 | [47-contact-row-actions.md](47-contact-row-actions.md) | Use a real overflow icon and make row actions available without swiping | P2 | Open |
 | 48 | [48-talkback-follow-through.md](48-talkback-follow-through.md) | Finish TalkBack support for selection mode, swipes, and fast scrolling | P2 | Open |
 | 49 | [49-reminders-notification-permission.md](49-reminders-notification-permission.md) | Keep the reminders switch in sync with notification permission | P2 | Open |
-| 50 | [50-skeleton-shimmer-animation.md](50-skeleton-shimmer-animation.md) | Make the loading skeleton actually animate | P3 | Open |
-| 51 | [51-system-bars-and-launch-theme.md](51-system-bars-and-launch-theme.md) | Make system bars and the launch window follow the app theme | P2 | Open |
-| 52 | [52-contact-row-density-and-hierarchy.md](52-contact-row-density-and-hierarchy.md) | Rebalance contact-row hierarchy and state feedback | P2 | Open |
+| 50 | [50-skeleton-shimmer-animation.md](50-skeleton-shimmer-animation.md) | Make the loading skeleton actually animate | P3 | Done |
+| 51 | [51-system-bars-and-launch-theme.md](51-system-bars-and-launch-theme.md) | Make system bars and the launch window follow the app theme | P2 | Done |
+| 52 | [52-contact-row-density-and-hierarchy.md](52-contact-row-density-and-hierarchy.md) | Rebalance contact-row hierarchy and state feedback | P2 | Done |
 
 ### Second-pass dependencies
 
