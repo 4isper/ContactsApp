@@ -1,6 +1,9 @@
 package com.m4isper.contactsapp.presentation.editor.rows
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,6 +21,7 @@ import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.ui.components.ContactAvatar
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun PhotoEditor(
     name: String,
@@ -42,7 +46,11 @@ internal fun PhotoEditor(
             testTag = "editor_photo",
         )
         Spacer(modifier = Modifier.height(spacing.xs))
-        Row {
+        // FlowRow: три подписи не влезают в 320 dp, действия переносятся, а не обрезаются.
+        FlowRow(
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
             TextButton(
                 onClick = onTakePhoto,
                 modifier = Modifier.testTag("editor_photo_camera"),

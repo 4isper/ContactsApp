@@ -3,6 +3,9 @@ package com.m4isper.contactsapp.presentation.editor
 import android.Manifest
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasTestTag
@@ -39,6 +42,7 @@ import com.m4isper.contactsapp.domain.usecase.contacts.SetLastContactAccountUseC
 import com.m4isper.contactsapp.domain.usecase.contacts.UpdateContactUseCase
 import com.m4isper.contactsapp.domain.usecase.groups.CreateGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.groups.GetGroupsUseCase
+import com.m4isper.contactsapp.presentation.editor.rows.PhotoEditor
 import com.m4isper.contactsapp.testDetails
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -877,5 +881,20 @@ class ContactEditorUiTest {
         val top = secondPhone.positionInRoot.y.toInt()
         val bottom = top + secondPhone.size.height
         assertTrue("second phone row must be on screen: top=$top bottom=$bottom viewport=$viewport", top >= 0 && bottom <= viewport)
+    }
+
+
+    @Test
+    fun photoActions_wrapInsteadOfClipping() {
+        compose.setContent {
+            // Двойная плотность: тексты занимают вдвое больше места — Row обрезал бы действия.
+            CompositionLocalProvider(LocalDensity provides Density(density = 1f, fontScale = 2f)) {
+                PhotoEditor(name = "Anna", photoUri = null, onPick = {}, onTakePhoto = {}, onRemove = {})
+            }
+        }
+
+        compose.onNodeWithTag("editor_photo_camera").assertIsDisplayed()
+        compose.onNodeWithTag("editor_photo_pick").assertIsDisplayed()
+        compose.onNodeWithTag("editor_photo_remove").assertDoesNotExist()
     }
 }
