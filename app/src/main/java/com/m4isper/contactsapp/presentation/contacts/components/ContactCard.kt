@@ -38,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -71,6 +72,7 @@ internal fun ContactCard(
     onCall: (() -> Unit)? = null,
     onSms: (() -> Unit)? = null,
     onToggleFavorite: (() -> Unit)? = null,
+    showFavoriteQuickAction: Boolean = true,
 ) {
     val ctx = LocalContext.current
     val spacing = LocalSpacing.current
@@ -89,6 +91,7 @@ internal fun ContactCard(
             onCall = call,
             onSms = sms,
             onToggleFavorite = onToggleFavorite,
+            showFavoriteQuickAction = showFavoriteQuickAction,
             modifier =
                 Modifier
                     .fillMaxWidth()
@@ -146,6 +149,7 @@ internal fun ContactCard(
             onCall = call,
             onSms = sms,
             onToggleFavorite = onToggleFavorite,
+            showFavoriteQuickAction = showFavoriteQuickAction,
             modifier = Modifier.fillMaxWidth(),
         )
     }
@@ -165,11 +169,11 @@ private fun ContactCardSurface(
     onSms: (() -> Unit)?,
     onToggleFavorite: (() -> Unit)?,
     modifier: Modifier = Modifier,
+    showFavoriteQuickAction: Boolean = true,
 ) {
     val spacing = LocalSpacing.current
     val ctx = LocalContext.current
     val compact = density == ListDensity.COMPACT
-    var menuOpen by remember { mutableStateOf(false) }
     // Меню показываем, когда есть хоть одно действие: телефон (звонок/СМС/копия)
     // или почта (письмо/копия) — email-only контакты тоже получают быстрые действия.
     val hasQuickActions = onCall != null || onSms != null || contact.primaryEmail != null
@@ -235,7 +239,8 @@ private fun ContactCardSurface(
                 Text(
                     text = contact.name,
                     style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
+                    // При крупном шрифте имени даём две строки: обрывок из 5–7 символов нечитаем.
+                    maxLines = if (LocalDensity.current.fontScale >= 1.5f) 2 else 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
@@ -251,46 +256,73 @@ private fun ContactCardSurface(
                 // Выбор теперь считывается через аватар (фон primary + галочку)
                 // и рамку карточки; отдельный Checkbox убран, чтобы не дублировать признак.
             } else {
-                FavoriteQuickAction(
-                    context = ctx,
-                    contactId = contact.contactId,
+                FavoriteAndOverflowActions(
+                    contact = contact,
                     isFavorite = isFavorite,
+                    showFavoriteQuickAction = showFavoriteQuickAction,
+                    hasQuickActions = hasQuickActions,
+                    onCall = onCall,
+                    onSms = onSms,
                     onToggleFavorite = onToggleFavorite,
                 )
-                if (hasQuickActions) {
-                    Box {
-                        IconButton(
-                            onClick = { menuOpen = true },
-                            modifier =
-                                Modifier
-                                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                                    .testTag("quick_actions_${contact.contactId}"),
-                        ) {
-                            BrandIcon(
-                                imageVector = Icons.Filled.MoreVert,
-                                contentDescription = stringResource(R.string.action_more),
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(spacing.xl),
-                            )
-                        }
-                        QuickActionsMenu(
-                            contactId = contact.contactId,
-                            contact = contact,
-                            expanded = menuOpen,
-                            onDismiss = { menuOpen = false },
-                            onCall = onCall,
-                            onSms = onSms,
-                        )
-                    }
-                }
             }
+        }
+    }
+}
+
+/** Хвостовые действия строки: favorite (если влезает) и overflow-меню. */
+@Composable
+private fun FavoriteAndOverflowActions(
+    contact: ContactDetails,
+    isFavorite: Boolean,
+    showFavoriteQuickAction: Boolean,
+    hasQuickActions: Boolean,
+    onCall: (() -> Unit)?,
+    onSms: (() -> Unit)?,
+    onToggleFavorite: (() -> Unit)?,
+) {
+    val spacing = LocalSpacing.current
+    var menuOpen by remember { mutableStateOf(false) }
+    if (showFavoriteQuickAction) {
+        FavoriteQuickAction(
+            contactId = contact.contactId,
+            isFavorite = isFavorite,
+            onToggleFavorite = onToggleFavorite,
+        )
+    }
+    if (hasQuickActions) {
+        Box {
+            IconButton(
+                onClick = { menuOpen = true },
+                modifier =
+                    Modifier
+                        .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                        .testTag("quick_actions_${contact.contactId}"),
+            ) {
+                BrandIcon(
+                    imageVector = Icons.Filled.MoreVert,
+                    contentDescription = stringResource(R.string.action_more),
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(spacing.xl),
+                )
+            }
+            QuickActionsMenu(
+                contactId = contact.contactId,
+                contact = contact,
+                expanded = menuOpen,
+                onDismiss = { menuOpen = false },
+                onCall = onCall,
+                onSms = onSms,
+                showFavorite = showFavoriteQuickAction,
+                isFavorite = isFavorite,
+                onToggleFavorite = onToggleFavorite,
+            )
         }
     }
 }
 
 @Composable
 private fun FavoriteQuickAction(
-    context: android.content.Context,
     contactId: Long,
     isFavorite: Boolean,
     onToggleFavorite: (() -> Unit)?,
@@ -308,10 +340,7 @@ private fun FavoriteQuickAction(
         return
     }
     IconButton(
-        onClick = {
-            performHapticFeedback(context, HapticImpact.Light)
-            onToggleFavorite()
-        },
+        onClick = onToggleFavorite,
         modifier =
             Modifier
                 .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
@@ -324,9 +353,10 @@ private fun FavoriteQuickAction(
                 stringResource(
                     if (isFavorite) R.string.action_remove_favorite else R.string.action_add_favorite,
                 ),
+            // Активное избранное — акцентное и заполненное, неактивное — нейтральное;
+            // кнопка активна в обоих состояниях, disabled-тинт здесь ошибочен.
             color =
-                if (isFavorite) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
-            enabled = isFavorite,
+                if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(spacing.xl),
         )
     }
@@ -344,6 +374,9 @@ private fun QuickActionsMenu(
     onDismiss: () -> Unit,
     onCall: (() -> Unit)?,
     onSms: (() -> Unit)?,
+    showFavorite: Boolean,
+    isFavorite: Boolean,
+    onToggleFavorite: (() -> Unit)?,
 ) {
     val ctx = LocalContext.current
     DropdownMenu(
@@ -360,7 +393,7 @@ private fun QuickActionsMenu(
                 leadingIcon = {
                     BrandIcon(
                         imageVector = BrandIcons.Call,
-                        contentDescription = stringResource(R.string.action_call),
+                        contentDescription = null,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp),
                     )
@@ -378,12 +411,28 @@ private fun QuickActionsMenu(
                 leadingIcon = {
                     BrandIcon(
                         imageVector = BrandIcons.Message,
-                        contentDescription = stringResource(R.string.action_send_sms),
+                        contentDescription = null,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp),
                     )
                 },
                 modifier = Modifier.testTag("quick_sms_$contactId"),
+            )
+        }
+        if (!showFavorite && onToggleFavorite != null) {
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        stringResource(
+                            if (isFavorite) R.string.action_remove_favorite else R.string.action_add_favorite,
+                        ),
+                    )
+                },
+                onClick = {
+                    onDismiss()
+                    onToggleFavorite()
+                },
+                modifier = Modifier.testTag("quick_favorite_menu_$contactId"),
             )
         }
         contact.primaryEmail?.let { email ->
@@ -466,3 +515,18 @@ internal fun contactSubtitle(contact: ContactDetails): String =
                 )
         }
     }
+
+/** Постоянная ширина хрома строки: поля карточки, аватар, overflow-кнопка и скроллер. */
+internal const val ROW_FIXED_WIDTH_DP = 204
+
+/** Минимальная читаемая ширина колонки имени. */
+internal const val MIN_NAME_WIDTH_DP = 136
+
+/**
+ * Виден ли favorite как быстрое действие: колонка имени должна остаться
+ * читаемой с учётом масштаба шрифта, иначе избранное уходит в overflow.
+ */
+internal fun favoriteQuickActionVisible(
+    screenWidthDp: Int,
+    fontScale: Float,
+): Boolean = screenWidthDp - ROW_FIXED_WIDTH_DP >= MIN_NAME_WIDTH_DP * fontScale

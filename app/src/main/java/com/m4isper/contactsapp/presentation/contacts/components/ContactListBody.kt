@@ -41,6 +41,7 @@ internal fun ContactListBody(
     onImportClick: (() -> Unit)? = null,
     onClearSearch: () -> Unit = {},
     onClearFilters: () -> Unit = {},
+    showFavoriteQuickAction: Boolean = true,
 ) {
     val pullState = rememberPullToRefreshState()
     PullToRefreshBox(
@@ -73,6 +74,7 @@ internal fun ContactListBody(
             is Loadable.Content ->
                 GroupedContacts(
                     contacts = content.data,
+                    showFavoriteQuickAction = showFavoriteQuickAction,
                     favorites = uiState.favorites,
                     selection = uiState.selection,
                     isSelectionMode = uiState.isSelectionMode,

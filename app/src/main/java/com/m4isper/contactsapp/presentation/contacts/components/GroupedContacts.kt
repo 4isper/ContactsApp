@@ -37,6 +37,7 @@ import kotlinx.coroutines.launch
 @Composable
 internal fun GroupedContacts(
     contacts: List<ContactDetails>,
+    showFavoriteQuickAction: Boolean = true,
     favorites: Set<Long>,
     selection: Set<Long>,
     isSelectionMode: Boolean,
@@ -90,6 +91,7 @@ internal fun GroupedContacts(
                         selection = selection,
                         isSelectionMode = isSelectionMode,
                         density = density,
+                        showFavoriteQuickAction = showFavoriteQuickAction,
                         onContactClick = onContactClick,
                         onContactLongClick = onContactLongClick,
                         onCall = onCall,
@@ -144,6 +146,7 @@ private fun LazyListScope.contactGroup(
     density: ListDensity,
     onContactClick: (Long) -> Unit,
     onContactLongClick: (Long) -> Unit,
+    showFavoriteQuickAction: Boolean,
     onCall: ((ContactDetails) -> Unit)?,
     onSms: ((ContactDetails) -> Unit)?,
     onToggleFavorite: ((Long) -> Unit)?,
@@ -166,6 +169,7 @@ private fun LazyListScope.contactGroup(
             onCall = onCall?.let { action -> { action(contact) } },
             onSms = onSms?.let { action -> { action(contact) } },
             onToggleFavorite = onToggleFavorite?.let { action -> { action(contact.contactId) } },
+            showFavoriteQuickAction = showFavoriteQuickAction,
         )
     }
 }
@@ -188,7 +192,8 @@ private fun ContactGroupHeader(letter: Char) {
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surface)
                 .padding(
-                    horizontal = spacing.m,
+                    // Заголовок и текст карточки делят одну стартовую грань: 12 + 12.
+                    horizontal = spacing.xl,
                     vertical = spacing.s,
                 ).then(
                     if (isFavorites) {

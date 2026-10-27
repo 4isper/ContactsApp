@@ -18,7 +18,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -97,6 +99,11 @@ internal fun ContactList(
     val onCreateGroup: (String) -> Unit = { onAction(ContactsListAction.CreateGroup(it)) }
     val onManageGroupsClick: () -> Unit = { onAction(ContactsNavigationAction.ManageGroupsClicked) }
     val onAddSelectedToGroup: (Set<Long>) -> Unit = { onAction(ContactsListAction.AddSelectedToGroup(it)) }
+    val showFavoriteQuickAction =
+        favoriteQuickActionVisible(
+            screenWidthDp = LocalConfiguration.current.screenWidthDp,
+            fontScale = LocalDensity.current.fontScale,
+        )
     val onDuplicatesClick: () -> Unit = { onAction(ContactsNavigationAction.DuplicatesClicked) }
     val onRecentsClick: () -> Unit = { onAction(ContactsNavigationAction.RecentsClicked) }
     val onSettingsClick: () -> Unit = { onAction(ContactsNavigationAction.SettingsClicked) }

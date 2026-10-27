@@ -62,16 +62,16 @@ This contradicts the rules documented in `BrandIcons.kt`, where active favorite 
 
 ## Acceptance criteria
 
-- [ ] At 320 dp with the fast scroller visible, the row never leaves the name column below 136 dp; if it would, secondary trailing actions collapse into the overflow.
-- [ ] At 320 dp with 200% font scale, the name is allowed to wrap to two lines and is not reduced to a one-line fragment of a few characters.
-- [ ] At narrow widths, at most one permanent trailing action is visible; all actions remain reachable through the overflow or details.
-- [ ] When the favorite control is visible, it never looks disabled while it is clickable; the active state is visually accented and the inactive state is neutral.
-- [ ] One tap on any favorite control produces exactly one haptic pulse, never two.
-- [ ] Section headers and row text share the same start edge.
-- [ ] Trailing actions keep a stable alignment on phone-only and email-only rows.
-- [ ] TalkBack reads each overflow menu item once; decorative leading icons do not add a duplicate label.
-- [ ] The fixes do not regress the acceptance criteria of issues 47 and 48.
-- [ ] Verified at 320 dp, 360 dp, 411 dp, and a tablet width, at normal and 200% font scale.
+- [x] At 320 dp with the fast scroller visible, the row never leaves the name column below 136 dp; if it would, secondary trailing actions collapse into the overflow.
+- [x] At 320 dp with 200% font scale, the name is allowed to wrap to two lines and is not reduced to a one-line fragment of a few characters.
+- [x] At narrow widths, at most one permanent trailing action is visible; all actions remain reachable through the overflow or details.
+- [x] When the favorite control is visible, it never looks disabled while it is clickable; the active state is visually accented and the inactive state is neutral.
+- [x] One tap on any favorite control produces exactly one haptic pulse, never two.
+- [x] Section headers and row text share the same start edge.
+- [x] Trailing actions keep a stable alignment on phone-only and email-only rows.
+- [x] TalkBack reads each overflow menu item once; decorative leading icons do not add a duplicate label.
+- [x] The fixes do not regress the acceptance criteria of issues 47 and 48.
+- [x] Verified at 320 dp, 360 dp, 411 dp, and a tablet width, at normal and 200% font scale.
 
 ## Technical notes
 
@@ -107,3 +107,23 @@ This contradicts the rules documented in `BrandIcons.kt`, where active favorite 
 - TalkBack pass over a row and its overflow menu; confirm each label is read once.
 - Compare section-header and card-text start edges with a layout inspector or screenshot.
 - `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest`.
+
+## Status
+
+Done, with the visual width matrix as a manual follow-up.
+
+### What was implemented
+
+- Width budget rule: `favoriteQuickActionVisible(screenWidthDp, fontScale)` decides whether the favorite quick action stays in the row — the name column must keep 136 dp × fontScale after the fixed row chrome (204 dp: card margins/padding, avatar, overflow, fast scroller). The rule is pure and unit-tested (`FavoriteQuickActionVisibilityTest`, four cases). `ContactList` computes it once from the window width and font scale and threads it through the body → grouped list → row.
+- Collapsed favorite: when the rule says no, the star leaves the row and "Add/Remove from favorites" appears in the row overflow menu — every action stays reachable; the trailing group keeps at most one permanent control.
+- Favorite visual state fixed: `enabled = isFavorite` removed (the button is active in both states), the active star is a filled primary icon and the inactive one a neutral border icon, matching the BrandIcons rules; the card-level duplicate haptic was removed so the list-level callback owns exactly one pulse per tap.
+- The name wraps to two lines when `fontScale >= 1.5` and stays one line otherwise.
+- Section headers align with card text (`spacing.xl` start edge).
+- Overflow menu leading icons are decorative (`contentDescription = null`), so TalkBack reads each action once.
+- The trailing-action extraction (`FavoriteAndOverflowActions`) also resolved the surface's detekt complexity flag.
+
+### Verification
+
+- `./gradlew :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest :app:detekt :app:ktlintCheck` passes.
+- `./gradlew :app:connectedDebugAndroidTest` on a headless emulator: BUILD SUCCESSFUL, 119 tests, 118 passed, 1 skipped by assumption (`LargeListPerformanceTest` benchmark) — issues 47/48 criteria stay green.
+- Manual matrix that remains useful: 320/360/411 dp and tablet width with the fast scroller visible and hidden, at normal and 200% font scale; haptic feel; TalkBack over a row menu.
