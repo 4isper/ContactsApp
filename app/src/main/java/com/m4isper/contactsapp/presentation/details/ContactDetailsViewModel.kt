@@ -53,6 +53,9 @@ sealed interface DetailsEvent {
 
     /** Не удалось скопировать или перенести контакт. */
     data object AccountActionFailed : DetailsEvent
+
+    /** Не удалось переключить избранное: обычно не хватает права на запись. */
+    data object FavoriteWriteFailed : DetailsEvent
 }
 
 /** Загрузка карточки: контакт, признак загрузки и ошибка. */
@@ -133,13 +136,16 @@ class ContactDetailsViewModel(
     }
 
     // Catch-all осознанный: сбой записи избранного не должен ронять экран.
-    fun toggleFavorite() {
-        val contactId = selectedContactId.value ?: return
-        viewModelScope.launch {
+    suspend fun toggleFavorite(): Boolean {
+        val contactId = selectedContactId.value ?: return false
+        val result =
             safeCall(DETAILS_TAG, "toggleFavorite failed") {
                 toggleFavoriteUseCase(contactId)
             }
+        if (result.isFailure) {
+            eventFlow.value = DetailsEvent.FavoriteWriteFailed
         }
+        return result.isSuccess
     }
 
     /**

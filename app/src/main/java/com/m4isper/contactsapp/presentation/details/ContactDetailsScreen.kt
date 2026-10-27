@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PersonSearch
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -27,6 +30,7 @@ import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.account.contactAccountTitle
 import com.m4isper.contactsapp.presentation.common.call.ConfirmCallDialog
 import com.m4isper.contactsapp.presentation.common.call.rememberCallHandler
+import com.m4isper.contactsapp.presentation.common.permissions.openAppSettings
 import com.m4isper.contactsapp.presentation.common.format.phoneText
 import com.m4isper.contactsapp.presentation.common.share.contactAsText
 import com.m4isper.contactsapp.presentation.common.share.copyToClipboard
@@ -66,6 +70,7 @@ fun ContactDetailsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val requestCall = rememberCallHandler()
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     var pendingConfirm by remember { mutableStateOf<CallTarget?>(null) }
     var showAccountPicker by remember { mutableStateOf(false) }
@@ -83,6 +88,7 @@ fun ContactDetailsScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             DetailsTopBar(
                 title =
@@ -113,8 +119,12 @@ fun ContactDetailsScreen(
                     }
                 },
                 onToggleFavorite = {
-                    viewModel.toggleFavorite()
-                    ContactsWidgetProvider.refresh(context)
+                    // Виджет обновляем только после успешной записи.
+                    scope.launch {
+                        if (viewModel.toggleFavorite()) {
+                            ContactsWidgetProvider.refresh(context)
+                        }
+                    }
                 },
                 onCopyToAccount = {
                     pendingAction = AccountAction.COPY
@@ -173,7 +183,7 @@ fun ContactDetailsScreen(
     }
 
     // Смена аккаунта: выбор аккаунта и подтверждение переноса с удалением исходника.
-    DetailsEventToast(uiState.event, viewModel::onEventHandled)
+    DetailsEventToast(uiState.event, snackbarHostState, viewModel::onEventHandled)
 
     AccountChangeDialogs(
         uiState = uiState,
@@ -199,22 +209,38 @@ fun ContactDetailsScreen(
     )
 }
 
-/** Одноразовые события карточки показываем тостом. */
+/**
+ * Одноразовые события карточки: большинство показываем тостом,
+ * сбой записи избранного — снекбаром с переходом в настройки.
+ */
 @Composable
 private fun DetailsEventToast(
     event: DetailsEvent?,
+    snackbarHostState: SnackbarHostState,
     onHandled: () -> Unit,
 ) {
     val context = LocalContext.current
     LaunchedEffect(event) {
-        val messageRes =
-            when (event) {
-                is DetailsEvent.ContactCopied -> R.string.details_copy_done
-                is DetailsEvent.ContactMoved -> R.string.details_move_done
-                DetailsEvent.AccountActionFailed -> R.string.details_account_failed
-                null -> return@LaunchedEffect
+        when (event) {
+            is DetailsEvent.ContactCopied ->
+                Toast.makeText(context, R.string.details_copy_done, Toast.LENGTH_SHORT).show()
+            is DetailsEvent.ContactMoved ->
+                Toast.makeText(context, R.string.details_move_done, Toast.LENGTH_SHORT).show()
+            DetailsEvent.AccountActionFailed ->
+                Toast.makeText(context, R.string.details_account_failed, Toast.LENGTH_SHORT).show()
+            DetailsEvent.FavoriteWriteFailed -> {
+                val openSettings = context.getString(R.string.permission_open_settings)
+                val result =
+                    snackbarHostState.showSnackbar(
+                        message = context.getString(R.string.details_favorite_failed),
+                        actionLabel = openSettings,
+                    )
+                if (result == SnackbarResult.ActionPerformed) {
+                    openAppSettings(context)
+                }
             }
-        Toast.makeText(context, messageRes, Toast.LENGTH_SHORT).show()
+            null -> return@LaunchedEffect
+        }
         onHandled()
     }
 }

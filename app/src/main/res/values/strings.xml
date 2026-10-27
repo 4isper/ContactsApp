@@ -279,6 +279,7 @@
     <string name="app_lock_wrong_pin">Wrong PIN code</string>
     <string name="app_lock_too_many_attempts">Too many attempts. Try again in %1$d s</string>
     <string name="app_lock_unlock">Unlock</string>
+    <string name="details_favorite_failed">Couldn\'t update favorites. Check the write permission for contacts</string>
     <string name="app_lock_show_pin">Show PIN code</string>
     <string name="app_lock_hide_pin">Hide PIN code</string>
     <string name="settings_language">Language</string>

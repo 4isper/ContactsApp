@@ -87,6 +87,7 @@ private class FakeDetailsRepository(
     override fun observeFavorites(): Flow<Set<Long>> = favoritesFlow.asStateFlow()
 
     override suspend fun toggleFavorite(contactId: Long) {
+        failure?.let { throw it }
         val current = favoritesFlow.value
         favoritesFlow.value =
             if (contactId in current) {
@@ -319,6 +320,34 @@ class ContactDetailsViewModelTest {
 
             viewModel.toggleFavorite()
             advanceUntilIdle()
+            assertEquals(false, viewModel.uiState.value.isFavorite)
+        }
+
+    @Test
+    fun `toggle favorite failure surfaces event and returns false`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeDetailsRepository(
+                    listOf(
+                        ContactDetails(
+                            contactId = 7,
+                            name = "Anna",
+                            phones = listOf(PhoneNumber("111", PhoneKind.MOBILE)),
+                        ),
+                    ),
+                    failure = SecurityException("write permission denied"),
+                )
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.load(7)
+            advanceUntilIdle()
+
+            val toggled = viewModel.toggleFavorite()
+            advanceUntilIdle()
+
+            assertEquals(false, toggled)
+            assertTrue(viewModel.uiState.value.event is DetailsEvent.FavoriteWriteFailed)
             assertEquals(false, viewModel.uiState.value.isFavorite)
         }
 
