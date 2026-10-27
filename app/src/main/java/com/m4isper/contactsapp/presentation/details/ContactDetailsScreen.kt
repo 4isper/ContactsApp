@@ -30,8 +30,10 @@ import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.account.contactAccountTitle
 import com.m4isper.contactsapp.presentation.common.call.ConfirmCallDialog
 import com.m4isper.contactsapp.presentation.common.call.rememberCallHandler
-import com.m4isper.contactsapp.presentation.common.permissions.openAppSettings
 import com.m4isper.contactsapp.presentation.common.format.phoneText
+import com.m4isper.contactsapp.presentation.common.permissions.openAppSettings
+import com.m4isper.contactsapp.presentation.common.permissions.rememberWritePermissionGate
+import com.m4isper.contactsapp.presentation.common.permissions.showWriteDeniedSnackbar
 import com.m4isper.contactsapp.presentation.common.share.contactAsText
 import com.m4isper.contactsapp.presentation.common.share.copyToClipboard
 import com.m4isper.contactsapp.presentation.common.share.openSms
@@ -45,6 +47,7 @@ import com.m4isper.contactsapp.ui.components.EmptyState
 import com.m4isper.contactsapp.ui.components.ErrorState
 import com.m4isper.contactsapp.ui.components.LoadingState
 import dev.zacsweers.metrox.viewmodel.metroViewModel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 private data class CallTarget(
@@ -71,6 +74,13 @@ fun ContactDetailsScreen(
     val requestCall = rememberCallHandler()
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    // Право на запись запрашиваем в момент переключения избранного, а не при открытии карточки.
+    val writeGate =
+        rememberWritePermissionGate(
+            onDenied = {
+                scope.launch { showWriteDeniedSnackbar(context, snackbarHostState) }
+            },
+        )
 
     var pendingConfirm by remember { mutableStateOf<CallTarget?>(null) }
     var showAccountPicker by remember { mutableStateOf(false) }
@@ -119,12 +129,7 @@ fun ContactDetailsScreen(
                     }
                 },
                 onToggleFavorite = {
-                    // Виджет обновляем только после успешной записи.
-                    scope.launch {
-                        if (viewModel.toggleFavorite()) {
-                            ContactsWidgetProvider.refresh(context)
-                        }
-                    }
+                    writeGate.run { launchFavoriteToggle(scope, viewModel, context) }
                 },
                 onCopyToAccount = {
                     pendingAction = AccountAction.COPY
@@ -207,6 +212,19 @@ fun ContactDetailsScreen(
         },
         onMoveDismissed = { pendingMoveAccount = null },
     )
+}
+
+/** Переключает избранное и обновляет виджет только после успешной записи. */
+private fun launchFavoriteToggle(
+    scope: CoroutineScope,
+    viewModel: ContactDetailsViewModel,
+    context: Context,
+) {
+    scope.launch {
+        if (viewModel.toggleFavorite()) {
+            ContactsWidgetProvider.refresh(context)
+        }
+    }
 }
 
 /**

@@ -27,13 +27,13 @@ The permission flow is inconsistent after issue 24:
 
 ## Acceptance criteria
 
-- [ ] Opening Groups, Group Detail, or Duplicates never shows a permission dialog by itself.
-- [ ] Tapping favorite in contact details without write permission requests it, then applies the toggle after a grant.
-- [ ] If favorite permission is denied, the heart state does not change and a clear snackbar with a settings action appears.
-- [ ] Group and duplicate write actions are gated; denied actions do not reach the data layer.
-- [ ] Returning from system settings refreshes permission state and allows the action without restarting the screen.
-- [ ] A denied permission never results in an unhandled `SecurityException` or a silent no-op.
-- [ ] User-facing permission strings exist in English and Russian.
+- [x] Opening Groups, Group Detail, or Duplicates never shows a permission dialog by itself.
+- [x] Tapping favorite in contact details without write permission requests it, then applies the toggle after a grant.
+- [x] If favorite permission is denied, the heart state does not change and a clear snackbar with a settings action appears.
+- [x] Group and duplicate write actions are gated; denied actions do not reach the data layer.
+- [x] Returning from system settings refreshes permission state and allows the action without restarting the screen.
+- [x] A denied permission never results in an unhandled `SecurityException` or a silent no-op.
+- [x] User-facing permission strings exist in English and Russian.
 
 ## Technical notes
 
@@ -58,3 +58,22 @@ The permission flow is inconsistent after issue 24:
 - Verify groups/duplicates remain browseable before any write.
 - Verify favorite toggling with and without permission, including failure injection from the data source.
 - `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest`.
+
+## Status
+
+Done.
+
+### What was implemented
+
+- New shared `WritePermissionGate` (`presentation/common/permissions/WritePermissionGate.kt`): `rememberWritePermissionGate(onDenied)` tracks `WRITE_CONTACTS`, requests it at the moment an action runs, retries the pending action exactly once after a grant, rechecks the state on every resume (a denial from system settings is never cached), and calls `onDenied` when the system answers with a denial. `showWriteDeniedSnackbar` renders the shared rationale with an "Open settings" action.
+- Groups, Group Detail, and Duplicates no longer request the permission on screen entry: the `LaunchedEffect` launches and their no-op callbacks are gone. Browsing is prompt-free.
+- Group create, rename, delete, merge, add members, and remove member now go through the gate; the group detail dialogs were extracted into a `GroupDetailDialogs` composable to stay under the detekt complexity budget. Denials surface as the rationale snackbar (detail/duplicates) or toast (groups list).
+- The duplicates merge confirm is gated the same way.
+- Contact details favorite: the toggle goes through the gate, the write reports success to the caller (`toggleFavorite(): Boolean`), the favorites widget refreshes only after a successful write, and a failed write emits `DetailsEvent.FavoriteWriteFailed` rendered as a snackbar with an "Open settings" action — previously the failure was only logged. A new JVM test covers the failed path (event emitted, return value false, favorite unchanged).
+- Strings: the existing `permission_write_rationale` is reused for denials; a new `details_favorite_failed` was added in en/ru. The GrantPermissionRule workaround that issue 44 added to `GroupDetailUiTest`/`DuplicatesUiTest` stays — the screens still hold the gate, but the system dialog no longer appears out of context during entry.
+
+### Verification
+
+- `./gradlew :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest :app:detekt :app:ktlintCheck` passes.
+- `./gradlew :app:connectedDebugAndroidTest` on a headless emulator: BUILD SUCCESSFUL, 116 tests, 115 passed, 1 skipped by assumption (`LargeListPerformanceTest` benchmark) — the whole suite ran twice with the gates in place.
+- Manual checks that remain useful: fresh install with deny / "don't ask again" for each entry point, and a TalkBack pass over the denial snackbars; the denied paths are covered by unit and UI structure, but the real system dialogs were not exercised on a device.

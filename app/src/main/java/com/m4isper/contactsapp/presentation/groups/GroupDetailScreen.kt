@@ -1,9 +1,6 @@
 package com.m4isper.contactsapp.presentation.groups
 
-import android.Manifest
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -40,6 +37,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,7 +49,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import com.m4isper.contactsapp.presentation.common.groups.GroupNameDialog
-import com.m4isper.contactsapp.presentation.common.permissions.hasPermission
+import com.m4isper.contactsapp.presentation.common.permissions.WritePermissionGate
+import com.m4isper.contactsapp.presentation.common.permissions.rememberWritePermissionGate
 import com.m4isper.contactsapp.presentation.contacts.components.contactSubtitle
 import com.m4isper.contactsapp.ui.components.ConfirmDialog
 import com.m4isper.contactsapp.ui.components.EmptyState
@@ -59,6 +58,7 @@ import com.m4isper.contactsapp.ui.components.ListAvatar
 import com.m4isper.contactsapp.ui.components.LoadingState
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 import dev.zacsweers.metrox.viewmodel.metroViewModel
+import kotlinx.coroutines.launch
 
 /** Группа: состав, добавление и удаление участников, переименование, слияние. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -73,18 +73,23 @@ fun GroupDetailScreen(
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarScope = rememberCoroutineScope()
     var showPicker by remember { mutableStateOf(false) }
     var renameTarget by remember { mutableStateOf(false) }
     var deleteTarget by remember { mutableStateOf(false) }
     var showMerge by remember { mutableStateOf(false) }
 
-    val writePermissionLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { /* no-op */ }
+    // Отказ в праве объясняем снекбаром: действие не выполняется молча.
+    val writeGate =
+        rememberWritePermissionGate(
+            onDenied = {
+                snackbarScope.launch {
+                    snackbarHostState.showSnackbar(context.getString(R.string.permission_write_rationale))
+                }
+            },
+        )
     LaunchedEffect(groupId) {
         viewModel.load(groupId)
-        if (!hasPermission(context, Manifest.permission.WRITE_CONTACTS)) {
-            writePermissionLauncher.launch(Manifest.permission.WRITE_CONTACTS)
-        }
     }
 
     GroupDetailEvents(uiState.event, snackbarHostState, viewModel)
@@ -172,22 +177,61 @@ fun GroupDetailScreen(
                 MemberList(
                     members = uiState.members,
                     onContactClick = onContactClick,
-                    onRemove = viewModel::onRemoveMember,
+                    onRemove = { contactId -> writeGate.run { viewModel.onRemoveMember(contactId) } },
                     modifier = screenModifier,
                 )
         }
     }
 
+    GroupDetailDialogs(
+        uiState = uiState,
+        showPicker = showPicker,
+        renameTarget = renameTarget,
+        deleteTarget = deleteTarget,
+        showMerge = showMerge,
+        writeGate = writeGate,
+        onPickerConfirm = viewModel::onAddMembers,
+        onRenameConfirm = viewModel::onRename,
+        onDeleteConfirm = viewModel::onDelete,
+        onMergeConfirm = viewModel::onMerge,
+        onDismissPicker = { showPicker = false },
+        onDismissRename = { renameTarget = false },
+        onDismissDelete = { deleteTarget = false },
+        onDismissMerge = { showMerge = false },
+    )
+}
+
+/**
+ * Диалоги экрана группы: добавление участников, переименование, удаление и слияние.
+ * Все записи проходят через [writeGate].
+ */
+@Composable
+private fun GroupDetailDialogs(
+    uiState: GroupDetailUiState,
+    showPicker: Boolean,
+    renameTarget: Boolean,
+    deleteTarget: Boolean,
+    showMerge: Boolean,
+    writeGate: WritePermissionGate,
+    onPickerConfirm: (List<Long>) -> Unit,
+    onRenameConfirm: (String) -> Unit,
+    onDeleteConfirm: () -> Unit,
+    onMergeConfirm: (Long) -> Unit,
+    onDismissPicker: () -> Unit,
+    onDismissRename: () -> Unit,
+    onDismissDelete: () -> Unit,
+    onDismissMerge: () -> Unit,
+) {
     if (showPicker) {
         val memberIds = uiState.members.map { it.contactId }.toSet()
         ContactPickerDialog(
             contacts = uiState.allContacts,
             excludedIds = memberIds,
             onConfirm = { ids ->
-                showPicker = false
-                viewModel.onAddMembers(ids)
+                onDismissPicker()
+                writeGate.run { onPickerConfirm(ids) }
             },
-            onDismiss = { showPicker = false },
+            onDismiss = onDismissPicker,
         )
     }
 
@@ -197,10 +241,10 @@ fun GroupDetailScreen(
             confirmLabel = stringResource(R.string.editor_save),
             initialName = uiState.group?.title.orEmpty(),
             onConfirm = { title ->
-                renameTarget = false
-                viewModel.onRename(title)
+                onDismissRename()
+                writeGate.run { onRenameConfirm(title) }
             },
-            onDismiss = { renameTarget = false },
+            onDismiss = onDismissRename,
             confirmTestTag = "rename_group_detail_confirm",
         )
     }
@@ -215,10 +259,10 @@ fun GroupDetailScreen(
                 ),
             confirmLabel = stringResource(R.string.action_delete),
             onConfirm = {
-                deleteTarget = false
-                viewModel.onDelete()
+                onDismissDelete()
+                writeGate.run { onDeleteConfirm() }
             },
-            onDismiss = { deleteTarget = false },
+            onDismiss = onDismissDelete,
             danger = true,
             confirmTestTag = "confirm_group_detail_delete",
         )
@@ -226,7 +270,7 @@ fun GroupDetailScreen(
 
     if (showMerge) {
         AlertDialog(
-            onDismissRequest = { showMerge = false },
+            onDismissRequest = onDismissMerge,
             title = { Text(stringResource(R.string.group_merge)) },
             text = {
                 Column {
@@ -237,8 +281,8 @@ fun GroupDetailScreen(
                     uiState.groups.forEach { group ->
                         TextButton(
                             onClick = {
-                                showMerge = false
-                                viewModel.onMerge(group.id)
+                                onDismissMerge()
+                                writeGate.run { onMergeConfirm(group.id) }
                             },
                             modifier = Modifier.testTag("merge_group_option_${group.id}"),
                         ) {
@@ -248,7 +292,7 @@ fun GroupDetailScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showMerge = false }) {
+                TextButton(onClick = onDismissMerge) {
                     Text(stringResource(R.string.action_cancel))
                 }
             },

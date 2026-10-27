@@ -1,10 +1,7 @@
 package com.m4isper.contactsapp.presentation.duplicates
 
-import android.Manifest
 import android.content.Context
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -45,6 +42,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -62,7 +60,7 @@ import com.m4isper.contactsapp.domain.duplicates.DuplicateGroup
 import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.format.birthdayText
-import com.m4isper.contactsapp.presentation.common.permissions.hasPermission
+import com.m4isper.contactsapp.presentation.common.permissions.rememberWritePermissionGate
 import com.m4isper.contactsapp.presentation.contacts.components.contactSubtitle
 import com.m4isper.contactsapp.ui.components.EmptyState
 import com.m4isper.contactsapp.ui.components.ErrorState
@@ -70,6 +68,7 @@ import com.m4isper.contactsapp.ui.components.ListAvatar
 import com.m4isper.contactsapp.ui.components.LoadingState
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 import dev.zacsweers.metrox.viewmodel.metroViewModel
+import kotlinx.coroutines.launch
 
 /** Поиск дубликатов: группы похожих контактов и слияние в выбранный основной. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -82,15 +81,18 @@ fun DuplicatesScreen(
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarScope = rememberCoroutineScope()
     var pendingMerge by remember { mutableStateOf<PendingMerge?>(null) }
 
-    val writePermissionLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { /* no-op */ }
-    LaunchedEffect(Unit) {
-        if (!hasPermission(context, Manifest.permission.WRITE_CONTACTS)) {
-            writePermissionLauncher.launch(Manifest.permission.WRITE_CONTACTS)
-        }
-    }
+    // Отказ в праве объясняем снекбаром: слияние не выполняется молча.
+    val writeGate =
+        rememberWritePermissionGate(
+            onDenied = {
+                snackbarScope.launch {
+                    snackbarHostState.showSnackbar(context.getString(R.string.permission_write_rationale))
+                }
+            },
+        )
     val mergedMessage = stringResource(R.string.duplicates_merged)
     val undoLabel = stringResource(R.string.duplicates_undo)
 
@@ -161,10 +163,12 @@ fun DuplicatesScreen(
             pending = pending,
             onConfirm = {
                 pendingMerge = null
-                viewModel.onMerge(
-                    pending.target.contactId,
-                    pending.sources.map { it.contactId },
-                )
+                writeGate.run {
+                    viewModel.onMerge(
+                        pending.target.contactId,
+                        pending.sources.map { it.contactId },
+                    )
+                }
             },
             onDismiss = { pendingMerge = null },
         )
