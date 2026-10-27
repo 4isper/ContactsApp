@@ -2,10 +2,10 @@ package com.m4isper.contactsapp.di
 
 import android.app.Application
 import android.content.Context
-import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
-import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactDetailsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.ObserveFavoritesUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.ObserveSettingsUseCase
 import com.m4isper.contactsapp.presentation.reminders.BirthdayReminderScheduler
 import com.m4isper.contactsapp.presentation.reminders.ReminderScheduler
 import com.m4isper.contactsapp.presentation.settings.AppLanguageStore

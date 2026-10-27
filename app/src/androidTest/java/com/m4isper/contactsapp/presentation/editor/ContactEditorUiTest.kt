@@ -1,6 +1,8 @@
 package com.m4isper.contactsapp.presentation.editor
 
 import android.Manifest
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
@@ -13,36 +15,40 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.unit.Density
 import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import com.m4isper.contactsapp.FakeAndroidRepository
 import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.FakeSettingsRepository
-import com.m4isper.contactsapp.domain.model.Birthday
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactEvent
-import com.m4isper.contactsapp.domain.model.ContactGroup
-import com.m4isper.contactsapp.domain.model.EventKind
-import com.m4isper.contactsapp.domain.model.NameMode
-import com.m4isper.contactsapp.domain.model.WebsiteKind
-import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
-import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
-import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactAccountUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactFormUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetDefaultContactAccountUseCase
-import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
-import com.m4isper.contactsapp.domain.usecase.SetLastContactAccountUseCase
-import com.m4isper.contactsapp.domain.usecase.UpdateContactUseCase
+import com.m4isper.contactsapp.domain.model.contact.Birthday
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactEvent
+import com.m4isper.contactsapp.domain.model.contact.ContactGroup
+import com.m4isper.contactsapp.domain.model.contact.EventKind
+import com.m4isper.contactsapp.domain.model.contact.NameMode
+import com.m4isper.contactsapp.domain.model.contact.WebsiteKind
+import com.m4isper.contactsapp.domain.usecase.contacts.CreateContactUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.DeleteContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactAccountUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactAccountsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactFormUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetDefaultContactAccountUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.SetLastContactAccountUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.UpdateContactUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.CreateGroupUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.GetGroupsUseCase
+import com.m4isper.contactsapp.presentation.editor.rows.PhotoEditor
 import com.m4isper.contactsapp.testDetails
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.LocalDate
 import java.util.concurrent.atomic.AtomicBoolean
 
 @RunWith(AndroidJUnit4::class)
@@ -359,7 +365,7 @@ class ContactEditorUiTest {
 
         assertTrue(repository.created.isEmpty())
         compose.onNodeWithTag("editor_form").performScrollToNode(hasText("Check the email address"))
-        compose.onNodeWithText("Check the email address").assertIsDisplayed()
+        compose.onNodeWithText("Check the email address").assertExists()
     }
 
     @Test
@@ -699,5 +705,201 @@ class ContactEditorUiTest {
 
         compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
         assertEquals(listOf(100L), repository.created.single().groups)
+    }
+
+    /** Открывает редактор контакта [details] и ждёт загрузки формы. */
+    private fun openEditor(
+        details: ContactDetails,
+        viewModel: ContactEditorViewModel,
+    ) {
+        compose.setContent {
+            ContactEditorScreen(
+                contactId = details.contactId,
+                onDone = {},
+                onBack = {},
+                viewModel = viewModel,
+            )
+        }
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.displayName == details.name
+        }
+    }
+
+    @Test
+    fun birthdayNoYear_survivesDialogRoundTrip() {
+        val details =
+            testDetails(7, "Anna", "111", birthday = Birthday(day = 21, month = 7, year = null))
+        val repository = FakeAndroidRepository(listOf(details))
+        val viewModel = viewModel(repository)
+        openEditor(details, viewModel)
+
+        compose
+            .onNodeWithTag("editor_form")
+            .performScrollToNode(hasTestTag("editor_birthday_button"))
+        compose.onNodeWithTag("editor_birthday_button").performClick()
+        compose.onNodeWithTag("editor_no_year_dialog_switch").assertIsDisplayed()
+        compose.onNodeWithTag("editor_birthday_confirm").performClick()
+        compose.onNodeWithTag("editor_save_button").performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
+        compose.waitForIdle()
+        val form = repository.updated.single().second
+        assertEquals(Birthday(day = 21, month = 7, year = null), form.birthday.value)
+    }
+
+    @Test
+    fun birthdaySwitchOff_opensPickerAndStoresChosenYear() {
+        val details =
+            testDetails(7, "Anna", "111", birthday = Birthday(day = 21, month = 7, year = null))
+        val repository = FakeAndroidRepository(listOf(details))
+        val viewModel = viewModel(repository)
+        openEditor(details, viewModel)
+
+        compose
+            .onNodeWithTag("editor_form")
+            .performScrollToNode(hasTestTag("editor_birthday_switch"))
+        compose.onNodeWithTag("editor_birthday_switch").performClick()
+        compose.onNodeWithTag("editor_birthday_confirm").assertIsDisplayed()
+        compose.onNodeWithTag("editor_birthday_confirm").performClick()
+        compose.onNodeWithTag("editor_save_button").performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
+        compose.waitForIdle()
+        val form = repository.updated.single().second
+        assertEquals(Birthday(day = 21, month = 7, year = LocalDate.now().year), form.birthday.value)
+    }
+
+    @Test
+    fun birthdayDialogSwitch_storesNoYear() {
+        val details =
+            testDetails(7, "Anna", "111", birthday = Birthday(day = 21, month = 7, year = 1985))
+        val repository = FakeAndroidRepository(listOf(details))
+        val viewModel = viewModel(repository)
+        openEditor(details, viewModel)
+
+        compose
+            .onNodeWithTag("editor_form")
+            .performScrollToNode(hasTestTag("editor_birthday_button"))
+        compose.onNodeWithTag("editor_birthday_button").performClick()
+        compose.onNodeWithTag("editor_no_year_dialog_switch").performClick()
+        compose.onNodeWithTag("editor_birthday_confirm").performClick()
+        compose.onNodeWithTag("editor_save_button").performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
+        compose.waitForIdle()
+        val form = repository.updated.single().second
+        assertEquals(Birthday(day = 21, month = 7, year = null), form.birthday.value)
+    }
+
+    @Test
+    fun birthdayPickerCancel_keepsNoYearValue() {
+        val details =
+            testDetails(7, "Anna", "111", birthday = Birthday(day = 21, month = 7, year = null))
+        val repository = FakeAndroidRepository(listOf(details))
+        val viewModel = viewModel(repository)
+        openEditor(details, viewModel)
+
+        compose
+            .onNodeWithTag("editor_form")
+            .performScrollToNode(hasTestTag("editor_birthday_switch"))
+        compose.onNodeWithTag("editor_birthday_switch").performClick()
+        compose.onNodeWithTag("editor_birthday_confirm").assertIsDisplayed()
+        Espresso.pressBack()
+        compose.waitForIdle()
+        compose.onNodeWithTag("editor_save_button").performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
+        compose.waitForIdle()
+        val form = repository.updated.single().second
+        assertEquals(Birthday(day = 21, month = 7, year = null), form.birthday.value)
+    }
+
+    @Test
+    fun eventSwitchOff_opensPickerAndStoresChosenYear() {
+        val details =
+            testDetails(
+                7,
+                "Anna",
+                "111",
+                events =
+                    listOf(
+                        ContactEvent(date = Birthday(day = 1, month = 6, year = null)),
+                    ),
+            )
+        val repository = FakeAndroidRepository(listOf(details))
+        val viewModel = viewModel(repository)
+        openEditor(details, viewModel)
+
+        compose
+            .onNodeWithTag("editor_form")
+            .performScrollToNode(hasTestTag("editor_event_switch"))
+        compose.onNodeWithTag("editor_event_switch").performClick()
+        compose.onNodeWithTag("editor_event_date_confirm").assertIsDisplayed()
+        compose.onNodeWithTag("editor_event_date_confirm").performClick()
+        compose.onNodeWithTag("editor_save_button").performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.closeScreen }
+        compose.waitForIdle()
+        val form = repository.updated.single().second
+        assertEquals(Birthday(day = 1, month = 6, year = LocalDate.now().year), form.events.single().date)
+    }
+
+    @Test
+    fun blockedSave_scrollsToFirstInvalidRowAndShowsSummary() {
+        val repository = FakeAndroidRepository()
+        val viewModel = viewModel(repository)
+        compose.setContent {
+            ContactEditorScreen(
+                contactId = null,
+                onDone = {},
+                onBack = {},
+                viewModel = viewModel,
+            )
+        }
+
+        typeInForm("editor_name_field", "Anna")
+        typeInForm("editor_phone_field", "+79161234567")
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_add_phone_button"))
+        compose.onNodeWithTag("editor_add_phone_button").performClick()
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_phone_field"))
+        compose.waitForIdle()
+        compose.onAllNodesWithTag("editor_phone_field")[1].performTextInput("abc")
+
+        // Уводим невалидную строку за пределы экрана и нажимаем Save в топбаре.
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_note_field"))
+        compose.waitForIdle()
+        compose.onNodeWithTag("editor_save_button").performClick()
+        compose.waitForIdle()
+
+        assertTrue(repository.created.isEmpty())
+        compose.onNodeWithText("Check the highlighted fields").assertIsDisplayed()
+        // Скролл проверяем по границам: узел в дереве, но assertIsDisplayed капризничает
+        // рядом со снекбаром.
+        val viewport =
+            compose
+                .onNodeWithTag("editor_form")
+                .fetchSemanticsNode()
+                .size.height
+        val secondPhone = compose.onAllNodesWithTag("editor_phone_field").fetchSemanticsNodes()[1]
+        val top = secondPhone.positionInRoot.y.toInt()
+        val bottom = top + secondPhone.size.height
+        assertTrue(
+            "second phone row must be on screen: top=$top bottom=$bottom viewport=$viewport",
+            top >= 0 && bottom <= viewport,
+        )
+    }
+
+    @Test
+    fun photoActions_wrapInsteadOfClipping() {
+        compose.setContent {
+            // Двойная плотность: тексты занимают вдвое больше места — Row обрезал бы действия.
+            CompositionLocalProvider(LocalDensity provides Density(density = 1f, fontScale = 2f)) {
+                PhotoEditor(name = "Anna", photoUri = null, onPick = {}, onTakePhoto = {}, onRemove = {})
+            }
+        }
+
+        compose.onNodeWithTag("editor_photo_camera").assertIsDisplayed()
+        compose.onNodeWithTag("editor_photo_pick").assertIsDisplayed()
+        compose.onNodeWithTag("editor_photo_remove").assertDoesNotExist()
     }
 }

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Тёмный родитель для ночного квалификатора: окно запуска совпадает с темой системы. -->
+    <style name="Theme.ContactsApp" parent="android:Theme.Material.NoActionBar" />
+</resources>

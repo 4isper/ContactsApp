@@ -2,18 +2,18 @@ package com.m4isper.contactsapp.presentation.groups
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactGroup
-import com.m4isper.contactsapp.domain.usecase.AddContactsToGroupUseCase
-import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
-import com.m4isper.contactsapp.domain.usecase.DeleteGroupUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
-import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
-import com.m4isper.contactsapp.domain.usecase.MergeGroupsUseCase
-import com.m4isper.contactsapp.domain.usecase.RemoveContactsFromGroupUseCase
-import com.m4isper.contactsapp.domain.usecase.RenameGroupUseCase
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactGroup
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.AddContactsToGroupUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.CreateGroupUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.DeleteGroupUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.GetGroupMembershipUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.GetGroupsUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.MergeGroupsUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.RemoveContactsFromGroupUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.RenameGroupUseCase
 import com.m4isper.contactsapp.presentation.common.safeCall
 import com.m4isper.contactsapp.presentation.contacts.SUBSCRIBE_TIMEOUT_MILLIS
 import dev.zacsweers.metro.AppScope
@@ -191,10 +191,24 @@ class GroupDetailViewModel(
     /** Отменяет удаление: группа создаётся заново вместе с участниками. */
     fun onUndoDelete() {
         val deleted = deletedGroupFlow.value ?: return
-        mutate(GroupDetailEvent.GroupRestored) {
-            val group = createGroupUseCase(deleted.title, deleted.account)
-            if (deleted.memberIds.isNotEmpty()) {
-                addContactsToGroupUseCase(group.id, deleted.memberIds)
+        if (isBusyFlow.value) return
+        viewModelScope.launch {
+            isBusyFlow.value = true
+            try {
+                safeCall(GROUP_DETAIL_TAG, "restore group failed") {
+                    val group = createGroupUseCase(deleted.title, deleted.account)
+                    if (deleted.memberIds.isNotEmpty()) {
+                        addContactsToGroupUseCase(group.id, deleted.memberIds)
+                    }
+                    groupIdFlow.value = group.id
+                    deletedGroupFlow.value = null
+                    refresh()
+                    eventFlow.value = GroupDetailEvent.GroupRestored
+                }.onFailure { failure ->
+                    eventFlow.value = GroupDetailEvent.ActionFailed
+                }
+            } finally {
+                isBusyFlow.value = false
             }
         }
     }

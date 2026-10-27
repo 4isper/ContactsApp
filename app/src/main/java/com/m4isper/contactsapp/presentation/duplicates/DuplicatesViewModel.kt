@@ -4,11 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.m4isper.contactsapp.domain.duplicates.DuplicateGroup
 import com.m4isper.contactsapp.domain.duplicates.findDuplicateGroups
-import com.m4isper.contactsapp.domain.model.AppError
-import com.m4isper.contactsapp.domain.model.ContactLink
-import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.MergeContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.UnmergeContactsUseCase
+import com.m4isper.contactsapp.domain.model.common.AppError
+import com.m4isper.contactsapp.domain.model.contact.ContactLink
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.MergeContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.UnmergeContactsUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.safeCall
 import com.m4isper.contactsapp.presentation.contacts.SUBSCRIBE_TIMEOUT_MILLIS
@@ -91,8 +91,12 @@ class DuplicatesViewModel(
             try {
                 safeCall(DUPLICATES_TAG, "merge contacts failed") {
                     val link = mergeContactsUseCase(targetId, sourceIds)
-                    lastLink.value = link
-                    event.value = DuplicatesEvent.Merged
+                    if (link == null) {
+                        event.value = DuplicatesEvent.MergeFailed
+                    } else {
+                        lastLink.value = link
+                        event.value = DuplicatesEvent.Merged
+                    }
                 }.onFailure { failure ->
                     event.value = DuplicatesEvent.MergeFailed
                 }

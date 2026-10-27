@@ -1,7 +1,7 @@
 package com.m4isper.contactsapp.presentation.settings
 
 import androidx.lifecycle.ViewModel
-import com.m4isper.contactsapp.domain.repository.PrivacySettings
+import com.m4isper.contactsapp.domain.repository.settings.PrivacySettings
 import com.m4isper.contactsapp.domain.security.AppLockAttempts
 import com.m4isper.contactsapp.domain.security.PinHasher
 import dev.zacsweers.metro.AppScope

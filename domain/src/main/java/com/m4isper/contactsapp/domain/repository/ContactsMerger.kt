@@ -1,6 +1,6 @@
 package com.m4isper.contactsapp.domain.repository
 
-import com.m4isper.contactsapp.domain.model.ContactLink
+import com.m4isper.contactsapp.domain.model.contact.ContactLink
 
 /** Слияние контактов: источники связываются с целевым и становятся его частью. */
 interface ContactsMerger {

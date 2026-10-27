@@ -1,8 +1,16 @@
 package com.m4isper.contactsapp.domain.model
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Test
+import com.m4isper.contactsapp.domain.model.contact.ContactForm
+import com.m4isper.contactsapp.domain.model.contact.EditableEvent
+import com.m4isper.contactsapp.domain.model.contact.EditableInstantMessage
+import com.m4isper.contactsapp.domain.model.contact.EditableName
+import com.m4isper.contactsapp.domain.model.contact.EditablePhone
+import com.m4isper.contactsapp.domain.model.contact.FormError
+import com.m4isper.contactsapp.domain.model.contact.NameMode
+import com.m4isper.contactsapp.domain.model.contact.validateContactForm
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Test
 
 class ContactFormValidatorTest {
     @Test

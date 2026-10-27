@@ -1,7 +1,8 @@
 package com.m4isper.contactsapp.data.datasource
 
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.AccountSyncInfo
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 
 /** Чтение контактов: список, один контакт и доступные аккаунты. */
 interface ContactsDataSource {
@@ -14,6 +15,9 @@ interface ContactsDataSource {
 
     /** Аккаунты, в которые можно сохранить контакт; локальный есть всегда. */
     suspend fun getContactAccounts(): List<ContactAccount> = listOf(ContactAccount.Local)
+
+    /** Статус синхронизации аккаунтов для индикатора в UI. */
+    suspend fun getAccountSyncInfos(): List<AccountSyncInfo> = listOf()
 
     /** Фото контакта для экспорта; null, если фото нет. */
     suspend fun loadContactPhoto(contactId: Long): ByteArray? = null

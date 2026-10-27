@@ -111,6 +111,7 @@ fun ContactsAppTheme(
 
     CompositionLocalProvider(
         LocalSpacing provides Spacing(),
+        LocalBrandTypography provides BrandTypography(),
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

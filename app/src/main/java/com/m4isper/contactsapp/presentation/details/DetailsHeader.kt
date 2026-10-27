@@ -25,7 +25,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import com.m4isper.contactsapp.R
-import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import com.m4isper.contactsapp.ui.components.DetailsAvatar
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 

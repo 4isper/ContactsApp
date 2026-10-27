@@ -1,22 +1,22 @@
 package com.m4isper.contactsapp.domain.contacts
 
-import com.m4isper.contactsapp.domain.model.AddressKind
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactGroup
-import com.m4isper.contactsapp.domain.model.ContactRelation
-import com.m4isper.contactsapp.domain.model.EmailAddress
-import com.m4isper.contactsapp.domain.model.EmailKind
-import com.m4isper.contactsapp.domain.model.Organization
-import com.m4isper.contactsapp.domain.model.PhoneKind
-import com.m4isper.contactsapp.domain.model.PhoneNumber
-import com.m4isper.contactsapp.domain.model.PostalAddress
-import com.m4isper.contactsapp.domain.model.RelationKind
-import com.m4isper.contactsapp.domain.model.SipAddress
-import com.m4isper.contactsapp.domain.model.SipKind
-import com.m4isper.contactsapp.domain.model.Website
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import com.m4isper.contactsapp.domain.model.contact.AddressKind
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactGroup
+import com.m4isper.contactsapp.domain.model.contact.ContactRelation
+import com.m4isper.contactsapp.domain.model.contact.EmailAddress
+import com.m4isper.contactsapp.domain.model.contact.EmailKind
+import com.m4isper.contactsapp.domain.model.contact.Organization
+import com.m4isper.contactsapp.domain.model.contact.PhoneKind
+import com.m4isper.contactsapp.domain.model.contact.PhoneNumber
+import com.m4isper.contactsapp.domain.model.contact.PostalAddress
+import com.m4isper.contactsapp.domain.model.contact.RelationKind
+import com.m4isper.contactsapp.domain.model.contact.SipAddress
+import com.m4isper.contactsapp.domain.model.contact.SipKind
+import com.m4isper.contactsapp.domain.model.contact.Website
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 import java.util.Locale
 
 private fun search(
@@ -83,7 +83,7 @@ class ContactSearchTest {
             )
 
         listOf("acme", "cto", "tverskaya", "anna.dev", "conference").forEach { query ->
-            assertEquals(query, listOf("Anna"), search(contacts, query))
+            assertEquals(listOf("Anna"), search(contacts, query), query)
         }
     }
 
@@ -117,7 +117,7 @@ class ContactSearchTest {
             )
 
         listOf("platform", "engineering", "london", "moscow", "101000", "sip:anna").forEach { query ->
-            assertEquals(query, listOf("Anna"), search(listOf(contact), query))
+            assertEquals(listOf("Anna"), search(listOf(contact), query), query)
         }
     }
 
@@ -158,7 +158,7 @@ class ContactSearchTest {
             )
 
         listOf("sister", "side", "dacha", "кум").forEach { query ->
-            assertEquals(query, listOf("Anna"), search(listOf(contact), query))
+            assertEquals(listOf("Anna"), search(listOf(contact), query), query)
         }
     }
 

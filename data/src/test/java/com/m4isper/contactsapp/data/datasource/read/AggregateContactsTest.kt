@@ -6,13 +6,13 @@ import android.provider.ContactsContract.CommonDataKinds.Relation
 import android.provider.ContactsContract.CommonDataKinds.SipAddress
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import android.provider.ContactsContract.CommonDataKinds.Website
-import com.m4isper.contactsapp.domain.model.AddressKind
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.EmailKind
-import com.m4isper.contactsapp.domain.model.PhoneKind
-import com.m4isper.contactsapp.domain.model.RelationKind
-import com.m4isper.contactsapp.domain.model.SipKind
-import com.m4isper.contactsapp.domain.model.WebsiteKind
+import com.m4isper.contactsapp.domain.model.contact.AddressKind
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.EmailKind
+import com.m4isper.contactsapp.domain.model.contact.PhoneKind
+import com.m4isper.contactsapp.domain.model.contact.RelationKind
+import com.m4isper.contactsapp.domain.model.contact.SipKind
+import com.m4isper.contactsapp.domain.model.contact.WebsiteKind
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -65,6 +65,18 @@ class AggregateContactsTest {
         assertEquals("Иван", nameParts?.given)
         assertEquals("Петров", nameParts?.family)
         assertEquals("Петрович", nameParts?.middle)
+    }
+
+    @Test
+    fun `aggregates birthdays for reminder consumers`() {
+        val headers = listOf(header(1, "Anna"))
+        val rows = listOf(birthdayRow(1, "1990-05-24"))
+
+        val result = aggregateContacts(headers, rows)
+
+        assertEquals(1990, result.single().birthday?.year)
+        assertEquals(5, result.single().birthday?.month)
+        assertEquals(24, result.single().birthday?.day)
     }
 
     @Test
@@ -182,12 +194,11 @@ class AggregateContactsTest {
 
     @Test
     fun `includes device last contacted fields`() {
-        val headers = listOf(header(1, "Anna", lastContacted = 1_700_000_000_000L, timesContacted = 7))
+        val headers = listOf(header(1, "Anna", lastContacted = 1_700_000_000_000L))
 
         val details = aggregateContacts(headers, emptyList()).single()
 
         assertEquals(1_700_000_000_000L, details.lastContacted)
-        assertEquals(7, details.timesContacted)
     }
 
     @Test

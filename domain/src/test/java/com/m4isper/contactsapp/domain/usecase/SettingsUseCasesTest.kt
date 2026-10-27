@@ -1,20 +1,27 @@
 package com.m4isper.contactsapp.domain.usecase
 
-import com.m4isper.contactsapp.domain.model.AppSettings
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactSortOrder
-import com.m4isper.contactsapp.domain.model.ListDensity
-import com.m4isper.contactsapp.domain.model.ThemeMode
-import com.m4isper.contactsapp.domain.repository.AccountSettings
-import com.m4isper.contactsapp.domain.repository.AppearanceSettings
-import com.m4isper.contactsapp.domain.repository.ListSettings
-import com.m4isper.contactsapp.domain.repository.SettingsReader
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.settings.AppSettings
+import com.m4isper.contactsapp.domain.model.settings.ContactSortOrder
+import com.m4isper.contactsapp.domain.model.settings.ListDensity
+import com.m4isper.contactsapp.domain.model.settings.ThemeMode
+import com.m4isper.contactsapp.domain.repository.settings.AccountSettings
+import com.m4isper.contactsapp.domain.repository.settings.AppearanceSettings
+import com.m4isper.contactsapp.domain.repository.settings.ListSettings
+import com.m4isper.contactsapp.domain.repository.settings.SettingsReader
+import com.m4isper.contactsapp.domain.usecase.contacts.GetLastContactAccountUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.SetLastContactAccountUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.ObserveSettingsUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.SetFavoritesFirstUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.SetListDensityUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.SetSortOrderUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.SetThemeModeUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 private class StubSettingsRepository(
     initial: AppSettings = AppSettings(),

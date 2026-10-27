@@ -2,6 +2,7 @@ package com.m4isper.contactsapp.presentation.import
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PersonSearch
@@ -19,6 +22,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -28,19 +32,24 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.R
-import com.m4isper.contactsapp.domain.model.ImportDecision
-import com.m4isper.contactsapp.domain.model.ImportFailureReason
-import com.m4isper.contactsapp.domain.model.ImportOutcome
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ImportDecision
+import com.m4isper.contactsapp.domain.model.contact.ImportFailureReason
+import com.m4isper.contactsapp.domain.model.contact.ImportOutcome
 import com.m4isper.contactsapp.domain.vcard.VCardInvalidContact
 import com.m4isper.contactsapp.domain.vcard.VCardIssue
-import com.m4isper.contactsapp.presentation.editor.AccountPickerDialog
-import com.m4isper.contactsapp.presentation.editor.AccountRow
+import com.m4isper.contactsapp.presentation.common.account.contactAccountLabel
+import com.m4isper.contactsapp.presentation.editor.components.AccountPickerDialog
+import com.m4isper.contactsapp.presentation.editor.components.AccountRow
 import com.m4isper.contactsapp.ui.components.EmptyState
 import com.m4isper.contactsapp.ui.components.LoadingState
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
@@ -213,6 +222,13 @@ private fun ImportEntryCard(
     onDecisionChange: (ImportDecision) -> Unit,
 ) {
     val spacing = LocalSpacing.current
+    // Цель слияния валидна, только если она среди кандидатов; исчезнувшая цель
+    // сбрасывает решение, и пользователь выбирает заново.
+    val chosenTargetId = (entry.decision as? ImportDecision.Merge)?.targetId
+    val chosenTarget =
+        chosenTargetId
+            ?.let { id -> entry.duplicates.firstOrNull { it.contactId == id } }
+    val multipleCandidates = entry.duplicates.size > 1
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
         modifier =
@@ -237,12 +253,11 @@ private fun ImportEntryCard(
                 )
             }
             if (entry.duplicates.isNotEmpty()) {
-                Text(
-                    text = stringResource(R.string.import_entry_duplicate, entry.duplicates.first().name),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.tertiary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                DuplicateSection(
+                    entry = entry,
+                    chosenTarget = chosenTarget,
+                    multipleCandidates = multipleCandidates,
+                    onDecisionChange = onDecisionChange,
                 )
             }
             if (entry.hasPhoto) {
@@ -261,8 +276,11 @@ private fun ImportEntryCard(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            Row(
+            // FlowRow: при длинных переводах или крупном шрифте чипы переносятся,
+            // а не обрезаются краем карточки.
+            FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(spacing.s),
+                verticalArrangement = Arrangement.spacedBy(spacing.xs),
                 modifier = Modifier.padding(top = spacing.s),
             ) {
                 FilterChip(
@@ -273,11 +291,15 @@ private fun ImportEntryCard(
                 )
                 FilterChip(
                     selected = entry.decision is ImportDecision.Merge,
+                    // При нескольких кандидатах объединение требует явного выбора
+                    // цели: без него чип недоступен.
                     onClick = {
                         val target = entry.duplicates.firstOrNull()?.contactId
                         if (target != null) onDecisionChange(ImportDecision.Merge(target))
                     },
-                    enabled = entry.duplicates.isNotEmpty(),
+                    enabled =
+                        entry.duplicates.isNotEmpty() &&
+                            (!multipleCandidates || chosenTarget != null),
                     label = { Text(stringResource(R.string.import_decision_merge)) },
                     modifier = Modifier.testTag("import_decision_merge_${entry.index}"),
                 )
@@ -291,6 +313,99 @@ private fun ImportEntryCard(
         }
     }
 }
+
+/**
+ * Блок дублей: при одном кандидате — привычная строка, при нескольких — все
+ * кандидаты с выбором цели слияния, чтобы «Объединить» не попадало в первый попавшийся.
+ */
+@Composable
+private fun DuplicateSection(
+    entry: ImportPreviewEntry,
+    chosenTarget: ContactDetails?,
+    multipleCandidates: Boolean,
+    onDecisionChange: (ImportDecision) -> Unit,
+) {
+    val spacing = LocalSpacing.current
+    if (!multipleCandidates) {
+        Text(
+            text = stringResource(R.string.import_entry_duplicate, entry.duplicates.first().name),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.tertiary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        return
+    }
+    Text(
+        text =
+            pluralStringResource(
+                R.plurals.import_entry_duplicate_count,
+                entry.duplicates.size,
+                entry.duplicates.size,
+            ),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.tertiary,
+    )
+    if (chosenTarget == null) {
+        Text(
+            text = stringResource(R.string.import_entry_merge_target_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+    Column(modifier = Modifier.selectableGroup()) {
+        entry.duplicates.forEach { duplicate ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .testTag("import_merge_target_${entry.index}_${duplicate.contactId}")
+                        .selectable(
+                            selected = chosenTarget?.contactId == duplicate.contactId,
+                            role = Role.RadioButton,
+                            onClick = { onDecisionChange(ImportDecision.Merge(duplicate.contactId)) },
+                        ),
+            ) {
+                RadioButton(
+                    selected = chosenTarget?.contactId == duplicate.contactId,
+                    onClick = null,
+                )
+                Column(modifier = Modifier.padding(start = spacing.s, top = spacing.xs)) {
+                    Text(
+                        text = duplicate.name.ifBlank { stringResource(R.string.import_entry_unnamed) },
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = duplicateSubtitle(duplicate),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+    }
+    chosenTarget?.let { target ->
+        Text(
+            text = stringResource(R.string.import_entry_merge_target, target.name),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.tertiary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+/** Подпись кандидата: телефон, почта или аккаунт — то, чем одинаковые имена различить. */
+@Composable
+private fun duplicateSubtitle(details: ContactDetails): String =
+    details.phones.firstOrNull()?.number
+        ?: details.emails.firstOrNull()?.address
+        ?: contactAccountLabel(details.account)
 
 /** Пропущенные блоки файла: в них не было ни одного поддерживаемого поля. */
 @Composable

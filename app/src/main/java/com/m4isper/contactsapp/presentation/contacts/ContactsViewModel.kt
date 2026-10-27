@@ -3,19 +3,28 @@ package com.m4isper.contactsapp.presentation.contacts
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.m4isper.contactsapp.domain.contacts.filterContacts
-import com.m4isper.contactsapp.domain.model.AppError
-import com.m4isper.contactsapp.domain.model.AppSettings
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactGroup
-import com.m4isper.contactsapp.domain.model.ContactSortOrder
-import com.m4isper.contactsapp.domain.model.ListDensity
-import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.ExportContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
+import com.m4isper.contactsapp.domain.model.common.AppError
+import com.m4isper.contactsapp.domain.model.contact.AccountSyncInfo
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactGroup
+import com.m4isper.contactsapp.domain.model.settings.AppSettings
+import com.m4isper.contactsapp.domain.model.settings.ContactSortOrder
+import com.m4isper.contactsapp.domain.model.settings.ListDensity
+import com.m4isper.contactsapp.domain.usecase.contacts.DeleteContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.ExportContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.ObserveSettingsUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.safeCall
+import com.m4isper.contactsapp.presentation.contacts.effects.ContactsFileActions
+import com.m4isper.contactsapp.presentation.contacts.effects.DeleteWindow
+import com.m4isper.contactsapp.presentation.contacts.effects.PendingDeleteCoordinator
+import com.m4isper.contactsapp.presentation.contacts.state.ContactsFavoriteState
+import com.m4isper.contactsapp.presentation.contacts.state.ContactsFilterState
+import com.m4isper.contactsapp.presentation.contacts.state.ContactsGroupState
+import com.m4isper.contactsapp.presentation.contacts.state.ContactsListState
+import com.m4isper.contactsapp.presentation.contacts.state.ContactsSelectionState
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
@@ -43,6 +52,7 @@ data class ContactsUiState(
     val selectedGroupId: Long? = null,
     val accounts: List<ContactAccount> = emptyList(),
     val selectedAccount: ContactAccount? = null,
+    val accountSyncInfos: List<AccountSyncInfo> = emptyList(),
     val sortOrder: ContactSortOrder = ContactSortOrder.BY_NAME,
     val listDensity: ListDensity = ListDensity.COMFORTABLE,
     val pinFavorites: Boolean = false,
@@ -89,6 +99,11 @@ sealed interface ContactsEvent {
 
     /** Экспорт: не удалось собрать контакты. */
     data object ExportFailed : ContactsEvent
+
+    /** Повторная синхронизация завершена: успех или ошибка загрузки. */
+    data class SyncRetryFinished(
+        val success: Boolean,
+    ) : ContactsEvent
 }
 
 internal const val SUBSCRIBE_TIMEOUT_MILLIS = 5_000L
@@ -124,6 +139,7 @@ private data class AccountsState(
     val accounts: List<ContactAccount>,
     val selectedAccount: ContactAccount?,
     val profileContactId: Long?,
+    val accountSyncInfos: List<AccountSyncInfo>,
 )
 
 private data class ContactsMiddle(
@@ -138,6 +154,7 @@ private data class ContactsMiddle(
     val accounts: List<ContactAccount>,
     val selectedAccount: ContactAccount?,
     val profileContactId: Long?,
+    val accountSyncInfos: List<AccountSyncInfo>,
 )
 
 private fun contactsContent(
@@ -183,6 +200,7 @@ private fun contactsUiState(
         selectedGroupId = middle.selectedGroupId,
         accounts = middle.accounts,
         selectedAccount = middle.selectedAccount,
+        accountSyncInfos = middle.accountSyncInfos,
         sortOrder = settings.sortOrder,
         listDensity = settings.listDensity,
         pinFavorites = shouldPinFavorites(load, middle, settings),
@@ -322,7 +340,13 @@ internal class ContactsViewModel(
                     ::ContactsMiddleBase,
                 ),
                 combine(groups.groups, filters.selectedGroupId, groups.membership, ::GroupsState),
-                combine(groups.accounts, filters.selectedAccount, groups.profileContactId, ::AccountsState),
+                combine(
+                    groups.accounts,
+                    filters.selectedAccount,
+                    groups.profileContactId,
+                    groups.accountSyncInfos,
+                    ::AccountsState,
+                ),
             ) { base, groups, accounts ->
                 ContactsMiddle(
                     favorites = base.favorites,
@@ -336,6 +360,7 @@ internal class ContactsViewModel(
                     accounts = accounts.accounts,
                     selectedAccount = accounts.selectedAccount,
                     profileContactId = accounts.profileContactId,
+                    accountSyncInfos = accounts.accountSyncInfos,
                 )
             },
             settingsFlow,
@@ -399,16 +424,21 @@ internal class ContactsViewModel(
     }
 
     /** Перечитывает список и связанные с ним группы, аккаунты и избранное. */
-    fun refresh() {
+    fun refresh(reportSyncResult: Boolean = false) {
         selection.clear()
-        viewModelScope.launch { reloadScreen(list, groups, favorites) }
+        viewModelScope.launch {
+            reloadScreen(list, groups, favorites)
+            if (reportSyncResult) {
+                eventFlow.value = ContactsEvent.SyncRetryFinished(success = list.failure.value == null)
+            }
+        }
     }
 
     /** Очищает список: экран закрыт, состояние не нужно. */
     fun clear() {
         list.clear()
         filters.onSearchQueryChange("")
-        filters.onToggleFavoritesOnly()
+        filters.resetFavoritesOnly()
         selection.clear()
         groups.clear()
     }

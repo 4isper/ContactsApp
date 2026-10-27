@@ -2,18 +2,18 @@ package com.m4isper.contactsapp.presentation.details
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.m4isper.contactsapp.domain.model.AppError
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactGroup
-import com.m4isper.contactsapp.domain.usecase.CopyContactToAccountUseCase
-import com.m4isper.contactsapp.domain.usecase.ExportContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactGroupsUseCase
-import com.m4isper.contactsapp.domain.usecase.MoveContactToAccountUseCase
-import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
-import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
+import com.m4isper.contactsapp.domain.model.common.AppError
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactGroup
+import com.m4isper.contactsapp.domain.usecase.contacts.CopyContactToAccountUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.ExportContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactAccountsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactDetailsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.MoveContactToAccountUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.ObserveFavoritesUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.ToggleFavoriteUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.GetContactGroupsUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.safeCall
 import com.m4isper.contactsapp.presentation.contacts.SUBSCRIBE_TIMEOUT_MILLIS
@@ -53,6 +53,9 @@ sealed interface DetailsEvent {
 
     /** Не удалось скопировать или перенести контакт. */
     data object AccountActionFailed : DetailsEvent
+
+    /** Не удалось переключить избранное: обычно не хватает права на запись. */
+    data object FavoriteWriteFailed : DetailsEvent
 }
 
 /** Загрузка карточки: контакт, признак загрузки и ошибка. */
@@ -133,13 +136,16 @@ class ContactDetailsViewModel(
     }
 
     // Catch-all осознанный: сбой записи избранного не должен ронять экран.
-    fun toggleFavorite() {
-        val contactId = selectedContactId.value ?: return
-        viewModelScope.launch {
+    suspend fun toggleFavorite(): Boolean {
+        val contactId = selectedContactId.value ?: return false
+        val result =
             safeCall(DETAILS_TAG, "toggleFavorite failed") {
                 toggleFavoriteUseCase(contactId)
             }
+        if (result.isFailure) {
+            eventFlow.value = DetailsEvent.FavoriteWriteFailed
         }
+        return result.isSuccess
     }
 
     /**
@@ -210,7 +216,9 @@ class ContactDetailsViewModel(
                 val (newId, event) = action(contactId, account)
                 eventFlow.value = event
                 if (newId != contactId) {
-                    loadedDetails.value = loadedDetails.value?.copy(contactId = newId)
+                    // Перенос создаёт новый контакт: дальше работаем только с его id.
+                    selectedContactId.value = newId
+                    refresh()
                 }
             }.onFailure { failure ->
                 eventFlow.value = DetailsEvent.AccountActionFailed

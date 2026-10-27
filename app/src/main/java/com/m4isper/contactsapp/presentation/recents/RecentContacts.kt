@@ -1,7 +1,7 @@
 package com.m4isper.contactsapp.presentation.recents
 
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.normalizeContactText
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.normalizeContactText
 
 /**
  * Недавние контакты по данным устройства: звонки и сообщения из любых приложений,

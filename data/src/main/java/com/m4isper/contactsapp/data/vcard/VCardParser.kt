@@ -1,29 +1,29 @@
 package com.m4isper.contactsapp.data.vcard
 
-import com.m4isper.contactsapp.domain.model.AddressKind
-import com.m4isper.contactsapp.domain.model.Birthday
-import com.m4isper.contactsapp.domain.model.ContactForm
-import com.m4isper.contactsapp.domain.model.EditableAddress
-import com.m4isper.contactsapp.domain.model.EditableBirthday
-import com.m4isper.contactsapp.domain.model.EditableEmail
-import com.m4isper.contactsapp.domain.model.EditableEvent
-import com.m4isper.contactsapp.domain.model.EditableInstantMessage
-import com.m4isper.contactsapp.domain.model.EditableName
-import com.m4isper.contactsapp.domain.model.EditableNickname
-import com.m4isper.contactsapp.domain.model.EditableNote
-import com.m4isper.contactsapp.domain.model.EditableOrganization
-import com.m4isper.contactsapp.domain.model.EditablePhone
-import com.m4isper.contactsapp.domain.model.EditableRelation
-import com.m4isper.contactsapp.domain.model.EditableSipAddress
-import com.m4isper.contactsapp.domain.model.EditableWebsite
-import com.m4isper.contactsapp.domain.model.EmailKind
-import com.m4isper.contactsapp.domain.model.EventKind
-import com.m4isper.contactsapp.domain.model.NameMode
-import com.m4isper.contactsapp.domain.model.NameParts
-import com.m4isper.contactsapp.domain.model.PhoneKind
-import com.m4isper.contactsapp.domain.model.RelationKind
-import com.m4isper.contactsapp.domain.model.SipKind
-import com.m4isper.contactsapp.domain.model.WebsiteKind
+import com.m4isper.contactsapp.domain.model.contact.AddressKind
+import com.m4isper.contactsapp.domain.model.contact.Birthday
+import com.m4isper.contactsapp.domain.model.contact.ContactForm
+import com.m4isper.contactsapp.domain.model.contact.EditableAddress
+import com.m4isper.contactsapp.domain.model.contact.EditableBirthday
+import com.m4isper.contactsapp.domain.model.contact.EditableEmail
+import com.m4isper.contactsapp.domain.model.contact.EditableEvent
+import com.m4isper.contactsapp.domain.model.contact.EditableInstantMessage
+import com.m4isper.contactsapp.domain.model.contact.EditableName
+import com.m4isper.contactsapp.domain.model.contact.EditableNickname
+import com.m4isper.contactsapp.domain.model.contact.EditableNote
+import com.m4isper.contactsapp.domain.model.contact.EditableOrganization
+import com.m4isper.contactsapp.domain.model.contact.EditablePhone
+import com.m4isper.contactsapp.domain.model.contact.EditableRelation
+import com.m4isper.contactsapp.domain.model.contact.EditableSipAddress
+import com.m4isper.contactsapp.domain.model.contact.EditableWebsite
+import com.m4isper.contactsapp.domain.model.contact.EmailKind
+import com.m4isper.contactsapp.domain.model.contact.EventKind
+import com.m4isper.contactsapp.domain.model.contact.NameMode
+import com.m4isper.contactsapp.domain.model.contact.NameParts
+import com.m4isper.contactsapp.domain.model.contact.PhoneKind
+import com.m4isper.contactsapp.domain.model.contact.RelationKind
+import com.m4isper.contactsapp.domain.model.contact.SipKind
+import com.m4isper.contactsapp.domain.model.contact.WebsiteKind
 import com.m4isper.contactsapp.domain.vcard.VCardContact
 import com.m4isper.contactsapp.domain.vcard.VCardInvalidContact
 import com.m4isper.contactsapp.domain.vcard.VCardIssue
@@ -209,15 +209,21 @@ private fun decodeIfQuotedPrintable(
     value: String,
     params: Map<String, String>,
 ): String {
+    val isQuotedPrintable =
+        params[ENCODING_KEY]?.contains(QUOTED_PRINTABLE, ignoreCase = true) == true ||
+            params[CHARSET_KEY]?.equals(QUOTED_PRINTABLE, ignoreCase = true) == true ||
+            params[TYPE_KEY]?.contains(QUOTED_PRINTABLE, ignoreCase = true) == true
+    if (!isQuotedPrintable) return value
+    val charsetName =
+        params[CHARSET_KEY]?.takeIf { !it.equals(QUOTED_PRINTABLE, ignoreCase = true) }
+            ?: "UTF-8"
     val charset =
-        params[CHARSET_KEY]?.takeIf { it.equals(QUOTED_PRINTABLE, ignoreCase = true) }
-            ?: params[TYPE_KEY]?.takeIf { it.contains(QUOTED_PRINTABLE, ignoreCase = true) }
-            ?: return value
-    val encoding =
-        runCatching { Charset.forName(charset.takeIf { !it.equals(QUOTED_PRINTABLE, true) } ?: "UTF-8") }
-            .getOrDefault(Charsets.UTF_8)
-    return decodeQuotedPrintable(value, encoding)
+        runCatching { Charset.forName(charsetName) }.getOrDefault(Charsets.UTF_8)
+    return decodeQuotedPrintable(value, charset)
 }
+
+/** Параметр ENCODING, например quoted-printable. */
+private const val ENCODING_KEY = "ENCODING"
 
 /** Кодировка значения из параметра CHARSET. */
 private const val CHARSET_KEY = "CHARSET"

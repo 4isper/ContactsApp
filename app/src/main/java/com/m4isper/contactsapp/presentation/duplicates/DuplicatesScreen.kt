@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp.presentation.duplicates
 
+import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -7,12 +8,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Merge
@@ -36,29 +40,36 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.duplicates.DuplicateGroup
-import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import com.m4isper.contactsapp.presentation.common.Loadable
-import com.m4isper.contactsapp.presentation.contacts.contactSubtitle
+import com.m4isper.contactsapp.presentation.common.format.birthdayText
+import com.m4isper.contactsapp.presentation.common.permissions.rememberWritePermissionGate
+import com.m4isper.contactsapp.presentation.contacts.components.contactSubtitle
 import com.m4isper.contactsapp.ui.components.EmptyState
 import com.m4isper.contactsapp.ui.components.ErrorState
 import com.m4isper.contactsapp.ui.components.ListAvatar
 import com.m4isper.contactsapp.ui.components.LoadingState
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 import dev.zacsweers.metrox.viewmodel.metroViewModel
+import kotlinx.coroutines.launch
 
 /** Поиск дубликатов: группы похожих контактов и слияние в выбранный основной. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,7 +82,19 @@ fun DuplicatesScreen(
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarScope = rememberCoroutineScope()
     var pendingMerge by remember { mutableStateOf<PendingMerge?>(null) }
+
+    // Отказ в праве объясняем снекбаром: слияние не выполняется молча.
+    val writeRationale = stringResource(R.string.permission_write_rationale)
+    val writeGate =
+        rememberWritePermissionGate(
+            onDenied = {
+                snackbarScope.launch {
+                    snackbarHostState.showSnackbar(writeRationale)
+                }
+            },
+        )
     val mergedMessage = stringResource(R.string.duplicates_merged)
     val undoLabel = stringResource(R.string.duplicates_undo)
 
@@ -79,28 +102,14 @@ fun DuplicatesScreen(
         viewModel.load()
     }
 
-    LaunchedEffect(uiState.event) {
-        when (uiState.event) {
-            DuplicatesEvent.Merged -> {
-                val result =
-                    snackbarHostState.showSnackbar(
-                        message = mergedMessage,
-                        actionLabel = undoLabel,
-                        duration = SnackbarDuration.Long,
-                    )
-                if (result == SnackbarResult.ActionPerformed) {
-                    viewModel.onUndoMerge()
-                }
-            }
-            DuplicatesEvent.Unmerged -> Toast.makeText(context, R.string.duplicates_unmerged, Toast.LENGTH_SHORT).show()
-            DuplicatesEvent.MergeFailed ->
-                Toast.makeText(context, R.string.duplicates_action_failed, Toast.LENGTH_SHORT).show()
-            DuplicatesEvent.UnmergeFailed ->
-                Toast.makeText(context, R.string.duplicates_action_failed, Toast.LENGTH_SHORT).show()
-            null -> Unit
-        }
-        viewModel.onEventHandled()
-    }
+    DuplicatesScreenEvents(
+        event = uiState.event,
+        snackbarHostState = snackbarHostState,
+        context = context,
+        mergedMessage = mergedMessage,
+        undoLabel = undoLabel,
+        viewModel = viewModel,
+    )
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -156,13 +165,49 @@ fun DuplicatesScreen(
             pending = pending,
             onConfirm = {
                 pendingMerge = null
-                viewModel.onMerge(
-                    pending.target.contactId,
-                    pending.sources.map { it.contactId },
-                )
+                writeGate.run {
+                    viewModel.onMerge(
+                        pending.target.contactId,
+                        pending.sources.map { it.contactId },
+                    )
+                }
             },
             onDismiss = { pendingMerge = null },
         )
+    }
+}
+
+/** Обрабатывает события экрана дубликатов: показывает Snackbar/Toast после слияния или ошибки. */
+@Composable
+private fun DuplicatesScreenEvents(
+    event: DuplicatesEvent?,
+    snackbarHostState: SnackbarHostState,
+    context: Context,
+    mergedMessage: String,
+    undoLabel: String,
+    viewModel: DuplicatesViewModel,
+) {
+    LaunchedEffect(event) {
+        when (event) {
+            DuplicatesEvent.Merged -> {
+                val result =
+                    snackbarHostState.showSnackbar(
+                        message = mergedMessage,
+                        actionLabel = undoLabel,
+                        duration = SnackbarDuration.Long,
+                    )
+                if (result == SnackbarResult.ActionPerformed) {
+                    viewModel.onUndoMerge()
+                }
+            }
+            DuplicatesEvent.Unmerged -> Toast.makeText(context, R.string.duplicates_unmerged, Toast.LENGTH_SHORT).show()
+            DuplicatesEvent.MergeFailed ->
+                Toast.makeText(context, R.string.duplicates_action_failed, Toast.LENGTH_SHORT).show()
+            DuplicatesEvent.UnmergeFailed ->
+                Toast.makeText(context, R.string.duplicates_action_failed, Toast.LENGTH_SHORT).show()
+            null -> Unit
+        }
+        viewModel.onEventHandled()
     }
 }
 
@@ -173,12 +218,20 @@ private fun MergePreviewDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val additions = mergeAdditions(pending.target, pending.sources)
+    val locale = LocalConfiguration.current.locales[0]
+    val additions = mergeAdditions(pending.target, pending.sources, formatBirthday = { birthdayText(it, locale) })
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.duplicates_preview_title)) },
         text = {
-            Column {
+            // Ограниченная высота со скроллом: длинный список добавлений не уводит
+            // текст и кнопки подтверждения за пределы экрана.
+            Column(
+                modifier =
+                    Modifier
+                        .verticalScroll(rememberScrollState())
+                        .heightIn(max = 360.dp),
+            ) {
                 Text(
                     text = stringResource(R.string.duplicates_preview_additions, pending.target.name),
                     style = MaterialTheme.typography.bodyMedium,
@@ -271,7 +324,7 @@ private fun DuplicateGroupCard(
 ) {
     val spacing = LocalSpacing.current
     val defaultPrimaryId = group.members.first().contactId
-    var selectedId by rememberSaveable { mutableStateOf(defaultPrimaryId) }
+    var selectedId by rememberSaveable { mutableLongStateOf(defaultPrimaryId) }
     // Если контакт-основной исчез после слияния, возвращаемся к самому заполненному.
     val primaryId =
         selectedId.takeIf { id -> group.members.any { it.contactId == id } } ?: defaultPrimaryId

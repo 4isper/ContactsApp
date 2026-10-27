@@ -1,13 +1,18 @@
 package com.m4isper.contactsapp.ui.components
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,6 +34,10 @@ val LocalShowPhotos = staticCompositionLocalOf { true }
 /**
  * Круглый аватар: фото контакта поверх инициала.
  * Если фото нет, не загрузилось или отключено в настройках — виден инициал.
+ *
+ * Если `selected = true` (режим выделения), аватар становится индикатором выбора:
+ * фон — `primary`, поверх — галочка `onPrimary`. Это отделяет аватар от фона
+ * выбранной карточки и даёт нематериальный признак выделения.
  */
 @Composable
 fun ContactAvatar(
@@ -37,38 +46,56 @@ fun ContactAvatar(
     size: Dp,
     textStyle: TextStyle,
     modifier: Modifier = Modifier,
+    selected: Boolean = false,
     testTag: String? = null,
 ) {
+    val bg by animateColorAsState(
+        if (selected) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.primaryContainer
+        },
+        label = "avatarBg",
+    )
     Box(
         modifier =
             modifier
                 .size(size)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer)
+                .background(bg)
                 .then(if (testTag != null) Modifier.testTag(testTag) else Modifier),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text = name.firstOrNull()?.toString() ?: "?",
-            color = MaterialTheme.colorScheme.onPrimaryContainer,
-            fontWeight = FontWeight.Bold,
-            style = textStyle,
-        )
-        if (photoUri != null && LocalShowPhotos.current) {
-            AsyncImage(
-                model =
-                    ImageRequest
-                        .Builder(LocalContext.current)
-                        .data(photoUri)
-                        .crossfade(true)
-                        .build(),
+        if (selected) {
+            Icon(
+                imageVector = Icons.Default.Check,
                 contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .clip(CircleShape),
+                tint = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.size(size / 2),
             )
+        } else {
+            Text(
+                text = name.firstOrNull()?.toString() ?: "?",
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                fontWeight = FontWeight.Bold,
+                style = textStyle,
+            )
+            if (photoUri != null && LocalShowPhotos.current) {
+                AsyncImage(
+                    model =
+                        ImageRequest
+                            .Builder(LocalContext.current)
+                            .data(photoUri)
+                            .crossfade(true)
+                            .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape),
+                )
+            }
         }
     }
 }
@@ -79,6 +106,7 @@ fun ListAvatar(
     photoUri: String?,
     modifier: Modifier = Modifier,
     size: Dp = LocalSpacing.current.avatarList,
+    selected: Boolean = false,
 ) {
     ContactAvatar(
         name = name,
@@ -86,6 +114,7 @@ fun ListAvatar(
         size = size,
         textStyle = MaterialTheme.typography.titleMedium,
         modifier = modifier,
+        selected = selected,
     )
 }
 

@@ -1,0 +1,12 @@
+package com.m4isper.contactsapp.domain.usecase.groups
+
+import com.m4isper.contactsapp.domain.repository.GroupsRepository
+
+class AddContactsToGroupUseCase(
+    private val repository: GroupsRepository,
+) {
+    suspend operator fun invoke(
+        groupId: Long,
+        contactIds: List<Long>,
+    ) = repository.addContactsToGroup(groupId, contactIds)
+}

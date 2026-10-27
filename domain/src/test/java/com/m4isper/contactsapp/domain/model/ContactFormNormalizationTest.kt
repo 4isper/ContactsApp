@@ -1,7 +1,20 @@
 package com.m4isper.contactsapp.domain.model
 
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import com.m4isper.contactsapp.domain.model.contact.Birthday
+import com.m4isper.contactsapp.domain.model.contact.ContactForm
+import com.m4isper.contactsapp.domain.model.contact.EditableAddress
+import com.m4isper.contactsapp.domain.model.contact.EditableEmail
+import com.m4isper.contactsapp.domain.model.contact.EditableEvent
+import com.m4isper.contactsapp.domain.model.contact.EditableInstantMessage
+import com.m4isper.contactsapp.domain.model.contact.EditableName
+import com.m4isper.contactsapp.domain.model.contact.EditablePhone
+import com.m4isper.contactsapp.domain.model.contact.EditableRelation
+import com.m4isper.contactsapp.domain.model.contact.EditableSipAddress
+import com.m4isper.contactsapp.domain.model.contact.EditableWebsite
+import com.m4isper.contactsapp.domain.model.contact.ImProtocol
+import com.m4isper.contactsapp.domain.model.contact.normalized
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 class ContactFormNormalizationTest {
     @Test

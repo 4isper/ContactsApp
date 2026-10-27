@@ -10,9 +10,9 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.m4isper.contactsapp.FakeAndroidRepository
 import com.m4isper.contactsapp.R
-import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
-import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.ObserveFavoritesUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.ToggleFavoriteUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.testDetails
 import org.junit.Rule
@@ -39,8 +39,8 @@ class RecentsUiTest {
         val repository =
             FakeAndroidRepository(
                 listOf(
-                    testDetails(1, "Anna", "111").copy(lastContacted = 200, timesContacted = 2),
-                    testDetails(2, "Bob", "222").copy(lastContacted = 100, timesContacted = 1),
+                    testDetails(1, "Anna", "111").copy(lastContacted = 200),
+                    testDetails(2, "Bob", "222").copy(lastContacted = 100),
                     testDetails(3, "Cara", "333"),
                 ),
             )

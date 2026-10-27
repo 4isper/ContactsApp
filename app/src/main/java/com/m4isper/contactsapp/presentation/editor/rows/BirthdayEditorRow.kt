@@ -1,0 +1,117 @@
+package com.m4isper.contactsapp.presentation.editor.rows
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.domain.model.contact.Birthday
+import com.m4isper.contactsapp.domain.model.contact.EditableBirthday
+import com.m4isper.contactsapp.presentation.common.format.birthdayText
+import com.m4isper.contactsapp.ui.theme.LocalSpacing
+
+@Composable
+internal fun BirthdayEditorRow(
+    birthday: EditableBirthday,
+    error: String? = null,
+    onPickClick: () -> Unit,
+    onBirthdayChange: (Birthday?) -> Unit,
+    onAddYearClick: () -> Unit,
+) {
+    val spacing = LocalSpacing.current
+    val value = birthday.value
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = spacing.m),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            TextButton(
+                onClick = onPickClick,
+                modifier = Modifier.testTag("editor_birthday_button"),
+            ) {
+                Text(
+                    text =
+                        if (value == null) {
+                            stringResource(R.string.editor_birthday_add)
+                        } else {
+                            birthdayText(value)
+                        },
+                )
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            if (value != null) {
+                IconButton(
+                    onClick = { onBirthdayChange(null) },
+                    modifier = Modifier.testTag("editor_birthday_remove"),
+                ) {
+                    Icon(
+                        Icons.Filled.Delete,
+                        contentDescription = stringResource(R.string.editor_birthday_remove),
+                    )
+                }
+            }
+        }
+        if (error != null) {
+            Spacer(modifier = Modifier.height(spacing.xs))
+            Text(
+                text = error,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        if (value != null) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                // Тег на toggleable-строке: Switch с onCheckedChange = null
+                // сам кликов не имеет, клик обрабатывает строка.
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .testTag("editor_birthday_switch")
+                        .toggleable(
+                            value = value.year == null,
+                            role = Role.Switch,
+                            // Включение просто сбрасывает год; выключение требует
+                            // явного выбора года в пикере, а не молчаливого текущего.
+                            onValueChange = { noYear ->
+                                if (noYear) {
+                                    onBirthdayChange(value.copy(year = null))
+                                } else {
+                                    onAddYearClick()
+                                }
+                            },
+                        ),
+            ) {
+                Text(
+                    text = stringResource(R.string.editor_birthday_no_year),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Switch(
+                    checked = value.year == null,
+                    onCheckedChange = null,
+                )
+            }
+        }
+    }
+}

@@ -8,12 +8,12 @@ import android.provider.ContactsContract
 import com.m4isper.contactsapp.data.datasource.read.CONTACT_DATA_PROJECTION
 import com.m4isper.contactsapp.data.datasource.read.ContactRows
 import com.m4isper.contactsapp.data.datasource.read.parseContactRows
-import com.m4isper.contactsapp.data.datasource.write.buildCreateOperations
-import com.m4isper.contactsapp.data.datasource.write.buildUpdateOperations
-import com.m4isper.contactsapp.data.datasource.write.photoWriteOperations
-import com.m4isper.contactsapp.data.datasource.write.readDownscaledPhoto
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactForm
+import com.m4isper.contactsapp.data.datasource.write.contacts.buildCreateOperations
+import com.m4isper.contactsapp.data.datasource.write.contacts.buildUpdateOperations
+import com.m4isper.contactsapp.data.datasource.write.contacts.photoWriteOperations
+import com.m4isper.contactsapp.data.datasource.write.contacts.readDownscaledPhoto
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactForm
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
@@ -66,23 +66,25 @@ class ContactsWriterDataSourceImpl(
             cursor?.use { parseContactRows(it) } ?: ContactRows()
         }
 
-    override suspend fun loadRawContactId(contactId: Long): Long? =
+    override suspend fun loadRawContactId(contactId: Long): Long? = loadRawContactIds(contactId).firstOrNull()
+
+    override suspend fun loadRawContactIds(contactId: Long): List<Long> =
         withContext(Dispatchers.IO) {
-            val cursor =
-                context.contentResolver.query(
+            val ids = mutableListOf<Long>()
+            context.contentResolver
+                .query(
                     ContactsContract.RawContacts.CONTENT_URI,
                     arrayOf(ContactsContract.RawContacts._ID),
                     "${ContactsContract.RawContacts.CONTACT_ID}=?",
                     arrayOf(contactId.toString()),
                     "${ContactsContract.RawContacts._ID} ASC",
-                )
-            cursor?.use {
-                if (it.moveToFirst()) {
-                    it.getLong(it.getColumnIndexOrThrow(ContactsContract.RawContacts._ID))
-                } else {
-                    null
+                )?.use { cursor ->
+                    val idIndex = cursor.getColumnIndexOrThrow(ContactsContract.RawContacts._ID)
+                    while (cursor.moveToNext()) {
+                        ids += cursor.getLong(idIndex)
+                    }
                 }
-            }
+            ids
         }
 
     override suspend fun setContactPhoto(

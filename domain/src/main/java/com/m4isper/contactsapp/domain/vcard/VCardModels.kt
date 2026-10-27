@@ -1,7 +1,7 @@
 package com.m4isper.contactsapp.domain.vcard
 
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactForm
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactForm
 
 /**
  * Контакт, разобранный из .vcf: форма для редактора, фото и категории (названия групп).

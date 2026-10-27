@@ -12,8 +12,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.CallMerge
 import androidx.compose.material.icons.automirrored.filled.Label
-import androidx.compose.material.icons.filled.CallMerge
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PersonAdd
@@ -37,24 +37,30 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.R
-import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import com.m4isper.contactsapp.presentation.common.groups.GroupNameDialog
-import com.m4isper.contactsapp.presentation.contacts.contactSubtitle
+import com.m4isper.contactsapp.presentation.common.permissions.WritePermissionGate
+import com.m4isper.contactsapp.presentation.common.permissions.rememberWritePermissionGate
+import com.m4isper.contactsapp.presentation.contacts.components.contactSubtitle
 import com.m4isper.contactsapp.ui.components.ConfirmDialog
 import com.m4isper.contactsapp.ui.components.EmptyState
 import com.m4isper.contactsapp.ui.components.ListAvatar
 import com.m4isper.contactsapp.ui.components.LoadingState
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 import dev.zacsweers.metrox.viewmodel.metroViewModel
+import kotlinx.coroutines.launch
 
 /** Группа: состав, добавление и удаление участников, переименование, слияние. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -66,14 +72,26 @@ fun GroupDetailScreen(
     modifier: Modifier = Modifier,
     viewModel: GroupDetailViewModel = metroViewModel(),
 ) {
-    val context = LocalContext.current
+    val resources = LocalResources.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarScope = rememberCoroutineScope()
     var showPicker by remember { mutableStateOf(false) }
     var renameTarget by remember { mutableStateOf(false) }
     var deleteTarget by remember { mutableStateOf(false) }
     var showMerge by remember { mutableStateOf(false) }
 
+    // Отказ в праве объясняем снекбаром: действие не выполняется молча.
+    val writeGate =
+        rememberWritePermissionGate(
+            onDenied = {
+                snackbarScope.launch {
+                    snackbarHostState.showSnackbar(
+                        resources.getString(R.string.permission_write_rationale),
+                    )
+                }
+            },
+        )
     LaunchedEffect(groupId) {
         viewModel.load(groupId)
     }
@@ -113,7 +131,7 @@ fun GroupDetailScreen(
                         modifier = Modifier.testTag("merge_group_button"),
                     ) {
                         Icon(
-                            Icons.Filled.CallMerge,
+                            Icons.AutoMirrored.Filled.CallMerge,
                             contentDescription = stringResource(R.string.group_merge),
                         )
                     }
@@ -131,14 +149,19 @@ fun GroupDetailScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showPicker = true },
-                modifier = Modifier.testTag("add_group_member_fab"),
-            ) {
-                Icon(
-                    Icons.Filled.PersonAdd,
-                    contentDescription = stringResource(R.string.group_add_members),
-                )
+            val memberIds = uiState.members.map { it.contactId }.toSet()
+            val hasEligible = uiState.allContacts.any { it.contactId !in memberIds }
+            // Все контакты уже в группе: добавлять некого — FAB не предлагаем.
+            if (hasEligible) {
+                FloatingActionButton(
+                    onClick = { showPicker = true },
+                    modifier = Modifier.testTag("add_group_member_fab"),
+                ) {
+                    Icon(
+                        Icons.Filled.PersonAdd,
+                        contentDescription = stringResource(R.string.group_add_members),
+                    )
+                }
             }
         },
     ) { innerPadding ->
@@ -158,21 +181,61 @@ fun GroupDetailScreen(
                 MemberList(
                     members = uiState.members,
                     onContactClick = onContactClick,
-                    onRemove = viewModel::onRemoveMember,
+                    onRemove = { contactId -> writeGate.run { viewModel.onRemoveMember(contactId) } },
                     modifier = screenModifier,
                 )
         }
     }
 
+    GroupDetailDialogs(
+        uiState = uiState,
+        showPicker = showPicker,
+        renameTarget = renameTarget,
+        deleteTarget = deleteTarget,
+        showMerge = showMerge,
+        writeGate = writeGate,
+        onPickerConfirm = viewModel::onAddMembers,
+        onRenameConfirm = viewModel::onRename,
+        onDeleteConfirm = viewModel::onDelete,
+        onMergeConfirm = viewModel::onMerge,
+        onDismissPicker = { showPicker = false },
+        onDismissRename = { renameTarget = false },
+        onDismissDelete = { deleteTarget = false },
+        onDismissMerge = { showMerge = false },
+    )
+}
+
+/**
+ * Диалоги экрана группы: добавление участников, переименование, удаление и слияние.
+ * Все записи проходят через [writeGate].
+ */
+@Composable
+private fun GroupDetailDialogs(
+    uiState: GroupDetailUiState,
+    showPicker: Boolean,
+    renameTarget: Boolean,
+    deleteTarget: Boolean,
+    showMerge: Boolean,
+    writeGate: WritePermissionGate,
+    onPickerConfirm: (List<Long>) -> Unit,
+    onRenameConfirm: (String) -> Unit,
+    onDeleteConfirm: () -> Unit,
+    onMergeConfirm: (Long) -> Unit,
+    onDismissPicker: () -> Unit,
+    onDismissRename: () -> Unit,
+    onDismissDelete: () -> Unit,
+    onDismissMerge: () -> Unit,
+) {
     if (showPicker) {
         val memberIds = uiState.members.map { it.contactId }.toSet()
         ContactPickerDialog(
             contacts = uiState.allContacts,
+            excludedIds = memberIds,
             onConfirm = { ids ->
-                showPicker = false
-                viewModel.onAddMembers(ids)
+                onDismissPicker()
+                writeGate.run { onPickerConfirm(ids) }
             },
-            onDismiss = { showPicker = false },
+            onDismiss = onDismissPicker,
         )
     }
 
@@ -182,10 +245,10 @@ fun GroupDetailScreen(
             confirmLabel = stringResource(R.string.editor_save),
             initialName = uiState.group?.title.orEmpty(),
             onConfirm = { title ->
-                renameTarget = false
-                viewModel.onRename(title)
+                onDismissRename()
+                writeGate.run { onRenameConfirm(title) }
             },
-            onDismiss = { renameTarget = false },
+            onDismiss = onDismissRename,
             confirmTestTag = "rename_group_detail_confirm",
         )
     }
@@ -194,16 +257,17 @@ fun GroupDetailScreen(
         ConfirmDialog(
             title = stringResource(R.string.group_delete_title),
             text =
-                stringResource(
-                    R.string.group_delete_with_members,
+                pluralStringResource(
+                    R.plurals.group_delete_with_members,
+                    uiState.members.size,
                     uiState.members.size,
                 ),
             confirmLabel = stringResource(R.string.action_delete),
             onConfirm = {
-                deleteTarget = false
-                viewModel.onDelete()
+                onDismissDelete()
+                writeGate.run { onDeleteConfirm() }
             },
-            onDismiss = { deleteTarget = false },
+            onDismiss = onDismissDelete,
             danger = true,
             confirmTestTag = "confirm_group_detail_delete",
         )
@@ -211,7 +275,7 @@ fun GroupDetailScreen(
 
     if (showMerge) {
         AlertDialog(
-            onDismissRequest = { showMerge = false },
+            onDismissRequest = onDismissMerge,
             title = { Text(stringResource(R.string.group_merge)) },
             text = {
                 Column {
@@ -222,8 +286,8 @@ fun GroupDetailScreen(
                     uiState.groups.forEach { group ->
                         TextButton(
                             onClick = {
-                                showMerge = false
-                                viewModel.onMerge(group.id)
+                                onDismissMerge()
+                                writeGate.run { onMergeConfirm(group.id) }
                             },
                             modifier = Modifier.testTag("merge_group_option_${group.id}"),
                         ) {
@@ -233,7 +297,7 @@ fun GroupDetailScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showMerge = false }) {
+                TextButton(onClick = onDismissMerge) {
                     Text(stringResource(R.string.action_cancel))
                 }
             },

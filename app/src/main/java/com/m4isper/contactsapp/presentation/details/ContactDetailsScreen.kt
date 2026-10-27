@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PersonSearch
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -20,27 +23,31 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.R
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.PhoneNumber
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.PhoneNumber
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.account.contactAccountTitle
 import com.m4isper.contactsapp.presentation.common.call.ConfirmCallDialog
 import com.m4isper.contactsapp.presentation.common.call.rememberCallHandler
 import com.m4isper.contactsapp.presentation.common.format.phoneText
+import com.m4isper.contactsapp.presentation.common.permissions.openAppSettings
+import com.m4isper.contactsapp.presentation.common.permissions.rememberWritePermissionGate
+import com.m4isper.contactsapp.presentation.common.permissions.showWriteDeniedSnackbar
 import com.m4isper.contactsapp.presentation.common.share.contactAsText
 import com.m4isper.contactsapp.presentation.common.share.copyToClipboard
 import com.m4isper.contactsapp.presentation.common.share.openSms
 import com.m4isper.contactsapp.presentation.common.share.shareContact
 import com.m4isper.contactsapp.presentation.common.share.shareContactAsQr
 import com.m4isper.contactsapp.presentation.common.share.shareContactAsText
-import com.m4isper.contactsapp.presentation.editor.AccountPickerDialog
+import com.m4isper.contactsapp.presentation.editor.components.AccountPickerDialog
 import com.m4isper.contactsapp.presentation.widget.ContactsWidgetProvider
 import com.m4isper.contactsapp.ui.components.ConfirmDialog
 import com.m4isper.contactsapp.ui.components.EmptyState
 import com.m4isper.contactsapp.ui.components.ErrorState
 import com.m4isper.contactsapp.ui.components.LoadingState
 import dev.zacsweers.metrox.viewmodel.metroViewModel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 private data class CallTarget(
@@ -66,6 +73,14 @@ fun ContactDetailsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val requestCall = rememberCallHandler()
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    // Право на запись запрашиваем в момент переключения избранного, а не при открытии карточки.
+    val writeGate =
+        rememberWritePermissionGate(
+            onDenied = {
+                scope.launch { showWriteDeniedSnackbar(context, snackbarHostState) }
+            },
+        )
 
     var pendingConfirm by remember { mutableStateOf<CallTarget?>(null) }
     var showAccountPicker by remember { mutableStateOf(false) }
@@ -83,6 +98,7 @@ fun ContactDetailsScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             DetailsTopBar(
                 title =
@@ -113,8 +129,7 @@ fun ContactDetailsScreen(
                     }
                 },
                 onToggleFavorite = {
-                    viewModel.toggleFavorite()
-                    ContactsWidgetProvider.refresh(context)
+                    writeGate.run { launchFavoriteToggle(scope, viewModel, context) }
                 },
                 onCopyToAccount = {
                     pendingAction = AccountAction.COPY
@@ -173,7 +188,7 @@ fun ContactDetailsScreen(
     }
 
     // Смена аккаунта: выбор аккаунта и подтверждение переноса с удалением исходника.
-    DetailsEventToast(uiState.event, viewModel::onEventHandled)
+    DetailsEventToast(uiState.event, snackbarHostState, viewModel::onEventHandled)
 
     AccountChangeDialogs(
         uiState = uiState,
@@ -199,22 +214,63 @@ fun ContactDetailsScreen(
     )
 }
 
-/** Одноразовые события карточки показываем тостом. */
+/** Переключает избранное и обновляет виджет только после успешной записи. */
+private fun launchFavoriteToggle(
+    scope: CoroutineScope,
+    viewModel: ContactDetailsViewModel,
+    context: Context,
+) {
+    scope.launch {
+        if (viewModel.toggleFavorite()) {
+            ContactsWidgetProvider.refresh(context)
+        }
+    }
+}
+
+/**
+ * Одноразовые события карточки: большинство показываем тостом,
+ * сбой записи избранного — снекбаром с переходом в настройки.
+ */
 @Composable
 private fun DetailsEventToast(
     event: DetailsEvent?,
+    snackbarHostState: SnackbarHostState,
     onHandled: () -> Unit,
 ) {
     val context = LocalContext.current
+
+    // Строки читаем в композиции — они конфигурационно-зависимые
+    // и будут обновлены при смене Configuration.
+    val copyDone = stringResource(R.string.details_copy_done)
+    val moveDone = stringResource(R.string.details_move_done)
+    val accountFailed = stringResource(R.string.details_account_failed)
+    val favoriteFailed = stringResource(R.string.details_favorite_failed)
+    val openSettings = stringResource(R.string.permission_open_settings)
+
     LaunchedEffect(event) {
-        val messageRes =
-            when (event) {
-                is DetailsEvent.ContactCopied -> R.string.details_copy_done
-                is DetailsEvent.ContactMoved -> R.string.details_move_done
-                DetailsEvent.AccountActionFailed -> R.string.details_account_failed
-                null -> return@LaunchedEffect
+        when (event) {
+            is DetailsEvent.ContactCopied ->
+                Toast.makeText(context, copyDone, Toast.LENGTH_SHORT).show()
+
+            is DetailsEvent.ContactMoved ->
+                Toast.makeText(context, moveDone, Toast.LENGTH_SHORT).show()
+
+            DetailsEvent.AccountActionFailed ->
+                Toast.makeText(context, accountFailed, Toast.LENGTH_SHORT).show()
+
+            DetailsEvent.FavoriteWriteFailed -> {
+                val result =
+                    snackbarHostState.showSnackbar(
+                        message = favoriteFailed,
+                        actionLabel = openSettings,
+                    )
+                if (result == SnackbarResult.ActionPerformed) {
+                    openAppSettings(context)
+                }
             }
-        Toast.makeText(context, messageRes, Toast.LENGTH_SHORT).show()
+
+            null -> return@LaunchedEffect
+        }
         onHandled()
     }
 }

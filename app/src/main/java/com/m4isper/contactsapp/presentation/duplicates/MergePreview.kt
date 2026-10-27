@@ -1,6 +1,7 @@
 package com.m4isper.contactsapp.presentation.duplicates
 
-import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.Birthday
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 
 /** Поле, которого нет в основном контакте, но появится после слияния. */
 data class MergeAddition(
@@ -23,10 +24,13 @@ enum class MergeField {
 /**
  * Поля источников, которых нет в целевом контакте: после слияния они появятся
  * в общем контакте. Пустой список — сливать нечего, контакты уже совпадают.
+ * [formatBirthday] превращает дату в читаемый текст; data-класс [Birthday] в превью
+ * показывать нельзя.
  */
 internal fun mergeAdditions(
     target: ContactDetails,
     sources: List<ContactDetails>,
+    formatBirthday: (Birthday) -> String,
 ): List<MergeAddition> {
     val targetPhones = target.phones.map { it.number }.toSet()
     val targetEmails = target.emails.map { it.address }.toSet()
@@ -41,7 +45,7 @@ internal fun mergeAdditions(
         additions += valuesAddition(MergeField.WEBSITE, targetWebsites, source.websites.map { it.url })
         additions += organizationAddition(target, source)
         additions += noteAddition(target, source)
-        additions += birthdayAddition(target, source)
+        additions += birthdayAddition(target, source, formatBirthday)
     }
     return additions.distinctBy { it.field to it.value }
 }
@@ -90,13 +94,16 @@ private fun noteAddition(
     }
 }
 
-/** День рождения источника, если он отличается. */
+/** День рождения источника, если он отличается; значение форматирует [formatBirthday]. */
 private fun birthdayAddition(
     target: ContactDetails,
     source: ContactDetails,
-): List<MergeAddition> =
-    if (source.birthday != null && source.birthday != target.birthday) {
-        listOf(MergeAddition(MergeField.BIRTHDAY, source.birthday.toString()))
+    formatBirthday: (Birthday) -> String,
+): List<MergeAddition> {
+    val sourceBirthday = source.birthday
+    return if (sourceBirthday != null && sourceBirthday != target.birthday) {
+        listOf(MergeAddition(MergeField.BIRTHDAY, formatBirthday(sourceBirthday)))
     } else {
         emptyList()
     }
+}

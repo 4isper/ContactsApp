@@ -2,6 +2,7 @@ package com.m4isper.contactsapp.presentation.common.share
 
 import android.graphics.Bitmap
 import android.graphics.Color
+import androidx.core.graphics.createBitmap
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.WriterException
 import com.google.zxing.common.BitMatrix
@@ -26,7 +27,7 @@ internal fun qrCodeBitmap(
             pixels[offset + x] = if (matrix[y * sizePx + x]) Color.BLACK else Color.WHITE
         }
     }
-    return Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888).apply {
+    return createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888).apply {
         setPixels(pixels, 0, sizePx, 0, 0, sizePx, sizePx)
     }
 }

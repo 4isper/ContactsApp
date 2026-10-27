@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp.data.datasource.write
 
+import com.m4isper.contactsapp.data.datasource.write.groups.planGroupMerge
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

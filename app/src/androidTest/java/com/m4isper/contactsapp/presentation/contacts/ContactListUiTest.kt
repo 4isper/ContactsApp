@@ -19,28 +19,37 @@ import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.FakeSettingsRepository
 import com.m4isper.contactsapp.FakeVCardCodec
 import com.m4isper.contactsapp.R
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactGroup
-import com.m4isper.contactsapp.domain.model.PhoneKind
-import com.m4isper.contactsapp.domain.model.PhoneNumber
-import com.m4isper.contactsapp.domain.usecase.AddContactsToGroupUseCase
-import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
-import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.ExportContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactsPageUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
-import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetProfileContactIdUseCase
-import com.m4isper.contactsapp.domain.usecase.LoadContactPhotoUseCase
-import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
-import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
-import com.m4isper.contactsapp.domain.usecase.RefreshFavoritesUseCase
-import com.m4isper.contactsapp.domain.usecase.RemoveFavoriteUseCase
-import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactGroup
+import com.m4isper.contactsapp.domain.model.contact.EmailAddress
+import com.m4isper.contactsapp.domain.model.contact.EmailKind
+import com.m4isper.contactsapp.domain.model.contact.PhoneKind
+import com.m4isper.contactsapp.domain.model.contact.PhoneNumber
+import com.m4isper.contactsapp.domain.usecase.contacts.DeleteContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.ExportContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetAccountSyncInfosUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactAccountsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactDetailsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactsPageUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetProfileContactIdUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.LoadContactPhotoUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.ObserveFavoritesUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.RefreshFavoritesUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.RemoveFavoriteUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.ToggleFavoriteUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.AddContactsToGroupUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.CreateGroupUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.GetGroupMembershipUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.GetGroupsUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.ObserveSettingsUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
+import com.m4isper.contactsapp.presentation.contacts.components.ContactList
+import com.m4isper.contactsapp.presentation.contacts.state.ContactsFavoriteState
+import com.m4isper.contactsapp.presentation.contacts.state.ContactsFilterState
+import com.m4isper.contactsapp.presentation.contacts.state.ContactsGroupState
+import com.m4isper.contactsapp.presentation.contacts.state.ContactsListState
+import com.m4isper.contactsapp.presentation.contacts.state.ContactsSelectionState
 import com.m4isper.contactsapp.testDetails
 import kotlinx.coroutines.launch
 import org.junit.Assert.assertEquals
@@ -81,6 +90,7 @@ class ContactListUiTest {
                     getGroups = GetGroupsUseCase(groups),
                     getMembership = GetGroupMembershipUseCase(groups),
                     getAccounts = GetContactAccountsUseCase(repository),
+                    getAccountSyncInfos = GetAccountSyncInfosUseCase(repository),
                     getProfileContactId = GetProfileContactIdUseCase(repository),
                     createGroup = CreateGroupUseCase(groups),
                     addContactsToGroup = AddContactsToGroupUseCase(groups),
@@ -320,6 +330,7 @@ class ContactListUiTest {
         }
         compose.onNodeWithTag("selection_top_bar").assertIsDisplayed()
 
+        compose.onNodeWithTag("selection_more_button").performClick()
         compose.onNodeWithTag("delete_selected_button").performClick()
         compose.onNodeWithTag("confirm_batch_delete").performClick()
         // Удаление коммитится по истечении окна отмены (~4 c реального времени).
@@ -408,6 +419,7 @@ class ContactListUiTest {
             viewModel.uiState.value.selection == setOf(1L)
         }
 
+        compose.onNodeWithTag("selection_more_button").performClick()
         compose.onNodeWithTag("add_to_group_button").performClick()
         compose.onNodeWithTag("group_check_row_Семья").performClick()
         compose.onNodeWithTag("group_picker_confirm").performClick()
@@ -472,6 +484,7 @@ class ContactListUiTest {
         compose.waitUntil(timeoutMillis = 5_000) {
             viewModel.uiState.value.selection == setOf(1L)
         }
+        compose.onNodeWithTag("selection_more_button").performClick()
         compose.onNodeWithTag("delete_selected_button").performClick()
         compose.onNodeWithTag("confirm_batch_delete").performClick()
 
@@ -853,5 +866,21 @@ class ContactListUiTest {
             !viewModel.uiState.value.pinFavorites
         }
         compose.onNodeWithTag("favorites_section_header").assertDoesNotExist()
+    }
+
+    @Test
+    fun emailOnlyContact_exposesQuickActionsMenu() {
+        val contact =
+            testDetails(3, "Kate", emails = listOf(EmailAddress("kate@example.com", EmailKind.HOME)))
+        compose.setContent {
+            ContactList(
+                uiState = ContactsUiState(content = Loadable.Content(listOf(contact))),
+                onAction = { },
+            )
+        }
+
+        compose.onNodeWithTag("quick_actions_3").performClick()
+        compose.onNodeWithText("Email").assertIsDisplayed()
+        compose.onNodeWithText("Call").assertDoesNotExist()
     }
 }

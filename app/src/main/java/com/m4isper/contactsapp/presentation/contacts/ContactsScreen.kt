@@ -14,17 +14,22 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.presentation.common.permissions.PermissionRequest
 import com.m4isper.contactsapp.presentation.common.permissions.hasPermission
 import com.m4isper.contactsapp.presentation.common.permissions.openAppSettings
+import com.m4isper.contactsapp.presentation.contacts.components.ContactList
+import com.m4isper.contactsapp.presentation.contacts.effects.syncContactsPermission
 import com.m4isper.contactsapp.presentation.import.ImportPreviewViewModel
 import com.m4isper.contactsapp.presentation.widget.ContactsWidgetProvider
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
+@Suppress("CyclomaticComplexMethod")
 @Composable
 internal fun ContactsScreen(
     onNavigation: (ContactsNavigationAction) -> Unit,
@@ -46,6 +51,21 @@ internal fun ContactsScreen(
     var hasReadPermission by remember {
         mutableStateOf(hasPermission(context, Manifest.permission.READ_CONTACTS))
     }
+    var hasWritePermission by remember {
+        mutableStateOf(hasPermission(context, Manifest.permission.WRITE_CONTACTS))
+    }
+    var pendingWriteAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+    val writePermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+        ) { isGranted ->
+            hasWritePermission = isGranted
+            if (isGranted) {
+                pendingWriteAction?.invoke()
+                pendingWriteAction = null
+            }
+        }
 
     val readPermissionLauncher =
         rememberLauncherForActivityResult(
@@ -54,11 +74,22 @@ internal fun ContactsScreen(
             hasReadPermission = isGranted
             if (isGranted) {
                 viewModel.refresh()
+                if (!hasPermission(context, Manifest.permission.WRITE_CONTACTS)) {
+                    writePermissionLauncher.launch(Manifest.permission.WRITE_CONTACTS)
+                }
             }
         }
 
+    LaunchedEffect(hasWritePermission) {
+        if (hasWritePermission) {
+            pendingWriteAction?.invoke()
+            pendingWriteAction = null
+        }
+    }
+
     LifecycleResumeEffect(context) {
         syncContactsPermission(context, viewModel) { hasReadPermission = it }
+        hasWritePermission = hasPermission(context, Manifest.permission.WRITE_CONTACTS)
         onPauseOrDispose { /* no-op */ }
     }
 
@@ -73,6 +104,24 @@ internal fun ContactsScreen(
 
     BackHandler(enabled = uiState.isSelectionMode) {
         viewModel.selection.clear()
+    }
+
+    // Переход в режим выделения и выход из него озвучиваются для TalkBack:
+    // announceForAccessibility доступен на всех поддерживаемых API через View.
+    val accessibilityView = LocalView.current
+    LaunchedEffect(uiState.isSelectionMode) {
+        val message =
+            if (uiState.isSelectionMode) {
+                val count = uiState.selection.size
+                accessibilityView.resources.getQuantityString(
+                    R.plurals.selection_mode_announce,
+                    count,
+                    count,
+                )
+            } else {
+                accessibilityView.resources.getString(R.string.selection_mode_exited)
+            }
+        accessibilityView.announceForAccessibility(message)
     }
 
     if (!hasReadPermission) {
@@ -93,12 +142,44 @@ internal fun ContactsScreen(
                 onImportPreviewReady = onImportPreviewReady,
                 onNavigation = onNavigation,
             )
+        val handleAction = { action: ContactsUiAction ->
+            when (action) {
+                is ContactsListAction.ToggleFavorite ->
+                    if (hasWritePermission) {
+                        actions.handle(action)
+                    } else {
+                        pendingWriteAction = { actions.handle(action) }
+                        writePermissionLauncher.launch(Manifest.permission.WRITE_CONTACTS)
+                    }
+
+                ContactsListAction.ToggleFavoriteSelected ->
+                    if (hasWritePermission) {
+                        actions.handle(action)
+                    } else {
+                        pendingWriteAction = { actions.handle(action) }
+                        writePermissionLauncher.launch(Manifest.permission.WRITE_CONTACTS)
+                    }
+
+                ContactsFileAction.DeleteSelected ->
+                    if (hasWritePermission) {
+                        actions.handle(action)
+                    } else {
+                        pendingWriteAction = { actions.handle(action) }
+                        writePermissionLauncher.launch(Manifest.permission.WRITE_CONTACTS)
+                    }
+
+                else -> actions.handle(action)
+            }
+        }
+        val onCreateContact = { handleAction(ContactsNavigationAction.AddClicked) }
         ContactList(
             uiState = uiState,
-            onAction = { action -> actions.handle(action) },
+            onAction = handleAction,
             groups = uiState.groups,
             accounts = uiState.accounts,
             profileContactId = uiState.profileContactId,
+            accountSyncInfos = uiState.accountSyncInfos,
+            onCreateContact = onCreateContact,
         )
     }
 }
@@ -145,6 +226,7 @@ private fun ContactsActionScope.handleFile(action: ContactsFileAction) {
     when (action) {
         ContactsFileAction.Retry -> viewModel.refresh()
         ContactsFileAction.Refresh -> viewModel.refresh()
+        ContactsFileAction.RetrySync -> viewModel.refresh(reportSyncResult = true)
         ContactsFileAction.DeleteSelected -> viewModel.onDeleteSelected()
         ContactsFileAction.UndoDelete -> viewModel.onUndoDelete()
         ContactsFileAction.DeleteWindowClosed -> viewModel.onDeleteWindowClosed()

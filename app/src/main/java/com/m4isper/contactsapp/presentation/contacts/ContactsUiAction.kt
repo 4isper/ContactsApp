@@ -1,6 +1,6 @@
 package com.m4isper.contactsapp.presentation.contacts
 
-import com.m4isper.contactsapp.domain.model.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 
 /**
  * Действие экрана списка: один контракт вместо десятков колбэков. Экран
@@ -54,6 +54,9 @@ sealed interface ContactsFileAction : ContactsUiAction {
     data object Retry : ContactsFileAction
 
     data object Refresh : ContactsFileAction
+
+    /** Повторная синхронизация из индикатора аккаунта: обновляет список и сообщает итог. */
+    data object RetrySync : ContactsFileAction
 
     data object DeleteSelected : ContactsFileAction
 

@@ -2,11 +2,11 @@ package com.m4isper.contactsapp.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -18,7 +18,10 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.dp
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.ui.theme.BrandIcon
+import com.m4isper.contactsapp.ui.theme.BrandIcons
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 
 @Composable
@@ -34,9 +37,11 @@ fun SearchField(
         onValueChange = onValueChange,
         label = { Text(stringResource(R.string.search_label)) },
         leadingIcon = {
-            Icon(
-                Icons.Filled.Search,
+            BrandIcon(
+                imageVector = BrandIcons.Search,
                 contentDescription = null,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp),
             )
         },
         trailingIcon = {

@@ -1,7 +1,7 @@
 package com.m4isper.contactsapp.domain.repository
 
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactForm
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactForm
 
 /** Изменение контактов: создание, правка, удаление и фото. */
 interface ContactsWriter {

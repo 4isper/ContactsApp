@@ -4,10 +4,11 @@ import com.m4isper.contactsapp.domain.contacts.FAVORITES_GROUP
 import com.m4isper.contactsapp.domain.contacts.groupContactsByFirstLetter
 import com.m4isper.contactsapp.domain.contacts.groupContactsWithPinnedFavorites
 import com.m4isper.contactsapp.domain.contacts.letterIndices
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactSortOrder
-import com.m4isper.contactsapp.domain.model.PhoneKind
-import com.m4isper.contactsapp.domain.model.PhoneNumber
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.PhoneKind
+import com.m4isper.contactsapp.domain.model.contact.PhoneNumber
+import com.m4isper.contactsapp.domain.model.settings.ContactSortOrder
+import com.m4isper.contactsapp.presentation.contacts.components.letterIndexAt
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

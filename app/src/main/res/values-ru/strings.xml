@@ -8,7 +8,14 @@
     <string name="search_label">Поиск</string>
     <string name="action_clear_search">Очистить поиск</string>
     <string name="contacts_empty">Контакты не найдены</string>
-    <string name="contacts_nothing_found">Ничего не найдено</string>
+    <string name="contacts_empty_cta_create">Создать контакт</string>
+    <string name="contacts_empty_cta_import">Импортировать из файла</string>
+    <string name="contacts_empty_show_all">Показать все контакты</string>
+    <string name="contacts_search_empty">По запросу «%1$s» ничего не найдено</string>
+    <string name="contacts_group_empty">В группе «%1$s» нет контактов</string>
+    <string name="contacts_account_empty">В аккаунте «%1$s» нет контактов</string>
+    <string name="contacts_filters_empty">Нет контактов по заданным фильтрам</string>
+    <string name="action_clear_filters">Сбросить фильтры</string>
     <string name="contacts_load_error">Не удалось загрузить контакты</string>
     <string name="action_retry">Повторить</string>
 
@@ -104,6 +111,8 @@
     <string name="action_back">Назад</string>
     <string name="action_send_sms">SMS</string>
     <string name="action_send_email">Написать</string>
+    <string name="action_copy_email">Скопировать email</string>
+    <string name="action_copy_phone">Скопировать телефон</string>
     <string name="action_open_map">Карта</string>
     <string name="action_open_website">Открыть</string>
     <string name="action_open_messenger">Открыть в мессенджере</string>
@@ -153,12 +162,53 @@
     <string name="editor_duplicate_title">Такой контакт уже есть</string>
     <string name="editor_duplicate_message">Контакт с таким же телефоном или почтой уже есть:</string>
     <string name="editor_duplicate_save_anyway">Всё равно сохранить</string>
+    <string name="editor_photo_crop_canvas">Область обрезки: двигайте пальцем, масштабируйте щипком</string>
+    <string name="editor_photo_zoom_in">Увеличить</string>
+    <string name="editor_photo_zoom_out">Уменьшить</string>
+    <string name="editor_photo_crop_reset">Вернуть как было</string>
+    <string name="editor_photo_crop_save_failed">Не удалось сохранить кадр. Попробуйте ещё раз</string>
+    <string name="editor_check_fields">Проверьте поля, выделенные ошибкой</string>
     <string name="form_error_empty">Заполните хотя бы одно поле</string>
     <string name="contact_select_prompt">Выберите контакт из списка</string>
     <string name="filter_favorites">Избранное</string>
     <string name="filter_accounts">Аккаунты</string>
     <string name="filter_accounts_all">Все аккаунты</string>
+    <string name="account_sync_synced">Синхронизировано</string>
+    <string name="account_sync_syncing">Синхронизация…</string>
+    <string name="account_sync_stale">Устарело</string>
+    <string name="account_sync_error">Ошибка синхронизации</string>
+    <string name="account_sync_synced_ago">Синхр. %1$s</string>
+    <string name="account_sync_just_now">только что</string>
+    <plurals name="account_sync_minutes_ago">
+        <item quantity="one">%1$d мин назад</item>
+        <item quantity="few">%1$d мин назад</item>
+        <item quantity="many">%1$d мин назад</item>
+        <item quantity="other">%1$d мин назад</item>
+    </plurals>
+    <plurals name="account_sync_hours_ago">
+        <item quantity="one">%1$d ч назад</item>
+        <item quantity="few">%1$d ч назад</item>
+        <item quantity="many">%1$d ч назад</item>
+        <item quantity="other">%1$d ч назад</item>
+    </plurals>
+    <plurals name="account_sync_days_ago">
+        <item quantity="one">%1$d дн назад</item>
+        <item quantity="few">%1$d дн назад</item>
+        <item quantity="many">%1$d дн назад</item>
+        <item quantity="other">%1$d дн назад</item>
+    </plurals>
+    <string name="account_sync_account_line">%1$s · %2$s</string>
+    <string name="account_sync_retry">Повторить синхронизацию</string>
+    <string name="account_sync_retry_success">Контакты обновлены</string>
+    <string name="account_sync_retry_failed">Не удалось обновить контакты</string>
     <string name="favorites_empty">Нет избранных контактов</string>
+    <plurals name="selection_mode_announce">
+        <item quantity="one">Режим выделения, %1$d контакт выбран</item>
+        <item quantity="few">Режим выделения, %1$d контакта выбрано</item>
+        <item quantity="many">Режим выделения, %1$d контактов выбрано</item>
+        <item quantity="other">Режим выделения, %1$d контактов выбрано</item>
+    </plurals>
+    <string name="selection_mode_exited">Режим выделения закрыт</string>
     <string name="action_add_favorite">Добавить в избранное</string>
     <string name="action_remove_favorite">Убрать из избранного</string>
     <string name="share_contact">Поделиться контактом</string>
@@ -166,6 +216,12 @@
     <string name="action_close">Закрыть</string>
     <string name="action_share">Поделиться</string>
     <string name="action_select_all">Выбрать все</string>
+    <string name="a11y_next_section">Следующая секция</string>
+    <string name="a11y_previous_section">Предыдущая секция</string>
+    <string name="a11y_section_state">%1$s, секция %2$d из %3$d</string>
+    <string name="a11y_loading_contacts">Загружаем контакты</string>
+    <string name="a11y_expanded">Развернуто</string>
+    <string name="a11y_collapsed">Свернуто</string>
     <string name="action_deselect_all">Снять выделение</string>
     <string name="batch_delete_failed">Не удалось удалить контакты</string>
     <string name="action_more">Дополнительные действия</string>
@@ -181,6 +237,14 @@
     <string name="import_preview_invalid">Пропущено блоков: %1$d</string>
     <string name="import_entry_unnamed">Без имени</string>
     <string name="import_entry_duplicate">Уже есть в контактах: %1$s</string>
+    <string name="import_entry_merge_target">Объединить с: %1$s</string>
+    <string name="import_entry_merge_target_hint">Выберите, с каким контактом объединить</string>
+    <plurals name="import_entry_duplicate_count">
+        <item quantity="one">Уже в контактах — %1$d кандидат</item>
+        <item quantity="few">Уже в контактах — %1$d кандидата</item>
+        <item quantity="many">Уже в контактах — %1$d кандидатов</item>
+        <item quantity="other">Уже в контактах — %1$d кандидата</item>
+    </plurals>
     <string name="import_entry_photo">В файле есть фото</string>
     <string name="import_entry_categories">Категории: %1$s</string>
     <string name="import_decision_create">Создать</string>
@@ -228,6 +292,7 @@
     <string name="error_permission_denied">Нет доступа к контактам</string>
     <string name="error_provider_failed">Провайдер контактов недоступен</string>
     <string name="error_save_failed">Не удалось сохранить контакт</string>
+    <string name="error_local_account_blocked">Нельзя сохранить в локальное хранилище: системный аккаунт по умолчанию — облачный. Выберите облачный аккаунт или измените аккаунт по умолчанию в настройках системы.</string>
     <string name="error_delete_failed">Не удалось удалить контакт</string>
     <string name="error_import_failed">Не удалось прочитать файл</string>
     <string name="error_schedule_failed">Не удалось запланировать напоминание</string>
@@ -237,6 +302,9 @@
     <string name="app_lock_wrong_pin">Неверный PIN-код</string>
     <string name="app_lock_too_many_attempts">Слишком много попыток. Повторите через %1$d с</string>
     <string name="app_lock_unlock">Разблокировать</string>
+    <string name="details_favorite_failed">Не удалось обновить избранное. Проверьте право на запись контактов</string>
+    <string name="app_lock_show_pin">Показать PIN-код</string>
+    <string name="app_lock_hide_pin">Скрыть PIN-код</string>
     <string name="settings_language">Язык</string>
     <string name="settings_language_system">Язык системы</string>
     <string name="settings_appearance">Оформление</string>
@@ -262,9 +330,15 @@
     <string name="reminders_birthday">день рождения</string>
     <string name="reminders_event">событие</string>
     <string name="settings_reminders">Напоминания</string>
+    <string name="settings_reminders_permission">Для напоминаний нужно разрешение на уведомления</string>
+    <string name="settings_reminders_blocked">Уведомления отключены для приложения. Напоминания не будут доставлены</string>
     <string name="settings_reminders_desc">Уведомлять о ближайших днях рождения и событиях</string>
-    <string name="settings_reminder_lead">Уведомлять заранее</string>
-    <string name="settings_reminder_lead_value">за %1$d дн. до</string>
+    <plurals name="settings_reminder_lead_value">
+        <item quantity="one">за %1$d день до</item>
+        <item quantity="few">за %1$d дня до</item>
+        <item quantity="many">за %1$d дней до</item>
+        <item quantity="other">за %1$d дня до</item>
+    </plurals>
     <string name="shortcut_new_contact">Новый контакт</string>
     <string name="shortcut_favorites">Избранное</string>
     <string name="action_add_to_calendar">В календарь</string>
@@ -304,12 +378,25 @@
     <string name="group_label">Группа</string>
     <string name="group_add_members">Добавить контакты</string>
     <string name="group_add_members_action">Добавить</string>
+    <string name="picker_no_contacts">Нет контактов для добавления</string>
+    <string name="picker_all_members">Все контакты уже в этой группе</string>
+    <plurals name="group_add_members_count">
+        <item quantity="one">Добавить %1$d контакт</item>
+        <item quantity="few">Добавить %1$d контакта</item>
+        <item quantity="many">Добавить %1$d контактов</item>
+        <item quantity="other">Добавить %1$d контакта</item>
+    </plurals>
     <string name="group_remove_member">Убрать из группы</string>
     <string name="group_members_empty">В группе нет контактов</string>
     <string name="group_not_found">Группа не найдена</string>
     <string name="group_merge">Объединить группу</string>
     <string name="group_merge_message">Перенести контакты в другую группу:</string>
-    <string name="group_delete_with_members">Группа и её контакты (%1$d) будут удалены. Сразу после этого удаление можно отменить.</string>
+    <plurals name="group_delete_with_members">
+        <item quantity="one">Группа и её %1$d контакт будут удалены. Сразу после этого удаление можно отменить.</item>
+        <item quantity="few">Группа и её %1$d контакта будут удалены. Сразу после этого удаление можно отменить.</item>
+        <item quantity="many">Группа и её %1$d контактов будут удалены. Сразу после этого удаление можно отменить.</item>
+        <item quantity="other">Группа и её %1$d контакта будут удалены. Сразу после этого удаление можно отменить.</item>
+    </plurals>
     <string name="group_deleted">Группа удалена</string>
     <string name="group_undo_delete">Отменить</string>
     <string name="group_restored">Группа восстановлена</string>
@@ -333,7 +420,6 @@
     <string name="editor_add_photo">Добавить фото</string>
     <string name="editor_change_photo">Изменить фото</string>
     <string name="editor_remove_photo">Удалить фото</string>
-    <string name="editor_photo_desc">Фото контакта</string>
     <string name="editor_section_phones">Телефоны</string>
     <string name="editor_section_account">Аккаунт</string>
     <string name="editor_account_local">Локальный</string>
@@ -366,7 +452,6 @@
     <string name="editor_im_label">Аккаунт</string>
     <string name="editor_im_service">Сервис</string>
     <string name="editor_sip_label">SIP-адрес</string>
-    <string name="editor_address_label">Адрес</string>
     <string name="editor_address_street">Улица</string>
     <string name="editor_address_po_box">Абонентский ящик</string>
     <string name="editor_address_neighborhood">Район</string>
@@ -411,10 +496,10 @@
         <item quantity="other">%d email</item>
     </plurals>
     <plurals name="selection_count">
-        <item quantity="one">Выбран %d</item>
-        <item quantity="few">Выбрано %d</item>
-        <item quantity="many">Выбрано %d</item>
-        <item quantity="other">Выбрано %d</item>
+        <item quantity="one">%d выбран</item>
+        <item quantity="few">%d выбрано</item>
+        <item quantity="many">%d выбрано</item>
+        <item quantity="other">%d выбрано</item>
     </plurals>
     <plurals name="batch_delete_title">
         <item quantity="one">Удалить %d контакт?</item>
@@ -433,12 +518,6 @@
         <item quantity="few">%d контакта восстановлено</item>
         <item quantity="many">%d контактов восстановлено</item>
         <item quantity="other">%d контакта восстановлено</item>
-    </plurals>
-    <plurals name="import_success">
-        <item quantity="one">Импортирован %d контакт</item>
-        <item quantity="few">Импортировано %d контакта</item>
-        <item quantity="many">Импортировано %d контактов</item>
-        <item quantity="other">Импортировано %d контакта</item>
     </plurals>
     <plurals name="export_success">
         <item quantity="one">Экспортирован %d контакт</item>

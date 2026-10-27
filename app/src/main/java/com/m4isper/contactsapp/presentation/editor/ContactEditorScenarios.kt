@@ -1,19 +1,19 @@
 package com.m4isper.contactsapp.presentation.editor
 
-import com.m4isper.contactsapp.domain.model.AppError
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactForm
-import com.m4isper.contactsapp.domain.model.ContactGroup
-import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactAccountUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetDefaultContactAccountUseCase
-import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
-import com.m4isper.contactsapp.domain.usecase.SaveResult
-import com.m4isper.contactsapp.domain.usecase.SetLastContactAccountUseCase
-import com.m4isper.contactsapp.domain.usecase.UpdateContactUseCase
+import com.m4isper.contactsapp.domain.model.common.AppError
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactForm
+import com.m4isper.contactsapp.domain.model.contact.ContactGroup
+import com.m4isper.contactsapp.domain.usecase.contacts.CreateContactUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactAccountUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactAccountsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetDefaultContactAccountUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.SaveResult
+import com.m4isper.contactsapp.domain.usecase.contacts.SetLastContactAccountUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.UpdateContactUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.GetGroupsUseCase
 import com.m4isper.contactsapp.presentation.common.safeCall
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -76,7 +76,7 @@ internal suspend fun save(
     form: ContactForm,
 ) {
     try {
-        state.update { it.copy(isBusy = true, error = null, fieldErrors = emptyMap()) }
+        state.update { it.copy(isBusy = true, error = null, fieldErrors = emptyMap(), firstErrorRowIds = emptyMap()) }
         safeCall(EDITOR_TAG, "save contact failed") {
             val result =
                 if (id == null) {
@@ -89,7 +89,7 @@ internal suspend fun save(
                 is SaveResult.Invalid -> state.update { it.copy(formError = result.error) }
             }
         }.onFailure { failure ->
-            state.update { it.copy(error = AppError.SAVE_FAILED) }
+            state.update { it.copy(error = AppError.from(failure)) }
         }
     } finally {
         state.update { it.copy(isBusy = false) }

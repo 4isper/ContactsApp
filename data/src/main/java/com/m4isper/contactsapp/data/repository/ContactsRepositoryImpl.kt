@@ -4,6 +4,7 @@
 package com.m4isper.contactsapp.data.repository
 
 import android.provider.ContactsContract
+import com.m4isper.contactsapp.data.datasource.ContactsContractLegacy
 import com.m4isper.contactsapp.data.datasource.ContactsDataSource
 import com.m4isper.contactsapp.data.datasource.ContactsWriterDataSource
 import com.m4isper.contactsapp.data.datasource.read.ExistingAddress
@@ -28,25 +29,29 @@ import com.m4isper.contactsapp.data.datasource.read.mapRelationKind
 import com.m4isper.contactsapp.data.datasource.read.mapSipKind
 import com.m4isper.contactsapp.data.datasource.read.mapWebsiteKind
 import com.m4isper.contactsapp.data.format.birthdayFromString
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactForm
-import com.m4isper.contactsapp.domain.model.ContactLink
-import com.m4isper.contactsapp.domain.model.EditableAddress
-import com.m4isper.contactsapp.domain.model.EditableBirthday
-import com.m4isper.contactsapp.domain.model.EditableEmail
-import com.m4isper.contactsapp.domain.model.EditableInstantMessage
-import com.m4isper.contactsapp.domain.model.EditableName
-import com.m4isper.contactsapp.domain.model.EditableNickname
-import com.m4isper.contactsapp.domain.model.EditableNote
-import com.m4isper.contactsapp.domain.model.EditableOrganization
-import com.m4isper.contactsapp.domain.model.EditablePhone
-import com.m4isper.contactsapp.domain.model.EditableRelation
-import com.m4isper.contactsapp.domain.model.EditableSipAddress
-import com.m4isper.contactsapp.domain.model.EditableWebsite
-import com.m4isper.contactsapp.domain.model.ImProtocol
-import com.m4isper.contactsapp.domain.model.NameMode
-import com.m4isper.contactsapp.domain.model.RawContactRef
+import com.m4isper.contactsapp.domain.model.contact.AccountSyncInfo
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactForm
+import com.m4isper.contactsapp.domain.model.contact.ContactLink
+import com.m4isper.contactsapp.domain.model.contact.EditableAddress
+import com.m4isper.contactsapp.domain.model.contact.EditableBirthday
+import com.m4isper.contactsapp.domain.model.contact.EditableEmail
+import com.m4isper.contactsapp.domain.model.contact.EditableInstantMessage
+import com.m4isper.contactsapp.domain.model.contact.EditableName
+import com.m4isper.contactsapp.domain.model.contact.EditableNickname
+import com.m4isper.contactsapp.domain.model.contact.EditableNote
+import com.m4isper.contactsapp.domain.model.contact.EditableOrganization
+import com.m4isper.contactsapp.domain.model.contact.EditablePhone
+import com.m4isper.contactsapp.domain.model.contact.EditableRelation
+import com.m4isper.contactsapp.domain.model.contact.EditableSipAddress
+import com.m4isper.contactsapp.domain.model.contact.EditableWebsite
+import com.m4isper.contactsapp.domain.model.contact.Email
+import com.m4isper.contactsapp.domain.model.contact.ImProtocol
+import com.m4isper.contactsapp.domain.model.contact.NameMode
+import com.m4isper.contactsapp.domain.model.contact.Phone
+import com.m4isper.contactsapp.domain.model.contact.RawContactRef
+import com.m4isper.contactsapp.domain.model.contact.Website
 import com.m4isper.contactsapp.domain.repository.ContactsAccounts
 import com.m4isper.contactsapp.domain.repository.ContactsMerger
 import com.m4isper.contactsapp.domain.repository.ContactsReader
@@ -107,6 +112,8 @@ class ContactsRepositoryImpl(
 
     override suspend fun getContactAccounts(): List<ContactAccount> = dataSource.getContactAccounts()
 
+    override suspend fun getAccountSyncInfos(): List<AccountSyncInfo> = dataSource.getAccountSyncInfos()
+
     override suspend fun createContact(
         form: ContactForm,
         account: ContactAccount,
@@ -143,7 +150,7 @@ class ContactsRepositoryImpl(
         val sourceRawIds =
             sourceIds
                 .filter { it != targetId }
-                .mapNotNull { id -> writer.loadRawContactId(id) }
+                .flatMap { id -> writer.loadRawContactIds(id) }
         return if (targetRawId != null && sourceRawIds.isNotEmpty()) {
             writer.linkRawContacts(targetRawId, sourceRawIds)
             ContactLink(
@@ -271,7 +278,7 @@ private fun ExistingSipAddress.toEditable(): EditableSipAddress =
             customLabelOf(
                 type,
                 label,
-                ContactsContract.CommonDataKinds.SipAddress.TYPE_CUSTOM,
+                ContactsContractLegacy.Sip.TYPE_CUSTOM,
             ),
     )
 

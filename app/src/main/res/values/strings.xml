@@ -8,7 +8,14 @@
     <string name="search_label">Search</string>
     <string name="action_clear_search">Clear search</string>
     <string name="contacts_empty">No contacts found</string>
-    <string name="contacts_nothing_found">Nothing found</string>
+    <string name="contacts_empty_cta_create">Create contact</string>
+    <string name="contacts_empty_cta_import">Import from file</string>
+    <string name="contacts_empty_show_all">Show all contacts</string>
+    <string name="contacts_search_empty">Nothing found for “%1$s”</string>
+    <string name="contacts_group_empty">No contacts in group “%1$s”</string>
+    <string name="contacts_account_empty">No contacts in account “%1$s”</string>
+    <string name="contacts_filters_empty">No contacts match the active filters</string>
+    <string name="action_clear_filters">Clear filters</string>
     <string name="contacts_load_error">Couldn\'t load contacts</string>
     <string name="action_retry">Retry</string>
 
@@ -104,6 +111,8 @@
     <string name="action_back">Back</string>
     <string name="action_send_sms">SMS</string>
     <string name="action_send_email">Email</string>
+    <string name="action_copy_email">Copy email</string>
+    <string name="action_copy_phone">Copy phone</string>
     <string name="action_open_map">Map</string>
     <string name="action_open_website">Open</string>
     <string name="action_open_messenger">Open in messenger</string>
@@ -153,12 +162,45 @@
     <string name="editor_duplicate_title">Such a contact already exists</string>
     <string name="editor_duplicate_message">A contact with the same phone or email is already in your contacts:</string>
     <string name="editor_duplicate_save_anyway">Save anyway</string>
+    <string name="editor_photo_crop_canvas">Photo crop area: drag to move, pinch to zoom</string>
+    <string name="editor_photo_zoom_in">Zoom in</string>
+    <string name="editor_photo_zoom_out">Zoom out</string>
+    <string name="editor_photo_crop_reset">Reset to fit</string>
+    <string name="editor_photo_crop_save_failed">Couldn\'t save the cropped photo. Try again</string>
+    <string name="editor_check_fields">Check the highlighted fields</string>
     <string name="form_error_empty">Fill in at least one field</string>
     <string name="contact_select_prompt">Select a contact from the list</string>
     <string name="filter_favorites">Favorites</string>
     <string name="filter_accounts">Accounts</string>
     <string name="filter_accounts_all">All accounts</string>
+    <string name="account_sync_synced">Synced</string>
+    <string name="account_sync_syncing">Syncing…</string>
+    <string name="account_sync_stale">Out of date</string>
+    <string name="account_sync_error">Sync error</string>
+    <string name="account_sync_synced_ago">Synced %1$s</string>
+    <string name="account_sync_just_now">just now</string>
+    <plurals name="account_sync_minutes_ago">
+        <item quantity="one">%1$d min ago</item>
+        <item quantity="other">%1$d min ago</item>
+    </plurals>
+    <plurals name="account_sync_hours_ago">
+        <item quantity="one">%1$d h ago</item>
+        <item quantity="other">%1$d h ago</item>
+    </plurals>
+    <plurals name="account_sync_days_ago">
+        <item quantity="one">%1$d d ago</item>
+        <item quantity="other">%1$d d ago</item>
+    </plurals>
+    <string name="account_sync_account_line">%1$s · %2$s</string>
+    <string name="account_sync_retry">Retry sync</string>
+    <string name="account_sync_retry_success">Contacts refreshed</string>
+    <string name="account_sync_retry_failed">Couldn\'t refresh contacts</string>
     <string name="favorites_empty">No favorite contacts</string>
+    <plurals name="selection_mode_announce">
+        <item quantity="one">Selection mode, %1$d contact selected</item>
+        <item quantity="other">Selection mode, %1$d contacts selected</item>
+    </plurals>
+    <string name="selection_mode_exited">Selection mode exited</string>
     <string name="action_add_favorite">Add to favorites</string>
     <string name="action_remove_favorite">Remove from favorites</string>
     <string name="share_contact">Share contact</string>
@@ -166,6 +208,12 @@
     <string name="action_close">Close</string>
     <string name="action_share">Share</string>
     <string name="action_select_all">Select all</string>
+    <string name="a11y_next_section">Next section</string>
+    <string name="a11y_previous_section">Previous section</string>
+    <string name="a11y_section_state">%1$s, section %2$d of %3$d</string>
+    <string name="a11y_loading_contacts">Loading contacts</string>
+    <string name="a11y_expanded">Expanded</string>
+    <string name="a11y_collapsed">Collapsed</string>
     <string name="action_deselect_all">Deselect all</string>
     <string name="batch_delete_failed">Couldn\'t delete contacts</string>
     <string name="action_more">More actions</string>
@@ -181,6 +229,12 @@
     <string name="import_preview_invalid">Skipped entries: %1$d</string>
     <string name="import_entry_unnamed">No name</string>
     <string name="import_entry_duplicate">Already in contacts: %1$s</string>
+    <string name="import_entry_merge_target">Merge into: %1$s</string>
+    <string name="import_entry_merge_target_hint">Choose which contact to merge into</string>
+    <plurals name="import_entry_duplicate_count">
+        <item quantity="one">Already in contacts — %1$d candidate</item>
+        <item quantity="other">Already in contacts — %1$d candidates</item>
+    </plurals>
     <string name="import_entry_photo">Photo in file</string>
     <string name="import_entry_categories">Categories: %1$s</string>
     <string name="import_decision_create">Create</string>
@@ -228,6 +282,7 @@
     <string name="error_permission_denied">No permission to access contacts</string>
     <string name="error_provider_failed">The contacts provider is unavailable</string>
     <string name="error_save_failed">Could not save the contact</string>
+    <string name="error_local_account_blocked">Cannot save to local storage: the default account is set to cloud. Choose a cloud account or change the default account in system settings.</string>
     <string name="error_delete_failed">Could not delete the contact</string>
     <string name="error_import_failed">Could not read the file</string>
     <string name="error_schedule_failed">Could not schedule the reminder</string>
@@ -237,6 +292,9 @@
     <string name="app_lock_wrong_pin">Wrong PIN code</string>
     <string name="app_lock_too_many_attempts">Too many attempts. Try again in %1$d s</string>
     <string name="app_lock_unlock">Unlock</string>
+    <string name="details_favorite_failed">Couldn\'t update favorites. Check the write permission for contacts</string>
+    <string name="app_lock_show_pin">Show PIN code</string>
+    <string name="app_lock_hide_pin">Hide PIN code</string>
     <string name="settings_language">Language</string>
     <string name="settings_language_system">System language</string>
     <string name="settings_appearance">Appearance</string>
@@ -262,9 +320,13 @@
     <string name="reminders_birthday">birthday</string>
     <string name="reminders_event">event</string>
     <string name="settings_reminders">Reminders</string>
+    <string name="settings_reminders_permission">Reminders need the notification permission</string>
+    <string name="settings_reminders_blocked">Notifications are turned off for the app. Reminders cannot be delivered</string>
     <string name="settings_reminders_desc">Notify about upcoming birthdays and events</string>
-    <string name="settings_reminder_lead">Remind in advance</string>
-    <string name="settings_reminder_lead_value">%1$d days before</string>
+    <plurals name="settings_reminder_lead_value">
+        <item quantity="one">%1$d day before</item>
+        <item quantity="other">%1$d days before</item>
+    </plurals>
     <string name="shortcut_new_contact">New contact</string>
     <string name="shortcut_favorites">Favorites</string>
     <string name="action_add_to_calendar">Add to calendar</string>
@@ -304,12 +366,21 @@
     <string name="group_label">Group</string>
     <string name="group_add_members">Add contacts</string>
     <string name="group_add_members_action">Add</string>
+    <string name="picker_no_contacts">No contacts to add</string>
+    <string name="picker_all_members">Everyone is already in this group</string>
+    <plurals name="group_add_members_count">
+        <item quantity="one">Add %1$d contact</item>
+        <item quantity="other">Add %1$d contacts</item>
+    </plurals>
     <string name="group_remove_member">Remove from group</string>
     <string name="group_members_empty">No contacts in the group</string>
     <string name="group_not_found">Group not found</string>
     <string name="group_merge">Merge group</string>
     <string name="group_merge_message">Move the contacts to another group:</string>
-    <string name="group_delete_with_members">The group and its %1$d contacts will be deleted. You can undo it right after.</string>
+    <plurals name="group_delete_with_members">
+        <item quantity="one">The group and its %1$d contact will be deleted. You can undo it right after.</item>
+        <item quantity="other">The group and its %1$d contacts will be deleted. You can undo it right after.</item>
+    </plurals>
     <string name="group_deleted">Group deleted</string>
     <string name="group_undo_delete">Undo</string>
     <string name="group_restored">Group restored</string>
@@ -333,7 +404,6 @@
     <string name="editor_add_photo">Add photo</string>
     <string name="editor_change_photo">Change photo</string>
     <string name="editor_remove_photo">Remove photo</string>
-    <string name="editor_photo_desc">Contact photo</string>
     <string name="editor_section_phones">Phones</string>
     <string name="editor_section_account">Account</string>
     <string name="editor_account_local">Local</string>
@@ -366,7 +436,6 @@
     <string name="editor_im_label">Account</string>
     <string name="editor_im_service">Service</string>
     <string name="editor_sip_label">SIP address</string>
-    <string name="editor_address_label">Address</string>
     <string name="editor_address_street">Street</string>
     <string name="editor_address_po_box">PO box</string>
     <string name="editor_address_neighborhood">Neighborhood</string>
@@ -419,10 +488,6 @@
     <plurals name="batch_delete_undone">
         <item quantity="one">%d contact restored</item>
         <item quantity="other">%d contacts restored</item>
-    </plurals>
-    <plurals name="import_success">
-        <item quantity="one">Imported %d contact</item>
-        <item quantity="other">Imported %d contacts</item>
     </plurals>
     <plurals name="export_success">
         <item quantity="one">Exported %d contact</item>

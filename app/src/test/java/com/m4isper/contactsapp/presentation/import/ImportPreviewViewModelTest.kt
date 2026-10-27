@@ -2,29 +2,30 @@ package com.m4isper.contactsapp.presentation.import
 
 import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.FakeVCardCodec
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactForm
-import com.m4isper.contactsapp.domain.model.ContactLink
-import com.m4isper.contactsapp.domain.model.EditableName
-import com.m4isper.contactsapp.domain.model.EditablePhone
-import com.m4isper.contactsapp.domain.model.ImportDecision
-import com.m4isper.contactsapp.domain.model.PhoneKind
-import com.m4isper.contactsapp.domain.model.PhoneNumber
+import com.m4isper.contactsapp.domain.model.contact.AccountSyncInfo
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactForm
+import com.m4isper.contactsapp.domain.model.contact.ContactLink
+import com.m4isper.contactsapp.domain.model.contact.EditableName
+import com.m4isper.contactsapp.domain.model.contact.EditablePhone
+import com.m4isper.contactsapp.domain.model.contact.ImportDecision
+import com.m4isper.contactsapp.domain.model.contact.PhoneKind
+import com.m4isper.contactsapp.domain.model.contact.PhoneNumber
 import com.m4isper.contactsapp.domain.repository.ContactsAccounts
 import com.m4isper.contactsapp.domain.repository.ContactsMerger
 import com.m4isper.contactsapp.domain.repository.ContactsReader
 import com.m4isper.contactsapp.domain.repository.ContactsWriter
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
-import com.m4isper.contactsapp.domain.usecase.AddContactsToGroupUseCase
-import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
-import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
-import com.m4isper.contactsapp.domain.usecase.ImportContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.MergeContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.SetContactPhotoUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.CreateContactUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.DeleteContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactAccountsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.ImportContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.MergeContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.SetContactPhotoUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.AddContactsToGroupUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.GetGroupsUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -72,6 +73,8 @@ private class PreviewContactsRepository(
 
     override suspend fun getContactAccounts(): List<ContactAccount> = listOf(ContactAccount.Local)
 
+    override suspend fun getAccountSyncInfos(): List<AccountSyncInfo> = emptyList()
+
     override suspend fun createContact(
         form: ContactForm,
         account: ContactAccount,
@@ -90,7 +93,7 @@ private class PreviewContactsRepository(
     override suspend fun mergeContacts(
         targetId: Long,
         sourceIds: List<Long>,
-    ): com.m4isper.contactsapp.domain.model.ContactLink? = null
+    ): com.m4isper.contactsapp.domain.model.contact.ContactLink? = null
 
     override fun observeFavorites(): Flow<Set<Long>> = favorites.asStateFlow()
 

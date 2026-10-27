@@ -7,12 +7,13 @@ import android.content.Context
 import android.net.Uri
 import android.provider.ContactsContract
 import android.provider.ContactsContract.CommonDataKinds.Email
+import android.provider.ContactsContract.CommonDataKinds.Event
+import android.provider.ContactsContract.CommonDataKinds.Im
 import android.provider.ContactsContract.CommonDataKinds.Nickname
 import android.provider.ContactsContract.CommonDataKinds.Note
 import android.provider.ContactsContract.CommonDataKinds.Organization
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.Relation
-import android.provider.ContactsContract.CommonDataKinds.SipAddress
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import android.provider.ContactsContract.CommonDataKinds.Website
@@ -22,9 +23,11 @@ import com.m4isper.contactsapp.data.datasource.read.DataColumns
 import com.m4isper.contactsapp.data.datasource.read.DataRow
 import com.m4isper.contactsapp.data.datasource.read.aggregateContacts
 import com.m4isper.contactsapp.data.datasource.read.buildContactDetails
-import com.m4isper.contactsapp.data.datasource.write.readContactPhotoBytes
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.data.datasource.write.contacts.readContactPhotoBytes
+import com.m4isper.contactsapp.domain.model.contact.AccountSyncInfo
+import com.m4isper.contactsapp.domain.model.contact.AccountSyncStatus
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
@@ -38,12 +41,11 @@ private val CONTACT_PROJECTION =
         ContactsContract.Contacts.DISPLAY_NAME,
         ContactsContract.Contacts.PHOTO_THUMBNAIL_URI,
         ContactsContract.Contacts.CONTACT_LAST_UPDATED_TIMESTAMP,
-        ContactsContract.Contacts.LAST_TIME_CONTACTED,
-        ContactsContract.Contacts.TIMES_CONTACTED,
+        ContactsContractLegacy.LAST_TIME_CONTACTED,
     )
 
 private const val CONTACT_SORT_ORDER =
-    "${ContactsContract.Contacts.DISPLAY_NAME} ASC"
+    "${ContactsContract.Contacts.DISPLAY_NAME} ASC, ${ContactsContract.Contacts._ID} ASC"
 
 /**
  * Контакты без имени в список не попадают. Фильтр уходит в провайдер, а не в
@@ -65,7 +67,9 @@ private val DATA_MIMETYPES =
         StructuredPostal.CONTENT_ITEM_TYPE,
         Website.CONTENT_ITEM_TYPE,
         Note.CONTENT_ITEM_TYPE,
-        SipAddress.CONTENT_ITEM_TYPE,
+        ContactsContractLegacy.Sip.CONTENT_ITEM_TYPE,
+        Event.CONTENT_ITEM_TYPE,
+        ContactsContractLegacy.Im.CONTENT_ITEM_TYPE,
     )
 
 /** Сколько id контактов уходит в один запрос к провайдеру. */
@@ -174,6 +178,73 @@ class ContactsDataSourceImpl(
                     },
                 )
         }
+
+    override suspend fun getAccountSyncInfos(): List<AccountSyncInfo> =
+        withContext(Dispatchers.IO) {
+            getContactAccounts()
+                .asSequence()
+                .filterNot { it.isLocal }
+                .mapNotNull { account ->
+                    val name = account.name?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+                    val type = account.type?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+                    val androidAccount = Account(name, type)
+
+                    // Публичный Android API не отдаёт время последней успешной
+                    // синхронизации. Не подставляем System.currentTimeMillis():
+                    // лучше показать только реальный статус, чем выдуманное
+                    // «только что».
+                    val status = queryAccountSyncStatus(androidAccount) ?: return@mapNotNull null
+                    AccountSyncInfo(
+                        account = account,
+                        syncStatus = status,
+                        lastSyncTimeMs = null,
+                    )
+                }.toList()
+        }
+
+    /**
+     * Статус по данным, которые действительно доступны приложению:
+     * активная/ожидающая синхронизация, настройки автосинхронизации и
+     * неотправленные изменения. Результат последней синхронизации Android
+     * публично не сообщает, поэтому [AccountSyncStatus.ERROR] здесь не
+     * синтезируется.
+     */
+    private fun queryAccountSyncStatus(account: Account): AccountSyncStatus? =
+        runCatching {
+            val authority = ContactsContract.AUTHORITY
+            val isActive = ContentResolver.isSyncActive(account, authority)
+            val isPending = ContentResolver.isSyncPending(account, authority)
+            val isSyncable = ContentResolver.getIsSyncable(account, authority)
+            val syncAutomatically = ContentResolver.getSyncAutomatically(account, authority)
+            val masterSyncAutomatically = ContentResolver.getMasterSyncAutomatically()
+            val hasDirtyContacts =
+                if (isActive || isPending) {
+                    false
+                } else {
+                    hasDirtyContacts(account)
+                }
+
+            resolveAccountSyncStatus(
+                isSyncActive = isActive,
+                isSyncPending = isPending,
+                isSyncable = isSyncable,
+                syncAutomatically = syncAutomatically,
+                masterSyncAutomatically = masterSyncAutomatically,
+                hasDirtyContacts = hasDirtyContacts,
+            )
+        }.getOrNull()
+
+    private fun hasDirtyContacts(account: Account): Boolean =
+        context.contentResolver
+            .query(
+                ContactsContract.RawContacts.CONTENT_URI,
+                arrayOf(ContactsContract.RawContacts._ID),
+                "${ContactsContract.RawContacts.ACCOUNT_NAME} = ? AND " +
+                    "${ContactsContract.RawContacts.ACCOUNT_TYPE} = ? AND " +
+                    "${ContactsContract.RawContacts.DIRTY} = 1",
+                arrayOf(account.name, account.type),
+                null,
+            )?.use { cursor -> cursor.count > 0 } ?: false
 
     private fun addAccountManagerAccounts(
         contactTypes: Set<String>,
@@ -286,8 +357,7 @@ class ContactsDataSourceImpl(
             val nameIndex = it.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME)
             val photoIndex = it.getColumnIndexOrThrow(ContactsContract.Contacts.PHOTO_THUMBNAIL_URI)
             val updatedIndex = it.getColumnIndexOrThrow(ContactsContract.Contacts.CONTACT_LAST_UPDATED_TIMESTAMP)
-            val lastContactedIndex = it.getColumnIndexOrThrow(ContactsContract.Contacts.LAST_TIME_CONTACTED)
-            val timesContactedIndex = it.getColumnIndexOrThrow(ContactsContract.Contacts.TIMES_CONTACTED)
+            val lastContactedIndex = it.getColumnIndexOrThrow(ContactsContractLegacy.LAST_TIME_CONTACTED)
             while (it.moveToNext()) {
                 headers +=
                     ContactHeaderRow(
@@ -297,7 +367,6 @@ class ContactsDataSourceImpl(
                         lastUpdated = if (it.isNull(updatedIndex)) null else it.getLong(updatedIndex),
                         lastContacted =
                             if (it.isNull(lastContactedIndex)) null else it.getLong(lastContactedIndex),
-                        timesContacted = it.getInt(timesContactedIndex),
                     )
             }
         }
@@ -317,7 +386,7 @@ class ContactsDataSourceImpl(
                 queryData(
                     selection =
                         "${ContactsContract.Data.CONTACT_ID} IN ($placeholders) AND " +
-                            "${ContactsContract.Data.MIMETYPE} IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                            "${ContactsContract.Data.MIMETYPE} IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     args = chunk.map(Long::toString).toTypedArray() + DATA_MIMETYPES,
                 )
         }
@@ -399,6 +468,26 @@ private fun contactSyncAccountTypes(): Set<String> =
         .getSyncAdapterTypes()
         .filter { it.authority == ContactsContract.AUTHORITY && it.supportsUploading() }
         .mapTo(mutableSetOf()) { it.accountType }
+
+/**
+ * Чистое правило статуса: его можно проверить без Android runtime.
+ * `null` означает «статус неизвестен», а не «синхронизировано».
+ */
+internal fun resolveAccountSyncStatus(
+    isSyncActive: Boolean,
+    isSyncPending: Boolean,
+    isSyncable: Int,
+    syncAutomatically: Boolean,
+    masterSyncAutomatically: Boolean,
+    hasDirtyContacts: Boolean,
+): AccountSyncStatus? =
+    when {
+        isSyncActive || isSyncPending -> AccountSyncStatus.SYNCING
+        isSyncable < 0 -> null
+        isSyncable == 0 || !syncAutomatically || !masterSyncAutomatically -> AccountSyncStatus.STALE
+        hasDirtyContacts -> AccountSyncStatus.STALE
+        else -> AccountSyncStatus.SYNCED
+    }
 
 /**
  * Аккаунт целевого raw contact — минимальный raw id, как в редакторе.

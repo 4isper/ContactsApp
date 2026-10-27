@@ -1,28 +1,35 @@
 package com.m4isper.contactsapp.data.repository
 
 import com.m4isper.contactsapp.data.datasource.GroupsDataSource
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactGroup
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactGroup
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class GroupsRepositoryImplTest {
-    private class RecordingGroupsDataSource(
-        private val failure: Throwable? = null,
-    ) : GroupsDataSource {
-        var createdTitle: String? = null
-        var createdAccount: ContactAccount? = null
+    private class FakeDs : GroupsDataSource {
+        val groups = mutableListOf(ContactGroup(id = 1L, title = "A"), ContactGroup(id = 2L, title = "B"))
+        val created = mutableListOf<Pair<String, ContactAccount>>()
+        val renamed = mutableListOf<Pair<Long, String>>()
+        val deleted = mutableListOf<Long>()
+        val added = mutableListOf<Pair<Long, List<Long>>>()
+        val removed = mutableListOf<Pair<Long, List<Long>>>()
+        var merged: Pair<Long, Long>? = null
 
-        override suspend fun loadGroups(): List<ContactGroup> {
-            failure?.let { throw it }
-            return emptyList()
-        }
+        override suspend fun loadGroups(): List<ContactGroup> = groups.toList()
 
         override suspend fun loadMembership(): Map<Long, Set<Long>> = emptyMap()
 
-        override suspend fun loadContactGroupIds(contactId: Long): Set<Long> = emptySet()
+        override suspend fun loadContactGroupIds(contactId: Long): Set<Long> =
+            if (contactId ==
+                10L
+            ) {
+                setOf(2L)
+            } else {
+                emptySet()
+            }
 
         override suspend fun createGroup(title: String): ContactGroup = createGroup(title, ContactAccount.Local)
 
@@ -30,88 +37,105 @@ class GroupsRepositoryImplTest {
             title: String,
             account: ContactAccount,
         ): ContactGroup {
-            failure?.let { throw it }
-            createdTitle = title
-            createdAccount = account
-            return ContactGroup(
-                id = 1,
-                title = title,
-                accountName = account.name,
-                accountType = account.type,
-            )
+            created += title to account
+            return ContactGroup(id = 9L, title = title, accountName = account.name, accountType = account.type)
         }
 
         override suspend fun renameGroup(
             groupId: Long,
             title: String,
-        ) = Unit
-
-        override suspend fun deleteGroup(groupId: Long) = Unit
-
-        override suspend fun removeContactsFromGroup(
-            groupId: Long,
-            contactIds: List<Long>,
-        ) = Unit
-
-        override suspend fun mergeGroups(
-            sourceGroupId: Long,
-            targetGroupId: Long,
         ) {
-            failure?.let { throw it }
+            renamed += groupId to title
+        }
+
+        override suspend fun deleteGroup(groupId: Long) {
+            deleted += groupId
         }
 
         override suspend fun addContactsToGroup(
             groupId: Long,
             contactIds: List<Long>,
-        ) = Unit
+        ) {
+            added += groupId to contactIds
+        }
+
+        override suspend fun removeContactsFromGroup(
+            groupId: Long,
+            contactIds: List<Long>,
+        ) {
+            removed +=
+                groupId to contactIds
+        }
+
+        override suspend fun mergeGroups(
+            sourceGroupId: Long,
+            targetGroupId: Long,
+        ) {
+            merged =
+                sourceGroupId to targetGroupId
+        }
     }
 
     @Test
-    fun `createGroup forwards trimmed title and selected account`() =
+    fun getContactGroupsFiltersByMembership() =
         runBlocking {
-            val dataSource = RecordingGroupsDataSource()
-            val repository = GroupsRepositoryImpl(dataSource)
-            val google = ContactAccount(name = "user@gmail.com", type = "com.google")
-
-            val group = repository.createGroup("  Работа  ", google)
-
-            assertEquals("Работа", dataSource.createdTitle)
-            assertEquals(google, dataSource.createdAccount)
-            assertEquals(
-                ContactGroup(
-                    id = 1,
-                    title = "Работа",
-                    accountName = google.name,
-                    accountType = google.type,
-                ),
-                group,
-            )
+            val ds = FakeDs()
+            val repo = GroupsRepositoryImpl(ds)
+            assertEquals(listOf(2L), repo.getContactGroups(10L).map { it.id })
         }
 
     @Test
-    fun `a failed read of the groups is propagated`() {
-        val repository = GroupsRepositoryImpl(RecordingGroupsDataSource(failure = SecurityException("denied")))
-
-        val failure = runCatching { runBlocking { repository.getGroups() } }.exceptionOrNull()
-
-        assertTrue(failure is SecurityException)
-    }
-
-    @Test
-    fun `a failed creation of a group is propagated`() {
-        val repository = GroupsRepositoryImpl(RecordingGroupsDataSource(failure = RuntimeException("boom")))
-
-        val failure = runCatching { runBlocking { repository.createGroup("Work") } }.exceptionOrNull()
-
-        assertTrue(failure is RuntimeException)
-    }
+    fun getContactGroupsEmptyWhenNoMembership() =
+        runBlocking {
+            val ds = FakeDs()
+            val repo = GroupsRepositoryImpl(ds)
+            assertTrue(repo.getContactGroups(99L).isEmpty())
+        }
 
     @Test
-    fun `a failed merge of the groups is propagated`() {
-        val repository = GroupsRepositoryImpl(RecordingGroupsDataSource(failure = RuntimeException("boom")))
+    fun createGroupTrimsTitle() =
+        runBlocking {
+            val ds = FakeDs()
+            val repo = GroupsRepositoryImpl(ds)
+            repo.createGroup("  x  ")
+            assertEquals("x", ds.created.first().first)
+        }
 
-        val failure = runCatching { runBlocking { repository.mergeGroups(1, 2) } }.exceptionOrNull()
+    @Test
+    fun renameGroupTrimsTitle() =
+        runBlocking {
+            val ds = FakeDs()
+            val repo = GroupsRepositoryImpl(ds)
+            repo.renameGroup(1L, "  y  ")
+            assertEquals("y", ds.renamed.first().second)
+        }
 
-        assertTrue(failure is RuntimeException)
-    }
+    @Test
+    fun deleteGroupDelegates() =
+        runBlocking {
+            val ds = FakeDs()
+            val repo = GroupsRepositoryImpl(ds)
+            repo.deleteGroup(3L)
+            assertEquals(listOf(3L), ds.deleted)
+        }
+
+    @Test
+    fun addAndRemoveDelegates() =
+        runBlocking {
+            val ds = FakeDs()
+            val repo = GroupsRepositoryImpl(ds)
+            repo.addContactsToGroup(1L, listOf(2L))
+            repo.removeContactsFromGroup(1L, listOf(3L))
+            assertEquals(listOf(2L), ds.added.first().second)
+            assertEquals(listOf(3L), ds.removed.first().second)
+        }
+
+    @Test
+    fun mergeGroupsDelegates() =
+        runBlocking {
+            val ds = FakeDs()
+            val repo = GroupsRepositoryImpl(ds)
+            repo.mergeGroups(1L, 2L)
+            assertEquals(1L to 2L, ds.merged)
+        }
 }

@@ -7,6 +7,8 @@
 /.idea/workspace.xml
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
+/.idea/deploymentTargetSelector.xml
+/.idea/deviceManager.xml
 .DS_Store
 build/
 release/
@@ -17,3 +19,4 @@ captures/
 *.aab
 mapping.txt
 .kotlin
+.zcode/

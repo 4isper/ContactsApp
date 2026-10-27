@@ -9,7 +9,7 @@ import androidx.test.rule.GrantPermissionRule
 import com.m4isper.contactsapp.data.datasource.ContactsContractGroupsProvider
 import com.m4isper.contactsapp.data.datasource.GroupsDataSourceImpl
 import com.m4isper.contactsapp.data.repository.GroupsRepositoryImpl
-import com.m4isper.contactsapp.domain.model.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

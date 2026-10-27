@@ -1,8 +1,11 @@
 package com.m4isper.contactsapp.domain.model
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Test
+import com.m4isper.contactsapp.domain.model.contact.Email
+import com.m4isper.contactsapp.domain.model.contact.Phone
+import com.m4isper.contactsapp.domain.model.contact.Url
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Test
 
 /**
  * Проверка значений формы: валидные значения принимаются и нормализуются,
@@ -21,7 +24,7 @@ class ContactValuesTest {
 
         valid.forEach { raw ->
             val email = Email.of(raw)
-            assertEquals("email must be accepted: $raw", raw, email?.value)
+            assertEquals(raw, email?.value, "email must be accepted: $raw")
         }
     }
 
@@ -46,7 +49,7 @@ class ContactValuesTest {
             )
 
         invalid.forEach { raw ->
-            assertNull("email must be rejected: $raw", Email.of(raw))
+            assertNull(Email.of(raw), "email must be rejected: $raw")
         }
     }
 
@@ -61,7 +64,7 @@ class ContactValuesTest {
             )
 
         valid.forEach { (raw, expected) ->
-            assertEquals("phone must be accepted: $raw", expected, Phone.of(raw)?.value)
+            assertEquals(expected, Phone.of(raw)?.value, "phone must be accepted: $raw")
         }
     }
 
@@ -83,7 +86,7 @@ class ContactValuesTest {
             )
 
         invalid.forEach { raw ->
-            assertNull("phone must be rejected: $raw", Phone.of(raw))
+            assertNull(Phone.of(raw), "phone must be rejected: $raw")
         }
     }
 
@@ -98,7 +101,7 @@ class ContactValuesTest {
             )
 
         valid.forEach { (raw, expected) ->
-            assertEquals("url must be accepted: $raw", expected, Url.of(raw)?.value)
+            assertEquals(expected, Url.of(raw)?.value, "url must be accepted: $raw")
         }
     }
 
@@ -127,7 +130,7 @@ class ContactValuesTest {
             )
 
         invalid.forEach { raw ->
-            assertNull("url must be rejected: $raw", Url.of(raw))
+            assertNull(Url.of(raw), "url must be rejected: $raw")
         }
     }
 }

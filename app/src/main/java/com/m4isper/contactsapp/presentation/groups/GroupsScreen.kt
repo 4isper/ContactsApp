@@ -41,11 +41,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.R
-import com.m4isper.contactsapp.domain.model.ContactGroup
+import com.m4isper.contactsapp.domain.model.contact.ContactGroup
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.account.contactAccountLabel
 import com.m4isper.contactsapp.presentation.common.groups.GroupNameDialog
 import com.m4isper.contactsapp.presentation.common.message
+import com.m4isper.contactsapp.presentation.common.permissions.rememberWritePermissionGate
 import com.m4isper.contactsapp.ui.components.ConfirmDialog
 import com.m4isper.contactsapp.ui.components.EmptyState
 import com.m4isper.contactsapp.ui.components.ErrorState
@@ -58,8 +59,8 @@ import dev.zacsweers.metrox.viewmodel.metroViewModel
 @Composable
 fun GroupsScreen(
     onBack: () -> Unit,
-    onGroupClick: (Long) -> Unit = {},
     modifier: Modifier = Modifier,
+    onGroupClick: (Long) -> Unit = {},
     viewModel: GroupsViewModel = metroViewModel(),
 ) {
     val context = LocalContext.current
@@ -68,6 +69,12 @@ fun GroupsScreen(
     var renameTarget by remember { mutableStateOf<ContactGroup?>(null) }
     var deleteTarget by remember { mutableStateOf<ContactGroup?>(null) }
 
+    val writeGate =
+        rememberWritePermissionGate(
+            onDenied = {
+                Toast.makeText(context, R.string.permission_write_rationale, Toast.LENGTH_SHORT).show()
+            },
+        )
     LaunchedEffect(Unit) {
         viewModel.load()
     }

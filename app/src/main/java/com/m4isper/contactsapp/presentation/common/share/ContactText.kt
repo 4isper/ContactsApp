@@ -1,6 +1,6 @@
 package com.m4isper.contactsapp.presentation.common.share
 
-import com.m4isper.contactsapp.domain.model.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 
 /**
  * Контакт обычным текстом: имя, организация, телефоны и почта.

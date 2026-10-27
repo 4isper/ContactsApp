@@ -2,30 +2,31 @@ package com.m4isper.contactsapp.presentation.details
 
 import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.FakeVCardCodec
-import com.m4isper.contactsapp.domain.model.AppError
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactForm
-import com.m4isper.contactsapp.domain.model.ContactGroup
-import com.m4isper.contactsapp.domain.model.ContactLink
-import com.m4isper.contactsapp.domain.model.PhoneKind
-import com.m4isper.contactsapp.domain.model.PhoneNumber
+import com.m4isper.contactsapp.domain.model.common.AppError
+import com.m4isper.contactsapp.domain.model.contact.AccountSyncInfo
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactForm
+import com.m4isper.contactsapp.domain.model.contact.ContactGroup
+import com.m4isper.contactsapp.domain.model.contact.ContactLink
+import com.m4isper.contactsapp.domain.model.contact.PhoneKind
+import com.m4isper.contactsapp.domain.model.contact.PhoneNumber
 import com.m4isper.contactsapp.domain.repository.ContactsAccounts
 import com.m4isper.contactsapp.domain.repository.ContactsMerger
 import com.m4isper.contactsapp.domain.repository.ContactsReader
 import com.m4isper.contactsapp.domain.repository.ContactsWriter
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
-import com.m4isper.contactsapp.domain.usecase.CopyContactToAccountUseCase
-import com.m4isper.contactsapp.domain.usecase.ExportContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactGroupsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
-import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
-import com.m4isper.contactsapp.domain.usecase.LoadContactPhotoUseCase
-import com.m4isper.contactsapp.domain.usecase.MoveContactToAccountUseCase
-import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
-import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.CopyContactToAccountUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.ExportContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactAccountsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactDetailsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.LoadContactPhotoUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.MoveContactToAccountUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.ObserveFavoritesUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.ToggleFavoriteUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.GetContactGroupsUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.GetGroupMembershipUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.GetGroupsUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -65,6 +66,8 @@ private class FakeDetailsRepository(
 
     override suspend fun getContactAccounts(): List<ContactAccount> = listOf(ContactAccount.Local)
 
+    override suspend fun getAccountSyncInfos(): List<AccountSyncInfo> = emptyList()
+
     override suspend fun unmergeContacts(link: ContactLink) = Unit
 
     private val favoritesFlow = MutableStateFlow(initialFavorites)
@@ -84,6 +87,7 @@ private class FakeDetailsRepository(
     override fun observeFavorites(): Flow<Set<Long>> = favoritesFlow.asStateFlow()
 
     override suspend fun toggleFavorite(contactId: Long) {
+        failure?.let { throw it }
         val current = favoritesFlow.value
         favoritesFlow.value =
             if (contactId in current) {
@@ -117,7 +121,7 @@ private class FakeDetailsRepository(
     override suspend fun mergeContacts(
         targetId: Long,
         sourceIds: List<Long>,
-    ): com.m4isper.contactsapp.domain.model.ContactLink? = null
+    ): com.m4isper.contactsapp.domain.model.contact.ContactLink? = null
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -222,6 +226,8 @@ class ContactDetailsViewModelTest {
 
                     override suspend fun getContactAccounts(): List<ContactAccount> = listOf(ContactAccount.Local)
 
+                    override suspend fun getAccountSyncInfos(): List<AccountSyncInfo> = emptyList()
+
                     override suspend fun unmergeContacts(link: ContactLink) = Unit
 
                     override suspend fun createContact(
@@ -259,7 +265,7 @@ class ContactDetailsViewModelTest {
                     override suspend fun mergeContacts(
                         targetId: Long,
                         sourceIds: List<Long>,
-                    ): com.m4isper.contactsapp.domain.model.ContactLink? = null
+                    ): com.m4isper.contactsapp.domain.model.contact.ContactLink? = null
                 }
             val viewModel =
                 ContactDetailsViewModel(
@@ -314,6 +320,34 @@ class ContactDetailsViewModelTest {
 
             viewModel.toggleFavorite()
             advanceUntilIdle()
+            assertEquals(false, viewModel.uiState.value.isFavorite)
+        }
+
+    @Test
+    fun `toggle favorite failure surfaces event and returns false`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeDetailsRepository(
+                    listOf(
+                        ContactDetails(
+                            contactId = 7,
+                            name = "Anna",
+                            phones = listOf(PhoneNumber("111", PhoneKind.MOBILE)),
+                        ),
+                    ),
+                    failure = SecurityException("write permission denied"),
+                )
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.load(7)
+            advanceUntilIdle()
+
+            val toggled = viewModel.toggleFavorite()
+            advanceUntilIdle()
+
+            assertEquals(false, toggled)
+            assertTrue(viewModel.uiState.value.event is DetailsEvent.FavoriteWriteFailed)
             assertEquals(false, viewModel.uiState.value.isFavorite)
         }
 

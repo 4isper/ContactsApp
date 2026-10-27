@@ -25,24 +25,24 @@ import com.m4isper.contactsapp.data.datasource.read.ExistingPhone
 import com.m4isper.contactsapp.data.datasource.read.ExistingRelation
 import com.m4isper.contactsapp.data.datasource.read.ExistingSipAddress
 import com.m4isper.contactsapp.data.datasource.read.ExistingWebsite
-import com.m4isper.contactsapp.domain.model.AddressKind
-import com.m4isper.contactsapp.domain.model.Birthday
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactForm
-import com.m4isper.contactsapp.domain.model.ContactLink
-import com.m4isper.contactsapp.domain.model.EditableName
-import com.m4isper.contactsapp.domain.model.EmailAddress
-import com.m4isper.contactsapp.domain.model.EmailKind
-import com.m4isper.contactsapp.domain.model.EventKind
-import com.m4isper.contactsapp.domain.model.ImProtocol
-import com.m4isper.contactsapp.domain.model.NameMode
-import com.m4isper.contactsapp.domain.model.PhoneKind
-import com.m4isper.contactsapp.domain.model.PhoneNumber
-import com.m4isper.contactsapp.domain.model.RawContactRef
-import com.m4isper.contactsapp.domain.model.RelationKind
-import com.m4isper.contactsapp.domain.model.SipKind
-import com.m4isper.contactsapp.domain.model.WebsiteKind
+import com.m4isper.contactsapp.domain.model.contact.AddressKind
+import com.m4isper.contactsapp.domain.model.contact.Birthday
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactForm
+import com.m4isper.contactsapp.domain.model.contact.ContactLink
+import com.m4isper.contactsapp.domain.model.contact.EditableName
+import com.m4isper.contactsapp.domain.model.contact.EmailAddress
+import com.m4isper.contactsapp.domain.model.contact.EmailKind
+import com.m4isper.contactsapp.domain.model.contact.EventKind
+import com.m4isper.contactsapp.domain.model.contact.ImProtocol
+import com.m4isper.contactsapp.domain.model.contact.NameMode
+import com.m4isper.contactsapp.domain.model.contact.PhoneKind
+import com.m4isper.contactsapp.domain.model.contact.PhoneNumber
+import com.m4isper.contactsapp.domain.model.contact.RawContactRef
+import com.m4isper.contactsapp.domain.model.contact.RelationKind
+import com.m4isper.contactsapp.domain.model.contact.SipKind
+import com.m4isper.contactsapp.domain.model.contact.WebsiteKind
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -461,8 +461,11 @@ private class FakeWriter(
 
     override suspend fun loadContactRows(contactId: Long): ContactRows = rowsByContact[contactId] ?: rows
 
-    override suspend fun loadRawContactId(contactId: Long): Long? =
-        rawContactIdsByContact[contactId] ?: if (rawContactIdsByContact.isEmpty()) rawContactId else null
+    override suspend fun loadRawContactId(contactId: Long): Long? = loadRawContactIds(contactId).firstOrNull()
+
+    override suspend fun loadRawContactIds(contactId: Long): List<Long> =
+        rawContactIdsByContact[contactId]?.let(::listOf)
+            ?: if (rawContactIdsByContact.isEmpty() && rawContactId != null) listOf(rawContactId) else emptyList()
 
     override suspend fun linkRawContacts(
         targetRawContactId: Long,

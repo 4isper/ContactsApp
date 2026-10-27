@@ -4,29 +4,30 @@ import com.m4isper.contactsapp.FakeContactsChangeSource
 import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.FakeSettingsRepository
 import com.m4isper.contactsapp.FakeVCardCodec
-import com.m4isper.contactsapp.domain.usecase.AddContactsToGroupUseCase
-import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
-import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.ExportContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactDetailsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactsPageUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetGroupMembershipUseCase
-import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetProfileContactIdUseCase
-import com.m4isper.contactsapp.domain.usecase.LoadContactPhotoUseCase
-import com.m4isper.contactsapp.domain.usecase.ObserveFavoritesUseCase
-import com.m4isper.contactsapp.domain.usecase.ObserveSettingsUseCase
-import com.m4isper.contactsapp.domain.usecase.RefreshFavoritesUseCase
-import com.m4isper.contactsapp.domain.usecase.RemoveFavoriteUseCase
-import com.m4isper.contactsapp.domain.usecase.ToggleFavoriteUseCase
-import com.m4isper.contactsapp.presentation.contacts.ContactsFavoriteState
-import com.m4isper.contactsapp.presentation.contacts.ContactsFilterState
-import com.m4isper.contactsapp.presentation.contacts.ContactsGroupState
-import com.m4isper.contactsapp.presentation.contacts.ContactsListState
-import com.m4isper.contactsapp.presentation.contacts.ContactsSelectionState
+import com.m4isper.contactsapp.domain.usecase.contacts.DeleteContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.ExportContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetAccountSyncInfosUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactAccountsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactDetailsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactsPageUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetProfileContactIdUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.LoadContactPhotoUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.ObserveFavoritesUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.RefreshFavoritesUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.RemoveFavoriteUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.ToggleFavoriteUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.AddContactsToGroupUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.CreateGroupUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.GetGroupMembershipUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.GetGroupsUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.ObserveSettingsUseCase
 import com.m4isper.contactsapp.presentation.contacts.ContactsViewModel
+import com.m4isper.contactsapp.presentation.contacts.state.ContactsFavoriteState
+import com.m4isper.contactsapp.presentation.contacts.state.ContactsFilterState
+import com.m4isper.contactsapp.presentation.contacts.state.ContactsGroupState
+import com.m4isper.contactsapp.presentation.contacts.state.ContactsListState
+import com.m4isper.contactsapp.presentation.contacts.state.ContactsSelectionState
 
 /**
  * Граф зависимостей экрана списка для тестов: собирает части состояния и
@@ -59,6 +60,7 @@ internal class ContactsTestGraph(
                     getGroups = GetGroupsUseCase(groups),
                     getMembership = GetGroupMembershipUseCase(groups),
                     getAccounts = GetContactAccountsUseCase(repository),
+                    getAccountSyncInfos = GetAccountSyncInfosUseCase(repository),
                     getProfileContactId = GetProfileContactIdUseCase(repository),
                     createGroup = CreateGroupUseCase(groups),
                     addContactsToGroup = AddContactsToGroupUseCase(groups),

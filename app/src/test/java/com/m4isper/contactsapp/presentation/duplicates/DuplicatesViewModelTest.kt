@@ -1,19 +1,21 @@
 package com.m4isper.contactsapp.presentation.duplicates
 
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.ContactForm
-import com.m4isper.contactsapp.domain.model.ContactLink
-import com.m4isper.contactsapp.domain.model.PhoneKind
-import com.m4isper.contactsapp.domain.model.PhoneNumber
+import com.m4isper.contactsapp.domain.model.contact.AccountSyncInfo
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.ContactForm
+import com.m4isper.contactsapp.domain.model.contact.ContactLink
+import com.m4isper.contactsapp.domain.model.contact.PhoneKind
+import com.m4isper.contactsapp.domain.model.contact.PhoneNumber
+import com.m4isper.contactsapp.domain.model.contact.RawContactRef
 import com.m4isper.contactsapp.domain.repository.ContactsAccounts
 import com.m4isper.contactsapp.domain.repository.ContactsMerger
 import com.m4isper.contactsapp.domain.repository.ContactsReader
 import com.m4isper.contactsapp.domain.repository.ContactsWriter
 import com.m4isper.contactsapp.domain.repository.FavoritesRepository
-import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.MergeContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.UnmergeContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.MergeContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.UnmergeContactsUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -58,6 +60,8 @@ private class FakeDuplicatesRepository(
 
     override suspend fun getContactAccounts(): List<ContactAccount> = listOf(ContactAccount.Local)
 
+    override suspend fun getAccountSyncInfos(): List<AccountSyncInfo> = emptyList()
+
     override suspend fun unmergeContacts(link: ContactLink) = Unit
 
     var failure: Throwable? = null
@@ -94,17 +98,17 @@ private class FakeDuplicatesRepository(
     override suspend fun mergeContacts(
         targetId: Long,
         sourceIds: List<Long>,
-    ): com.m4isper.contactsapp.domain.model.ContactLink? {
+    ): com.m4isper.contactsapp.domain.model.contact.ContactLink? {
         mergeFailure?.let { throw it }
         merged += targetId to sourceIds
         contacts = contacts.filterNot { it.contactId in sourceIds }
-        return com.m4isper.contactsapp.domain.model.ContactLink(
+        return com.m4isper.contactsapp.domain.model.contact.ContactLink(
             target =
-                com.m4isper.contactsapp.domain.model
+                com.m4isper.contactsapp.domain.model.contact
                     .RawContactRef(targetId),
             sources =
                 sourceIds.map {
-                    com.m4isper.contactsapp.domain.model
+                    com.m4isper.contactsapp.domain.model.contact
                         .RawContactRef(it)
                 },
         )

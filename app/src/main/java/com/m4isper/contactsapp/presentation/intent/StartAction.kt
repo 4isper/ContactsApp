@@ -3,6 +3,7 @@ package com.m4isper.contactsapp.presentation.intent
 import android.content.ContentResolver
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.provider.ContactsContract
 
 /**
@@ -111,9 +112,17 @@ private fun Intent.isContactUri(): Boolean {
 /** id контакта из URI: у lookup-контакта он тоже последний сегмент. */
 private fun Uri.contactId(): Long = lastPathSegment?.toLongOrNull() ?: 0L
 
-/** Текст .vcf из intent: либо данные, либо переданный файл. */
+/** Текст .vcf из intent: либо данные, либо переданный файл, либо EXTRA_STREAM. */
 private fun Intent.vCardText(resolver: ContentResolver): String =
     data?.let { uri -> uri.readText(resolver) }
+        ?: (
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                getParcelableExtra(Intent.EXTRA_STREAM)
+            }
+        )?.let { uri -> uri.readText(resolver) }
         ?: getStringExtra(Intent.EXTRA_TEXT)
         ?: ""
 

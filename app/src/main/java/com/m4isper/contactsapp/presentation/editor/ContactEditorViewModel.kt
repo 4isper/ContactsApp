@@ -2,24 +2,27 @@ package com.m4isper.contactsapp.presentation.editor
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.m4isper.contactsapp.domain.model.AppError
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactGroup
-import com.m4isper.contactsapp.domain.model.EditablePhone
-import com.m4isper.contactsapp.domain.model.FormField
-import com.m4isper.contactsapp.domain.model.findSimilarContacts
-import com.m4isper.contactsapp.domain.model.validateContactFields
-import com.m4isper.contactsapp.domain.usecase.CreateContactUseCase
-import com.m4isper.contactsapp.domain.usecase.CreateGroupUseCase
-import com.m4isper.contactsapp.domain.usecase.DeleteContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactAccountUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactAccountsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactFormUseCase
-import com.m4isper.contactsapp.domain.usecase.GetContactsUseCase
-import com.m4isper.contactsapp.domain.usecase.GetDefaultContactAccountUseCase
-import com.m4isper.contactsapp.domain.usecase.GetGroupsUseCase
-import com.m4isper.contactsapp.domain.usecase.SetLastContactAccountUseCase
-import com.m4isper.contactsapp.domain.usecase.UpdateContactUseCase
+import com.m4isper.contactsapp.domain.model.common.AppError
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactForm
+import com.m4isper.contactsapp.domain.model.contact.ContactGroup
+import com.m4isper.contactsapp.domain.model.contact.EditablePhone
+import com.m4isper.contactsapp.domain.model.contact.FormError
+import com.m4isper.contactsapp.domain.model.contact.FormField
+import com.m4isper.contactsapp.domain.model.contact.findSimilarContacts
+import com.m4isper.contactsapp.domain.model.contact.firstInvalidRowIndex
+import com.m4isper.contactsapp.domain.model.contact.validateContactFields
+import com.m4isper.contactsapp.domain.usecase.contacts.CreateContactUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.DeleteContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactAccountUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactAccountsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactFormUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetContactsUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.GetDefaultContactAccountUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.SetLastContactAccountUseCase
+import com.m4isper.contactsapp.domain.usecase.contacts.UpdateContactUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.CreateGroupUseCase
+import com.m4isper.contactsapp.domain.usecase.groups.GetGroupsUseCase
 import com.m4isper.contactsapp.presentation.common.safeCall
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
@@ -178,14 +181,15 @@ class ContactEditorViewModel(
         val form = state.value.toForm()
         val fieldErrors = validateContactFields(form)
         // Неразобранная дата (из провайдера) — подсказка, а не повод отказать в сохранении.
+        val errorRowIds = firstErrorRowIds(state.value, fieldErrors, form)
         val blocking = fieldErrors.filterKeys { it != FormField.EVENT }
         if (blocking.isNotEmpty()) {
-            // Показываем проблему у конкретного поля и не идём в провайдер.
-            state.update { it.copy(fieldErrors = fieldErrors) }
+            // Показываем проблему у конкретной строки и не идём в провайдер.
+            state.update { it.copy(fieldErrors = fieldErrors, firstErrorRowIds = errorRowIds) }
             return
         }
         if (fieldErrors.isNotEmpty()) {
-            state.update { it.copy(fieldErrors = fieldErrors) }
+            state.update { it.copy(fieldErrors = fieldErrors, firstErrorRowIds = errorRowIds) }
         }
         viewModelScope.launch {
             if (id == null) {
@@ -235,7 +239,15 @@ class ContactEditorViewModel(
 
     /** Меняет состояние формы и снимает прежние ошибки. */
     internal fun update(transform: (EditorUiState) -> EditorUiState) {
-        state.update { transform(it).copy(formError = null, error = null, deleteFailed = false) }
+        state.update {
+            transform(it).copy(
+                formError = null,
+                error = null,
+                deleteFailed = false,
+                fieldErrors = emptyMap(),
+                firstErrorRowIds = emptyMap(),
+            )
+        }
     }
 
     /** Новая строка со стабильным ключом: счётчик живёт в пределах экрана. */
@@ -257,3 +269,26 @@ internal fun <T> List<EditorRow<T>>.moved(
         }
     }
 }
+
+/**
+ * Строка-владелец первой ошибки каждого поля: домен возвращает индекс в форме,
+ * презентация переводит его в rowId строки экрана.
+ */
+private fun firstErrorRowIds(
+    state: EditorUiState,
+    fieldErrors: Map<FormField, FormError>,
+    form: ContactForm,
+): Map<FormField, Long> =
+    fieldErrors.keys
+        .mapNotNull { field ->
+            firstInvalidRowIndex(form, field)?.let { index ->
+                val rowId =
+                    when (field) {
+                        FormField.PHONE -> state.phones.getOrNull(index)?.rowId
+                        FormField.EMAIL -> state.emails.getOrNull(index)?.rowId
+                        FormField.WEBSITE -> state.websites.getOrNull(index)?.rowId
+                        FormField.EVENT -> state.events.getOrNull(index)?.rowId
+                    }
+                rowId?.let { field to it }
+            }
+        }.toMap()

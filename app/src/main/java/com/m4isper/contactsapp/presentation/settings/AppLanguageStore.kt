@@ -1,6 +1,7 @@
 package com.m4isper.contactsapp.presentation.settings
 
 import android.content.Context
+import androidx.core.content.edit
 
 /**
  * Язык приложения в обычных настройках: нужен до создания Activity,
@@ -20,7 +21,7 @@ class SharedPrefsAppLanguageStore(
     override var language: String
         get() = preferences.getString(KEY_LANGUAGE, "").orEmpty()
         set(value) {
-            preferences.edit().putString(KEY_LANGUAGE, value).apply()
+            preferences.edit { putString(KEY_LANGUAGE, value) }
         }
 
     private companion object {

@@ -1,10 +1,10 @@
 package com.m4isper.contactsapp.data.datasource.read
 
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
-import com.m4isper.contactsapp.domain.model.ContactAccount
-import com.m4isper.contactsapp.domain.model.ContactDetails
-import com.m4isper.contactsapp.domain.model.NameParts
-import com.m4isper.contactsapp.domain.model.PhotoRef
+import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.domain.model.contact.NameParts
+import com.m4isper.contactsapp.domain.model.contact.PhotoRef
 
 /** Полная модель контакта для экрана деталей. */
 internal fun buildContactDetails(
@@ -32,7 +32,6 @@ internal fun buildContactDetails(
         account = account,
         lastUpdated = header.lastUpdated,
         lastContacted = header.lastContacted,
-        timesContacted = header.timesContacted,
     )
 
 /**
@@ -56,17 +55,19 @@ internal fun aggregateContacts(
             emails = emailAddressesOf(contactRows),
             addresses = postalAddressesOf(contactRows),
             websites = websitesOf(contactRows),
+            instantMessages = instantMessagesOf(contactRows),
             sipAddresses = sipAddressesOf(contactRows),
             organization = organizationOf(contactRows),
             note = noteOf(contactRows),
+            birthday = birthdayOf(contactRows),
+            relations = relationsOf(contactRows),
+            events = eventsOf(contactRows),
             photo = PhotoRef.of(header.photoUri),
             nameParts = namePartsOf(contactRows),
-            relations = relationsOf(contactRows),
             nickname = nicknameOf(contactRows),
             account = accounts[header.contactId] ?: ContactAccount.Local,
             lastUpdated = header.lastUpdated,
             lastContacted = header.lastContacted,
-            timesContacted = header.timesContacted,
         )
     }
 }
