@@ -38,6 +38,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.domain.model.common.AppError
 import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import com.m4isper.contactsapp.domain.model.contact.FormError
 import com.m4isper.contactsapp.presentation.common.groups.GroupPickerDialog
@@ -125,7 +126,12 @@ internal fun EditorForm(
                 onRemove = { edit { it.withoutPhoto() } },
             )
         }
-        accountItems(uiState = uiState, onClick = { showAccountPicker = true }, isError = uiState.error != null)
+        // Аккаунт подсвечивается только собственной ошибкой выбора, а не любой сетевой/полевой.
+        accountItems(
+            uiState = uiState,
+            onClick = { showAccountPicker = true },
+            isError = uiState.error == AppError.LOCAL_ACCOUNT_BLOCKED,
+        )
         if (uiState.formError != null || uiState.deleteFailed) {
             item(key = "error") {
                 Text(
@@ -439,6 +445,8 @@ internal fun FormError.fieldMessage(): String =
 private fun formMessage(uiState: EditorUiState): String =
     when {
         uiState.deleteFailed -> stringResource(R.string.batch_delete_failed)
-        uiState.formError == FormError.EMPTY_FORM -> stringResource(R.string.form_error_empty)
-        else -> uiState.error?.message().orEmpty()
+        uiState.error != null -> uiState.error.message()
+        // У каждой ветки FormError есть сообщение: пустая строка ошибки невозможна.
+        uiState.formError != null -> uiState.formError.fieldMessage()
+        else -> ""
     }
