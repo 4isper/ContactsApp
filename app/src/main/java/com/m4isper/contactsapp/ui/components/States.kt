@@ -1,8 +1,10 @@
 package com.m4isper.contactsapp.ui.components
 
+import android.provider.Settings
 import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -31,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -60,14 +63,31 @@ fun ListSkeleton(
 ) {
     val spacing = LocalSpacing.current
     val loadingText = stringResource(R.string.a11y_loading_contacts)
-    val pulse by animateFloatAsState(
-        targetValue = 1f,
-        animationSpec =
-            infiniteRepeatable(
-                animation = tween(durationMillis = 1000),
-                repeatMode = RepeatMode.Reverse,
-            ),
-    )
+    // Пульс живёт только когда система вообще анимирует: при выключенных
+    // анимациях скелетон статичен, но остаётся читаемым.
+    val animationsEnabled =
+        Settings.Global.getFloat(
+            LocalContext.current.contentResolver,
+            Settings.Global.ANIMATOR_DURATION_SCALE,
+            1f,
+        ) > 0f
+    val pulse =
+        if (animationsEnabled) {
+            rememberInfiniteTransition(label = "skeleton")
+                .animateFloat(
+                    initialValue = 0f,
+                    targetValue = 1f,
+                    animationSpec =
+                        infiniteRepeatable(
+                            animation = tween(durationMillis = 1000),
+                            repeatMode = RepeatMode.Reverse,
+                        ),
+                    label = "skeleton_pulse",
+                ).value
+        } else {
+            1f
+        }
+    val animatedAlpha = skeletonAlpha(pulse)
 
     Column(
         // Скелетон для TalkBack — одно «загружаем контакты», а не набор пустых карточек.
@@ -103,9 +123,9 @@ fun ListSkeleton(
                         )
                         Spacer(modifier = Modifier.width(spacing.m))
                         Column(modifier = Modifier.fillMaxWidth()) {
-                            SkeletonLine(width = 60f, height = 16f, alpha = pulse)
+                            SkeletonLine(width = 60f, height = 16f, alpha = animatedAlpha)
                             Spacer(modifier = Modifier.height(spacing.xs))
-                            SkeletonLine(width = 90f, height = 14f, alpha = pulse)
+                            SkeletonLine(width = 90f, height = 14f, alpha = animatedAlpha)
                         }
                     }
                 }
@@ -113,6 +133,11 @@ fun ListSkeleton(
         }
     }
 }
+
+internal const val SKELETON_ALPHA_MIN = 0.35f
+
+/** Альфа скелетона по прогрессу пульса: монотонно от [SKELETON_ALPHA_MIN] до 1. */
+internal fun skeletonAlpha(progress: Float): Float = SKELETON_ALPHA_MIN + (1f - SKELETON_ALPHA_MIN) * progress
 
 /** Шиммер-линия: пульсирующая полоса, имитирующая текст. */
 @Composable

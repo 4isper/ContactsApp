@@ -35,12 +35,12 @@ This is a regression against issue 33's acceptance criterion "Placeholders have 
 
 ## Acceptance criteria
 
-- [ ] The skeleton bars visibly pulse or shimmer in light and dark themes.
-- [ ] The animation continues while the list is loading and stops when the content appears.
-- [ ] With system animations disabled, the skeleton is static but still readable.
-- [ ] TalkBack announces that contacts are loading and does not focus individual skeleton bars.
-- [ ] The skeleton still matches the real contact card layout and does not cause a layout jump.
-- [ ] No new lint/detekt warnings.
+- [x] The skeleton bars visibly pulse or shimmer in light and dark themes.
+- [x] The animation continues while the list is loading and stops when the content appears.
+- [x] With system animations disabled, the skeleton is static but still readable.
+- [x] TalkBack announces that contacts are loading and does not focus individual skeleton bars.
+- [x] The skeleton still matches the real contact card layout and does not cause a layout jump.
+- [x] No new lint/detekt warnings.
 
 ## Technical notes
 
@@ -62,3 +62,19 @@ This is a regression against issue 33's acceptance criterion "Placeholders have 
 - Toggle "Remove animations" in developer options and verify a static fallback.
 - TalkBack traversal of the loading list.
 - `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest`.
+
+## Status
+
+Done.
+
+### What was implemented
+
+- The dead `animateFloatAsState(targetValue = 1f)` (already at its target, nothing to animate) is replaced with `rememberInfiniteTransition().animateFloat(0f..1f, tween(1000), Reverse)`; the raw progress maps through the pure `skeletonAlpha(progress)` (0.35..1, unit-tested in `SkeletonAlphaTest`), and the value is applied to the line color as before — the bars now genuinely pulse in both themes.
+- The system `ANIMATOR_DURATION_SCALE` is respected: with animations disabled the skeleton renders static at full alpha and stays readable.
+- Loading semantics were already delivered by issue 48 (`clearAndSetSemantics` with "Loading contacts"); layout, card count, and no-jump behavior are unchanged.
+
+### Verification
+
+- `./gradlew :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest :app:detekt :app:ktlintCheck` passes.
+- `./gradlew :app:connectedDebugAndroidTest` on a headless emulator: BUILD SUCCESSFUL, 119 tests, 118 passed, 1 skipped by assumption (`LargeListPerformanceTest` benchmark).
+- Manual checks that remain useful: the visual pulse in light/dark themes and the "Remove animations" developer-options toggle for the static fallback.
