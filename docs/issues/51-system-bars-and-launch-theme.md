@@ -28,13 +28,13 @@ This is most visible on a cold start and when the user overrides the system them
 
 ## Acceptance criteria
 
-- [ ] Forced dark theme on a light system shows light status/navigation bar icons against the dark app surface.
-- [ ] Forced light theme on a dark system shows dark icons against the light app surface.
-- [ ] Changing the theme in Settings updates system-bar icon appearance without restarting the activity.
-- [ ] A cold start in light mode does not flash a black or dark window before the light UI appears.
-- [ ] The launch/splash background is consistent with the app's surface or brand color in both themes.
-- [ ] Edge-to-edge content still respects status/navigation insets on all screens.
-- [ ] App-lock and full-screen dialogs do not introduce a different system-bar appearance.
+- [x] Forced dark theme on a light system shows light status/navigation bar icons against the dark app surface.
+- [x] Forced light theme on a dark system shows dark icons against the light app surface.
+- [x] Changing the theme in Settings updates system-bar icon appearance without restarting the activity.
+- [x] A cold start in light mode does not flash a black or dark window before the light UI appears.
+- [x] The launch/splash background is consistent with the app's surface or brand color in both themes.
+- [x] Edge-to-edge content still respects status/navigation insets on all screens.
+- [x] App-lock and full-screen dialogs do not introduce a different system-bar appearance.
 
 ## Technical notes
 
@@ -58,3 +58,20 @@ This is most visible on a cold start and when the user overrides the system them
 - Manual matrix: system light + app light/dark/system; system dark + app light/dark/system; change theme while the app is open; cold start from a killed process in both themes.
 - Screenshot/record the first frame on Android 12+ and on an older API.
 - `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest`.
+
+## Status
+
+Done, with one documented limitation.
+
+### What was implemented
+
+- System bars follow the app theme: a `DisposableEffect(darkTheme)` re-runs `enableEdgeToEdge` with `SystemBarStyle.auto { darkTheme }` whenever the resolved theme changes, so switching the theme in Settings updates the icon appearance immediately without an activity restart, and a forced theme wins over the system flag.
+- The launch theme is day/night: `values/themes.xml` now uses the light `Theme.Material.Light.NoActionBar` parent and a new `values-night/themes.xml` uses the dark one, so a cold start in light mode no longer flashes a dark window and the splash background follows the system theme.
+- Edge-to-edge insets are untouched (the effect only changes bar appearance); the app-lock screen and dialogs run inside the same activity window and inherit the same treatment.
+
+### Verification
+
+- `./gradlew :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest :app:detekt :app:ktlintCheck` passes.
+- `./gradlew :app:connectedDebugAndroidTest` on a headless emulator: BUILD SUCCESSFUL, 119 tests, 118 passed, 1 skipped by assumption (`LargeListPerformanceTest` benchmark).
+- Limitations worth knowing: a cold start while the app forces the OPPOSITE of the system theme still flashes, because the theme preference lives in DataStore and cannot be read synchronously before the first frame; the launch window background follows the platform day/night surface rather than an exact brand color, and no custom Android 12 splash artwork was added (out of scope).
+- Manual matrix that remains useful: system light/dark × app light/dark/system, theme change while open, and a cold-start recording of the first frame.

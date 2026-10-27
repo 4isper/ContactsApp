@@ -4,9 +4,11 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
+import android.graphics.Color
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -144,8 +146,18 @@ private fun AppContent(
     }
     SecureWindowEffect(settings.secureWindow)
 
+    val darkTheme = settings.themeMode.isDark()
+    // Системные бары следуют теме приложения, а не системы; пересчитывается сразу при смене темы.
+    DisposableEffect(darkTheme) {
+        (activity as? ComponentActivity)?.enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { darkTheme },
+            navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { darkTheme },
+        )
+        onDispose { }
+    }
+
     ContactsAppTheme(
-        darkTheme = settings.themeMode.isDark(),
+        darkTheme = darkTheme,
         dynamicColor = settings.dynamicColor,
     ) {
         CompositionLocalProvider(LocalShowPhotos provides settings.showPhotos) {
