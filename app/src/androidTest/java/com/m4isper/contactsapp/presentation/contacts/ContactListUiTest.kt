@@ -21,6 +21,8 @@ import com.m4isper.contactsapp.FakeVCardCodec
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import com.m4isper.contactsapp.domain.model.contact.ContactGroup
+import com.m4isper.contactsapp.domain.model.contact.EmailAddress
+import com.m4isper.contactsapp.domain.model.contact.EmailKind
 import com.m4isper.contactsapp.domain.model.contact.PhoneKind
 import com.m4isper.contactsapp.domain.model.contact.PhoneNumber
 import com.m4isper.contactsapp.domain.usecase.contacts.DeleteContactsUseCase
@@ -864,5 +866,21 @@ class ContactListUiTest {
             !viewModel.uiState.value.pinFavorites
         }
         compose.onNodeWithTag("favorites_section_header").assertDoesNotExist()
+    }
+
+    @Test
+    fun emailOnlyContact_exposesQuickActionsMenu() {
+        val contact =
+            testDetails(3, "Kate", emails = listOf(EmailAddress("kate@example.com", EmailKind.HOME)))
+        compose.setContent {
+            ContactList(
+                uiState = ContactsUiState(content = Loadable.Content(listOf(contact))),
+                onAction = { },
+            )
+        }
+
+        compose.onNodeWithTag("quick_actions_3").performClick()
+        compose.onNodeWithText("Email").assertIsDisplayed()
+        compose.onNodeWithText("Call").assertDoesNotExist()
     }
 }

@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -45,6 +47,8 @@ import androidx.compose.ui.unit.dp
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import com.m4isper.contactsapp.domain.model.settings.ListDensity
+import com.m4isper.contactsapp.presentation.common.share.copyToClipboard
+import com.m4isper.contactsapp.presentation.common.share.openEmail
 import com.m4isper.contactsapp.ui.components.HapticImpact
 import com.m4isper.contactsapp.ui.components.ListAvatar
 import com.m4isper.contactsapp.ui.components.performHapticFeedback
@@ -166,7 +170,9 @@ private fun ContactCardSurface(
     val ctx = LocalContext.current
     val compact = density == ListDensity.COMPACT
     var menuOpen by remember { mutableStateOf(false) }
-    val hasCallOrSms = onCall != null || onSms != null
+    // Меню показываем, когда есть хоть одно действие: телефон (звонок/СМС/копия)
+    // или почта (письмо/копия) — email-only контакты тоже получают быстрые действия.
+    val hasQuickActions = onCall != null || onSms != null || contact.primaryEmail != null
 
     val containerColor =
         if (selected) {
@@ -251,7 +257,7 @@ private fun ContactCardSurface(
                     isFavorite = isFavorite,
                     onToggleFavorite = onToggleFavorite,
                 )
-                if (hasCallOrSms) {
+                if (hasQuickActions) {
                     Box {
                         IconButton(
                             onClick = { menuOpen = true },
@@ -261,7 +267,7 @@ private fun ContactCardSurface(
                                     .testTag("quick_actions_${contact.contactId}"),
                         ) {
                             BrandIcon(
-                                imageVector = BrandIcons.Settings,
+                                imageVector = Icons.Filled.MoreVert,
                                 contentDescription = stringResource(R.string.action_more),
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(spacing.xl),
@@ -269,6 +275,7 @@ private fun ContactCardSurface(
                         }
                         QuickActionsMenu(
                             contactId = contact.contactId,
+                            contact = contact,
                             expanded = menuOpen,
                             onDismiss = { menuOpen = false },
                             onCall = onCall,
@@ -325,14 +332,20 @@ private fun FavoriteQuickAction(
     }
 }
 
+/**
+ * Быстрые действия строки. Поведение одинаково для меню и свайпа и описано здесь:
+ * звонок всегда подтверждается диалогом, СМС запускается сразу.
+ */
 @Composable
 private fun QuickActionsMenu(
     contactId: Long,
+    contact: ContactDetails,
     expanded: Boolean,
     onDismiss: () -> Unit,
     onCall: (() -> Unit)?,
     onSms: (() -> Unit)?,
 ) {
+    val ctx = LocalContext.current
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismiss,
@@ -371,6 +384,34 @@ private fun QuickActionsMenu(
                     )
                 },
                 modifier = Modifier.testTag("quick_sms_$contactId"),
+            )
+        }
+        contact.primaryEmail?.let { email ->
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.action_send_email)) },
+                onClick = {
+                    onDismiss()
+                    openEmail(ctx, email.address)
+                },
+                modifier = Modifier.testTag("quick_email_$contactId"),
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.action_copy_email)) },
+                onClick = {
+                    onDismiss()
+                    copyToClipboard(ctx, email.address)
+                },
+                modifier = Modifier.testTag("quick_copy_email_$contactId"),
+            )
+        }
+        contact.primaryPhone?.let { phone ->
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.action_copy_phone)) },
+                onClick = {
+                    onDismiss()
+                    copyToClipboard(ctx, phone.number)
+                },
+                modifier = Modifier.testTag("quick_copy_phone_$contactId"),
             )
         }
     }

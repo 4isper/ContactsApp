@@ -15,6 +15,7 @@ import com.m4isper.contactsapp.domain.model.contact.EditableName
 import com.m4isper.contactsapp.domain.model.contact.EditableNickname
 import com.m4isper.contactsapp.domain.model.contact.EditablePhone
 import com.m4isper.contactsapp.domain.model.contact.EditableRelation
+import com.m4isper.contactsapp.domain.model.contact.EmailAddress
 import com.m4isper.contactsapp.domain.model.contact.InstantMessage
 import com.m4isper.contactsapp.domain.model.contact.PhoneKind
 import com.m4isper.contactsapp.domain.model.contact.PhoneNumber
@@ -51,6 +52,7 @@ internal fun testDetails(
     id: Long,
     name: String,
     vararg phones: String,
+    emails: List<EmailAddress> = emptyList(),
     instantMessages: List<InstantMessage> = emptyList(),
     nickname: String? = null,
     relations: List<ContactRelation> = emptyList(),
@@ -60,6 +62,7 @@ internal fun testDetails(
     contactId = id,
     name = name,
     phones = phones.map { PhoneNumber(it, PhoneKind.MOBILE) },
+    emails = emails,
     instantMessages = instantMessages,
     nickname = nickname,
     relations = relations,

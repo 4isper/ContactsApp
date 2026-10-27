@@ -111,6 +111,8 @@
     <string name="action_back">Назад</string>
     <string name="action_send_sms">SMS</string>
     <string name="action_send_email">Написать</string>
+    <string name="action_copy_email">Скопировать email</string>
+    <string name="action_copy_phone">Скопировать телефон</string>
     <string name="action_open_map">Карта</string>
     <string name="action_open_website">Открыть</string>
     <string name="action_open_messenger">Открыть в мессенджере</string>

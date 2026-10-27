@@ -111,6 +111,8 @@
     <string name="action_back">Back</string>
     <string name="action_send_sms">SMS</string>
     <string name="action_send_email">Email</string>
+    <string name="action_copy_email">Copy email</string>
+    <string name="action_copy_phone">Copy phone</string>
     <string name="action_open_map">Map</string>
     <string name="action_open_website">Open</string>
     <string name="action_open_messenger">Open in messenger</string>

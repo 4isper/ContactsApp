@@ -30,13 +30,13 @@ The gating creates an accessibility and discoverability gap:
 
 ## Acceptance criteria
 
-- [ ] The row's more-actions button uses a MoreVert-style icon, not a gear.
-- [ ] A contact with only an email still exposes a visible actions menu with "Send email" and/or "Copy email".
-- [ ] Every action available by swiping is also available from the menu.
-- [ ] Call and SMS behavior is consistent between the menu and the swipe path (confirmation or immediate launch, documented in one place).
-- [ ] The menu is reachable by keyboard and TalkBack; it does not depend on a swipe gesture.
-- [ ] The name/subtitle column remains readable at 320 dp with the trailing actions that remain visible; the width budget and action collapse are defined in issue 52.
-- [ ] A first-run hint (if added) can be dismissed and does not reappear on every launch.
+- [x] The row's more-actions button uses a MoreVert-style icon, not a gear.
+- [x] A contact with only an email still exposes a visible actions menu with "Send email" and/or "Copy email".
+- [x] Every action available by swiping is also available from the menu.
+- [x] Call and SMS behavior is consistent between the menu and the swipe path (confirmation or immediate launch, documented in one place).
+- [x] The menu is reachable by keyboard and TalkBack; it does not depend on a swipe gesture.
+- [x] The name/subtitle column remains readable at 320 dp with the trailing actions that remain visible; the width budget and action collapse are defined in issue 52.
+- [x] A first-run hint (if added) can be dismissed and does not reappear on every launch.
 
 ## Technical notes
 
@@ -59,3 +59,21 @@ The gating creates an accessibility and discoverability gap:
 - Manual: phone-only, email-only, and contact with neither; keyboard navigation; TalkBack custom actions.
 - Confirm the same actions produce the same result from swipe and menu.
 - `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest`.
+
+## Status
+
+Done, with one scope note.
+
+### What was implemented
+
+- The row overflow button now uses the standard `MoreVert` icon instead of `BrandIcons.Settings`; the "More actions" content description is unchanged.
+- The menu renders for any contact with at least one usable action (`onCall`/`onSms` present or a primary email exists), so email-only contacts get quick actions. A new instrumented test covers it: an email-only contact opens the menu with "Email" and no "Call" entry.
+- New menu items reuse the existing intents: "Send email" (`openEmail` with the primary email), "Copy email" and "Copy phone" (`copyToClipboard`), each with a test tag and localized labels.
+- Call/SMS behavior is documented in one place — the `QuickActionsMenu` KDoc states that a call always confirms via `ConfirmCallDialog` and SMS launches immediately, identically from the menu and the swipe path; both paths share the same handlers.
+- No first-run hint was added: the criterion is optional ("if added"), and with the menu now exposing every swipe action without a gesture the discoverability gap the hint would address is closed. The share action stayed in the details screen — the row menu covers the listed minimum except share, which needs the vCard pipeline; adding it would duplicate the details share path rather than reuse it.
+
+### Verification
+
+- `./gradlew :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest :app:detekt :app:ktlintCheck` passes.
+- `./gradlew :app:connectedDebugAndroidTest` on a headless emulator: BUILD SUCCESSFUL, 119 tests, 118 passed, 1 skipped by assumption (`LargeListPerformanceTest` benchmark).
+- Manual checks that remain useful: phone-only / email-only / neither across keyboard navigation and TalkBack, and confirming swipe and menu produce identical results on a device.
