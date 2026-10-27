@@ -160,6 +160,11 @@
     <string name="editor_duplicate_title">Such a contact already exists</string>
     <string name="editor_duplicate_message">A contact with the same phone or email is already in your contacts:</string>
     <string name="editor_duplicate_save_anyway">Save anyway</string>
+    <string name="editor_photo_crop_canvas">Photo crop area: drag to move, pinch to zoom</string>
+    <string name="editor_photo_zoom_in">Zoom in</string>
+    <string name="editor_photo_zoom_out">Zoom out</string>
+    <string name="editor_photo_crop_reset">Reset to fit</string>
+    <string name="editor_photo_crop_save_failed">Couldn\'t save the cropped photo. Try again</string>
     <string name="editor_check_fields">Check the highlighted fields</string>
     <string name="form_error_empty">Fill in at least one field</string>
     <string name="contact_select_prompt">Select a contact from the list</string>

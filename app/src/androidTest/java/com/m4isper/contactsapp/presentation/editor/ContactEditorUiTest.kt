@@ -1,11 +1,9 @@
 package com.m4isper.contactsapp.presentation.editor
 
 import android.Manifest
-import androidx.compose.ui.test.assertCountEquals
-import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Density
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasTestTag
@@ -17,6 +15,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.unit.Density
 import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
@@ -876,13 +875,19 @@ class ContactEditorUiTest {
         compose.onNodeWithText("Check the highlighted fields").assertIsDisplayed()
         // Скролл проверяем по границам: узел в дереве, но assertIsDisplayed капризничает
         // рядом со снекбаром.
-        val viewport = compose.onNodeWithTag("editor_form").fetchSemanticsNode().size.height
+        val viewport =
+            compose
+                .onNodeWithTag("editor_form")
+                .fetchSemanticsNode()
+                .size.height
         val secondPhone = compose.onAllNodesWithTag("editor_phone_field").fetchSemanticsNodes()[1]
         val top = secondPhone.positionInRoot.y.toInt()
         val bottom = top + secondPhone.size.height
-        assertTrue("second phone row must be on screen: top=$top bottom=$bottom viewport=$viewport", top >= 0 && bottom <= viewport)
+        assertTrue(
+            "second phone row must be on screen: top=$top bottom=$bottom viewport=$viewport",
+            top >= 0 && bottom <= viewport,
+        )
     }
-
 
     @Test
     fun photoActions_wrapInsteadOfClipping() {

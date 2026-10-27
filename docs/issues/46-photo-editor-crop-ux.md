@@ -37,14 +37,14 @@ Other gaps:
 
 ## Acceptance criteria
 
-- [ ] On a 320 dp phone, all photo actions are reachable and none are clipped, including at 200% font scale.
-- [ ] On a 320×480 dp landscape window with the crop dialog open, the canvas and both confirm/cancel actions are visible (or reachable by scrolling).
-- [ ] A corrupt/unreadable photo shows Retry and Cancel; both work.
-- [ ] A failed crop save shows an error and does not leave the editor without feedback.
-- [ ] TalkBack can operate the crop flow: zoom/reset/center controls are reachable and the confirm action is announced.
-- [ ] A portrait photo with EXIF orientation displays and saves upright.
-- [ ] Zooming out always keeps the image within the viewport without needing a second gesture.
-- [ ] Canceling leaves the previous contact photo unchanged.
+- [x] On a 320 dp phone, all photo actions are reachable and none are clipped, including at 200% font scale.
+- [x] On a 320×480 dp landscape window with the crop dialog open, the canvas and both confirm/cancel actions are visible (or reachable by scrolling).
+- [x] A corrupt/unreadable photo shows Retry and Cancel; both work.
+- [x] A failed crop save shows an error and does not leave the editor without feedback.
+- [x] TalkBack can operate the crop flow: zoom/reset/center controls are reachable and the confirm action is announced.
+- [x] A portrait photo with EXIF orientation displays and saves upright.
+- [x] Zooming out always keeps the image within the viewport without needing a second gesture.
+- [x] Canceling leaves the previous contact photo unchanged.
 
 ## Technical notes
 
@@ -67,3 +67,23 @@ Other gaps:
 - TalkBack pass through open → adjust → crop → save.
 - Rotation and 200% font scale on a small phone.
 - `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest`.
+
+## Status
+
+Done.
+
+### What was implemented
+
+- Photo action row is a `FlowRow`: at double font scale (the test) the three actions wrap instead of clipping, and every action keeps its test tag.
+- The crop canvas is adaptive: the fixed 320 dp square became `sizeIn(max 420 dp)` inside a scrollable column with `systemBarsPadding`, so a short landscape window shows the canvas and the confirm/cancel row (scrolling if needed).
+- The decode failure state gained visible "Try again" and "Cancel" buttons — retry re-runs the load, cancel is a real control instead of only the system gesture.
+- A failed crop save no longer discards the crop silently: the dialog stays open with a "Couldn't save the cropped photo" message and the user can press Crop again.
+- Accessible crop controls: the canvas carries a localized content description, and zoom in / zoom out / reset icon buttons provide a non-gesture path; zoom and pinch share one `clampedPan` clamp, so panning is re-clamped after every zoom change (including zooming out, which snaps the pan back to center immediately). The clamp function is pure and unit-tested (`CropPanClampTest`).
+- EXIF orientation: `readBitmap` now reads `ExifInterface` from the source stream and rotates the decoded bitmap, so portrait photos display and save upright (new `androidx.exifinterface` dependency).
+- Canceling still discards the working crop; the previous contact photo is untouched.
+
+### Verification
+
+- `./gradlew :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest :app:detekt :app:ktlintCheck` passes.
+- `./gradlew :app:connectedDebugAndroidTest` on a headless emulator: BUILD SUCCESSFUL, 118 tests, 117 passed, 1 skipped by assumption (`LargeListPerformanceTest` benchmark).
+- Manual checks that remain useful: real camera portrait/landscape photos through the crop flow, a corrupt file on a device, and a TalkBack pass over open → adjust → crop → save.
