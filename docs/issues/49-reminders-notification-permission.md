@@ -30,13 +30,13 @@ Consequences:
 
 ## Acceptance criteria
 
-- [ ] Denying the notification permission leaves the reminders switch off and shows an explanation with a settings action.
-- [ ] Granting the permission turns reminders on and persists the preference.
-- [ ] On Android 12 and below, disabling app notifications in system settings is reflected by the switch/warning on return to the screen.
-- [ ] A blocked reminders channel is detected and explained.
-- [ ] Returning from system settings refreshes the state automatically.
-- [ ] The user is never shown an "on" switch when notifications are guaranteed to be dropped.
-- [ ] All new text is localized in English and Russian.
+- [x] Denying the notification permission leaves the reminders switch off and shows an explanation with a settings action.
+- [x] Granting the permission turns reminders on and persists the preference.
+- [x] On Android 12 and below, disabling app notifications in system settings is reflected by the switch/warning on return to the screen.
+- [x] A blocked reminders channel is detected and explained.
+- [x] Returning from system settings refreshes the state automatically.
+- [x] The user is never shown an "on" switch when notifications are guaranteed to be dropped.
+- [x] All new text is localized in English and Russian.
 
 ## Technical notes
 
@@ -61,3 +61,23 @@ Consequences:
 - Confirm no notification is claimed as active while blocked.
 - UI test for the permission callback and switch state.
 - `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest`.
+
+## Status
+
+Done, with the one-explicit-toggle choice for the pending intent.
+
+### What was implemented
+
+- The switch shows the effective state through `remindersEffectivelyOn(enabled, appNotificationsEnabled, channelBlocked)` — a pure function unit-tested in `RemindersDeliveryTest`. An "on" switch now guarantees the notification can actually be delivered.
+- Enabling: on Android 13+ the `POST_NOTIFICATIONS` request drives the preference — the launcher callback applies `onRemindersChanged(true)` only after a grant; a denial shows an inline explanation with an "Open settings" action and leaves the switch off. The "pending intent" from the issue is resolved with the documented alternative: one explicit toggle after returning from settings.
+- On any API level the screen also checks `NotificationManagerCompat.areNotificationsEnabled()` and the reminders channel importance (the channel id is now shared between the receiver and settings via `REMINDERS_CHANNEL_ID`); a blocked app or channel shows a dedicated warning with an "Open settings" action.
+- `LifecycleResumeEffect` recomputes deliverability, so returning from system settings updates the switch and warnings without restarting the screen.
+- No permission request happens on screen entry — the launcher fires only from the switch.
+- The reminders section moved to its own `RemindersSection.kt` (the settings file hit the detekt function-count limit); warnings and lead options became separate composables to stay within the complexity budget.
+- New strings in en/ru: `settings_reminders_permission`, `settings_reminders_blocked`.
+
+### Verification
+
+- `./gradlew :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest :app:detekt :app:ktlintCheck` passes.
+- `./gradlew :app:connectedDebugAndroidTest` on a headless emulator: BUILD SUCCESSFUL, 119 tests, 118 passed, 1 skipped by assumption (`LargeListPerformanceTest` benchmark).
+- Manual checks that remain useful: deny / grant / permanently-deny / app-notifications-off / channel-blocked on API 33+ and API 30 devices, and the return-from-settings refresh on a real device.

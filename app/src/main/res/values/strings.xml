@@ -321,6 +321,8 @@
     <string name="reminders_birthday">birthday</string>
     <string name="reminders_event">event</string>
     <string name="settings_reminders">Reminders</string>
+    <string name="settings_reminders_permission">Reminders need the notification permission</string>
+    <string name="settings_reminders_blocked">Notifications are turned off for the app. Reminders cannot be delivered</string>
     <string name="settings_reminders_desc">Notify about upcoming birthdays and events</string>
     <string name="settings_reminder_lead">Remind in advance</string>
     <string name="settings_reminder_lead_value">%1$d days before</string>

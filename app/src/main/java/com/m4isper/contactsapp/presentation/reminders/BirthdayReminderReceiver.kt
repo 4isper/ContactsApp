@@ -19,6 +19,7 @@ import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.reminders.OccasionKind
 import com.m4isper.contactsapp.domain.reminders.UpcomingOccasion
 import com.m4isper.contactsapp.domain.reminders.upcomingOccasions
+import com.m4isper.contactsapp.presentation.settings.REMINDERS_CHANNEL_ID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -129,7 +130,7 @@ class BirthdayReminderReceiver : BroadcastReceiver() {
     }
 
     companion object {
-        private const val CHANNEL_ID = "reminders"
+        private val CHANNEL_ID = REMINDERS_CHANNEL_ID
         private const val NOTIFICATION_ID = 4201
     }
 }

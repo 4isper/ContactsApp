@@ -331,6 +331,8 @@
     <string name="reminders_birthday">день рождения</string>
     <string name="reminders_event">событие</string>
     <string name="settings_reminders">Напоминания</string>
+    <string name="settings_reminders_permission">Для напоминаний нужно разрешение на уведомления</string>
+    <string name="settings_reminders_blocked">Уведомления отключены для приложения. Напоминания не будут доставлены</string>
     <string name="settings_reminders_desc">Уведомлять о ближайших днях рождения и событиях</string>
     <string name="settings_reminder_lead">Уведомлять заранее</string>
     <string name="settings_reminder_lead_value">за %1$d дн. до</string>

@@ -1,9 +1,5 @@
 package com.m4isper.contactsapp.presentation.settings
 
-import android.Manifest
-import android.os.Build
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -41,14 +37,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.R
-import com.m4isper.contactsapp.domain.model.settings.AppSettings
 import com.m4isper.contactsapp.domain.model.settings.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.settings.ListDensity
 import com.m4isper.contactsapp.domain.model.settings.ThemeMode
 import com.m4isper.contactsapp.presentation.common.account.contactAccountTitle
 import com.m4isper.contactsapp.presentation.common.account.testKey
 import com.m4isper.contactsapp.presentation.common.message
-import com.m4isper.contactsapp.presentation.common.permissions.hasPermission
 import com.m4isper.contactsapp.ui.components.ConfirmDialog
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 import dev.zacsweers.metrox.viewmodel.metroViewModel
@@ -257,50 +251,6 @@ internal fun SettingsScreen(
     }
 }
 
-/** Варианты предупреждения заранее: за сколько дней напомнить о празднике. */
-private val REMINDER_LEAD_OPTIONS = listOf(1, 3, 7, 14)
-
-/** Напоминания: переключатель и срок предупреждения. */
-@Composable
-private fun RemindersSection(
-    settings: AppSettings,
-    viewModel: SettingsViewModel,
-) {
-    val context = LocalContext.current
-    val notificationPermissionLauncher =
-        rememberLauncherForActivityResult(
-            ActivityResultContracts.RequestPermission(),
-        ) { /* no-op: receiver checks permission */ }
-
-    SettingsSection(title = stringResource(R.string.settings_reminders)) {
-        SettingsSwitch(
-            label = stringResource(R.string.settings_reminders),
-            description = stringResource(R.string.settings_reminders_desc),
-            checked = settings.remindersEnabled,
-            onCheckedChange = { enabled ->
-                if (enabled &&
-                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                    !hasPermission(context, Manifest.permission.POST_NOTIFICATIONS)
-                ) {
-                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                }
-                viewModel.onRemindersChanged(enabled, settings.reminderLeadDays)
-            },
-            testTag = "reminders_switch",
-        )
-        if (settings.remindersEnabled) {
-            REMINDER_LEAD_OPTIONS.forEach { days ->
-                SettingsOption(
-                    label = stringResource(R.string.settings_reminder_lead_value, days),
-                    selected = settings.reminderLeadDays == days,
-                    onSelect = { viewModel.onRemindersChanged(true, days) },
-                    testTag = "reminder_lead_$days",
-                )
-            }
-        }
-    }
-}
-
 /** Языки приложения: пустой код — язык системы. */
 private val APP_LANGUAGES =
     listOf(
@@ -333,7 +283,7 @@ private fun SettingsInfo(
 }
 
 @Composable
-private fun SettingsSection(
+internal fun SettingsSection(
     title: String,
     content: @Composable () -> Unit,
 ) {
@@ -363,7 +313,7 @@ private fun SettingsSection(
 }
 
 @Composable
-private fun SettingsOption(
+internal fun SettingsOption(
     label: String,
     selected: Boolean,
     onSelect: () -> Unit,
@@ -395,7 +345,7 @@ private fun SettingsOption(
 }
 
 @Composable
-private fun SettingsSwitch(
+internal fun SettingsSwitch(
     label: String,
     description: String,
     checked: Boolean,
