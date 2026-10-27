@@ -63,7 +63,6 @@ class ContactValidationTest {
 
         assertEquals(FormError.INVALID_DATE, validateContactFields(form)[FormField.EVENT])
     }
-}
 
     @Test
     fun `first invalid row index points at the offending row`() {
@@ -86,3 +85,4 @@ class ContactValidationTest {
 
         assertNull(firstInvalidRowIndex(form, FormField.PHONE))
     }
+}
