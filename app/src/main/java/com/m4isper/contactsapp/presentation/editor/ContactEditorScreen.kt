@@ -155,6 +155,17 @@ fun ContactEditorScreen(
         }
     }
 
+    // Блокированное сохранение: короткая подсказка, даже если невалидное поле за экраном.
+    val fieldsBlocked = uiState.firstErrorRowIds.isNotEmpty()
+    LaunchedEffect(fieldsBlocked) {
+        if (fieldsBlocked) {
+            snackbarHostState.showSnackbar(
+                message = context.getString(R.string.editor_check_fields),
+                duration = SnackbarDuration.Long,
+            )
+        }
+    }
+
     if (showDiscardDialog) {
         ConfirmDialog(
             title = stringResource(R.string.editor_discard_title),

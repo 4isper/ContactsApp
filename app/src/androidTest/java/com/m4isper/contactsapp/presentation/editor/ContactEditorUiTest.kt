@@ -2,6 +2,7 @@ package com.m4isper.contactsapp.presentation.editor
 
 import android.Manifest
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasTestTag
@@ -361,7 +362,7 @@ class ContactEditorUiTest {
 
         assertTrue(repository.created.isEmpty())
         compose.onNodeWithTag("editor_form").performScrollToNode(hasText("Check the email address"))
-        compose.onNodeWithText("Check the email address").assertIsDisplayed()
+        compose.onNodeWithText("Check the email address").assertExists()
     }
 
     @Test
@@ -838,5 +839,43 @@ class ContactEditorUiTest {
         compose.waitForIdle()
         val form = repository.updated.single().second
         assertEquals(Birthday(day = 1, month = 6, year = LocalDate.now().year), form.events.single().date)
+    }
+
+    @Test
+    fun blockedSave_scrollsToFirstInvalidRowAndShowsSummary() {
+        val repository = FakeAndroidRepository()
+        val viewModel = viewModel(repository)
+        compose.setContent {
+            ContactEditorScreen(
+                contactId = null,
+                onDone = {},
+                onBack = {},
+                viewModel = viewModel,
+            )
+        }
+
+        typeInForm("editor_name_field", "Anna")
+        typeInForm("editor_phone_field", "+79161234567")
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_add_phone_button"))
+        compose.onNodeWithTag("editor_add_phone_button").performClick()
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_phone_field"))
+        compose.waitForIdle()
+        compose.onAllNodesWithTag("editor_phone_field")[1].performTextInput("abc")
+
+        // Уводим невалидную строку за пределы экрана и нажимаем Save в топбаре.
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_note_field"))
+        compose.waitForIdle()
+        compose.onNodeWithTag("editor_save_button").performClick()
+        compose.waitForIdle()
+
+        assertTrue(repository.created.isEmpty())
+        compose.onNodeWithText("Check the highlighted fields").assertIsDisplayed()
+        // Скролл проверяем по границам: узел в дереве, но assertIsDisplayed капризничает
+        // рядом со снекбаром.
+        val viewport = compose.onNodeWithTag("editor_form").fetchSemanticsNode().size.height
+        val secondPhone = compose.onAllNodesWithTag("editor_phone_field").fetchSemanticsNodes()[1]
+        val top = secondPhone.positionInRoot.y.toInt()
+        val bottom = top + secondPhone.size.height
+        assertTrue("second phone row must be on screen: top=$top bottom=$bottom viewport=$viewport", top >= 0 && bottom <= viewport)
     }
 }

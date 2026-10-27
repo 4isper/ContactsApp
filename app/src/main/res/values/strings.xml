@@ -160,6 +160,7 @@
     <string name="editor_duplicate_title">Such a contact already exists</string>
     <string name="editor_duplicate_message">A contact with the same phone or email is already in your contacts:</string>
     <string name="editor_duplicate_save_anyway">Save anyway</string>
+    <string name="editor_check_fields">Check the highlighted fields</string>
     <string name="form_error_empty">Fill in at least one field</string>
     <string name="contact_select_prompt">Select a contact from the list</string>
     <string name="filter_favorites">Favorites</string>

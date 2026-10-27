@@ -160,6 +160,7 @@
     <string name="editor_duplicate_title">Такой контакт уже есть</string>
     <string name="editor_duplicate_message">Контакт с таким же телефоном или почтой уже есть:</string>
     <string name="editor_duplicate_save_anyway">Всё равно сохранить</string>
+    <string name="editor_check_fields">Проверьте поля, выделенные ошибкой</string>
     <string name="form_error_empty">Заполните хотя бы одно поле</string>
     <string name="contact_select_prompt">Выберите контакт из списка</string>
     <string name="filter_favorites">Избранное</string>

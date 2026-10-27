@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
@@ -27,11 +29,13 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -41,6 +45,7 @@ import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.common.AppError
 import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import com.m4isper.contactsapp.domain.model.contact.FormError
+import com.m4isper.contactsapp.domain.model.contact.FormField
 import com.m4isper.contactsapp.presentation.common.groups.GroupPickerDialog
 import com.m4isper.contactsapp.presentation.common.message
 import com.m4isper.contactsapp.presentation.editor.components.AccountPickerDialog
@@ -110,13 +115,27 @@ internal fun EditorForm(
         )
     }
 
+    val listState = rememberLazyListState()
+    val itemIndices = remember { FormItemIndices() }
+    val focusRequesters = remember { mutableMapOf<String, FocusRequester>() }
+
+    fun focusFor(key: String): FocusRequester = focusRequesters.getOrPut(key) { FocusRequester() }
+
+    // Блокированное сохранение: показываем баннер и подводим пользователя к первой ошибке.
+    LaunchedEffect(uiState.firstErrorRowIds) {
+        scrollToFirstError(uiState.firstErrorRowIds, itemIndices, listState, focusRequesters)
+    }
+
     LazyColumn(
+        state = listState,
         modifier =
             modifier
                 .fillMaxSize()
                 .imePadding()
                 .testTag("editor_form"),
     ) {
+        itemIndices.reset()
+        itemIndices.register("photo")
         item(key = "photo") {
             EditorPhotoSection(
                 name = uiState.effectiveName,
@@ -131,8 +150,10 @@ internal fun EditorForm(
             uiState = uiState,
             onClick = { showAccountPicker = true },
             isError = uiState.error == AppError.LOCAL_ACCOUNT_BLOCKED,
+            itemIndices = itemIndices,
         )
-        if (uiState.formError != null || uiState.deleteFailed) {
+        if (uiState.formError != null || uiState.deleteFailed || uiState.fieldErrors.isNotEmpty()) {
+            itemIndices.register("error")
             item(key = "error") {
                 Text(
                     text = formMessage(uiState),
@@ -142,6 +163,7 @@ internal fun EditorForm(
                 )
             }
         }
+        itemIndices.register("name")
         item(key = "name") {
             NameEditor(
                 mode = uiState.nameMode,
@@ -166,9 +188,11 @@ internal fun EditorForm(
                 onToggleMode = { edit { it.withToggledNameMode() } },
             )
         }
+        itemIndices.register("nickname-header")
         item(key = "nickname-header") {
             SectionHeader(titleRes = R.string.editor_section_nickname)
         }
+        itemIndices.register("nickname")
         item(key = "nickname") {
             OutlinedTextField(
                 value = uiState.nickname.nickname,
@@ -183,19 +207,23 @@ internal fun EditorForm(
                         .testTag("editor_nickname_field"),
             )
         }
+        itemIndices.register("groups-header")
         item(key = "groups-header") {
             SectionHeader(titleRes = R.string.editor_section_groups)
         }
+        itemIndices.register("groups")
         item(key = "groups") {
             GroupMembershipRow(
                 selected = uiState.selectedGroups,
                 onClick = { showGroupPicker = true },
             )
         }
-        editorContactItems(uiState = uiState, edit = edit)
+        editorContactItems(uiState = uiState, edit = edit, itemIndices = itemIndices, focusFor = ::focusFor)
         editorExtraItems(
             uiState = uiState,
             edit = edit,
+            itemIndices = itemIndices,
+            focusFor = ::focusFor,
             onBirthdayClick = {
                 birthdayPickerNoYear = uiState.birthday.value?.year == null
                 showDatePicker = true
@@ -219,6 +247,7 @@ internal fun EditorForm(
             },
         )
         if (!uiState.isNew) {
+            itemIndices.register("delete")
             item(key = "delete") {
                 OutlinedButton(
                     onClick = onDeleteClick,
@@ -308,9 +337,12 @@ private fun LazyListScope.accountItems(
     uiState: EditorUiState,
     onClick: () -> Unit,
     isError: Boolean = false,
+    itemIndices: FormItemIndices,
 ) {
     if (uiState.isNew) {
         if (uiState.accounts.size <= 1) return
+        itemIndices.register("account-header")
+        itemIndices.register("account")
         item(key = "account-header") {
             SectionHeader(titleRes = R.string.editor_section_account)
         }
@@ -319,6 +351,8 @@ private fun LazyListScope.accountItems(
         }
     } else {
         val account = uiState.selectedAccount ?: return
+        itemIndices.register("account-header")
+        itemIndices.register("account")
         item(key = "account-header") {
             SectionHeader(titleRes = R.string.editor_section_account)
         }
@@ -448,5 +482,46 @@ private fun formMessage(uiState: EditorUiState): String =
         uiState.error != null -> uiState.error.message()
         // У каждой ветки FormError есть сообщение: пустая строка ошибки невозможна.
         uiState.formError != null -> uiState.formError.fieldMessage()
+        uiState.fieldErrors.isNotEmpty() -> stringResource(R.string.editor_check_fields)
         else -> ""
     }
+
+/**
+ * Индексы элементов формы в LazyColumn: считаются в порядке регистрации блоков
+ * и позволяют прокрутить список к строке с ошибкой.
+ */
+internal class FormItemIndices {
+    private val indices = mutableMapOf<String, Int>()
+    private var next = 0
+
+    /** Сброс перед новым проходом построения содержимого списка. */
+    fun reset() {
+        indices.clear()
+        next = 0
+    }
+
+    fun register(key: String) {
+        indices[key] = next
+        next++
+    }
+
+    /** Регистрирует блок из [count] элементов без индивидуальных ключей. */
+    fun registerCount(count: Int) {
+        next += count
+    }
+
+    operator fun get(key: String): Int? = indices[key]
+}
+
+/** Подводит список к первой строке с ошибкой и ставит фокус в её поле. */
+private suspend fun scrollToFirstError(
+    targets: Map<FormField, Long>,
+    itemIndices: FormItemIndices,
+    listState: LazyListState,
+    focusRequesters: MutableMap<String, FocusRequester>,
+) {
+    val target = targets.entries.firstOrNull() ?: return
+    val key = "row_${target.value}"
+    itemIndices[key]?.let { listState.animateScrollToItem(it) }
+    runCatching { focusRequesters[key]?.requestFocus() }
+}

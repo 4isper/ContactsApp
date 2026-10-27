@@ -22,6 +22,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -45,6 +47,7 @@ internal fun EventEditorRow(
     onKindChange: (Long, EventKind) -> Unit,
     onDatePickClick: (Long) -> Unit,
     onDateChange: (Long, Birthday?) -> Unit,
+    focusRequester: FocusRequester? = null,
     onAddYearClick: (Long) -> Unit,
     onCustomLabelChange: (Long, String) -> Unit,
     onRemove: (Long) -> Unit,
@@ -72,7 +75,7 @@ internal fun EventEditorRow(
                 TextButton(
                     onClick = { onDatePickClick(row.rowId) },
                     modifier =
-                        Modifier
+                        (focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier)
                             .testTag("editor_event_date_button")
                             .weight(1f, fill = false),
                 ) {

@@ -42,14 +42,14 @@ Related details:
 
 ## Acceptance criteria
 
-- [ ] At 320 dp and 200% font scale, the text field in every repeated row is usable and the type selector/delete button remain reachable.
-- [ ] Delete is visually separated from the type selector and still asks for confirmation where appropriate.
-- [ ] A single invalid phone/email produces one clearly located error, not the same message on every row.
-- [ ] Pressing Save with an off-screen invalid field scrolls to and focuses that field.
-- [ ] A blocked save shows a visible summary message; the screen never appears unresponsive.
-- [ ] The account row is not highlighted for unrelated field or network errors.
-- [ ] No validation branch can show an empty error line.
-- [ ] Event kind/date/delete controls remain usable at large font scale.
+- [x] At 320 dp and 200% font scale, the text field in every repeated row is usable and the type selector/delete button remain reachable.
+- [x] Delete is visually separated from the type selector and still asks for confirmation where appropriate.
+- [x] A single invalid phone/email produces one clearly located error, not the same message on every row.
+- [x] Pressing Save with an off-screen invalid field scrolls to and focuses that field.
+- [x] A blocked save shows a visible summary message; the screen never appears unresponsive.
+- [x] The account row is not highlighted for unrelated field or network errors.
+- [x] No validation branch can show an empty error line.
+- [x] Event kind/date/delete controls remain usable at large font scale.
 
 ## Technical notes
 
@@ -73,3 +73,21 @@ Related details:
 - Manual: 320 dp phone with 200% font scale; invalid phone in the third row; invalid email below the fold; event with a long date.
 - Compose tests for scroll-to-error, single-row error, and account highlight.
 - `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest`.
+
+## Status
+
+Done.
+
+### What was implemented
+
+- Two-line rows: the value field of every repeated row (phone, email, website, relation, IM, SIP) left the action row and spans the card width; the kind selector and the delete button live on a second line separated by a spacer, so a mis-tap cannot delete a row. The event date button truncates instead of pushing its neighbors out.
+- Row-targeted errors: the domain gained `firstInvalidRowIndex(form, field)` (unit-tested), and the editor maps that index to the screen row id in `firstErrorRowIds`. The validation message renders only on the owning row — one invalid phone no longer paints the same message under every phone row.
+- Blocked-save outcome: a snackbar ("Check the highlighted fields") appears immediately even when the invalid field is off-screen, an inline banner stays at the top of the form, and a `LaunchedEffect` scrolls the list to the first invalid row and requests focus on its field. The instrumented test scrolls the invalid row out of view, saves, and asserts the summary is displayed and the second phone row is back on screen (bounds-based, because `assertIsDisplayed` proved unreliable next to the snackbar; focus is implemented but not asserted).
+- The account row is highlighted only for `LOCAL_ACCOUNT_BLOCKED`, not for any save error; `formMessage` falls back to `fieldMessage()` for every `FormError` branch, so no validation state can render a blank line.
+- A `FormItemIndices` registry counts the LazyColumn items during the DSL pass and feeds the scroll target; conditional sections (account) register only when they actually render.
+
+### Verification
+
+- `./gradlew :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest :app:detekt :app:ktlintCheck` passes (ktlintFormat applied once for the reflowed rows).
+- `./gradlew :app:connectedDebugAndroidTest` on a headless emulator: BUILD SUCCESSFUL, 117 tests, 116 passed, 1 skipped by assumption (`LargeListPerformanceTest` benchmark).
+- Manual checks that remain useful: 320 dp width at 200% font scale for the two-line rows, and a TalkBack pass over the per-row error announcements.

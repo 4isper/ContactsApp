@@ -19,6 +19,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -40,6 +42,7 @@ internal fun PhoneEditorRow(
     canRemove: Boolean,
     canMoveUp: Boolean,
     canMoveDown: Boolean,
+    focusRequester: FocusRequester? = null,
     onPhoneChange: (Long, String) -> Unit,
     onKindChange: (Long, PhoneKind) -> Unit,
     onCustomLabelChange: (Long, String) -> Unit,
@@ -75,7 +78,7 @@ internal fun PhoneEditorRow(
                     isError = error != null,
                     supportingText = error?.let { { Text(it) } },
                     modifier =
-                        Modifier
+                        (focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier)
                             .weight(1f)
                             .testTag("editor_phone_field"),
                 )

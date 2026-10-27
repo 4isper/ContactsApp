@@ -13,6 +13,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -20,6 +21,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.contact.FormField
 import com.m4isper.contactsapp.presentation.editor.EditorUiState
+import com.m4isper.contactsapp.presentation.editor.FormItemIndices
 import com.m4isper.contactsapp.presentation.editor.components.SectionHeader
 import com.m4isper.contactsapp.presentation.editor.edits.withAddedEvent
 import com.m4isper.contactsapp.presentation.editor.edits.withAddedRelation
@@ -51,21 +53,26 @@ internal fun LazyListScope.editorExtraItems(
     onEventDateClick: (Long) -> Unit,
     onBirthdayAddYear: () -> Unit,
     onEventAddYear: (Long) -> Unit,
+    itemIndices: FormItemIndices,
+    focusFor: (String) -> FocusRequester,
 ) {
-    organizationItems(uiState, edit)
-    birthdayItems(uiState, edit, onBirthdayClick, onBirthdayAddYear)
-    eventItems(uiState, edit, onEventDateClick, onEventAddYear)
-    relationItems(uiState, edit)
-    noteItems(uiState, edit)
+    organizationItems(uiState, edit, itemIndices)
+    birthdayItems(uiState, edit, onBirthdayClick, onBirthdayAddYear, itemIndices)
+    eventItems(uiState, edit, onEventDateClick, onEventAddYear, itemIndices, focusFor)
+    relationItems(uiState, edit, itemIndices)
+    noteItems(uiState, edit, itemIndices)
 }
 
 private fun LazyListScope.organizationItems(
     uiState: EditorUiState,
     edit: ((EditorUiState) -> EditorUiState) -> Unit,
+    itemIndices: FormItemIndices,
 ) {
+    itemIndices.register("organization-header")
     item(key = "organization-header") {
         SectionHeader(titleRes = R.string.editor_section_organization)
     }
+    itemIndices.register("organization")
     item(key = "organization") {
         OrganizationFields(uiState, edit)
     }
@@ -145,10 +152,13 @@ private fun LazyListScope.birthdayItems(
     edit: ((EditorUiState) -> EditorUiState) -> Unit,
     onBirthdayClick: () -> Unit,
     onBirthdayAddYear: () -> Unit,
+    itemIndices: FormItemIndices,
 ) {
+    itemIndices.register("birthday-header")
     item(key = "birthday-header") {
         SectionHeader(titleRes = R.string.editor_section_birthday)
     }
+    itemIndices.register("birthday")
     item(key = "birthday") {
         BirthdayEditorRow(
             birthday = uiState.birthday,
@@ -165,7 +175,10 @@ private fun LazyListScope.eventItems(
     edit: ((EditorUiState) -> EditorUiState) -> Unit,
     onEventDateClick: (Long) -> Unit,
     onEventAddYear: (Long) -> Unit,
+    itemIndices: FormItemIndices,
+    focusFor: (String) -> FocusRequester,
 ) {
+    itemIndices.register("events-header")
     item(key = "events-header") {
         SectionHeader(
             titleRes = R.string.editor_section_events,
@@ -174,27 +187,30 @@ private fun LazyListScope.eventItems(
             addTestTag = "editor_add_event_button",
         )
     }
-    items(
-        items = uiState.events,
-        key = { it.rowId },
-    ) { row ->
-        EventEditorRow(
-            row = row,
-            error = errorForRow(uiState, FormField.EVENT, row.rowId),
-            onKindChange = { rowId, kind -> edit { it.withEventKind(rowId, kind) } },
-            onDatePickClick = onEventDateClick,
-            onDateChange = { rowId, date -> edit { it.withEventDate(rowId, date) } },
-            onAddYearClick = onEventAddYear,
-            onCustomLabelChange = { rowId, value -> edit { it.withEventLabel(rowId, value) } },
-            onRemove = { rowId -> edit { it.withoutEvent(rowId) } },
-        )
+    uiState.events.forEach { row ->
+        itemIndices.register("row_${row.rowId}")
+        item(key = row.rowId) {
+            EventEditorRow(
+                row = row,
+                error = errorForRow(uiState, FormField.EVENT, row.rowId),
+                onKindChange = { rowId, kind -> edit { it.withEventKind(rowId, kind) } },
+                onDatePickClick = onEventDateClick,
+                onDateChange = { rowId, date -> edit { it.withEventDate(rowId, date) } },
+                onAddYearClick = onEventAddYear,
+                onCustomLabelChange = { rowId, value -> edit { it.withEventLabel(rowId, value) } },
+                onRemove = { rowId -> edit { it.withoutEvent(rowId) } },
+                focusRequester = focusFor("row_${row.rowId}"),
+            )
+        }
     }
 }
 
 private fun LazyListScope.relationItems(
     uiState: EditorUiState,
     edit: ((EditorUiState) -> EditorUiState) -> Unit,
+    itemIndices: FormItemIndices,
 ) {
+    itemIndices.register("relations-header")
     item(key = "relations-header") {
         SectionHeader(
             titleRes = R.string.editor_section_relations,
@@ -203,6 +219,7 @@ private fun LazyListScope.relationItems(
             addTestTag = "editor_add_relation_button",
         )
     }
+    itemIndices.registerCount(uiState.relations.size)
     items(
         items = uiState.relations,
         key = { it.rowId },
@@ -225,10 +242,12 @@ private fun LazyListScope.relationItems(
 private fun LazyListScope.noteItems(
     uiState: EditorUiState,
     edit: ((EditorUiState) -> EditorUiState) -> Unit,
+    itemIndices: FormItemIndices,
 ) {
     item(key = "note-header") {
         SectionHeader(titleRes = R.string.editor_section_note)
     }
+    itemIndices.register("note")
     item(key = "note") {
         val spacing = LocalSpacing.current
         OutlinedTextField(

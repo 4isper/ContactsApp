@@ -2,13 +2,14 @@ package com.m4isper.contactsapp.presentation.editor.items
 
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.focus.FocusRequester
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.contact.EditableAddress
 import com.m4isper.contactsapp.domain.model.contact.FormField
 import com.m4isper.contactsapp.presentation.editor.EditorRow
 import com.m4isper.contactsapp.presentation.editor.EditorUiState
+import com.m4isper.contactsapp.presentation.editor.FormItemIndices
 import com.m4isper.contactsapp.presentation.editor.components.SectionHeader
 import com.m4isper.contactsapp.presentation.editor.edits.withAddedAddress
 import com.m4isper.contactsapp.presentation.editor.edits.withAddedEmail
@@ -62,19 +63,24 @@ import com.m4isper.contactsapp.presentation.editor.rows.WebsiteEditorRow
 internal fun LazyListScope.editorContactItems(
     uiState: EditorUiState,
     edit: ((EditorUiState) -> EditorUiState) -> Unit,
+    itemIndices: FormItemIndices,
+    focusFor: (String) -> FocusRequester,
 ) {
-    phoneItems(uiState, edit)
-    emailItems(uiState, edit)
-    instantMessageItems(uiState, edit)
-    sipItems(uiState, edit)
-    addressItems(uiState, edit)
-    websiteItems(uiState, edit)
+    phoneItems(uiState, edit, itemIndices, focusFor)
+    emailItems(uiState, edit, itemIndices, focusFor)
+    instantMessageItems(uiState, edit, itemIndices)
+    sipItems(uiState, edit, itemIndices)
+    addressItems(uiState, edit, itemIndices)
+    websiteItems(uiState, edit, itemIndices, focusFor)
 }
 
 private fun LazyListScope.phoneItems(
     uiState: EditorUiState,
     edit: ((EditorUiState) -> EditorUiState) -> Unit,
+    itemIndices: FormItemIndices,
+    focusFor: (String) -> FocusRequester,
 ) {
+    itemIndices.register("phones-header")
     item(key = "phones-header") {
         SectionHeader(
             titleRes = R.string.editor_section_phones,
@@ -83,31 +89,35 @@ private fun LazyListScope.phoneItems(
             addTestTag = "editor_add_phone_button",
         )
     }
-    itemsIndexed(
-        items = uiState.phones,
-        key = { _, row -> row.rowId },
-    ) { index, row ->
-        PhoneEditorRow(
-            row = row,
-            error = errorForRow(uiState, FormField.PHONE, row.rowId),
-            canRemove = uiState.phones.size > 1,
-            canMoveUp = index > 0,
-            canMoveDown = index < uiState.phones.lastIndex,
-            onPhoneChange = { rowId, value -> edit { it.withPhone(rowId, value) } },
-            onKindChange = { rowId, kind -> edit { it.withPhoneKind(rowId, kind) } },
-            onCustomLabelChange = { rowId, value -> edit { it.withPhoneLabel(rowId, value) } },
-            onSetPrimary = { rowId -> edit { it.withPrimaryPhone(rowId) } },
-            onMoveUp = { rowId -> edit { it.withMovedPhone(rowId, -1) } },
-            onMoveDown = { rowId -> edit { it.withMovedPhone(rowId, 1) } },
-            onRemove = { rowId -> edit { it.withoutPhone(rowId) } },
-        )
+    uiState.phones.forEachIndexed { index, row ->
+        itemIndices.register("row_${row.rowId}")
+        item(key = row.rowId) {
+            PhoneEditorRow(
+                row = row,
+                error = errorForRow(uiState, FormField.PHONE, row.rowId),
+                canRemove = uiState.phones.size > 1,
+                canMoveUp = index > 0,
+                canMoveDown = index < uiState.phones.lastIndex,
+                onPhoneChange = { rowId, value -> edit { it.withPhone(rowId, value) } },
+                onKindChange = { rowId, kind -> edit { it.withPhoneKind(rowId, kind) } },
+                onCustomLabelChange = { rowId, value -> edit { it.withPhoneLabel(rowId, value) } },
+                onSetPrimary = { rowId -> edit { it.withPrimaryPhone(rowId) } },
+                onMoveUp = { rowId -> edit { it.withMovedPhone(rowId, -1) } },
+                onMoveDown = { rowId -> edit { it.withMovedPhone(rowId, 1) } },
+                onRemove = { rowId -> edit { it.withoutPhone(rowId) } },
+                focusRequester = focusFor("row_${row.rowId}"),
+            )
+        }
     }
 }
 
 private fun LazyListScope.emailItems(
     uiState: EditorUiState,
     edit: ((EditorUiState) -> EditorUiState) -> Unit,
+    itemIndices: FormItemIndices,
+    focusFor: (String) -> FocusRequester,
 ) {
+    itemIndices.register("emails-header")
     item(key = "emails-header") {
         SectionHeader(
             titleRes = R.string.editor_section_emails,
@@ -116,30 +126,33 @@ private fun LazyListScope.emailItems(
             addTestTag = "editor_add_email_button",
         )
     }
-    itemsIndexed(
-        items = uiState.emails,
-        key = { _, row -> row.rowId },
-    ) { index, row ->
-        EmailEditorRow(
-            row = row,
-            error = errorForRow(uiState, FormField.EMAIL, row.rowId),
-            canMoveUp = index > 0,
-            canMoveDown = index < uiState.emails.lastIndex,
-            onEmailChange = { rowId, value -> edit { it.withEmail(rowId, value) } },
-            onKindChange = { rowId, kind -> edit { it.withEmailKind(rowId, kind) } },
-            onCustomLabelChange = { rowId, value -> edit { it.withEmailLabel(rowId, value) } },
-            onSetPrimary = { rowId -> edit { it.withPrimaryEmail(rowId) } },
-            onMoveUp = { rowId -> edit { it.withMovedEmail(rowId, -1) } },
-            onMoveDown = { rowId -> edit { it.withMovedEmail(rowId, 1) } },
-            onRemove = { rowId -> edit { it.withoutEmail(rowId) } },
-        )
+    uiState.emails.forEachIndexed { index, row ->
+        itemIndices.register("row_${row.rowId}")
+        item(key = row.rowId) {
+            EmailEditorRow(
+                row = row,
+                error = errorForRow(uiState, FormField.EMAIL, row.rowId),
+                canMoveUp = index > 0,
+                canMoveDown = index < uiState.emails.lastIndex,
+                onEmailChange = { rowId, value -> edit { it.withEmail(rowId, value) } },
+                onKindChange = { rowId, kind -> edit { it.withEmailKind(rowId, kind) } },
+                onCustomLabelChange = { rowId, value -> edit { it.withEmailLabel(rowId, value) } },
+                onSetPrimary = { rowId -> edit { it.withPrimaryEmail(rowId) } },
+                onMoveUp = { rowId -> edit { it.withMovedEmail(rowId, -1) } },
+                onMoveDown = { rowId -> edit { it.withMovedEmail(rowId, 1) } },
+                onRemove = { rowId -> edit { it.withoutEmail(rowId) } },
+                focusRequester = focusFor("row_${row.rowId}"),
+            )
+        }
     }
 }
 
 private fun LazyListScope.instantMessageItems(
     uiState: EditorUiState,
     edit: ((EditorUiState) -> EditorUiState) -> Unit,
+    itemIndices: FormItemIndices,
 ) {
+    itemIndices.register("instant-messages-header")
     item(key = "instant-messages-header") {
         SectionHeader(
             titleRes = R.string.editor_section_instant_messages,
@@ -175,7 +188,9 @@ private fun LazyListScope.instantMessageItems(
 private fun LazyListScope.sipItems(
     uiState: EditorUiState,
     edit: ((EditorUiState) -> EditorUiState) -> Unit,
+    itemIndices: FormItemIndices,
 ) {
+    itemIndices.register("sip-header")
     item(key = "sip-header") {
         SectionHeader(
             titleRes = R.string.editor_section_sip,
@@ -201,7 +216,9 @@ private fun LazyListScope.sipItems(
 private fun LazyListScope.addressItems(
     uiState: EditorUiState,
     edit: ((EditorUiState) -> EditorUiState) -> Unit,
+    itemIndices: FormItemIndices,
 ) {
+    itemIndices.register("addresses-header")
     item(key = "addresses-header") {
         SectionHeader(
             titleRes = R.string.editor_section_addresses,
@@ -242,7 +259,10 @@ private fun addressRow(
 private fun LazyListScope.websiteItems(
     uiState: EditorUiState,
     edit: ((EditorUiState) -> EditorUiState) -> Unit,
+    itemIndices: FormItemIndices,
+    focusFor: (String) -> FocusRequester,
 ) {
+    itemIndices.register("websites-header")
     item(key = "websites-header") {
         SectionHeader(
             titleRes = R.string.editor_section_websites,
@@ -251,23 +271,24 @@ private fun LazyListScope.websiteItems(
             addTestTag = "editor_add_website_button",
         )
     }
-    items(
-        items = uiState.websites,
-        key = { it.rowId },
-    ) { row ->
-        WebsiteEditorRow(
-            row = row,
-            error = errorForRow(uiState, FormField.WEBSITE, row.rowId),
-            onWebsiteChange = { rowId, value -> edit { it.withWebsite(rowId, value) } },
-            onKindChange = { rowId, kind -> edit { it.withWebsiteKind(rowId, kind) } },
-            onCustomLabelChange = {
-                rowId,
-                value,
-                ->
-                edit { it.withWebsiteLabel(rowId, value) }
-            },
-            onRemove = { rowId -> edit { it.withoutWebsite(rowId) } },
-        )
+    uiState.websites.forEach { row ->
+        itemIndices.register("row_${row.rowId}")
+        item(key = row.rowId) {
+            WebsiteEditorRow(
+                row = row,
+                error = errorForRow(uiState, FormField.WEBSITE, row.rowId),
+                onWebsiteChange = { rowId, value -> edit { it.withWebsite(rowId, value) } },
+                onKindChange = { rowId, kind -> edit { it.withWebsiteKind(rowId, kind) } },
+                onCustomLabelChange = {
+                    rowId,
+                    value,
+                    ->
+                    edit { it.withWebsiteLabel(rowId, value) }
+                },
+                onRemove = { rowId -> edit { it.withoutWebsite(rowId) } },
+                focusRequester = focusFor("row_${row.rowId}"),
+            )
+        }
     }
 }
 
