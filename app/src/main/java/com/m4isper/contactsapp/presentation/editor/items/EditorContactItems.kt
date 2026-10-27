@@ -89,7 +89,7 @@ private fun LazyListScope.phoneItems(
     ) { index, row ->
         PhoneEditorRow(
             row = row,
-            error = uiState.fieldErrors[FormField.PHONE]?.fieldMessage(),
+            error = errorForRow(uiState, FormField.PHONE, row.rowId),
             canRemove = uiState.phones.size > 1,
             canMoveUp = index > 0,
             canMoveDown = index < uiState.phones.lastIndex,
@@ -122,7 +122,7 @@ private fun LazyListScope.emailItems(
     ) { index, row ->
         EmailEditorRow(
             row = row,
-            error = uiState.fieldErrors[FormField.EMAIL]?.fieldMessage(),
+            error = errorForRow(uiState, FormField.EMAIL, row.rowId),
             canMoveUp = index > 0,
             canMoveDown = index < uiState.emails.lastIndex,
             onEmailChange = { rowId, value -> edit { it.withEmail(rowId, value) } },
@@ -257,7 +257,7 @@ private fun LazyListScope.websiteItems(
     ) { row ->
         WebsiteEditorRow(
             row = row,
-            error = uiState.fieldErrors[FormField.WEBSITE]?.fieldMessage(),
+            error = errorForRow(uiState, FormField.WEBSITE, row.rowId),
             onWebsiteChange = { rowId, value -> edit { it.withWebsite(rowId, value) } },
             onKindChange = { rowId, kind -> edit { it.withWebsiteKind(rowId, kind) } },
             onCustomLabelChange = {
@@ -270,3 +270,14 @@ private fun LazyListScope.websiteItems(
         )
     }
 }
+
+/** Сообщение об ошибке показывается только строке-владельцу, а не всем строкам поля. */
+@Composable
+internal fun errorForRow(
+    uiState: EditorUiState,
+    field: FormField,
+    rowId: Long?,
+): String? =
+    uiState.firstErrorRowIds[field]
+        ?.takeIf { it == rowId }
+        ?.let { uiState.fieldErrors[field]?.fieldMessage() }

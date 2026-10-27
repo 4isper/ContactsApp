@@ -38,7 +38,6 @@ import com.m4isper.contactsapp.presentation.editor.edits.withRelationLabel
 import com.m4isper.contactsapp.presentation.editor.edits.withRelationName
 import com.m4isper.contactsapp.presentation.editor.edits.withoutEvent
 import com.m4isper.contactsapp.presentation.editor.edits.withoutRelation
-import com.m4isper.contactsapp.presentation.editor.fieldMessage
 import com.m4isper.contactsapp.presentation.editor.rows.BirthdayEditorRow
 import com.m4isper.contactsapp.presentation.editor.rows.EventEditorRow
 import com.m4isper.contactsapp.presentation.editor.rows.RelationEditorRow
@@ -153,7 +152,7 @@ private fun LazyListScope.birthdayItems(
     item(key = "birthday") {
         BirthdayEditorRow(
             birthday = uiState.birthday,
-            error = uiState.fieldErrors[FormField.EVENT]?.fieldMessage(),
+            error = errorForRow(uiState, FormField.EVENT, uiState.birthday.rowId),
             onPickClick = onBirthdayClick,
             onBirthdayChange = { value -> edit { it.withBirthday(value) } },
             onAddYearClick = onBirthdayAddYear,
@@ -181,7 +180,7 @@ private fun LazyListScope.eventItems(
     ) { row ->
         EventEditorRow(
             row = row,
-            error = uiState.fieldErrors[FormField.EVENT]?.fieldMessage(),
+            error = errorForRow(uiState, FormField.EVENT, row.rowId),
             onKindChange = { rowId, kind -> edit { it.withEventKind(rowId, kind) } },
             onDatePickClick = onEventDateClick,
             onDateChange = { rowId, date -> edit { it.withEventDate(rowId, date) } },

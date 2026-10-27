@@ -8,8 +8,10 @@ import com.m4isper.contactsapp.domain.model.contact.EditablePhone
 import com.m4isper.contactsapp.domain.model.contact.EditableWebsite
 import com.m4isper.contactsapp.domain.model.contact.FormError
 import com.m4isper.contactsapp.domain.model.contact.FormField
+import com.m4isper.contactsapp.domain.model.contact.firstInvalidRowIndex
 import com.m4isper.contactsapp.domain.model.contact.validateContactFields
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -62,3 +64,25 @@ class ContactValidationTest {
         assertEquals(FormError.INVALID_DATE, validateContactFields(form)[FormField.EVENT])
     }
 }
+
+    @Test
+    fun `first invalid row index points at the offending row`() {
+        val form =
+            ContactForm(
+                phones = listOf(EditablePhone(number = "+79161234567"), EditablePhone(number = "нет")),
+                emails = listOf(EditableEmail(address = "anna@"), EditableEmail(address = "ok@example.com")),
+                events = listOf(EditableEvent(unparsedDate = "??")),
+            )
+
+        assertEquals(1, firstInvalidRowIndex(form, FormField.PHONE))
+        assertEquals(0, firstInvalidRowIndex(form, FormField.EMAIL))
+        assertEquals(0, firstInvalidRowIndex(form, FormField.EVENT))
+        assertNull(firstInvalidRowIndex(form, FormField.WEBSITE))
+    }
+
+    @Test
+    fun `blank values and valid rows yield no index`() {
+        val form = ContactForm(phones = listOf(EditablePhone(number = "")))
+
+        assertNull(firstInvalidRowIndex(form, FormField.PHONE))
+    }

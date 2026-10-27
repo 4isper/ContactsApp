@@ -4,10 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.m4isper.contactsapp.domain.model.common.AppError
 import com.m4isper.contactsapp.domain.model.contact.ContactAccount
+import com.m4isper.contactsapp.domain.model.contact.ContactForm
 import com.m4isper.contactsapp.domain.model.contact.ContactGroup
 import com.m4isper.contactsapp.domain.model.contact.EditablePhone
+import com.m4isper.contactsapp.domain.model.contact.FormError
 import com.m4isper.contactsapp.domain.model.contact.FormField
 import com.m4isper.contactsapp.domain.model.contact.findSimilarContacts
+import com.m4isper.contactsapp.domain.model.contact.firstInvalidRowIndex
 import com.m4isper.contactsapp.domain.model.contact.validateContactFields
 import com.m4isper.contactsapp.domain.usecase.contacts.CreateContactUseCase
 import com.m4isper.contactsapp.domain.usecase.contacts.DeleteContactsUseCase
@@ -178,14 +181,15 @@ class ContactEditorViewModel(
         val form = state.value.toForm()
         val fieldErrors = validateContactFields(form)
         // Неразобранная дата (из провайдера) — подсказка, а не повод отказать в сохранении.
+        val errorRowIds = firstErrorRowIds(state.value, fieldErrors, form)
         val blocking = fieldErrors.filterKeys { it != FormField.EVENT }
         if (blocking.isNotEmpty()) {
-            // Показываем проблему у конкретного поля и не идём в провайдер.
-            state.update { it.copy(fieldErrors = fieldErrors) }
+            // Показываем проблему у конкретной строки и не идём в провайдер.
+            state.update { it.copy(fieldErrors = fieldErrors, firstErrorRowIds = errorRowIds) }
             return
         }
         if (fieldErrors.isNotEmpty()) {
-            state.update { it.copy(fieldErrors = fieldErrors) }
+            state.update { it.copy(fieldErrors = fieldErrors, firstErrorRowIds = errorRowIds) }
         }
         viewModelScope.launch {
             if (id == null) {
@@ -241,6 +245,7 @@ class ContactEditorViewModel(
                 error = null,
                 deleteFailed = false,
                 fieldErrors = emptyMap(),
+                firstErrorRowIds = emptyMap(),
             )
         }
     }
@@ -264,3 +269,26 @@ internal fun <T> List<EditorRow<T>>.moved(
         }
     }
 }
+
+/**
+ * Строка-владелец первой ошибки каждого поля: домен возвращает индекс в форме,
+ * презентация переводит его в rowId строки экрана.
+ */
+private fun firstErrorRowIds(
+    state: EditorUiState,
+    fieldErrors: Map<FormField, FormError>,
+    form: ContactForm,
+): Map<FormField, Long> =
+    fieldErrors.keys
+        .mapNotNull { field ->
+            firstInvalidRowIndex(form, field)?.let { index ->
+                val rowId =
+                    when (field) {
+                        FormField.PHONE -> state.phones.getOrNull(index)?.rowId
+                        FormField.EMAIL -> state.emails.getOrNull(index)?.rowId
+                        FormField.WEBSITE -> state.websites.getOrNull(index)?.rowId
+                        FormField.EVENT -> state.events.getOrNull(index)?.rowId
+                    }
+                rowId?.let { field to it }
+            }
+        }.toMap()

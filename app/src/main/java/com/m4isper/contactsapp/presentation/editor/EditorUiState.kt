@@ -69,6 +69,8 @@ internal data class EditorUiState(
     val formError: FormError? = null,
     /** Ошибки конкретных полей: показываем проблему рядом с полем. */
     val fieldErrors: Map<FormField, FormError> = emptyMap(),
+    /** Строка-владелец первой ошибки каждого поля: подсвечиваем только её. */
+    val firstErrorRowIds: Map<FormField, Long> = emptyMap(),
     /** Похожие контакты: предупреждаем о вероятном дубле перед сохранением. */
     val similarContacts: List<ContactDetails> = emptyList(),
     val error: AppError? = null,

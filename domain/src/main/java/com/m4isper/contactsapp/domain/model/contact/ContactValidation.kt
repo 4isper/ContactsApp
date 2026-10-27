@@ -20,3 +20,23 @@ fun validateContactFields(form: ContactForm): Map<FormField, FormError> {
     }
     return errors
 }
+
+/**
+ * Индекс первой строки [field] с невалидным значением: презентация подсвечивает
+ * именно её, а не каждую строку поля. Пустые значения не считаются ошибкой.
+ * null — ошибок нет.
+ */
+fun firstInvalidRowIndex(
+    form: ContactForm,
+    field: FormField,
+): Int? =
+    when (field) {
+        FormField.PHONE ->
+            form.phones.indexOfFirst { it.number.isNotBlank() && Phone.of(it.number) == null }.takeIf { it >= 0 }
+        FormField.EMAIL ->
+            form.emails.indexOfFirst { it.address.isNotBlank() && Email.of(it.address) == null }.takeIf { it >= 0 }
+        FormField.WEBSITE ->
+            form.websites.indexOfFirst { it.url.isNotBlank() && Url.of(it.url) == null }.takeIf { it >= 0 }
+        FormField.EVENT ->
+            form.events.indexOfFirst { it.unparsedDate != null }.takeIf { it >= 0 }
+    }

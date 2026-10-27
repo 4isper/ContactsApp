@@ -76,7 +76,7 @@ internal suspend fun save(
     form: ContactForm,
 ) {
     try {
-        state.update { it.copy(isBusy = true, error = null, fieldErrors = emptyMap()) }
+        state.update { it.copy(isBusy = true, error = null, fieldErrors = emptyMap(), firstErrorRowIds = emptyMap()) }
         safeCall(EDITOR_TAG, "save contact failed") {
             val result =
                 if (id == null) {
