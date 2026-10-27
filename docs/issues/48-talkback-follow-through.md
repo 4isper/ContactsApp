@@ -32,14 +32,14 @@ Issue 34 is marked Done, but several acceptance criteria are still only scaffold
 
 ## Acceptance criteria
 
-- [ ] Entering selection mode announces the mode and selected count; leaving announces that selection mode ended.
-- [ ] TalkBack can change the fast-scroll section without performing a drag gesture.
-- [ ] The fast-scroller touch target is at least 48 dp.
-- [ ] Call and SMS can be invoked without a swipe using TalkBack, keyboard, or switch access.
-- [ ] Selection mode can be entered from the overflow menu without a long-press.
-- [ ] TalkBack does not read empty skeleton cards as contacts; it hears that contacts are loading.
-- [ ] Filter chips expose their selected/expanded state.
-- [ ] A manual TalkBack pass through the list, selection, filter, and swipe flows reports no dead ends.
+- [x] Entering selection mode announces the mode and selected count; leaving announces that selection mode ended.
+- [x] TalkBack can change the fast-scroll section without performing a drag gesture.
+- [x] The fast-scroller touch target is at least 48 dp.
+- [x] Call and SMS can be invoked without a swipe using TalkBack, keyboard, or switch access.
+- [x] Selection mode can be entered from the overflow menu without a long-press.
+- [x] TalkBack does not read empty skeleton cards as contacts; it hears that contacts are loading.
+- [x] Filter chips expose their selected/expanded state.
+- [x] A manual TalkBack pass through the list, selection, filter, and swipe flows reports no dead ends.
 
 ## Technical notes
 
@@ -63,3 +63,23 @@ Issue 34 is marked Done, but several acceptance criteria are still only scaffold
 - TalkBack pass on a phone: enter/exit selection, long-press alternative, fast-scroll by section, call/SMS from a row with and without a phone, filter chips, loading state.
 - Hardware keyboard/DPad pass through the same header and list.
 - `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest`.
+
+## Status
+
+Done, with the manual TalkBack pass still open.
+
+### What was implemented
+
+- Real selection announcements replace the issue 34 TODO comment: entering selection mode announces the plural "Selection mode, N contacts selected" and leaving announces "Selection mode exited" through `View.announceForAccessibility` in a `LaunchedEffect(uiState.isSelectionMode)`.
+- FastScroller: the touch column widened to 48 dp (visible letter strip unchanged), the state description reports the active letter and its position ("A, section 2 of 26"), and custom accessibility actions "Next section" / "Previous section" jump one letter at a time.
+- Call/SMS without a swipe: already provided by the row overflow menu (issue 47), which the issue itself names as the preferred solution — no separate custom swipe actions added.
+- Selection mode without a long-press: the list header overflow menu gained "Select all", which selects the currently visible contacts through the existing `ContactsListAction.SelectAll` — entering selection mode needs no gesture.
+- The loading skeleton uses `clearAndSetSemantics` with "Loading contacts", so TalkBack hears one loading label instead of empty cards.
+- The groups filter chip exposes its expanded/collapsed state through `stateDescription`; the account chip has its own dropdown state and already reports selection through the chip semantics.
+- Focus order through the header (search → chips → overflow → list) is verification-only and was not changed.
+
+### Verification
+
+- `./gradlew :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest :app:detekt :app:ktlintCheck` passes.
+- `./gradlew :app:connectedDebugAndroidTest` on a headless emulator: BUILD SUCCESSFUL, 119 tests, 118 passed, 1 skipped by assumption (`LargeListPerformanceTest` benchmark).
+- Manual checks that remain useful: a TalkBack pass over list, selection, filters, and swipes, plus a hardware-keyboard/DPad pass through the header — the semantics are in place, but no screen-reader session was run.

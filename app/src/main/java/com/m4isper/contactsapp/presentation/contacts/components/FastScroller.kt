@@ -12,12 +12,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.m4isper.contactsapp.R
 
 /** Чистый маппинг Y-координаты касания в букву индекса. */
 internal fun letterIndexAt(
@@ -43,16 +47,27 @@ internal fun FastScroller(
         height: Int,
     ): Char? = letterIndexAt(y, height, letters.size)?.let { letters[it] }
 
+    val nextLabel = stringResource(R.string.a11y_next_section)
+    val previousLabel = stringResource(R.string.a11y_previous_section)
+    val stateText =
+        activeLetter
+            ?.let { letter ->
+                val index = letters.indexOf(letter)
+                stringResource(R.string.a11y_section_state, letter, index + 1, letters.size)
+            }.orEmpty()
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
         modifier =
             modifier
                 .fillMaxHeight()
-                .width(28.dp)
+                .width(48.dp)
                 .semantics {
                     contentDescription = barDescription
-                    stateDescription = activeLetter?.toString() ?: ""
+                    stateDescription = stateText
+                    customActions =
+                        sectionActions(letters, activeLetter, nextLabel, previousLabel, onLetter)
                 }.pointerInput(letters) {
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false)
@@ -82,4 +97,26 @@ internal fun FastScroller(
             )
         }
     }
+}
+
+/** Кастомные действия TalkBack: перейти к следующей или предыдущей секции. */
+private fun sectionActions(
+    letters: List<Char>,
+    activeLetter: Char?,
+    nextLabel: String,
+    previousLabel: String,
+    onLetter: (Char) -> Unit,
+): List<CustomAccessibilityAction> {
+    val nextIndex = activeLetter?.let { letters.indexOf(it) + 1 } ?: 0
+    val previousIndex = activeLetter?.let { letters.indexOf(it) - 1 } ?: letters.lastIndex
+    return listOf(
+        CustomAccessibilityAction(nextLabel) {
+            letters.getOrNull(nextIndex)?.let(onLetter)
+            true
+        },
+        CustomAccessibilityAction(previousLabel) {
+            letters.getOrNull(previousIndex)?.let(onLetter)
+            true
+        },
+    )
 }

@@ -217,6 +217,12 @@
     <string name="action_close">Закрыть</string>
     <string name="action_share">Поделиться</string>
     <string name="action_select_all">Выбрать все</string>
+    <string name="a11y_next_section">Следующая секция</string>
+    <string name="a11y_previous_section">Предыдущая секция</string>
+    <string name="a11y_section_state">%1$s, секция %2$d из %3$d</string>
+    <string name="a11y_loading_contacts">Загружаем контакты</string>
+    <string name="a11y_expanded">Развернуто</string>
+    <string name="a11y_collapsed">Свернуто</string>
     <string name="action_deselect_all">Снять выделение</string>
     <string name="batch_delete_failed">Не удалось удалить контакты</string>
     <string name="action_more">Дополнительные действия</string>

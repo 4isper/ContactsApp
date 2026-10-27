@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Merge
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
@@ -39,6 +40,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.m4isper.contactsapp.R
@@ -78,6 +81,7 @@ internal fun FilterHeader(
     onProfileClick: () -> Unit = {},
     accountSyncInfos: List<AccountSyncInfo> = emptyList(),
     onRetrySync: () -> Unit = {},
+    onSelectAllClick: () -> Unit = {},
 ) {
     val spacing = LocalSpacing.current
     var menuOpen by remember { mutableStateOf(false) }
@@ -158,6 +162,20 @@ internal fun FilterHeader(
                     expanded = menuOpen,
                     onDismissRequest = { menuOpen = false },
                 ) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.action_select_all)) },
+                        onClick = {
+                            menuOpen = false
+                            onSelectAllClick()
+                        },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Filled.SelectAll,
+                                contentDescription = null,
+                            )
+                        },
+                        modifier = Modifier.testTag("select_all_menu_item"),
+                    )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.recents_title)) },
                         onClick = {
@@ -282,9 +300,14 @@ private fun GroupsFilterChip(
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier) {
+        val expandedText = stringResource(if (expanded) R.string.a11y_expanded else R.string.a11y_collapsed)
         FilterChip(
             selected = selectedGroup != null,
             onClick = { onExpandedChange(true) },
+            modifier =
+                Modifier
+                    .widthIn(max = 220.dp)
+                    .semantics { stateDescription = expandedText },
             label = {
                 Text(
                     text = selectedGroup?.title ?: stringResource(R.string.filter_groups),
@@ -309,7 +332,6 @@ private fun GroupsFilterChip(
                     contentDescription = null,
                 )
             },
-            modifier = Modifier.widthIn(max = 220.dp),
         )
         DropdownMenu(
             expanded = expanded,

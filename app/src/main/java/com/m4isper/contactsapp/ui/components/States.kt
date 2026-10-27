@@ -32,6 +32,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -57,6 +59,7 @@ fun ListSkeleton(
     modifier: Modifier = Modifier,
 ) {
     val spacing = LocalSpacing.current
+    val loadingText = stringResource(R.string.a11y_loading_contacts)
     val pulse by animateFloatAsState(
         targetValue = 1f,
         animationSpec =
@@ -67,7 +70,12 @@ fun ListSkeleton(
     )
 
     Column(
-        modifier = modifier.fillMaxSize().padding(horizontal = spacing.m),
+        // Скелетон для TalkBack — одно «загружаем контакты», а не набор пустых карточек.
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(horizontal = spacing.m)
+                .clearAndSetSemantics { contentDescription = loadingText },
     ) {
         repeat(itemCount) {
             Card(

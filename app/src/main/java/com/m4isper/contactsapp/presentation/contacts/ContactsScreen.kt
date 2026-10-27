@@ -14,8 +14,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.presentation.common.permissions.PermissionRequest
 import com.m4isper.contactsapp.presentation.common.permissions.hasPermission
 import com.m4isper.contactsapp.presentation.common.permissions.openAppSettings
@@ -104,9 +106,23 @@ internal fun ContactsScreen(
         viewModel.selection.clear()
     }
 
-    // Анонсируем переход в режим выделения и из него для TalkBack-пользователей.
-    // Реализация через AccessibilityManager.announceForAccessibility требует
-    // отдельного исследования (метод недоступен в текущей конфигурации Compose).
+    // Переход в режим выделения и выход из него озвучиваются для TalkBack:
+    // announceForAccessibility доступен на всех поддерживаемых API через View.
+    val accessibilityView = LocalView.current
+    LaunchedEffect(uiState.isSelectionMode) {
+        val message =
+            if (uiState.isSelectionMode) {
+                val count = uiState.selection.size
+                accessibilityView.resources.getQuantityString(
+                    R.plurals.selection_mode_announce,
+                    count,
+                    count,
+                )
+            } else {
+                accessibilityView.resources.getString(R.string.selection_mode_exited)
+            }
+        accessibilityView.announceForAccessibility(message)
+    }
 
     if (!hasReadPermission) {
         PermissionRequest(

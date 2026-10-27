@@ -228,6 +228,7 @@ internal fun ContactList(
                     onDuplicatesClick = onDuplicatesClick,
                     onRecentsClick = onRecentsClick,
                     onSettingsClick = onSettingsClick,
+                    onSelectAllClick = { onSelectAll(visibleIds) },
                 )
             }
             ContactListBody(
