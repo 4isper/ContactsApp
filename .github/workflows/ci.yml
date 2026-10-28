@@ -43,7 +43,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Static analysis and architecture checks
-        run: ./gradlew detekt ktlintCheck checkArchitecture --stacktrace
+        run: ./gradlew detekt ktlintCheck checkArchitecture :app:checkDebugMetroHiddenDependencies :data:checkDebugMetroHiddenDependencies :domain:checkMainMetroHiddenDependencies --stacktrace
 
       - name: Unit tests
         run: ./gradlew :domain:test :data:test :app:testDebugUnitTest --stacktrace
