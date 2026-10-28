@@ -334,6 +334,9 @@
     <string name="calendar_event_title">%1$s — event</string>
     <string name="share_contact_text">Share as text</string>
     <string name="share_contact_qr">Share as QR code</string>
+    <string name="show_qr">Show QR code</string>
+    <string name="qr_scan_hint">Point another phone\'s camera at this code to add the contact</string>
+    <string name="qr_preview_share">Share image</string>
     <string name="widget_title">Favorites</string>
     <string name="widget_empty">Mark a contact as favorite to see it here</string>
     <string name="widget_description">Favorites on the home screen</string>

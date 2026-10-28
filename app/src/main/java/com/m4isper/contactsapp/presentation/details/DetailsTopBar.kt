@@ -38,6 +38,7 @@ internal fun DetailsTopBar(
     onShare: () -> Unit,
     onShareAsText: () -> Unit,
     onShareAsQr: () -> Unit,
+    onShowQr: () -> Unit,
     onToggleFavorite: () -> Unit,
     onCopyToAccount: () -> Unit,
     onMoveToAccount: () -> Unit,
@@ -125,6 +126,14 @@ internal fun DetailsTopBar(
                             onShareAsText()
                         },
                         modifier = Modifier.testTag("share_as_text_menu_item"),
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.show_qr)) },
+                        onClick = {
+                            menuExpanded = false
+                            onShowQr()
+                        },
+                        modifier = Modifier.testTag("show_qr_menu_item"),
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.share_contact_qr)) },

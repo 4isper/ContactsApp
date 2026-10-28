@@ -346,6 +346,9 @@
     <string name="calendar_event_title">%1$s — событие</string>
     <string name="share_contact_text">Поделиться текстом</string>
     <string name="share_contact_qr">Поделиться QR-кодом</string>
+    <string name="show_qr">Показать QR-код</string>
+    <string name="qr_scan_hint">Наведите камеру другого телефона на код, чтобы добавить контакт</string>
+    <string name="qr_preview_share">Поделиться картинкой</string>
     <string name="widget_title">Избранное</string>
     <string name="widget_empty">Отметьте контакт как избранный, чтобы он появился здесь</string>
     <string name="widget_description">Избранные контакты на главном экране</string>

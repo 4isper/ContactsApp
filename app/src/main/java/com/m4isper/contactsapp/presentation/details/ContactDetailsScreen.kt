@@ -86,6 +86,7 @@ fun ContactDetailsScreen(
     var showAccountPicker by remember { mutableStateOf(false) }
     var pendingAction by remember { mutableStateOf<AccountAction?>(null) }
     var pendingMoveAccount by remember { mutableStateOf<ContactAccount?>(null) }
+    var qrPreviewVCard by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(contactId) {
         viewModel.load(contactId)
@@ -110,12 +111,7 @@ fun ContactDetailsScreen(
                 onEdit = onEdit,
                 onShare = {
                     scope.launch {
-                        val vCard = viewModel.vCardText()
-                        if (vCard == null) {
-                            Toast.makeText(context, R.string.share_failed, Toast.LENGTH_SHORT).show()
-                        } else {
-                            shareContact(context, vCard)
-                        }
+                        shareOrFail(context, viewModel.vCardText()) { shareContact(context, it) }
                     }
                 },
                 onShareAsText = {
@@ -126,6 +122,11 @@ fun ContactDetailsScreen(
                 onShareAsQr = {
                     scope.launch {
                         shareDetailsAsQr(context, viewModel.vCardText())
+                    }
+                },
+                onShowQr = {
+                    scope.launch {
+                        shareOrFail(context, viewModel.vCardText()) { qrPreviewVCard = it }
                     }
                 },
                 onToggleFavorite = {
@@ -212,6 +213,15 @@ fun ContactDetailsScreen(
         },
         onMoveDismissed = { pendingMoveAccount = null },
     )
+
+    qrPreviewVCard?.let { vCard ->
+        QrPreviewDialog(
+            contactName = (uiState.content as? Loadable.Content)?.data?.name.orEmpty(),
+            vCardText = vCard,
+            onShare = { scope.launch { shareContactAsQr(context, vCard) } },
+            onDismiss = { qrPreviewVCard = null },
+        )
+    }
 }
 
 /** Переключает избранное и обновляет виджет только после успешной записи. */
@@ -310,11 +320,7 @@ private suspend fun shareDetailsAsText(
     context: Context,
     details: ContactDetails?,
 ) {
-    if (details == null) {
-        shareOrFail(context, false) { }
-    } else {
-        shareOrFail(context, true) { shareContactAsText(context, contactAsText(details)) }
-    }
+    shareOrFail(context, details?.let { contactAsText(it) }) { shareContactAsText(context, it) }
 }
 
 /** Делится контактом QR-кодом: без карточки показываем ошибку, а не падаем. */
@@ -322,21 +328,18 @@ private suspend fun shareDetailsAsQr(
     context: Context,
     vCard: String?,
 ) {
-    if (vCard == null) {
-        shareOrFail(context, false) { }
-    } else {
-        shareOrFail(context, true) { shareContactAsQr(context, vCard) }
-    }
+    shareOrFail(context, vCard) { shareContactAsQr(context, it) }
 }
 
+/** Общий гейт для share-путей: пустое содержимое — тост об ошибке, иначе действие. */
 private suspend fun shareOrFail(
     context: Context,
-    hasContent: Boolean,
-    action: suspend () -> Unit,
+    content: String?,
+    action: suspend (String) -> Unit,
 ) {
-    if (hasContent) {
-        action()
-    } else {
+    if (content.isNullOrBlank()) {
         Toast.makeText(context, R.string.share_failed, Toast.LENGTH_SHORT).show()
+    } else {
+        action(content)
     }
 }
