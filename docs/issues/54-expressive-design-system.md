@@ -46,7 +46,7 @@ The UI is built from Material 3 defaults with a few token overrides, and no scre
 
 - Per-screen redesigns (56–61 own those).
 - A custom display font: this issue keeps the system font unless a licensed brand face is provided.
-- Changing the color palette itself (issue 55).
+- Changing the color palette itself.
 
 ## Verification
 

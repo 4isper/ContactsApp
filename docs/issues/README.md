@@ -160,7 +160,6 @@ A third UX/UI pass looked at the app as a 2026 product rather than at feature co
 | # | File | Title | Priority | Status |
 |---|---|---|---|---|
 | 54 | [54-expressive-design-system.md](54-expressive-design-system.md) | Adopt Material 3 Expressive as the app's visual language | P2 | Done (screenshot check pending) |
-| 55 | [55-brand-identity-and-color.md](55-brand-identity-and-color.md) | Make the brand visible again: brand-first color, avatars, icon and splash | P2 | Proposed |
 | 56 | [56-home-search-and-navigation.md](56-home-search-and-navigation.md) | Modernize home chrome with a search bar, real app bar, and adaptive navigation | P2 | Proposed |
 | 57 | [57-list-surfaces-and-fast-scroller.md](57-list-surfaces-and-fast-scroller.md) | Rework contact-list surfaces and replace the iOS-style fast scroller | P2 | Proposed |
 | 58 | [58-details-hero-and-grouped-fields.md](58-details-hero-and-grouped-fields.md) | Give contact details a hero header and grouped field sections | P2 | Proposed |
@@ -170,14 +169,13 @@ A third UX/UI pass looked at the app as a 2026 product rather than at feature co
 
 ### Third-pass dependencies
 
-- 54 (tokens and motion) should land first: 55–61 all consume its type/shape/motion decisions instead of inventing local values.
-- 55 (brand-first color) changes the default palette; do it before 57/58 so surface and accent contrast is tuned once. Issue 51 already owns system-bar appearance, so reuse its day/night themes for the splash work.
+- 54 (tokens and motion) should land first: 56–61 all consume its type/shape/motion decisions instead of inventing local values.
 - 56 (home chrome and navigation) and 59 (content width and two-pane) overlap in the shell: 56 owns the rail/suite and the home app bar, 59 owns pane strategies and max content width. Land 56 first, then 59.
 - 57 is a partial regression fix for 52 (`showFavoriteQuickAction` is computed but never passed) and unifies the favorite accent with 58; it can ship independently and early.
 - 58 depends on 54 for motion and on 57 for the favorite accent. 60 depends on 54 (sheet motion) and touches the same editor files as 59's two-column work — coordinate the editor branch.
-- 61 depends on 55 (Appearance section gains the dynamic-color toggle) and 56 (home entry point to settings); it also reuses 57's row tokens for utility screens.
+- 61 depends on 56 (home entry point to settings); it also reuses 57's row tokens for utility screens.
 
 ### How to use the third pass
 
-These are visual improvements, not missing features, so they can be scheduled opportunistically. Keep the before/after screenshots for 54–58 and 61, and run the adaptive checks (320/600/840 dp, font scale 2.0) for 56, 58, 59, and 60. If only part of the pass ships, 57 (the wiring regression) and 55 (brand visibility) give the largest visual return for the smallest change.
+These are visual improvements, not missing features, so they can be scheduled opportunistically. Keep the before/after screenshots for 54–58 and 61, and run the adaptive checks (320/600/840 dp, font scale 2.0) for 56, 58, 59, and 60. If only part of the pass ships, 57 (the wiring regression) gives the largest visual return for the smallest change.
 

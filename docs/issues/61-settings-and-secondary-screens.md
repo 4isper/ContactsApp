@@ -37,7 +37,7 @@
 - `app/src/main/java/com/m4isper/contactsapp/ui/components/States.kt` — `EmptyState`; extend it (icon container, supporting text) rather than forking per screen.
 - `app/src/main/java/com/m4isper/contactsapp/ui/components/ConfirmDialog.kt` — reuse for the reset/destructive confirmation.
 - Strings: `app/src/main/res/values/strings.xml`, `values-ru/strings.xml`; reuse `action_*` where possible; the settings labels are produced by `labelRes()` mappers in the settings model — keep those as the single source.
-- Issue 55 adds the dynamic-color toggle to Appearance; issue 56 owns the home entry point to settings. Leave both slots in the new layout.
+- Issue 56 owns the home entry point to settings. Leave that slot in the new layout.
 - Version name comes from `BuildConfig`/`PackageManager`; no new dependency for the About section.
 
 ## Out of scope
