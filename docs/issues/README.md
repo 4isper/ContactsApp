@@ -144,3 +144,12 @@ A second UX/UI pass looked at the implemented screens rather than the feature sp
 ### How to use the second pass
 
 Several issues are UI-visible regressions in features that are already marked Done. Treat their acceptance criteria as the new definition of done, and include before/after screenshots for the remaining layout issues (45, 46, 47, 52) plus a TalkBack recording for 48. 38, 39, 41, 43, and 44 landed without recordings; their files note the manual checks that remain useful.
+
+## Share UX backlog (2026-10-28)
+
+A follow-up from the QR share code review: the app can export a contact QR as a PNG to the share sheet, but never displays the code itself, so face-to-face sharing routes through another app before the second phone can scan anything. The item is implemented; each file has a `Status` section.
+
+| # | File | Title | Priority | Status |
+|---|---|---|---|---|
+| 53 | [53-qr-preview-dialog.md](53-qr-preview-dialog.md) | Show the contact QR code on screen instead of only exporting it as an image | P2 | Done |
+
