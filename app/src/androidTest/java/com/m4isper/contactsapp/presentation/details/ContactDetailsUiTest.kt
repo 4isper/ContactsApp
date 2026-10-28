@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -56,6 +57,7 @@ class ContactDetailsUiTest {
     private fun viewModel(
         repository: FakeAndroidRepository,
         groups: FakeGroupsRepository = FakeGroupsRepository(),
+        codec: FakeVCardCodec = FakeVCardCodec(),
     ) = ContactDetailsViewModel(
         GetContactDetailsUseCase(repository),
         GetContactGroupsUseCase(groups),
@@ -66,7 +68,7 @@ class ContactDetailsUiTest {
             loadContactPhoto = LoadContactPhotoUseCase(repository),
             getGroups = GetGroupsUseCase(groups),
             getGroupMembership = GetGroupMembershipUseCase(groups),
-            codec = FakeVCardCodec(),
+            codec = codec,
         ),
         GetContactAccountsUseCase(repository),
         CopyContactToAccountUseCase(repository, repository),
@@ -303,5 +305,48 @@ class ContactDetailsUiTest {
         compose.onNodeWithTag("edit_button").performClick()
 
         assertEquals(true, edited.get())
+    }
+
+    @Test
+    fun showQrMenuItemOpensPreviewAndCloseDismissesIt() {
+        val viewModel = viewModel(FakeAndroidRepository(listOf(testDetails(7, "Anna", "111"))))
+        compose.setContent {
+            ContactDetailsScreen(contactId = 7, onBack = {}, onEdit = {}, viewModel = viewModel)
+        }
+        awaitContent(viewModel)
+
+        compose.onNodeWithTag("details_more_button").performClick()
+        compose.onNodeWithTag("show_qr_menu_item").performClick()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("qr_preview_image").fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithTag("qr_preview_dialog").assertIsDisplayed()
+        compose.onNodeWithText("Point another phone's camera at this code to add the contact").assertIsDisplayed()
+
+        compose.onNodeWithTag("qr_preview_close").performClick()
+
+        compose.onNodeWithTag("qr_preview_dialog").assertDoesNotExist()
+    }
+
+    @Test
+    fun showQrDoesNotOpenPreviewWhenVCardIsBlank() {
+        val viewModel =
+            viewModel(
+                FakeAndroidRepository(listOf(testDetails(7, "Anna", "111"))),
+                codec = FakeVCardCodec(encoded = ""),
+            )
+        compose.setContent {
+            ContactDetailsScreen(contactId = 7, onBack = {}, onEdit = {}, viewModel = viewModel)
+        }
+        awaitContent(viewModel)
+
+        compose.onNodeWithTag("details_more_button").performClick()
+        compose.onNodeWithTag("show_qr_menu_item").performClick()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("show_qr_menu_item").fetchSemanticsNodes().isEmpty()
+        }
+
+        compose.onNodeWithTag("qr_preview_dialog").assertDoesNotExist()
     }
 }
