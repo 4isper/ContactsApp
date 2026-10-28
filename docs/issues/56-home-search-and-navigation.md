@@ -76,6 +76,7 @@ Done in code and automated checks; the visual and TalkBack walk is still manual.
 
 - `./gradlew :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest :app:detekt :app:ktlintCheck :app:lintDebug` passes.
 - New JVM tests: `ContactsFilterStateTest` (search mode open/close/clear) and `TopLevelNavigationTest` (destination mapping, rail visibility, stack collapse).
-- New instrumented tests: `searchModeClosesBeforeLeavingTheScreen` in `ContactListUiTest` and `HomeNavigationRailTest`. They compile but were not run: no emulator or device is attached in this session.
+- New instrumented tests: `searchModeClosesBeforeLeavingTheScreen` in `ContactListUiTest` and `HomeNavigationRailTest`; both pass on the emulator.
+- The full instrumented suite passes on the `Pixel_10_Pro_Fold` AVD (API 37): `:app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.notClass=com.m4isper.contactsapp.data.LargeListPerformanceTest` → 127 tests in 23 classes, 0 failures. The perf test is excluded because it is gated behind `contacts.perf=true` and would report an assumption violation as a failure. The emulator must run with a window: headless mode leaves the test window unfocused and `Espresso.closeSoftKeyboard()` fails across `ContactEditorUiTest`.
 - `:app:lintDebug` was red on `HEAD` before this issue: the Glance widget read strings through `LocalContext` inside composition. Fixed separately in `aadf6f7` by resolving the strings in `provideGlance`.
 - Still manual: compact/medium/expanded screenshots, the 320 dp / 2.0 font-scale check, and TalkBack over the app bar, search expansion, and rail.
