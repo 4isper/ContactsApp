@@ -278,6 +278,7 @@
     <string name="recents_empty">Нет недавних контактов</string>
 
     <string name="duplicates_title">Дубликаты</string>
+    <string name="duplicates_select_prompt">Выберите группу дублей для предпросмотра</string>
     <string name="duplicates_menu">Найти дубликаты</string>
     <string name="duplicates_empty">Дубликаты не найдены</string>
     <string name="duplicates_primary_label">Основной контакт</string>
@@ -380,6 +381,7 @@
     <string name="groups_manage">Управление группами</string>
     <string name="groups_new">Новая группа</string>
     <string name="groups_title">Группы</string>
+    <string name="group_select_prompt">Выберите группу из списка</string>
     <string name="groups_empty">Групп пока нет</string>
     <string name="group_name_label">Название группы</string>
     <string name="group_label">Группа</string>

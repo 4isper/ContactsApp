@@ -4,7 +4,9 @@ import android.content.Context
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Contacts
+import androidx.compose.material.icons.filled.Merge
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationRail
@@ -40,7 +42,9 @@ import com.m4isper.contactsapp.StartRequest
 import com.m4isper.contactsapp.presentation.contacts.ContactsNavigationAction
 import com.m4isper.contactsapp.presentation.contacts.ContactsScreen
 import com.m4isper.contactsapp.presentation.details.ContactDetailsScreen
+import com.m4isper.contactsapp.presentation.duplicates.DuplicateReviewScreen
 import com.m4isper.contactsapp.presentation.duplicates.DuplicatesScreen
+import com.m4isper.contactsapp.presentation.duplicates.DuplicatesViewModel
 import com.m4isper.contactsapp.presentation.editor.ContactEditorScreen
 import com.m4isper.contactsapp.presentation.groups.GroupDetailScreen
 import com.m4isper.contactsapp.presentation.groups.GroupsScreen
@@ -61,6 +65,12 @@ data object GroupsKey : NavKey
 
 @Serializable
 data object DuplicatesKey : NavKey
+
+@Serializable
+data class DuplicateReviewKey(
+    val targetId: Long,
+    val sourceIds: List<Long>,
+) : NavKey
 
 @Serializable
 data object RecentsKey : NavKey
@@ -87,6 +97,12 @@ data class ContactEditorKey(
     /** Номер сеанса правки: новый сеанс — новая форма, даже для того же контакта. */
     val sessionId: Long = 0L,
 ) : NavKey
+
+// Сцена list-detail на каждую пару «список ↔ деталь»: иначе записи разных разделов
+// попадают в одну сцену, и плейсхолдер детали берётся у чужого списка.
+private const val SCENE_CONTACTS = "contacts"
+private const val SCENE_GROUPS = "groups"
+private const val SCENE_DUPLICATES = "duplicates"
 
 /**
  * Открыть детали: на узком экране — push поверх списка,
@@ -115,6 +131,8 @@ fun ContactsNavHost(
     val context = LocalContext.current
     val backStack = rememberNavBackStack(ContactsListKey)
     val importViewModel: ImportPreviewViewModel = metroViewModel()
+    // Список и панель предпросмотра дубликатов — один экран на двоих.
+    val duplicatesViewModel: DuplicatesViewModel = metroViewModel()
     var pickMode by remember { mutableStateOf(false) }
     var showFavorites by remember { mutableStateOf(false) }
     var editorSession by remember { mutableLongStateOf(0L) }
@@ -181,6 +199,7 @@ fun ContactsNavHost(
                         entry<ContactsListKey>(
                             metadata =
                                 ListDetailSceneStrategy.listPane(
+                                    sceneKey = SCENE_CONTACTS,
                                     detailPlaceholder = {
                                         EmptyState(
                                             icon = Icons.Filled.Contacts,
@@ -212,22 +231,60 @@ fun ContactsNavHost(
                                 onDone = dropUnlessResumed { backStack.removeLastOrNull() },
                             )
                         }
-                        entry<GroupsKey> {
+                        entry<GroupsKey>(
+                            metadata =
+                                ListDetailSceneStrategy.listPane(
+                                    sceneKey = SCENE_GROUPS,
+                                    detailPlaceholder = {
+                                        EmptyState(
+                                            icon = Icons.AutoMirrored.Filled.Label,
+                                            title = stringResource(R.string.group_select_prompt),
+                                        )
+                                    },
+                                ),
+                        ) {
                             GroupsScreen(
                                 onBack = dropUnlessResumed { backStack.removeLastOrNull() },
                                 onGroupClick = { groupId -> backStack.add(GroupDetailKey(groupId)) },
                             )
                         }
-                        entry<GroupDetailKey> { key ->
+                        entry<GroupDetailKey>(
+                            metadata = ListDetailSceneStrategy.detailPane(sceneKey = SCENE_GROUPS),
+                        ) { key ->
                             GroupDetailScreen(
                                 groupId = key.groupId,
                                 onBack = dropUnlessResumed { backStack.removeLastOrNull() },
                                 onContactClick = { contactId -> navigateToDetails(backStack, contactId) },
                             )
                         }
-                        entry<DuplicatesKey> {
+                        entry<DuplicatesKey>(
+                            metadata =
+                                ListDetailSceneStrategy.listPane(
+                                    sceneKey = SCENE_DUPLICATES,
+                                    detailPlaceholder = {
+                                        EmptyState(
+                                            icon = Icons.Filled.Merge,
+                                            title = stringResource(R.string.duplicates_select_prompt),
+                                        )
+                                    },
+                                ),
+                        ) {
                             DuplicatesScreen(
                                 onBack = dropUnlessResumed { backStack.removeLastOrNull() },
+                                onReview = { targetId, sourceIds ->
+                                    backStack.add(DuplicateReviewKey(targetId, sourceIds))
+                                },
+                                viewModel = duplicatesViewModel,
+                            )
+                        }
+                        entry<DuplicateReviewKey>(
+                            metadata = ListDetailSceneStrategy.detailPane(sceneKey = SCENE_DUPLICATES),
+                        ) { key ->
+                            DuplicateReviewScreen(
+                                targetId = key.targetId,
+                                sourceIds = key.sourceIds,
+                                onBack = dropUnlessResumed { backStack.removeLastOrNull() },
+                                viewModel = duplicatesViewModel,
                             )
                         }
                         entry<RecentsKey> {
@@ -245,7 +302,7 @@ fun ContactsNavHost(
                             )
                         }
                         entry<ContactDetailsKey>(
-                            metadata = ListDetailSceneStrategy.detailPane(),
+                            metadata = ListDetailSceneStrategy.detailPane(sceneKey = SCENE_CONTACTS),
                         ) { key ->
                             ContactDetailsScreen(
                                 contactId = key.contactId,

@@ -48,7 +48,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -60,9 +59,10 @@ import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.duplicates.DuplicateGroup
 import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import com.m4isper.contactsapp.presentation.common.Loadable
-import com.m4isper.contactsapp.presentation.common.format.birthdayText
 import com.m4isper.contactsapp.presentation.common.permissions.rememberWritePermissionGate
 import com.m4isper.contactsapp.presentation.contacts.components.contactSubtitle
+import com.m4isper.contactsapp.ui.adaptive.WindowWidthClass
+import com.m4isper.contactsapp.ui.adaptive.rememberWindowWidthClass
 import com.m4isper.contactsapp.ui.components.EmptyState
 import com.m4isper.contactsapp.ui.components.ErrorState
 import com.m4isper.contactsapp.ui.components.ListAvatar
@@ -78,6 +78,7 @@ import kotlinx.coroutines.launch
 fun DuplicatesScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    onReview: ((targetId: Long, sourceIds: List<Long>) -> Unit)? = null,
     viewModel: DuplicatesViewModel = metroViewModel(),
 ) {
     val context = LocalContext.current
@@ -85,6 +86,8 @@ fun DuplicatesScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val snackbarScope = rememberCoroutineScope()
     var pendingMerge by remember { mutableStateOf<PendingMerge?>(null) }
+    // На широком окне предпросмотр — вторая панель, на компактном — диалог поверх списка.
+    val inlineReview = rememberWindowWidthClass() == WindowWidthClass.EXPANDED && onReview != null
 
     // Отказ в праве объясняем снекбаром: слияние не выполняется молча.
     val writeRationale = stringResource(R.string.permission_write_rationale)
@@ -154,7 +157,13 @@ fun DuplicatesScreen(
                 DuplicateGroupList(
                     groups = content.data,
                     merging = uiState.isMerging,
-                    onMergePreview = { target, sources -> pendingMerge = PendingMerge(target, sources) },
+                    onMergePreview = { target, sources ->
+                        if (inlineReview) {
+                            onReview?.invoke(target.contactId, sources.map { it.contactId })
+                        } else {
+                            pendingMerge = PendingMerge(target, sources)
+                        }
+                    },
                     modifier = screenModifier,
                 )
         }
@@ -219,8 +228,6 @@ private fun MergePreviewDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val locale = LocalConfiguration.current.locales[0]
-    val additions = mergeAdditions(pending.target, pending.sources, formatBirthday = { birthdayText(it, locale) })
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.duplicates_preview_title)) },
@@ -233,25 +240,7 @@ private fun MergePreviewDialog(
                         .verticalScroll(rememberScrollState())
                         .heightIn(max = 360.dp),
             ) {
-                Text(
-                    text = stringResource(R.string.duplicates_preview_additions, pending.target.name),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                if (additions.isEmpty()) {
-                    Text(
-                        text = stringResource(R.string.duplicates_preview_empty),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                } else {
-                    additions.forEach { addition ->
-                        Text(
-                            text = addition.field.label() + ": " + addition.value,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
+                MergePreviewContent(target = pending.target, sources = pending.sources)
             }
         },
         confirmButton = {
@@ -270,20 +259,6 @@ private fun MergePreviewDialog(
         modifier = Modifier.testTag("merge_preview_dialog"),
     )
 }
-
-/** Подпись поля контакта в предпросмотре слияния. */
-@Composable
-private fun MergeField.label(): String =
-    when (this) {
-        MergeField.NAME -> stringResource(R.string.details_field_name)
-        MergeField.PHONE -> stringResource(R.string.details_field_phone)
-        MergeField.EMAIL -> stringResource(R.string.details_field_email)
-        MergeField.ADDRESS -> stringResource(R.string.details_field_address)
-        MergeField.WEBSITE -> stringResource(R.string.details_field_website)
-        MergeField.ORGANIZATION -> stringResource(R.string.details_field_organization)
-        MergeField.NOTE -> stringResource(R.string.details_field_note)
-        MergeField.BIRTHDAY -> stringResource(R.string.details_field_birthday)
-    }
 
 /** Слияние, ожидающее подтверждения: основной контакт и источники. */
 private data class PendingMerge(

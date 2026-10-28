@@ -268,6 +268,7 @@
     <string name="recents_empty">No recent contacts</string>
 
     <string name="duplicates_title">Duplicates</string>
+    <string name="duplicates_select_prompt">Select a duplicate group to review</string>
     <string name="duplicates_menu">Find duplicates</string>
     <string name="duplicates_empty">No duplicates found</string>
     <string name="duplicates_primary_label">Primary contact</string>
@@ -368,6 +369,7 @@
     <string name="groups_manage">Manage groups</string>
     <string name="groups_new">New group</string>
     <string name="groups_title">Groups</string>
+    <string name="group_select_prompt">Select a group from the list</string>
     <string name="groups_empty">No groups yet</string>
     <string name="group_name_label">Group name</string>
     <string name="group_label">Group</string>

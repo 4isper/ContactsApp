@@ -16,6 +16,8 @@ class TopLevelNavigationTest {
         assertEquals(TopLevelDestination.Duplicates, topLevelDestinationOf(DuplicatesKey))
         assertEquals(TopLevelDestination.Settings, topLevelDestinationOf(SettingsKey))
         assertNull(topLevelDestinationOf(ContactDetailsKey(1)))
+        assertNull(topLevelDestinationOf(GroupDetailKey(4)))
+        assertNull(topLevelDestinationOf(DuplicateReviewKey(targetId = 1, sourceIds = listOf(2))))
         assertNull(topLevelDestinationOf(null))
     }
 
