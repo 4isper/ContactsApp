@@ -189,6 +189,9 @@ internal fun ContactList(
                 allFavorite = allFavorite,
                 visibleIds = visibleIds,
                 profileContactId = profileContactId,
+                onSearchQueryChange = onSearchQueryChange,
+                onSearchOpened = onSearchOpened,
+                onSearchClosed = onSearchClosed,
                 onClearSelection = onClearSelection,
                 onSelectAll = onSelectAll,
                 onToggleFavoriteSelected = onToggleFavoriteSelected,
@@ -235,12 +238,7 @@ internal fun ContactList(
             )
             if (!uiState.isSelectionMode) {
                 FilterHeader(
-                    searchQuery = uiState.searchQuery,
-                    isSearchMode = uiState.isSearchMode,
                     showFavoritesOnly = uiState.showFavoritesOnly,
-                    onSearchQueryChange = onSearchQueryChange,
-                    onSearchExpandedChange = { onSearchOpened() },
-                    onSearchClose = onSearchClosed,
                     onFavoritesOnlyChange = onFavoritesOnlyChange,
                     groups = groups,
                     selectedGroupId = uiState.selectedGroupId,
@@ -307,7 +305,7 @@ internal fun ContactList(
     )
 }
 
-/** Верхняя панель списка: выделение, обычный режим или поиск без панели. */
+/** Верхняя панель списка: выделение или поисковая строка с действиями. */
 @Composable
 private fun ContactListTopBar(
     uiState: ContactsUiState,
@@ -315,6 +313,9 @@ private fun ContactListTopBar(
     allFavorite: Boolean,
     visibleIds: List<Long>,
     profileContactId: Long?,
+    onSearchQueryChange: (String) -> Unit,
+    onSearchOpened: () -> Unit,
+    onSearchClosed: () -> Unit,
     onClearSelection: () -> Unit,
     onSelectAll: (List<Long>) -> Unit,
     onToggleFavoriteSelected: () -> Unit,
@@ -344,8 +345,13 @@ private fun ContactListTopBar(
                 onExport = onExportSelection,
                 onDelete = onDelete,
             )
-        !uiState.isSearchMode ->
+        else ->
             HomeTopBar(
+                searchQuery = uiState.searchQuery,
+                isSearchMode = uiState.isSearchMode,
+                onSearchQueryChange = onSearchQueryChange,
+                onSearchOpen = onSearchOpened,
+                onSearchClose = onSearchClosed,
                 onSettingsClick = onSettingsClick,
                 onRecentsClick = onRecentsClick,
                 onDuplicatesClick = onDuplicatesClick,

@@ -51,12 +51,7 @@ import com.m4isper.contactsapp.ui.theme.PillShape
 
 @Composable
 internal fun FilterHeader(
-    searchQuery: String,
-    isSearchMode: Boolean,
     showFavoritesOnly: Boolean,
-    onSearchQueryChange: (String) -> Unit,
-    onSearchExpandedChange: (Boolean) -> Unit,
-    onSearchClose: () -> Unit,
     onFavoritesOnlyChange: () -> Unit,
     modifier: Modifier = Modifier,
     groups: List<ContactGroup> = emptyList(),
@@ -75,13 +70,7 @@ internal fun FilterHeader(
     var showNewGroupDialog by remember { mutableStateOf(false) }
     val selectedGroup = groups.firstOrNull { it.id == selectedGroupId }
     Column(modifier = modifier.fillMaxWidth()) {
-        ContactsSearchField(
-            query = searchQuery,
-            expanded = isSearchMode,
-            onQueryChange = onSearchQueryChange,
-            onExpandedChange = onSearchExpandedChange,
-            onClose = onSearchClose,
-        )
+        // Поле поиска переехало в HomeTopBar (issue 62); здесь остались только фильтры.
         FlowRow(
             modifier =
                 Modifier

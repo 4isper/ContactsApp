@@ -302,6 +302,22 @@ class ContactListUiTest {
     }
 
     @Test
+    fun homeIdleKeepsActionsAndDropsTheAppTitleRow() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        compose.setContent {
+            ContactList(
+                uiState = ContactsUiState(content = Loadable.Content(listOf(anna))),
+                onAction = {},
+            )
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("home_top_bar").assertIsDisplayed()
+        compose.onNodeWithTag("settings_action").assertIsDisplayed()
+        compose.onNodeWithText(context.getString(R.string.app_name)).assertDoesNotExist()
+    }
+
+    @Test
     fun addFabClickReportsAdd() {
         val added = AtomicBoolean(false)
         compose.setContent {

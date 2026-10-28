@@ -31,12 +31,7 @@ class ContactsFilterHeaderSyncTest {
         compose.setContent {
             ContactsAppTheme(dynamicColor = false) {
                 FilterHeader(
-                    searchQuery = "",
-                    isSearchMode = false,
                     showFavoritesOnly = false,
-                    onSearchQueryChange = {},
-                    onSearchExpandedChange = {},
-                    onSearchClose = {},
                     onFavoritesOnlyChange = {},
                     accounts = listOf(ContactAccount.Local, google),
                     selectedAccount = selectedAccount,
