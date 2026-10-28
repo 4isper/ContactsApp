@@ -26,7 +26,7 @@ import com.m4isper.contactsapp.domain.model.contact.EmailKind
 import com.m4isper.contactsapp.domain.model.contact.Organization
 import com.m4isper.contactsapp.domain.model.contact.PhoneKind
 import com.m4isper.contactsapp.domain.model.contact.PhoneNumber
-import com.m4isper.contactsapp.presentation.common.groups.GroupPickerDialog
+import com.m4isper.contactsapp.presentation.common.groups.GroupPickerSheet
 import com.m4isper.contactsapp.presentation.details.DetailsContent
 import com.m4isper.contactsapp.presentation.editor.EditorBody
 import com.m4isper.contactsapp.presentation.editor.EditorRow
@@ -186,7 +186,7 @@ internal fun SettingsWidthPreview() {
 @Composable
 internal fun GroupPickerWidthPreview() {
     WidthPreview {
-        GroupPickerDialog(
+        GroupPickerSheet(
             title = stringResource(R.string.editor_section_groups),
             groups = WidthPreviewGroups,
             selectedIds = setOf(1),

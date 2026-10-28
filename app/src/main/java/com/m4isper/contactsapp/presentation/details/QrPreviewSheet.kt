@@ -3,11 +3,13 @@ package com.m4isper.contactsapp.presentation.details
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -28,7 +30,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.presentation.common.share.qrCodeBitmap
+import com.m4isper.contactsapp.ui.components.AppBottomSheet
 import com.m4isper.contactsapp.ui.components.AppLoadingIndicator
+import com.m4isper.contactsapp.ui.theme.LocalSpacing
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -39,17 +43,18 @@ private val QrCardPadding = 8.dp
 private val QrHintPadding = 12.dp
 
 /**
- * Показывает QR-код контакта на экране: второй телефон сканирует его обычной камерой.
- * Кодирование идёт в фоне, поэтому диалог сначала показывает заглушку.
+ * Показывает QR-код контакта в нижнем листе: второй телефон сканирует его обычной камерой.
+ * Кодирование идёт в фоне, поэтому лист сначала показывает заглушку.
  */
 @Composable
-internal fun QrPreviewDialog(
+internal fun QrPreviewSheet(
     contactName: String,
     vCardText: String,
     onShare: () -> Unit,
     onDismiss: () -> Unit,
     encode: suspend (String) -> Bitmap? = { withContext(Dispatchers.Default) { qrCodeBitmap(it) } },
 ) {
+    val spacing = LocalSpacing.current
     var bitmap by remember(vCardText) { mutableStateOf<Bitmap?>(null) }
     var isLoading by remember(vCardText) { mutableStateOf(true) }
 
@@ -59,47 +64,68 @@ internal fun QrPreviewDialog(
         isLoading = false
     }
 
-    AlertDialog(
+    AppBottomSheet(
         onDismissRequest = onDismiss,
         modifier = Modifier.testTag("qr_preview_dialog"),
-        title = { Text(contactName) },
-        text = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                QrCard {
-                    when {
-                        isLoading ->
-                            AppLoadingIndicator(
-                                color = Color.Black,
-                                trackColor = Color.Black.copy(alpha = 0.12f),
-                                modifier = Modifier.testTag("qr_preview_placeholder"),
-                            )
+    ) {
+        Text(
+            text = contactName,
+            style = MaterialTheme.typography.titleLarge,
+        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = spacing.m),
+        ) {
+            QrCard {
+                when {
+                    isLoading ->
+                        AppLoadingIndicator(
+                            color = Color.Black,
+                            trackColor = Color.Black.copy(alpha = 0.12f),
+                            modifier = Modifier.testTag("qr_preview_placeholder"),
+                        )
 
-                        bitmap == null ->
-                            Text(
-                                text = stringResource(R.string.share_failed),
-                                textAlign = TextAlign.Center,
-                            )
+                    bitmap == null ->
+                        Text(
+                            text = stringResource(R.string.share_failed),
+                            textAlign = TextAlign.Center,
+                        )
 
-                        else ->
-                            Image(
-                                bitmap = bitmap!!.asImageBitmap(),
-                                contentDescription = null,
-                                modifier =
-                                    Modifier
-                                        .size(QrPreviewSize)
-                                        .testTag("qr_preview_image"),
-                            )
-                    }
+                    else ->
+                        Image(
+                            bitmap = bitmap!!.asImageBitmap(),
+                            contentDescription = null,
+                            modifier =
+                                Modifier
+                                    .size(QrPreviewSize)
+                                    .testTag("qr_preview_image"),
+                        )
                 }
-                Text(
-                    text = stringResource(R.string.qr_scan_hint),
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = QrHintPadding),
-                )
             }
-        },
-        confirmButton = {
+            Text(
+                text = stringResource(R.string.qr_scan_hint),
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = QrHintPadding),
+            )
+        }
+        Row(
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = spacing.s),
+        ) {
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.testTag("qr_preview_close"),
+            ) {
+                Text(stringResource(R.string.action_close))
+            }
             if (bitmap != null) {
                 TextButton(
                     onClick = onShare,
@@ -108,16 +134,8 @@ internal fun QrPreviewDialog(
                     Text(stringResource(R.string.qr_preview_share))
                 }
             }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-                modifier = Modifier.testTag("qr_preview_close"),
-            ) {
-                Text(stringResource(R.string.action_close))
-            }
-        },
-    )
+        }
+    }
 }
 
 /** Белая подложка: тихая зона кодера не обрезается, контраст не зависит от темы. */

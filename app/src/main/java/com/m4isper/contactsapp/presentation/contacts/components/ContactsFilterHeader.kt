@@ -45,7 +45,7 @@ import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 import com.m4isper.contactsapp.domain.model.contact.ContactGroup
 import com.m4isper.contactsapp.presentation.common.account.contactAccountLabel
 import com.m4isper.contactsapp.presentation.common.account.contactAccountTitle
-import com.m4isper.contactsapp.presentation.common.groups.GroupNameDialog
+import com.m4isper.contactsapp.presentation.common.groups.GroupNameSheet
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 import com.m4isper.contactsapp.ui.theme.PillShape
 
@@ -141,7 +141,7 @@ internal fun FilterHeader(
     }
 
     if (showNewGroupDialog) {
-        GroupNameDialog(
+        GroupNameSheet(
             title = stringResource(R.string.groups_new),
             confirmLabel = stringResource(R.string.action_create),
             onConfirm = { name ->

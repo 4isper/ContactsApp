@@ -47,7 +47,7 @@ import com.m4isper.contactsapp.domain.model.common.AppError
 import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import com.m4isper.contactsapp.domain.model.contact.FormError
 import com.m4isper.contactsapp.domain.model.contact.FormField
-import com.m4isper.contactsapp.presentation.common.groups.GroupPickerDialog
+import com.m4isper.contactsapp.presentation.common.groups.GroupPickerSheet
 import com.m4isper.contactsapp.presentation.common.message
 import com.m4isper.contactsapp.presentation.editor.components.AccountPickerDialog
 import com.m4isper.contactsapp.presentation.editor.components.AccountRow
@@ -218,7 +218,7 @@ internal fun EditorForm(
     }
 
     if (showGroupPicker) {
-        GroupPickerDialog(
+        GroupPickerSheet(
             title = stringResource(R.string.editor_section_groups),
             groups = uiState.availableGroups,
             selectedIds = uiState.selectedGroupIds,

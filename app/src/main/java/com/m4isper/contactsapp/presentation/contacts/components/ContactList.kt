@@ -33,7 +33,7 @@ import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.call.ConfirmCallDialog
 import com.m4isper.contactsapp.presentation.common.call.rememberCallHandler
 import com.m4isper.contactsapp.presentation.common.format.phoneText
-import com.m4isper.contactsapp.presentation.common.groups.GroupPickerDialog
+import com.m4isper.contactsapp.presentation.common.groups.GroupPickerSheet
 import com.m4isper.contactsapp.presentation.common.share.openSms
 import com.m4isper.contactsapp.presentation.contacts.ContactsFileAction
 import com.m4isper.contactsapp.presentation.contacts.ContactsListAction
@@ -391,7 +391,7 @@ private fun ContactListDialogs(
     }
 
     if (showGroupPicker) {
-        GroupPickerDialog(
+        GroupPickerSheet(
             title = stringResource(R.string.action_add_to_group),
             groups = groups,
             selectedIds = pendingGroupIds,

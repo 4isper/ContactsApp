@@ -19,7 +19,7 @@ import org.junit.runner.RunWith
 import java.util.concurrent.atomic.AtomicBoolean
 
 @RunWith(AndroidJUnit4::class)
-class QrPreviewDialogTest {
+class QrPreviewSheetTest {
     @get:Rule
     val compose = createComposeRule()
 
@@ -33,7 +33,7 @@ class QrPreviewDialogTest {
     fun showsPlaceholderUntilTheCodeIsEncoded() {
         val encoded = CompletableDeferred<Bitmap?>()
         compose.setContent {
-            QrPreviewDialog(
+            QrPreviewSheet(
                 contactName = "Anna",
                 vCardText = VCARD,
                 onShare = {},
@@ -55,7 +55,7 @@ class QrPreviewDialogTest {
     @Test
     fun showsNameAndScanHint() {
         compose.setContent {
-            QrPreviewDialog(
+            QrPreviewSheet(
                 contactName = "Anna",
                 vCardText = VCARD,
                 onShare = {},
@@ -73,7 +73,7 @@ class QrPreviewDialogTest {
     fun shareButtonInvokesShare() {
         val shared = AtomicBoolean(false)
         compose.setContent {
-            QrPreviewDialog(
+            QrPreviewSheet(
                 contactName = "Anna",
                 vCardText = VCARD,
                 onShare = { shared.set(true) },
@@ -92,7 +92,7 @@ class QrPreviewDialogTest {
     fun closeButtonInvokesDismiss() {
         val dismissed = AtomicBoolean(false)
         compose.setContent {
-            QrPreviewDialog(
+            QrPreviewSheet(
                 contactName = "Anna",
                 vCardText = VCARD,
                 onShare = {},
@@ -110,7 +110,7 @@ class QrPreviewDialogTest {
     @Test
     fun failedEncodingShowsErrorWithoutShare() {
         compose.setContent {
-            QrPreviewDialog(
+            QrPreviewSheet(
                 contactName = "Anna",
                 vCardText = VCARD,
                 onShare = {},

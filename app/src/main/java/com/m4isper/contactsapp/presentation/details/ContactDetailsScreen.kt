@@ -225,7 +225,7 @@ fun ContactDetailsScreen(
     )
 
     qrPreviewVCard?.let { vCard ->
-        QrPreviewDialog(
+        QrPreviewSheet(
             contactName = (uiState.content as? Loadable.Content)?.data?.name.orEmpty(),
             vCardText = vCard,
             onShare = { scope.launch { shareContactAsQr(context, vCard) } },
