@@ -1,23 +1,13 @@
 package com.m4isper.contactsapp.presentation.editor.rows
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -27,12 +17,15 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.contact.EditableEmail
-import com.m4isper.contactsapp.domain.model.contact.Email
 import com.m4isper.contactsapp.domain.model.contact.EmailKind
 import com.m4isper.contactsapp.presentation.common.format.emailKindLabel
 import com.m4isper.contactsapp.presentation.editor.EditorRow
-import com.m4isper.contactsapp.presentation.editor.components.EditorRowToolbar
+import com.m4isper.contactsapp.presentation.editor.components.CompactFieldLabel
+import com.m4isper.contactsapp.presentation.editor.components.CompactFieldRow
+import com.m4isper.contactsapp.presentation.editor.components.DeleteFieldButton
+import com.m4isper.contactsapp.presentation.editor.components.FieldRowMenu
 import com.m4isper.contactsapp.presentation.editor.components.KindMenu
+import com.m4isper.contactsapp.presentation.editor.components.ReorderHandle
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 
 @Composable
@@ -51,78 +44,83 @@ internal fun EmailEditorRow(
     onRemove: (Long) -> Unit,
 ) {
     val spacing = LocalSpacing.current
-    Card(
-        colors =
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-            ),
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = spacing.m, vertical = spacing.xs),
-    ) {
-        Column(modifier = Modifier.padding(spacing.m)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(
-                    value = row.value.address,
-                    onValueChange = { onEmailChange(row.rowId, it) },
-                    label = { Text(stringResource(R.string.editor_email_label)) },
-                    singleLine = true,
-                    shape = MaterialTheme.shapes.medium,
-                    keyboardOptions =
-                        KeyboardOptions(
-                            keyboardType = KeyboardType.Email,
-                            imeAction = ImeAction.Next,
-                        ),
-                    isError = error != null,
-                    supportingText = error?.let { { Text(it) } },
-                    modifier =
-                        (focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier)
-                            .weight(1f)
-                            .testTag("editor_email_field"),
-                )
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                KindMenu(
-                    current = row.value.kind,
-                    options = EmailKind.entries,
-                    label = { emailKindLabel(it) },
-                    onSelect = { onKindChange(row.rowId, it) },
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                IconButton(onClick = { onRemove(row.rowId) }) {
-                    Icon(
-                        Icons.Filled.Delete,
-                        contentDescription = stringResource(R.string.action_delete_email),
-                    )
-                }
-            }
-            if (row.value.kind == EmailKind.OTHER) {
-                Spacer(modifier = Modifier.height(spacing.s))
-                OutlinedTextField(
-                    value = row.value.customLabel.orEmpty(),
-                    onValueChange = { onCustomLabelChange(row.rowId, it) },
-                    label = { Text(stringResource(R.string.editor_kind_label)) },
-                    singleLine = true,
-                    shape = MaterialTheme.shapes.medium,
-                    keyboardOptions =
-                        KeyboardOptions(
-                            keyboardType = KeyboardType.Text,
-                            imeAction = ImeAction.Done,
-                        ),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-            EditorRowToolbar(
-                isPrimary = row.value.isPrimary,
-                onSetPrimary = { onSetPrimary(row.rowId) },
+    val deleteLabel = stringResource(R.string.action_delete_email)
+    CompactFieldRow(
+        testTag = "editor_email_row_${row.rowId}",
+        dragHandle = {
+            ReorderHandle(
+                testTag = "editor_email_drag_${row.rowId}",
                 canMoveUp = canMoveUp,
                 canMoveDown = canMoveDown,
                 onMoveUp = { onMoveUp(row.rowId) },
                 onMoveDown = { onMoveDown(row.rowId) },
-                primaryTestTag = "editor_email_primary_${row.rowId}",
-                moveUpTestTag = "editor_email_up_${row.rowId}",
-                moveDownTestTag = "editor_email_down_${row.rowId}",
+            )
+        },
+        kind = {
+            KindMenu(
+                current = row.value.kind,
+                options = EmailKind.entries,
+                label = { emailKindLabel(it) },
+                onSelect = { onKindChange(row.rowId, it) },
+            )
+        },
+        value = { fieldModifier ->
+            OutlinedTextField(
+                value = row.value.address,
+                onValueChange = { onEmailChange(row.rowId, it) },
+                label = { CompactFieldLabel(R.string.editor_email_label) },
+                singleLine = true,
+                shape = MaterialTheme.shapes.medium,
+                keyboardOptions =
+                    KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Next,
+                    ),
+                isError = error != null,
+                supportingText = error?.let { { Text(it) } },
+                modifier =
+                    (focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier)
+                        .then(fieldModifier)
+                        .testTag("editor_email_field"),
+            )
+        },
+        trailing = {
+            if (row.value.address.isBlank()) {
+                DeleteFieldButton(
+                    testTag = "editor_email_delete_${row.rowId}",
+                    label = deleteLabel,
+                    onClick = { onRemove(row.rowId) },
+                )
+            } else {
+                FieldRowMenu(
+                    prefix = "email",
+                    rowId = row.rowId,
+                    isPrimary = row.value.isPrimary,
+                    canMoveUp = canMoveUp,
+                    canMoveDown = canMoveDown,
+                    deleteLabel = deleteLabel,
+                    onSetPrimary = { onSetPrimary(row.rowId) },
+                    onMoveUp = { onMoveUp(row.rowId) },
+                    onMoveDown = { onMoveDown(row.rowId) },
+                    onRemove = { onRemove(row.rowId) },
+                )
+            }
+        },
+    ) {
+        if (row.value.kind == EmailKind.OTHER) {
+            Spacer(modifier = Modifier.height(spacing.xs))
+            OutlinedTextField(
+                value = row.value.customLabel.orEmpty(),
+                onValueChange = { onCustomLabelChange(row.rowId, it) },
+                label = { Text(stringResource(R.string.editor_kind_label)) },
+                singleLine = true,
+                shape = MaterialTheme.shapes.medium,
+                keyboardOptions =
+                    KeyboardOptions(
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Done,
+                    ),
+                modifier = Modifier.fillMaxWidth(),
             )
         }
     }

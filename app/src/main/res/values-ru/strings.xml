@@ -136,7 +136,7 @@
     <string name="editor_name_phonetic_middle">Фонетическое отчество</string>
     <string name="editor_name_phonetic_family">Фонетическая фамилия</string>
     <string name="editor_name_details">Дополнительно</string>
-    <string name="editor_phone_label">Номер телефона</string>
+    <string name="editor_phone_label">Телефон</string>
     <string name="editor_kind_label">Подпись</string>
     <string name="editor_add_phone">Добавить номер</string>
     <string name="editor_save">Сохранить</string>
@@ -460,7 +460,7 @@
     <string name="editor_email_label">Email</string>
     <string name="editor_im_label">Аккаунт</string>
     <string name="editor_im_service">Сервис</string>
-    <string name="editor_sip_label">SIP-адрес</string>
+    <string name="editor_sip_label">SIP</string>
     <string name="editor_address_street">Улица</string>
     <string name="editor_address_po_box">Абонентский ящик</string>
     <string name="editor_address_neighborhood">Район</string>
@@ -474,8 +474,10 @@
     <string name="editor_organization_department">Отдел</string>
     <string name="editor_organization_job_description">Описание работы</string>
     <string name="editor_organization_office_location">Офис</string>
-    <string name="editor_primary_value">Основной</string>
-    <string name="editor_make_primary">Сделать основным</string>
+    <string name="editor_primary_value">Основное значение</string>
+    <string name="editor_make_primary">Сделать основным значением</string>
+    <string name="editor_row_actions">Действия с полем</string>
+    <string name="editor_reorder_handle">Переставить поле</string>
     <string name="editor_note_label">Заметка</string>
     <string name="editor_nickname_label">Никнейм</string>
     <string name="editor_relation_label">Имя</string>

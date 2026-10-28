@@ -2,12 +2,16 @@ package com.m4isper.contactsapp.presentation.editor
 
 import android.Manifest
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.DeviceConfigurationOverride
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.WindowSize
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.StateRestorationTester
@@ -16,8 +20,11 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performCustomAccessibilityActionWithLabel
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipe
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -299,7 +306,9 @@ class ContactEditorUiTest {
         Espresso.closeSoftKeyboard()
         compose
             .onNodeWithTag("editor_form")
-            .performScrollToNode(hasTestTag("editor_phone_primary_$phoneRowId"))
+            .performScrollToNode(hasTestTag("editor_phone_more_$phoneRowId"))
+        compose.onNodeWithTag("editor_phone_more_$phoneRowId").performClick()
+        compose.onNodeWithTag("editor_phone_primary_$phoneRowId").assertTextContains("Set as primary value")
         compose.onNodeWithTag("editor_phone_primary_$phoneRowId").performClick()
 
         compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_add_address_button"))
@@ -936,6 +945,119 @@ class ContactEditorUiTest {
 
         compose.onNodeWithTag("editor_form").assertIsDisplayed()
         compose.onNodeWithTag("editor_form_right").assertDoesNotExist()
+    }
+
+    @Test
+    fun compactWidth_phoneRowStaysOneLineWithoutClipping() {
+        val viewModel = viewModel(FakeAndroidRepository())
+        compose.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.WindowSize(DpSize(320.dp, 700.dp))) {
+                ContactEditorScreen(contactId = null, onDone = {}, onBack = {}, viewModel = viewModel)
+            }
+        }
+        val phoneRowId =
+            viewModel.uiState.value.phones
+                .single()
+                .rowId
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_phone_row_$phoneRowId"))
+
+        val row = compose.onNodeWithTag("editor_phone_row_$phoneRowId").getUnclippedBoundsInRoot()
+        val rowHeight = row.bottom - row.top
+        assertTrue("row is $rowHeight tall", rowHeight <= 64.5.dp)
+        assertTrue("row ends at ${row.right}", row.right <= 320.dp)
+        compose.onNodeWithTag("editor_phone_field").assertIsDisplayed()
+        compose.onNodeWithTag("editor_phone_drag_$phoneRowId").assertIsDisplayed()
+        compose.onNodeWithTag("editor_phone_more_$phoneRowId").assertIsDisplayed()
+    }
+
+    @Test
+    fun draggingTheHandleMovesARowUp() {
+        val viewModel = twoPhones()
+
+        val secondRowId =
+            viewModel.uiState.value.phones[1]
+                .rowId
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_phone_drag_$secondRowId"))
+        Espresso.closeSoftKeyboard()
+        compose.waitForIdle()
+        compose.onNodeWithTag("editor_phone_drag_$secondRowId").performTouchInput {
+            swipe(start = center, end = center + Offset(0f, -80.dp.toPx()))
+        }
+        compose.waitForIdle()
+
+        assertEquals(
+            listOf("222", "111"),
+            viewModel.uiState.value.phones
+                .map { it.value.number },
+        )
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun reorderHandleOffersMoveActionsToTalkBack() {
+        val viewModel = twoPhones()
+
+        val secondRowId =
+            viewModel.uiState.value.phones[1]
+                .rowId
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_phone_drag_$secondRowId"))
+        compose.waitForIdle()
+        compose
+            .onNodeWithTag("editor_phone_drag_$secondRowId")
+            .performCustomAccessibilityActionWithLabel("Move up")
+        compose.waitForIdle()
+
+        assertEquals(
+            listOf("222", "111"),
+            viewModel.uiState.value.phones
+                .map { it.value.number },
+        )
+    }
+
+    private fun twoPhones(): ContactEditorViewModel {
+        val viewModel = viewModel(FakeAndroidRepository())
+        compose.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.WindowSize(DpSize(320.dp, 700.dp))) {
+                ContactEditorScreen(contactId = null, onDone = {}, onBack = {}, viewModel = viewModel)
+            }
+        }
+        typeInForm("editor_phone_field", "111")
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_add_phone_button"))
+        compose.onNodeWithTag("editor_add_phone_button").performClick()
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_phone_field"))
+        compose.waitForIdle()
+        compose.onAllNodesWithTag("editor_phone_field")[1].performTextInput("222")
+        compose.waitForIdle()
+        return viewModel
+    }
+
+    @Test
+    fun dismissingTheGroupsSheetKeepsFieldFocus() {
+        val groups = FakeGroupsRepository(groups = listOf(ContactGroup(id = 100, title = "Семья")))
+        val viewModel = viewModel(FakeAndroidRepository(), groups)
+        compose.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.WindowSize(DpSize(320.dp, 800.dp))) {
+                ContactEditorScreen(contactId = null, onDone = {}, onBack = {}, viewModel = viewModel)
+            }
+        }
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.allGroups
+                .isNotEmpty()
+        }
+
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_groups_row"))
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_nickname_field"))
+        compose.onNodeWithTag("editor_nickname_field").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("editor_nickname_field").assertIsFocused()
+
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_groups_row"))
+        compose.onNodeWithTag("editor_groups_row").performClick()
+        compose.onNodeWithTag("group_picker_confirm").assertIsDisplayed()
+        Espresso.pressBack()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("editor_nickname_field").assertIsFocused()
     }
 
     @Test

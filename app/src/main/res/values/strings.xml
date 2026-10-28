@@ -136,7 +136,7 @@
     <string name="editor_name_phonetic_middle">Phonetic middle name</string>
     <string name="editor_name_phonetic_family">Phonetic last name</string>
     <string name="editor_name_details">More fields</string>
-    <string name="editor_phone_label">Phone number</string>
+    <string name="editor_phone_label">Phone</string>
     <string name="editor_kind_label">Label</string>
     <string name="editor_add_phone">Add number</string>
     <string name="editor_save">Save</string>
@@ -444,7 +444,7 @@
     <string name="editor_email_label">Email</string>
     <string name="editor_im_label">Account</string>
     <string name="editor_im_service">Service</string>
-    <string name="editor_sip_label">SIP address</string>
+    <string name="editor_sip_label">SIP</string>
     <string name="editor_address_street">Street</string>
     <string name="editor_address_po_box">PO box</string>
     <string name="editor_address_neighborhood">Neighborhood</string>
@@ -458,8 +458,10 @@
     <string name="editor_organization_department">Department</string>
     <string name="editor_organization_job_description">Job description</string>
     <string name="editor_organization_office_location">Office location</string>
-    <string name="editor_primary_value">Primary</string>
-    <string name="editor_make_primary">Make primary</string>
+    <string name="editor_primary_value">Primary value</string>
+    <string name="editor_make_primary">Set as primary value</string>
+    <string name="editor_row_actions">Field actions</string>
+    <string name="editor_reorder_handle">Reorder field</string>
     <string name="editor_note_label">Note</string>
     <string name="editor_nickname_label">Nickname</string>
     <string name="editor_relation_label">Name</string>
