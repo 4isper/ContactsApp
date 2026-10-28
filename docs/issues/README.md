@@ -179,3 +179,14 @@ A third UX/UI pass looked at the app as a 2026 product rather than at feature co
 
 These are visual improvements, not missing features, so they can be scheduled opportunistically. Keep the before/after screenshots for 54–58 and 61, and run the adaptive checks (320/600/840 dp, font scale 2.0) for 56, 58, 59, and 60. If only part of the pass ships, 57 (the wiring regression) gives the largest visual return for the smallest change.
 
+## Home header density follow-up (2026-10-29)
+
+A density review of the home screen found that issue 56's app bar and search field are each standard, but stacked permanently they cost ~175–200 dp of fixed chrome before the first contact row (~3 list rows). The merge is the cheapest large win: the static app-name row is the least valuable element, and in search mode the top bar already disappears. The filter-chip row is deliberately untouched in this item.
+
+| # | File | Title | Priority | Status |
+|---|---|---|---|---|
+| 62 | [62-home-header-density.md](62-home-header-density.md) | Merge the home app bar and search row to reclaim vertical space | P2 | Open |
+| 63 | [63-home-header-scroll-collapse.md](63-home-header-scroll-collapse.md) | Collapse the home header on scroll (enter-always behavior) | P3 | Open |
+
+This item partially supersedes issue 56's "top app bar with the app name/brand" acceptance criterion for the idle home state; search-mode and selection bars from 56 and 38 stay as they are. 63 depends on 62 and can reuse the M3 `TopAppBar` + `enterAlwaysScrollBehavior` path only if 62 keeps the row inside an M3 app bar — the two composition choices are documented in both files.
+
