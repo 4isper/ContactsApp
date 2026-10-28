@@ -68,6 +68,7 @@ import com.m4isper.contactsapp.ui.components.ErrorState
 import com.m4isper.contactsapp.ui.components.ListAvatar
 import com.m4isper.contactsapp.ui.components.LoadingState
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
+import com.m4isper.contactsapp.ui.theme.PillShape
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 import kotlinx.coroutines.launch
 
@@ -376,6 +377,7 @@ private fun DuplicateGroupCard(
                         onMergePreview(target, sources)
                     },
                     enabled = !merging,
+                    shape = PillShape,
                     modifier = Modifier.testTag("merge_group_${group.members.minOf { it.contactId }}"),
                 ) {
                     Text(stringResource(R.string.action_merge))

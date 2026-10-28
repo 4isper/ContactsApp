@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -44,6 +43,7 @@ import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.common.AppError
 import com.m4isper.contactsapp.presentation.common.message
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
+import com.m4isper.contactsapp.ui.theme.PillShape
 
 @Composable
 fun LoadingState(modifier: Modifier = Modifier) {
@@ -51,7 +51,7 @@ fun LoadingState(modifier: Modifier = Modifier) {
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
-        CircularProgressIndicator()
+        AppLoadingIndicator()
     }
 }
 
@@ -184,7 +184,10 @@ fun ErrorState(
                 textAlign = TextAlign.Center,
             )
             Spacer(modifier = Modifier.height(spacing.m))
-            Button(onClick = onRetry) {
+            Button(
+                onClick = onRetry,
+                shape = PillShape,
+            ) {
                 Text(stringResource(R.string.action_retry))
             }
         }
@@ -232,6 +235,7 @@ fun EmptyState(
                 Spacer(modifier = Modifier.height(spacing.l))
                 Button(
                     onClick = onPrimaryClick,
+                    shape = PillShape,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(text = primaryLabel)
@@ -241,6 +245,7 @@ fun EmptyState(
                 Spacer(modifier = Modifier.height(spacing.s))
                 OutlinedButton(
                     onClick = onSecondaryClick,
+                    shape = PillShape,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(text = secondaryLabel)

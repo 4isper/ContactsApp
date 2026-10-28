@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp.presentation.details
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
@@ -26,6 +27,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.contact.ContactDetails
+import com.m4isper.contactsapp.ui.theme.AppMotion
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,6 +46,17 @@ internal fun DetailsTopBar(
     onMoveToAccount: () -> Unit,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
+    val favoriteTint by
+        animateColorAsState(
+            targetValue =
+                if (isFavorite) {
+                    MaterialTheme.colorScheme.tertiary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            animationSpec = AppMotion.effects(),
+            label = "favoriteTint",
+        )
     TopAppBar(
         title = {
             Text(
@@ -92,12 +105,7 @@ internal fun DetailsTopBar(
                                     R.string.action_add_favorite
                                 },
                             ),
-                        tint =
-                            if (isFavorite) {
-                                MaterialTheme.colorScheme.tertiary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
+                        tint = favoriteTint,
                     )
                 }
                 IconButton(onClick = onShare) {

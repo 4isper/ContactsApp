@@ -28,6 +28,7 @@ import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import com.m4isper.contactsapp.ui.components.DetailsAvatar
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
+import com.m4isper.contactsapp.ui.theme.PillShape
 
 @Composable
 internal fun DetailsHeader(
@@ -92,7 +93,10 @@ internal fun DetailsHeader(
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(spacing.s),
                 ) {
-                    FilledTonalButton(onClick = onCallPrimary) {
+                    FilledTonalButton(
+                        onClick = onCallPrimary,
+                        shape = PillShape,
+                    ) {
                         Icon(
                             Icons.Filled.Call,
                             contentDescription = null,
@@ -100,7 +104,10 @@ internal fun DetailsHeader(
                         Spacer(modifier = Modifier.width(spacing.s))
                         Text(stringResource(R.string.action_call))
                     }
-                    OutlinedButton(onClick = onSmsPrimary) {
+                    OutlinedButton(
+                        onClick = onSmsPrimary,
+                        shape = PillShape,
+                    ) {
                         Icon(
                             Icons.AutoMirrored.Filled.Message,
                             contentDescription = null,

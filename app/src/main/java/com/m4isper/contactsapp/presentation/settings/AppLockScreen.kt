@@ -15,7 +15,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,7 +42,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.ui.components.AppLoadingIndicator
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
+import com.m4isper.contactsapp.ui.theme.PillShape
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.Duration
@@ -153,7 +154,7 @@ internal fun AppLockScreen(
                 )
             }
             if (checking) {
-                CircularProgressIndicator(
+                AppLoadingIndicator(
                     modifier =
                         Modifier
                             .padding(top = spacing.m)
@@ -163,6 +164,7 @@ internal fun AppLockScreen(
             Button(
                 onClick = unlock,
                 enabled = pin.length >= MIN_PIN_LENGTH && !checking && !locked,
+                shape = PillShape,
                 modifier =
                     Modifier
                         .padding(top = spacing.m)

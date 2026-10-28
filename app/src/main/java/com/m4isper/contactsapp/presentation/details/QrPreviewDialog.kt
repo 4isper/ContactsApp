@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -29,6 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.presentation.common.share.qrCodeBitmap
+import com.m4isper.contactsapp.ui.components.AppLoadingIndicator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -68,8 +68,9 @@ internal fun QrPreviewDialog(
                 QrCard {
                     when {
                         isLoading ->
-                            CircularProgressIndicator(
+                            AppLoadingIndicator(
                                 color = Color.Black,
+                                trackColor = Color.Black.copy(alpha = 0.12f),
                                 modifier = Modifier.testTag("qr_preview_placeholder"),
                             )
 

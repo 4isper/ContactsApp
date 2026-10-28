@@ -24,7 +24,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material.icons.filled.ZoomOut
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -60,6 +59,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.exifinterface.media.ExifInterface
 import com.m4isper.contactsapp.R
+import com.m4isper.contactsapp.ui.components.AppLoadingIndicator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -142,7 +142,7 @@ internal fun CropPhotoDialog(
                             }
                         }
                     }
-                bitmap == null -> CircularProgressIndicator()
+                bitmap == null -> AppLoadingIndicator()
                 else ->
                     CropContent(
                         bitmap = bitmap!!,

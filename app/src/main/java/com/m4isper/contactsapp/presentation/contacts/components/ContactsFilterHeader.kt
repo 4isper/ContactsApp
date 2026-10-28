@@ -56,6 +56,7 @@ import com.m4isper.contactsapp.ui.components.SearchField
 import com.m4isper.contactsapp.ui.theme.BrandIcon
 import com.m4isper.contactsapp.ui.theme.BrandIcons
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
+import com.m4isper.contactsapp.ui.theme.PillShape
 
 @Composable
 internal fun FilterHeader(
@@ -104,6 +105,7 @@ internal fun FilterHeader(
                 FilterChip(
                     selected = showFavoritesOnly,
                     onClick = onFavoritesOnlyChange,
+                    shape = PillShape,
                     label = { Text(stringResource(R.string.filter_favorites)) },
                     leadingIcon =
                         if (showFavoritesOnly) {
@@ -304,6 +306,7 @@ private fun GroupsFilterChip(
         FilterChip(
             selected = selectedGroup != null,
             onClick = { onExpandedChange(true) },
+            shape = PillShape,
             modifier =
                 Modifier
                     .widthIn(max = 220.dp)
@@ -418,6 +421,7 @@ private fun AccountFilterChip(
             FilterChip(
                 selected = selectedAccount != null,
                 onClick = { expanded = true },
+                shape = PillShape,
                 label = {
                     Column {
                         Text(

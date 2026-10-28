@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.Dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.m4isper.contactsapp.ui.theme.AppMotion
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 
 /** Показывать ли фотографии контактов: выключается в настройках. */
@@ -55,6 +56,7 @@ fun ContactAvatar(
         } else {
             MaterialTheme.colorScheme.primaryContainer
         },
+        animationSpec = AppMotion.effects(),
         label = "avatarBg",
     )
     Box(
