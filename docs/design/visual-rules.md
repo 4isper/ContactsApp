@@ -7,6 +7,7 @@ The app follows Material 3 with a small, owned token layer. Use these rules for 
 - Brand scheme by default (deep teal primary, warm amber tertiary); wallpaper colors are an explicit user choice, never an implicit override.
 - Brand accent is an accent: favorites, selection, and one primary action per screen. Do not wash whole surfaces in `primary`.
 - Prefer tonal layering over shadows: `surface` for the reading surface, `surfaceContainerLow/High` for grouped or raised regions. A card should earn its elevation by grouping content, not by decorating a row.
+- List rows share one `surface`; separate rows inside a section with 1 dp `outlineVariant` dividers inset to the text. Selection is a `secondaryContainer` fill, favorite is `tertiary` — never a per-row card.
 - Use `outlineVariant` for separators; `outline` only for focused/active boundaries.
 - Destructive actions use the `error` role and are confirmed.
 
