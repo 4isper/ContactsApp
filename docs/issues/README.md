@@ -155,7 +155,7 @@ A follow-up from the QR share code review: the app can export a contact QR as a 
 
 ## Visual audit backlog, third pass (2026-10-28)
 
-A third UX/UI pass looked at the app as a 2026 product rather than at feature completeness. The findings are visual-systemic rather than correctness bugs: the app is built from default Material 3 tokens, the brand is bypassed by dynamic color, every surface is a rounded card, and the adaptive shell stops at list-detail. Each file follows the same structure (problem, scope, acceptance criteria, technical notes, out of scope, verification). Issues 54, 56, 57, and 58 are implemented; the rest are not, and their acceptance boxes are unchecked.
+A third UX/UI pass looked at the app as a 2026 product rather than at feature completeness. The findings are visual-systemic rather than correctness bugs: the app is built from default Material 3 tokens, the brand is bypassed by dynamic color, every surface is a rounded card, and the adaptive shell stops at list-detail. Each file follows the same structure (problem, scope, acceptance criteria, technical notes, out of scope, verification). Issues 54, 56, 57, 58, and 59 are implemented; 60 and 61 are not, and their acceptance boxes are unchecked.
 
 | # | File | Title | Priority | Status |
 |---|---|---|---|---|
@@ -163,7 +163,7 @@ A third UX/UI pass looked at the app as a 2026 product rather than at feature co
 | 56 | [56-home-search-and-navigation.md](56-home-search-and-navigation.md) | Modernize home chrome with a search bar, real app bar, and adaptive navigation | P2 | Done (320 dp verified; TalkBack pending) | `b372ef7`, `5d4fa86`, `2ed1aff` |
 | 57 | [57-list-surfaces-and-fast-scroller.md](57-list-surfaces-and-fast-scroller.md) | Rework contact-list surfaces and replace the iOS-style fast scroller | P2 | Done (129/131 on the AVD; two stale-star failures) | `13fc6dc`, `3dc6619` |
 | 58 | [58-details-hero-and-grouped-fields.md](58-details-hero-and-grouped-fields.md) | Give contact details a hero header and grouped field sections | P2 | Done (details 17/17; full suite 133/135, two stale-star failures; TalkBack pending) | `ec6a72b`, `0ff3e9e` |
-| 59 | [59-adaptive-layouts.md](59-adaptive-layouts.md) | Make every screen adaptive, not just contacts↔details | P2 | Proposed |
+| 59 | [59-adaptive-layouts.md](59-adaptive-layouts.md) | Make every screen adaptive, not just contacts↔details | P2 | Done (142 instrumented tests at 411 dp: 139 passed; two stale-star, one Glance-receiver flake) | `32ec6fc`, `ae5cff4`, `a0a4fbc`, `56f1c7f`, `eb4c0f1` |
 | 60 | [60-dialogs-sheets-and-editor-density.md](60-dialogs-sheets-and-editor-density.md) | Replace oversized dialogs with bottom sheets and compact the editor | P3 | Proposed |
 | 61 | [61-settings-and-secondary-screens.md](61-settings-and-secondary-screens.md) | Refresh settings and the secondary screens with a scannable style | P3 | Proposed |
 
