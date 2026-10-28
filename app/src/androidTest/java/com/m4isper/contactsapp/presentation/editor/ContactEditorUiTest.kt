@@ -3,11 +3,14 @@ package com.m4isper.contactsapp.presentation.editor
 import android.Manifest
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.DeviceConfigurationOverride
+import androidx.compose.ui.test.WindowSize
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
@@ -16,6 +19,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
@@ -901,5 +906,82 @@ class ContactEditorUiTest {
         compose.onNodeWithTag("editor_photo_camera").assertIsDisplayed()
         compose.onNodeWithTag("editor_photo_pick").assertIsDisplayed()
         compose.onNodeWithTag("editor_photo_remove").assertDoesNotExist()
+    }
+
+    @Test
+    fun expandedWidth_splitsFormIntoTwoColumns() {
+        val viewModel = viewModel(FakeAndroidRepository())
+        compose.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.WindowSize(DpSize(1000.dp, 800.dp))) {
+                ContactEditorScreen(contactId = null, onDone = {}, onBack = {}, viewModel = viewModel)
+            }
+        }
+
+        compose.onNodeWithTag("editor_form_left").assertIsDisplayed()
+        compose.onNodeWithTag("editor_form_right").assertIsDisplayed()
+        // Порядок полей сохранён: имя — в левой колонке, работа и даты — в правой.
+        compose.onNodeWithTag("editor_name_field").assertIsDisplayed()
+        compose.onNodeWithTag("editor_form_right").performScrollToNode(hasTestTag("editor_birthday_button"))
+        compose.onNodeWithTag("editor_birthday_button").assertIsDisplayed()
+    }
+
+    @Test
+    fun compactWidth_keepsSingleFormList() {
+        val viewModel = viewModel(FakeAndroidRepository())
+        compose.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.WindowSize(DpSize(411.dp, 891.dp))) {
+                ContactEditorScreen(contactId = null, onDone = {}, onBack = {}, viewModel = viewModel)
+            }
+        }
+
+        compose.onNodeWithTag("editor_form").assertIsDisplayed()
+        compose.onNodeWithTag("editor_form_right").assertDoesNotExist()
+    }
+
+    @Test
+    fun expandedWidth_invalidFieldBlocksSave() {
+        val repository = FakeAndroidRepository()
+        val viewModel = viewModel(repository)
+        compose.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.WindowSize(DpSize(1000.dp, 800.dp))) {
+                ContactEditorScreen(contactId = null, onDone = {}, onBack = {}, viewModel = viewModel)
+            }
+        }
+
+        compose.onNodeWithTag("editor_form_left").performScrollToNode(hasTestTag("editor_add_email_button"))
+        compose.onNodeWithTag("editor_add_email_button").performClick()
+        compose.onNodeWithTag("editor_form_left").performScrollToNode(hasTestTag("editor_email_field"))
+        Espresso.closeSoftKeyboard()
+        compose.waitForIdle()
+        compose.onNodeWithTag("editor_email_field").performTextInput("not-an-email")
+        compose.onNodeWithTag("editor_save_button").performClick()
+        compose.waitForIdle()
+
+        assertTrue(repository.created.isEmpty())
+        compose.onNodeWithTag("editor_form_left").performScrollToNode(hasText("Check the email address"))
+        compose.onNodeWithText("Check the email address").assertExists()
+    }
+
+    @Test
+    fun rotation_restoresScrollAndUnsavedInput() {
+        val viewModel = viewModel(FakeAndroidRepository())
+        val restorer = StateRestorationTester(compose)
+        // Поворот телефона: узкое окно, один список, а не две колонки планшета.
+        restorer.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.WindowSize(DpSize(411.dp, 891.dp))) {
+                ContactEditorScreen(contactId = null, onDone = {}, onBack = {}, viewModel = viewModel)
+            }
+        }
+
+        typeInForm("editor_nickname_field", "anna")
+        Espresso.closeSoftKeyboard()
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_birthday_button"))
+        compose.onNodeWithTag("editor_birthday_button").assertIsDisplayed()
+
+        restorer.emulateSavedInstanceStateRestore()
+
+        compose.onNodeWithTag("editor_birthday_button").assertIsDisplayed()
+        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_nickname_field"))
+        compose.onNodeWithTag("editor_nickname_field").assertTextContains("anna")
     }
 }
