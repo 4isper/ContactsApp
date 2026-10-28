@@ -160,7 +160,7 @@ A third UX/UI pass looked at the app as a 2026 product rather than at feature co
 | # | File | Title | Priority | Status |
 |---|---|---|---|---|
 | 54 | [54-expressive-design-system.md](54-expressive-design-system.md) | Adopt Material 3 Expressive as the app's visual language | P2 | Done (screenshot check pending) |
-| 56 | [56-home-search-and-navigation.md](56-home-search-and-navigation.md) | Modernize home chrome with a search bar, real app bar, and adaptive navigation | P2 | Proposed |
+| 56 | [56-home-search-and-navigation.md](56-home-search-and-navigation.md) | Modernize home chrome with a search bar, real app bar, and adaptive navigation | P2 | Done (visual check pending) | `b372ef7`, `5d4fa86`, `2ed1aff` |
 | 57 | [57-list-surfaces-and-fast-scroller.md](57-list-surfaces-and-fast-scroller.md) | Rework contact-list surfaces and replace the iOS-style fast scroller | P2 | Proposed |
 | 58 | [58-details-hero-and-grouped-fields.md](58-details-hero-and-grouped-fields.md) | Give contact details a hero header and grouped field sections | P2 | Proposed |
 | 59 | [59-adaptive-layouts.md](59-adaptive-layouts.md) | Make every screen adaptive, not just contacts↔details | P2 | Proposed |

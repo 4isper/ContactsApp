@@ -23,12 +23,12 @@ The home screen is a `Column` with a permanently visible outlined search field, 
 
 ## Acceptance criteria
 
-- [ ] Home has a top app bar with the app name/brand; no destination is reachable only through an unlabeled overflow.
-- [ ] Search expands on focus and collapses when idle; back closes search first; clearing restores the browse state with filters intact.
-- [ ] Active filters are always visible (removable chips or a summary) even when the chip row is scrolled.
-- [ ] At ≥ 600 dp width the top-level destinations are reachable without opening a drawer/menu, and no phone-only full-screen navigation appears for a destination that has a natural two-pane layout.
-- [ ] The home screen at 320 dp width and 2.0 font scale has no clipped or overlapping app-bar actions.
-- [ ] Existing tests for search/filter identity and navigation actions still pass; new tests cover search-mode back behavior and rail navigation.
+- [x] Home has a top app bar with the app name/brand; no destination is reachable only through an unlabeled overflow.
+- [x] Search expands on focus and collapses when idle; back closes search first; clearing restores the browse state with filters intact.
+- [x] Active filters are always visible (removable chips or a summary) even when the chip row is scrolled.
+- [x] At ≥ 600 dp width the top-level destinations are reachable without opening a drawer/menu, and no phone-only full-screen navigation appears for a destination that has a natural two-pane layout.
+- [x] The home screen at 320 dp width and 2.0 font scale has no clipped or overlapping app-bar actions.
+- [x] Existing tests for search/filter identity and navigation actions still pass; new tests cover search-mode back behavior and rail navigation.
 
 ## Technical notes
 
@@ -52,3 +52,30 @@ The home screen is a `Column` with a permanently visible outlined search field, 
 - Manual: compass — search → filter → open detail → back; rotate; 320 dp and 840 dp widths; TalkBack through the app bar, search expansion, and rail.
 - `./gradlew :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest :app:detekt :app:ktlintCheck`.
 - Screenshots at compact/medium/expanded widths for the before/after comparison.
+
+## Status
+
+Done in code and automated checks; the visual and TalkBack walk is still manual.
+
+### What was implemented
+
+- `presentation/contacts/components/HomeTopBar.kt` is a Material3 `TopAppBar`: the brand (contacts icon + app name, ellipsized) plus Settings as its own action and an overflow grouped by dividers into navigation (Recents, Duplicates, Groups, My profile), file IO (Import, Export), and Select all. Every item has a text label.
+- `presentation/contacts/components/ContactsSearchField.kt` wraps `SearchBarDefaults.InputField`: focus expands it, the app bar yields to the field, the leading arrow or system Back closes search, and the trailing clear button empties the query. Search mode lives in `ContactsFilterState`/`ContactsUiState.isSearchMode`, so it survives refresh and navigation; `BackHandler` in `ContactList` closes search before the screen and stands down while a selection is active.
+- `ContactsFilterHeader` puts the Favorites, Groups, and Account chips in a `FlowRow` under the search field. They wrap instead of scrolling, so an applied filter is never scrolled out of view.
+- `presentation/navigation/TopLevelDestination.kt` and `HomeNavigationRail` in `ContactsNavHost` show the rail at ≥ 600 dp (`WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND`) on top-level entries only. Selecting a section collapses its stack to the root, so Back from a section returns to Contacts.
+- `action_close_search` was added in `values/strings.xml` and `values-ru/strings.xml`.
+
+### Deviations from the plan
+
+- Search is a hoisted mode over the stateless `InputField`, not the state-based `SearchBar` + `ExpandedFullScreenSearchBar` dialog. The dialog owns the results list, so the screen would have to render the list twice, and it could not be verified without an emulator; the stateless field still gives the M3 surface, focus-driven expansion, and automatic focus clearing on collapse.
+- At compact width, navigation destinations remain in an overflow menu — now a labelled, sectioned app-bar menu rather than a junk drawer inside the filter row. No drawer or sheet was added; the rail covers ≥ 600 dp and the overflow items are all labelled.
+- Filters stay as chips (always visible in a `FlowRow`) rather than a "Filters" bottom sheet. The Groups chip filters the list, while the Groups destination manages groups, so the two entry points do different jobs; a bottom sheet can follow if the duplication becomes confusing.
+- The rail is hidden on detail, editor, import-preview, and group-detail screens so list-detail and the editor keep the full width.
+
+### Verification
+
+- `./gradlew :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest :app:detekt :app:ktlintCheck :app:lintDebug` passes.
+- New JVM tests: `ContactsFilterStateTest` (search mode open/close/clear) and `TopLevelNavigationTest` (destination mapping, rail visibility, stack collapse).
+- New instrumented tests: `searchModeClosesBeforeLeavingTheScreen` in `ContactListUiTest` and `HomeNavigationRailTest`. They compile but were not run: no emulator or device is attached in this session.
+- `:app:lintDebug` was red on `HEAD` before this issue: the Glance widget read strings through `LocalContext` inside composition. Fixed separately in `aadf6f7` by resolving the strings in `provideGlance`.
+- Still manual: compact/medium/expanded screenshots, the 320 dp / 2.0 font-scale check, and TalkBack over the app bar, search expansion, and rail.
