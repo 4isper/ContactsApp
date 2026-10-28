@@ -18,6 +18,10 @@ internal class ContactsFilterState(
 
     /** Поисковый запрос. */
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+    private val _searchActive = MutableStateFlow(false)
+
+    /** Открыт ли поиск: поле получило фокус, экран показывает режим поиска. */
+    val searchActive: StateFlow<Boolean> = _searchActive.asStateFlow()
     private val _favoritesOnly = MutableStateFlow(false)
 
     /** Показывать только избранное. */
@@ -34,6 +38,16 @@ internal class ContactsFilterState(
     fun onSearchQueryChange(query: String) {
         selection.clear()
         _searchQuery.value = query
+    }
+
+    /** Поле поиска получило фокус: экран переходит в режим поиска. */
+    fun onSearchActivated() {
+        _searchActive.value = true
+    }
+
+    /** Поиск закрыт: запрос остаётся, список продолжает показывать результаты. */
+    fun onSearchClosed() {
+        _searchActive.value = false
     }
 
     /** Включает фильтр избранного (без переключения). */

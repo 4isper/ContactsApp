@@ -211,21 +211,53 @@ private fun ContactsActionScope.handle(action: ContactsUiAction) {
 
 /** Фильтры, выделение, избранное и группы. */
 private fun ContactsActionScope.handleState(action: ContactsListAction) {
+    if (handleSearch(action)) return
+    if (handleGroup(action)) return
     when (action) {
-        is ContactsListAction.SearchQueryChanged -> viewModel.filters.onSearchQueryChange(action.query)
         ContactsListAction.FavoritesOnlyToggled -> viewModel.filters.onToggleFavoritesOnly()
         is ContactsListAction.ContactSelected -> viewModel.selection.onContactSelected(action.contactId)
         ContactsListAction.ClearSelection -> viewModel.selection.clear()
         is ContactsListAction.SelectAll -> viewModel.selection.selectAll(action.contactIds)
         is ContactsListAction.GroupSelected -> viewModel.filters.onGroupSelected(action.groupId)
         is ContactsListAction.AccountSelected -> viewModel.filters.onAccountSelected(action.account)
-        is ContactsListAction.CreateGroup -> scope.launch { viewModel.groups.onCreateGroup(action.title) }
-        is ContactsListAction.AddSelectedToGroup ->
-            scope.launch { viewModel.groups.onAddSelectedToGroup(action.groupIds) }
         is ContactsListAction.ToggleFavorite -> toggleFavorite(action.contactId)
         ContactsListAction.ToggleFavoriteSelected -> toggleFavoriteSelected()
+        // Поиск и группы обработаны выше.
+        else -> Unit
     }
 }
+
+/** Группы: создание и добавление выделенных. Возвращает true, если действие обработано. */
+private fun ContactsActionScope.handleGroup(action: ContactsListAction): Boolean =
+    when (action) {
+        is ContactsListAction.CreateGroup -> {
+            scope.launch { viewModel.groups.onCreateGroup(action.title) }
+            true
+        }
+        is ContactsListAction.AddSelectedToGroup -> {
+            scope.launch { viewModel.groups.onAddSelectedToGroup(action.groupIds) }
+            true
+        }
+        else -> false
+    }
+
+/** Поиск: запрос и режим экрана. Возвращает true, если действие обработано. */
+private fun ContactsActionScope.handleSearch(action: ContactsListAction): Boolean =
+    when (action) {
+        is ContactsListAction.SearchQueryChanged -> {
+            viewModel.filters.onSearchQueryChange(action.query)
+            true
+        }
+        ContactsListAction.SearchOpened -> {
+            viewModel.filters.onSearchActivated()
+            true
+        }
+        ContactsListAction.SearchClosed -> {
+            viewModel.filters.onSearchClosed()
+            true
+        }
+        else -> false
+    }
 
 /** Файлы, удаление и обновление списка. */
 private fun ContactsActionScope.handleFile(action: ContactsFileAction) {

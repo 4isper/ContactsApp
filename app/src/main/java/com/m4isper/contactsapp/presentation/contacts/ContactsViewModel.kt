@@ -41,6 +41,7 @@ import kotlinx.coroutines.launch
 
 data class ContactsUiState(
     val searchQuery: String = "",
+    val isSearchMode: Boolean = false,
     val showFavoritesOnly: Boolean = false,
     val favorites: Set<Long> = emptySet(),
     val isRefreshing: Boolean = false,
@@ -117,6 +118,7 @@ private data class ContactsLoad(
     val loading: Boolean,
     val query: String,
     val failure: Throwable?,
+    val searchActive: Boolean,
 )
 
 private data class ContactsMiddleBase(
@@ -189,6 +191,7 @@ private fun contactsUiState(
     val content = contactsContent(load, visible)
     return ContactsUiState(
         searchQuery = load.query,
+        isSearchMode = load.searchActive,
         showFavoritesOnly = middle.favoritesOnly,
         favorites = middle.favorites,
         isRefreshing = load.loading,
@@ -328,6 +331,7 @@ internal class ContactsViewModel(
                 list.isLoading,
                 filters.searchQuery,
                 list.failure,
+                filters.searchActive,
                 ::ContactsLoad,
             ),
             combine(
@@ -438,6 +442,7 @@ internal class ContactsViewModel(
     fun clear() {
         list.clear()
         filters.onSearchQueryChange("")
+        filters.onSearchClosed()
         filters.resetFavoritesOnly()
         selection.clear()
         groups.clear()
