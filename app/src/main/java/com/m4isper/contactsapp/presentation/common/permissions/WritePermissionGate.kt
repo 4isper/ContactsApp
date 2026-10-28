@@ -75,6 +75,8 @@ internal fun rememberWritePermissionGate(onDenied: () -> Unit = {}): WritePermis
     val gate = remember { WritePermissionGate() }
     val launcher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { result ->
+            // Постоянный отказ: снекбара недостаточно — сразу открываем настройки.
+            if (!result) openSettingsIfPermanentlyDenied(context, Manifest.permission.WRITE_CONTACTS)
             gate.onPermissionResult(result, currentOnDenied)
         }
     LaunchedEffect(launcher) {

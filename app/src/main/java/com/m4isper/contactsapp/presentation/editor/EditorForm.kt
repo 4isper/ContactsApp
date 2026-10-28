@@ -453,7 +453,12 @@ private fun SimilarContactsDialog(
 
 /** Файл для снимка камеры: провайдеру отдаём URI через FileProvider. */
 private fun cameraOutputUri(context: android.content.Context): Uri {
-    val file = java.io.File(context.cacheDir, "camera_${System.currentTimeMillis()}.jpg")
+    val file =
+        java.io.File(
+            com.m4isper.contactsapp.presentation.common.share
+                .sharedCacheDir(context),
+            "camera_${System.currentTimeMillis()}.jpg",
+        )
     return androidx.core.content.FileProvider.getUriForFile(
         context,
         "${context.packageName}.fileprovider",

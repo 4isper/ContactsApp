@@ -21,6 +21,7 @@ import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.presentation.common.permissions.PermissionRequest
 import com.m4isper.contactsapp.presentation.common.permissions.hasPermission
 import com.m4isper.contactsapp.presentation.common.permissions.openAppSettings
+import com.m4isper.contactsapp.presentation.common.permissions.openSettingsIfPermanentlyDenied
 import com.m4isper.contactsapp.presentation.contacts.components.ContactList
 import com.m4isper.contactsapp.presentation.contacts.effects.syncContactsPermission
 import com.m4isper.contactsapp.presentation.import.ImportPreviewViewModel
@@ -64,6 +65,8 @@ internal fun ContactsScreen(
             if (isGranted) {
                 pendingWriteAction?.invoke()
                 pendingWriteAction = null
+            } else {
+                openSettingsIfPermanentlyDenied(context, Manifest.permission.WRITE_CONTACTS)
             }
         }
 
@@ -77,6 +80,9 @@ internal fun ContactsScreen(
                 if (!hasPermission(context, Manifest.permission.WRITE_CONTACTS)) {
                     writePermissionLauncher.launch(Manifest.permission.WRITE_CONTACTS)
                 }
+            } else {
+                // Постоянный отказ: диалог больше не покажется — ведём в настройки.
+                openSettingsIfPermanentlyDenied(context, Manifest.permission.READ_CONTACTS)
             }
         }
 

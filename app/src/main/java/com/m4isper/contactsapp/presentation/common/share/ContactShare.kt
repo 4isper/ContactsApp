@@ -28,7 +28,7 @@ internal suspend fun shareContacts(
         return
     }
     // Одно фиксированное имя: повторные шаринги перезаписывают файл, кэш не растёт.
-    val file = File(context.cacheDir, "shared_contacts.vcf")
+    val file = File(sharedCacheDir(context), "shared_contacts.vcf")
     val written =
         withContext(Dispatchers.IO) {
             runCatching { file.writeText(vCardText) }
@@ -121,7 +121,7 @@ private suspend fun writeQrFile(
 ): File? {
     val bitmap = vCardText.takeIf { it.isNotBlank() }?.let { qrCodeBitmap(it) }
     if (bitmap == null) return null
-    val file = File(context.cacheDir, QR_FILE_NAME)
+    val file = File(sharedCacheDir(context), QR_FILE_NAME)
     val written =
         withContext(Dispatchers.IO) {
             runCatching {
@@ -145,3 +145,6 @@ private fun showShareFailed(context: Context) {
             Toast.LENGTH_SHORT,
         ).show()
 }
+
+/** Каталог для файлов, отдаваемых наружу через FileProvider: гранты точечные, корень кэша не светится. */
+internal fun sharedCacheDir(context: Context): File = File(context.cacheDir, "shared").apply { mkdirs() }
