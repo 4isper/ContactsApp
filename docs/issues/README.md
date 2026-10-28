@@ -155,7 +155,7 @@ A follow-up from the QR share code review: the app can export a contact QR as a 
 
 ## Visual audit backlog, third pass (2026-10-28)
 
-A third UX/UI pass looked at the app as a 2026 product rather than at feature completeness. The findings are visual-systemic rather than correctness bugs: the app is built from default Material 3 tokens, the brand is bypassed by dynamic color, every surface is a rounded card, and the adaptive shell stops at list-detail. Each file follows the same structure (problem, scope, acceptance criteria, technical notes, out of scope, verification). Issues 54, 56, 57, 58, 59, and 60 are implemented; 61 is not, and its acceptance boxes are unchecked.
+A third UX/UI pass looked at the app as a 2026 product rather than at feature completeness. The findings are visual-systemic rather than correctness bugs: the app is built from default Material 3 tokens, the brand is bypassed by dynamic color, every surface is a rounded card, and the adaptive shell stops at list-detail. Each file follows the same structure (problem, scope, acceptance criteria, technical notes, out of scope, verification). All seven issues, 54 and 56 through 61, are implemented.
 
 | # | File | Title | Priority | Status |
 |---|---|---|---|---|
@@ -165,7 +165,7 @@ A third UX/UI pass looked at the app as a 2026 product rather than at feature co
 | 58 | [58-details-hero-and-grouped-fields.md](58-details-hero-and-grouped-fields.md) | Give contact details a hero header and grouped field sections | P2 | Done (details 17/17; full suite 133/135, two stale-star failures; TalkBack pending) | `ec6a72b`, `0ff3e9e` |
 | 59 | [59-adaptive-layouts.md](59-adaptive-layouts.md) | Make every screen adaptive, not just contacts↔details | P2 | Done (142 instrumented tests at 411 dp: 139 passed; two stale-star, one Glance-receiver flake) | `32ec6fc`, `ae5cff4`, `a0a4fbc`, `56f1c7f`, `eb4c0f1` |
 | 60 | [60-dialogs-sheets-and-editor-density.md](60-dialogs-sheets-and-editor-density.md) | Replace oversized dialogs with bottom sheets and compact the editor | P3 | Done (editor 33/33, picker 2/2, QR 5/5; full suite 148 tests, 145 passed: two stale-star, one Glance-receiver flake) | `433005c`, `9732413` |
-| 61 | [61-settings-and-secondary-screens.md](61-settings-and-secondary-screens.md) | Refresh settings and the secondary screens with a scannable style | P3 | Proposed |
+| 61 | [61-settings-and-secondary-screens.md](61-settings-and-secondary-screens.md) | Refresh settings and the secondary screens with a scannable style | P3 | Done (settings 9/9, import preview 4/4, export banner 3/3; full suite 157 tests, 153 passed: two stale-star, one Glance-receiver and one focus flake) | `d4068f4`, `05a33a0`, `acf9779` |
 
 ### Third-pass dependencies
 
