@@ -50,6 +50,7 @@ import com.m4isper.contactsapp.domain.vcard.VCardIssue
 import com.m4isper.contactsapp.presentation.common.account.contactAccountLabel
 import com.m4isper.contactsapp.presentation.editor.components.AccountPickerDialog
 import com.m4isper.contactsapp.presentation.editor.components.AccountRow
+import com.m4isper.contactsapp.ui.adaptive.ReadingColumn
 import com.m4isper.contactsapp.ui.components.EmptyState
 import com.m4isper.contactsapp.ui.components.LoadingState
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
@@ -149,36 +150,41 @@ private fun ImportPreviewList(
     modifier: Modifier = Modifier,
 ) {
     val spacing = LocalSpacing.current
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(spacing.m),
-        verticalArrangement = Arrangement.spacedBy(spacing.s),
-    ) {
-        item(key = "summary") {
-            ImportSummary(uiState)
-        }
-        if (uiState.accounts.size > 1) {
-            item(key = "account") {
-                AccountRow(
-                    account = uiState.selectedAccount,
-                    onClick = onAccountClick,
+    ReadingColumn(modifier = modifier) {
+        LazyColumn(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .testTag("import_preview_list"),
+            contentPadding = PaddingValues(spacing.m),
+            verticalArrangement = Arrangement.spacedBy(spacing.s),
+        ) {
+            item(key = "summary") {
+                ImportSummary(uiState)
+            }
+            if (uiState.accounts.size > 1) {
+                item(key = "account") {
+                    AccountRow(
+                        account = uiState.selectedAccount,
+                        onClick = onAccountClick,
+                    )
+                }
+            }
+            items(uiState.entries, key = { it.index }) { entry ->
+                ImportEntryCard(
+                    entry = entry,
+                    onDecisionChange = { decision -> onDecisionChange(entry.index, decision) },
                 )
             }
-        }
-        items(uiState.entries, key = { it.index }) { entry ->
-            ImportEntryCard(
-                entry = entry,
-                onDecisionChange = { decision -> onDecisionChange(entry.index, decision) },
-            )
-        }
-        if (uiState.invalid.isNotEmpty()) {
-            item(key = "invalid") {
-                ImportInvalidCard(uiState.invalid)
+            if (uiState.invalid.isNotEmpty()) {
+                item(key = "invalid") {
+                    ImportInvalidCard(uiState.invalid)
+                }
             }
-        }
-        uiState.outcome?.let { outcome ->
-            item(key = "result") {
-                ImportResultCard(outcome, onDone)
+            uiState.outcome?.let { outcome ->
+                item(key = "result") {
+                    ImportResultCard(outcome, onDone)
+                }
             }
         }
     }

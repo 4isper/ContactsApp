@@ -48,6 +48,7 @@ import com.m4isper.contactsapp.presentation.common.format.websiteKindLabel
 import com.m4isper.contactsapp.presentation.common.share.openInstantMessage
 import com.m4isper.contactsapp.presentation.common.share.openMap
 import com.m4isper.contactsapp.presentation.common.share.openWebsite
+import com.m4isper.contactsapp.ui.adaptive.ReadingColumn
 import java.time.LocalDate
 
 /** Поле карточки: всё, что нужно строке, собрано заранее — порядок и разделители задаёт секция. */
@@ -93,46 +94,48 @@ internal fun DetailsContent(
             relationsSection(details, onCopyClick),
             notesSection(details),
         )
-    LazyColumn(
-        state = listState,
-        modifier =
-            modifier
-                .fillMaxSize()
-                .testTag("details_list"),
-    ) {
-        item(key = "hero") {
-            DetailsHeader(
-                details = details,
-                isFavorite = isFavorite,
-                onCallPrimary = { details.primaryPhone?.let(onCallClick) },
-                onSmsPrimary = { details.primaryPhone?.let(onSmsClick) },
-                onEmailPrimary = { details.primaryEmail?.let { onEmailClick(it.address) } },
-                onToggleFavorite = onToggleFavorite,
-                onNameBottom = onHeroNameBottom,
-            )
-        }
-        sections.forEach { section ->
-            section.title?.let { title ->
-                item(key = "section_${section.key}") {
-                    DetailsSectionHeader(
-                        title = title,
-                        modifier = Modifier.testTag("details_section_${section.key}"),
+    ReadingColumn(modifier = modifier) {
+        LazyColumn(
+            state = listState,
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .testTag("details_list"),
+        ) {
+            item(key = "hero") {
+                DetailsHeader(
+                    details = details,
+                    isFavorite = isFavorite,
+                    onCallPrimary = { details.primaryPhone?.let(onCallClick) },
+                    onSmsPrimary = { details.primaryPhone?.let(onSmsClick) },
+                    onEmailPrimary = { details.primaryEmail?.let { onEmailClick(it.address) } },
+                    onToggleFavorite = onToggleFavorite,
+                    onNameBottom = onHeroNameBottom,
+                )
+            }
+            sections.forEach { section ->
+                section.title?.let { title ->
+                    item(key = "section_${section.key}") {
+                        DetailsSectionHeader(
+                            title = title,
+                            modifier = Modifier.testTag("details_section_${section.key}"),
+                        )
+                    }
+                }
+                itemsIndexed(
+                    items = section.fields,
+                    key = { _, field -> field.key },
+                ) { index, field ->
+                    DetailsFieldRow(
+                        icon = field.icon,
+                        primary = field.primary,
+                        secondary = field.secondary,
+                        actions = field.actions,
+                        onClick = field.onClick,
+                        showDivider = index < section.fields.lastIndex,
+                        modifier = field.tag?.let { Modifier.testTag(it) } ?: Modifier,
                     )
                 }
-            }
-            itemsIndexed(
-                items = section.fields,
-                key = { _, field -> field.key },
-            ) { index, field ->
-                DetailsFieldRow(
-                    icon = field.icon,
-                    primary = field.primary,
-                    secondary = field.secondary,
-                    actions = field.actions,
-                    onClick = field.onClick,
-                    showDivider = index < section.fields.lastIndex,
-                    modifier = field.tag?.let { Modifier.testTag(it) } ?: Modifier,
-                )
             }
         }
     }

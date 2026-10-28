@@ -43,6 +43,7 @@ import com.m4isper.contactsapp.domain.model.settings.ThemeMode
 import com.m4isper.contactsapp.presentation.common.account.contactAccountTitle
 import com.m4isper.contactsapp.presentation.common.account.testKey
 import com.m4isper.contactsapp.presentation.common.message
+import com.m4isper.contactsapp.ui.adaptive.ReadingColumn
 import com.m4isper.contactsapp.ui.components.ConfirmDialog
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 import dev.zacsweers.metrox.viewmodel.metroViewModel
@@ -82,144 +83,146 @@ internal fun SettingsScreen(
             )
         },
     ) { innerPadding ->
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .verticalScroll(rememberScrollState())
-                    .padding(vertical = spacing.s),
-        ) {
-            uiState.error?.let { error ->
-                Text(
-                    text = error.message(),
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(horizontal = spacing.m, vertical = spacing.s),
-                )
-            }
-            SettingsSection(title = stringResource(R.string.settings_theme)) {
-                ThemeMode.entries.forEach { mode ->
-                    SettingsOption(
-                        label = stringResource(mode.labelRes()),
-                        selected = settings.themeMode == mode,
-                        onSelect = { viewModel.onThemeModeSelected(mode) },
-                        testTag = "theme_${mode.name}",
+        // Читаемая колонка: на планшете список настроек центрирован, а не растянут на всю ширину.
+        ReadingColumn(modifier = Modifier.padding(innerPadding)) {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(vertical = spacing.s),
+            ) {
+                uiState.error?.let { error ->
+                    Text(
+                        text = error.message(),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(horizontal = spacing.m, vertical = spacing.s),
                     )
                 }
-            }
-            SettingsSection(title = stringResource(R.string.settings_sort_order)) {
-                ContactSortOrder.entries.forEach { order ->
-                    SettingsOption(
-                        label = stringResource(order.labelRes()),
-                        selected = settings.sortOrder == order,
-                        onSelect = { viewModel.onSortOrderSelected(order) },
-                        testTag = "sort_${order.name}",
-                    )
-                }
-            }
-            SettingsSection(title = stringResource(R.string.settings_list_density)) {
-                ListDensity.entries.forEach { density ->
-                    SettingsOption(
-                        label = stringResource(density.labelRes()),
-                        selected = settings.listDensity == density,
-                        onSelect = { viewModel.onListDensitySelected(density) },
-                        testTag = "density_${density.name}",
-                    )
-                }
-            }
-            SettingsSection(title = stringResource(R.string.settings_favorites)) {
-                SettingsSwitch(
-                    label = stringResource(R.string.settings_favorites_first),
-                    description = stringResource(R.string.settings_favorites_first_desc),
-                    checked = settings.favoritesFirst,
-                    onCheckedChange = viewModel::onFavoritesFirstChanged,
-                    testTag = "favorites_first_switch",
-                )
-            }
-            if (uiState.accounts.isNotEmpty()) {
-                SettingsSection(title = stringResource(R.string.settings_default_account)) {
-                    uiState.accounts.forEach { account ->
+                SettingsSection(title = stringResource(R.string.settings_theme)) {
+                    ThemeMode.entries.forEach { mode ->
                         SettingsOption(
-                            label = contactAccountTitle(account),
-                            selected = settings.defaultContactAccount == account,
-                            onSelect = { viewModel.onDefaultAccountSelected(account) },
-                            testTag = "default_account_${account.testKey()}",
+                            label = stringResource(mode.labelRes()),
+                            selected = settings.themeMode == mode,
+                            onSelect = { viewModel.onThemeModeSelected(mode) },
+                            testTag = "theme_${mode.name}",
                         )
                     }
                 }
-            }
-            SettingsSection(title = stringResource(R.string.settings_language)) {
-                APP_LANGUAGES.forEach { (tag, label) ->
-                    SettingsOption(
-                        label = label ?: stringResource(R.string.settings_language_system),
-                        selected = settings.appLanguage == tag,
-                        onSelect = {
-                            viewModel.onLanguageSelected(tag)
-                            // Язык применяется при создании Activity: окно пересоздаёт хост.
-                            onRestartRequired()
-                        },
-                        testTag = "language_${tag.ifBlank { "system" }}",
+                SettingsSection(title = stringResource(R.string.settings_sort_order)) {
+                    ContactSortOrder.entries.forEach { order ->
+                        SettingsOption(
+                            label = stringResource(order.labelRes()),
+                            selected = settings.sortOrder == order,
+                            onSelect = { viewModel.onSortOrderSelected(order) },
+                            testTag = "sort_${order.name}",
+                        )
+                    }
+                }
+                SettingsSection(title = stringResource(R.string.settings_list_density)) {
+                    ListDensity.entries.forEach { density ->
+                        SettingsOption(
+                            label = stringResource(density.labelRes()),
+                            selected = settings.listDensity == density,
+                            onSelect = { viewModel.onListDensitySelected(density) },
+                            testTag = "density_${density.name}",
+                        )
+                    }
+                }
+                SettingsSection(title = stringResource(R.string.settings_favorites)) {
+                    SettingsSwitch(
+                        label = stringResource(R.string.settings_favorites_first),
+                        description = stringResource(R.string.settings_favorites_first_desc),
+                        checked = settings.favoritesFirst,
+                        onCheckedChange = viewModel::onFavoritesFirstChanged,
+                        testTag = "favorites_first_switch",
                     )
                 }
-            }
-            SettingsSection(title = stringResource(R.string.settings_appearance)) {
-                SettingsSwitch(
-                    label = stringResource(R.string.settings_dynamic_color),
-                    description = stringResource(R.string.settings_dynamic_color_desc),
-                    checked = settings.dynamicColor,
-                    onCheckedChange = viewModel::onDynamicColorChanged,
-                    testTag = "dynamic_color_switch",
-                )
-                SettingsSwitch(
-                    label = stringResource(R.string.settings_show_photos),
-                    description = stringResource(R.string.settings_show_photos_desc),
-                    checked = settings.showPhotos,
-                    onCheckedChange = viewModel::onShowPhotosChanged,
-                    testTag = "show_photos_switch",
-                )
-            }
-            SettingsSection(title = stringResource(R.string.settings_privacy)) {
-                SettingsSwitch(
-                    label = stringResource(R.string.settings_app_lock),
-                    description = stringResource(R.string.settings_app_lock_desc),
-                    checked = settings.appLockEnabled,
-                    onCheckedChange = { enabled ->
-                        if (enabled) {
-                            showPinDialog = true
-                        } else {
-                            viewModel.onAppLockChanged(false, "")
+                if (uiState.accounts.isNotEmpty()) {
+                    SettingsSection(title = stringResource(R.string.settings_default_account)) {
+                        uiState.accounts.forEach { account ->
+                            SettingsOption(
+                                label = contactAccountTitle(account),
+                                selected = settings.defaultContactAccount == account,
+                                onSelect = { viewModel.onDefaultAccountSelected(account) },
+                                testTag = "default_account_${account.testKey()}",
+                            )
                         }
-                    },
-                    testTag = "app_lock_switch",
-                )
-                SettingsSwitch(
-                    label = stringResource(R.string.settings_secure_window),
-                    description = stringResource(R.string.settings_secure_window_desc),
-                    checked = settings.secureWindow,
-                    onCheckedChange = viewModel::onSecureWindowChanged,
-                    testTag = "secure_window_switch",
-                )
-            }
-            RemindersSection(settings = settings, viewModel = viewModel)
-            SettingsSection(title = stringResource(R.string.settings_about)) {
-                SettingsInfo(
-                    label = stringResource(R.string.settings_version, appVersion(context)),
-                    testTag = "app_version",
-                )
-                SettingsInfo(
-                    label = stringResource(R.string.settings_privacy_note),
-                    testTag = "app_privacy_note",
-                )
-            }
-            TextButton(
-                onClick = { showResetDialog = true },
-                modifier = Modifier.testTag("reset_settings_button"),
-            ) {
-                Text(
-                    text = stringResource(R.string.settings_reset),
-                    color = MaterialTheme.colorScheme.error,
-                )
+                    }
+                }
+                SettingsSection(title = stringResource(R.string.settings_language)) {
+                    APP_LANGUAGES.forEach { (tag, label) ->
+                        SettingsOption(
+                            label = label ?: stringResource(R.string.settings_language_system),
+                            selected = settings.appLanguage == tag,
+                            onSelect = {
+                                viewModel.onLanguageSelected(tag)
+                                // Язык применяется при создании Activity: окно пересоздаёт хост.
+                                onRestartRequired()
+                            },
+                            testTag = "language_${tag.ifBlank { "system" }}",
+                        )
+                    }
+                }
+                SettingsSection(title = stringResource(R.string.settings_appearance)) {
+                    SettingsSwitch(
+                        label = stringResource(R.string.settings_dynamic_color),
+                        description = stringResource(R.string.settings_dynamic_color_desc),
+                        checked = settings.dynamicColor,
+                        onCheckedChange = viewModel::onDynamicColorChanged,
+                        testTag = "dynamic_color_switch",
+                    )
+                    SettingsSwitch(
+                        label = stringResource(R.string.settings_show_photos),
+                        description = stringResource(R.string.settings_show_photos_desc),
+                        checked = settings.showPhotos,
+                        onCheckedChange = viewModel::onShowPhotosChanged,
+                        testTag = "show_photos_switch",
+                    )
+                }
+                SettingsSection(title = stringResource(R.string.settings_privacy)) {
+                    SettingsSwitch(
+                        label = stringResource(R.string.settings_app_lock),
+                        description = stringResource(R.string.settings_app_lock_desc),
+                        checked = settings.appLockEnabled,
+                        onCheckedChange = { enabled ->
+                            if (enabled) {
+                                showPinDialog = true
+                            } else {
+                                viewModel.onAppLockChanged(false, "")
+                            }
+                        },
+                        testTag = "app_lock_switch",
+                    )
+                    SettingsSwitch(
+                        label = stringResource(R.string.settings_secure_window),
+                        description = stringResource(R.string.settings_secure_window_desc),
+                        checked = settings.secureWindow,
+                        onCheckedChange = viewModel::onSecureWindowChanged,
+                        testTag = "secure_window_switch",
+                    )
+                }
+                RemindersSection(settings = settings, viewModel = viewModel)
+                SettingsSection(title = stringResource(R.string.settings_about)) {
+                    SettingsInfo(
+                        label = stringResource(R.string.settings_version, appVersion(context)),
+                        testTag = "app_version",
+                    )
+                    SettingsInfo(
+                        label = stringResource(R.string.settings_privacy_note),
+                        testTag = "app_privacy_note",
+                    )
+                }
+                TextButton(
+                    onClick = { showResetDialog = true },
+                    modifier = Modifier.testTag("reset_settings_button"),
+                ) {
+                    Text(
+                        text = stringResource(R.string.settings_reset),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
             }
         }
     }
