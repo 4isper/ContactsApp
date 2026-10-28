@@ -4,6 +4,8 @@ import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PersonSearch
 import androidx.compose.material3.Scaffold
@@ -12,6 +14,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,6 +39,7 @@ import com.m4isper.contactsapp.presentation.common.permissions.rememberWritePerm
 import com.m4isper.contactsapp.presentation.common.permissions.showWriteDeniedSnackbar
 import com.m4isper.contactsapp.presentation.common.share.contactAsText
 import com.m4isper.contactsapp.presentation.common.share.copyToClipboard
+import com.m4isper.contactsapp.presentation.common.share.openEmail
 import com.m4isper.contactsapp.presentation.common.share.openSms
 import com.m4isper.contactsapp.presentation.common.share.shareContact
 import com.m4isper.contactsapp.presentation.common.share.shareContactAsQr
@@ -87,6 +91,10 @@ fun ContactDetailsScreen(
     var pendingAction by remember { mutableStateOf<AccountAction?>(null) }
     var pendingMoveAccount by remember { mutableStateOf<ContactAccount?>(null) }
     var qrPreviewVCard by remember { mutableStateOf<String?>(null) }
+    val listState = rememberLazyListState()
+    val details = (uiState.content as? Loadable.Content)?.data
+    var heroNameBottom by remember { mutableStateOf<Float?>(null) }
+    val heroNameVisible = rememberHeroNameVisible(listState, heroNameBottom)
 
     LaunchedEffect(contactId) {
         viewModel.load(contactId)
@@ -102,11 +110,9 @@ fun ContactDetailsScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             DetailsTopBar(
-                title =
-                    (uiState.content as? Loadable.Content)?.data?.name
-                        ?: stringResource(R.string.app_name),
-                shareable = (uiState.content as? Loadable.Content)?.data,
-                isFavorite = uiState.isFavorite,
+                title = details?.name,
+                showTitle = details != null && !heroNameVisible,
+                shareable = details,
                 onBack = onBack,
                 onEdit = onEdit,
                 onShare = {
@@ -116,7 +122,7 @@ fun ContactDetailsScreen(
                 },
                 onShareAsText = {
                     scope.launch {
-                        shareDetailsAsText(context, (uiState.content as? Loadable.Content)?.data)
+                        shareDetailsAsText(context, details)
                     }
                 },
                 onShareAsQr = {
@@ -128,9 +134,6 @@ fun ContactDetailsScreen(
                     scope.launch {
                         shareOrFail(context, viewModel.vCardText()) { qrPreviewVCard = it }
                     }
-                },
-                onToggleFavorite = {
-                    writeGate.run { launchFavoriteToggle(scope, viewModel, context) }
                 },
                 onCopyToAccount = {
                     pendingAction = AccountAction.COPY
@@ -165,11 +168,18 @@ fun ContactDetailsScreen(
             is Loadable.Content ->
                 DetailsContent(
                     details = content.data,
+                    isFavorite = uiState.isFavorite,
+                    listState = listState,
                     onCallClick = { phone ->
                         pendingConfirm = CallTarget(content.data.name, phone)
                     },
                     onSmsClick = { openSms(context, it.number) },
+                    onEmailClick = { openEmail(context, it) },
                     onCopyClick = { copyToClipboard(context, it) },
+                    onToggleFavorite = {
+                        writeGate.run { launchFavoriteToggle(scope, viewModel, context) }
+                    },
+                    onHeroNameBottom = { heroNameBottom = it },
                     modifier = screenModifier,
                     groups = uiState.groups,
                 )
@@ -222,6 +232,29 @@ fun ContactDetailsScreen(
             onDismiss = { qrPreviewVCard = null },
         )
     }
+}
+
+/**
+ * Имя шапки на экране, пока его низ ниже верха списка. Сравниваем с реальным низом имени,
+ * а не с низом шапки: у короткого контакта шапка не уезжает целиком, и от неё остаётся полоса.
+ */
+@Composable
+private fun rememberHeroNameVisible(
+    listState: LazyListState,
+    nameBottom: Float?,
+): Boolean {
+    val visible by
+        remember(listState, nameBottom) {
+            derivedStateOf {
+                val info = listState.layoutInfo
+                if (info.totalItemsCount == 0) return@derivedStateOf true
+                val bottom = nameBottom ?: return@derivedStateOf true
+                // Нет шапки среди видимых — она уехала целиком, имя уже не на экране.
+                val hero = info.visibleItemsInfo.firstOrNull { it.index == 0 } ?: return@derivedStateOf false
+                hero.offset + bottom > info.viewportStartOffset
+            }
+        }
+    return visible
 }
 
 /** Переключает избранное и обновляет виджет только после успешной записи. */

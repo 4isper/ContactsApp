@@ -96,6 +96,9 @@
     <string name="details_field_organization">Организация</string>
     <string name="details_field_note">Заметка</string>
     <string name="details_field_birthday">День рождения</string>
+    <string name="details_section_email_messaging">Почта и сообщения</string>
+    <string name="details_section_address_web">Адреса и сайты</string>
+    <string name="details_section_dates">Даты</string>
     <string name="details_copy_to_account">Копировать в другой аккаунт</string>
     <string name="details_move_to_account">Перенести в другой аккаунт</string>
     <string name="details_copy_done">Контакт скопирован</string>

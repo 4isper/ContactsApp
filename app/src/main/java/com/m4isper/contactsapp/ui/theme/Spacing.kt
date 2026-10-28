@@ -15,6 +15,8 @@ data class Spacing(
     val xxl: Dp = 32.dp,
     val avatarList: Dp = 48.dp,
     val avatarDetails: Dp = 72.dp,
+    /** Аватар в шапке карточки: крупнее строки списка, но не доминирует над именем. */
+    val avatarHero: Dp = 104.dp,
     /** Отступ снизу списка, чтобы FAB не перекрывал последний элемент. */
     val fabClearance: Dp = 80.dp,
 )

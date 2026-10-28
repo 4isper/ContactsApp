@@ -125,12 +125,12 @@ fun DetailsAvatar(
     name: String,
     photoUri: String?,
     modifier: Modifier = Modifier,
+    size: Dp = LocalSpacing.current.avatarDetails,
 ) {
-    val spacing = LocalSpacing.current
     ContactAvatar(
         name = name,
         photoUri = photoUri,
-        size = spacing.avatarDetails,
+        size = size,
         textStyle = MaterialTheme.typography.headlineMedium,
         modifier = modifier,
     )

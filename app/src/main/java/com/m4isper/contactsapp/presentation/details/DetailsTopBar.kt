@@ -1,11 +1,8 @@
 package com.m4isper.contactsapp.presentation.details
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.DropdownMenu
@@ -13,7 +10,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -27,43 +23,34 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.contact.ContactDetails
-import com.m4isper.contactsapp.ui.theme.AppMotion
 
+/** Топ-бар карточки: имя появляется только после того, как шапка ушла под скролл. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun DetailsTopBar(
     title: String?,
+    showTitle: Boolean,
     shareable: ContactDetails?,
-    isFavorite: Boolean,
     onBack: () -> Unit,
     onEdit: () -> Unit,
     onShare: () -> Unit,
     onShareAsText: () -> Unit,
     onShareAsQr: () -> Unit,
     onShowQr: () -> Unit,
-    onToggleFavorite: () -> Unit,
     onCopyToAccount: () -> Unit,
     onMoveToAccount: () -> Unit,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
-    val favoriteTint by
-        animateColorAsState(
-            targetValue =
-                if (isFavorite) {
-                    MaterialTheme.colorScheme.tertiary
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
-            animationSpec = AppMotion.effects(),
-            label = "favoriteTint",
-        )
     TopAppBar(
         title = {
-            Text(
-                text = title ?: stringResource(R.string.action_back),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            if (showTitle && title != null) {
+                Text(
+                    text = title,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.testTag("details_title"),
+                )
+            }
         },
         navigationIcon = {
             IconButton(
@@ -79,42 +66,6 @@ internal fun DetailsTopBar(
         actions = {
             if (shareable != null) {
                 IconButton(
-                    onClick = onEdit,
-                    modifier = Modifier.testTag("edit_button"),
-                ) {
-                    Icon(
-                        Icons.Filled.Edit,
-                        contentDescription = stringResource(R.string.action_edit),
-                    )
-                }
-                IconButton(
-                    onClick = onToggleFavorite,
-                    modifier = Modifier.testTag("favorite_button"),
-                ) {
-                    Icon(
-                        if (isFavorite) {
-                            Icons.Filled.Favorite
-                        } else {
-                            Icons.Filled.FavoriteBorder
-                        },
-                        contentDescription =
-                            stringResource(
-                                if (isFavorite) {
-                                    R.string.action_remove_favorite
-                                } else {
-                                    R.string.action_add_favorite
-                                },
-                            ),
-                        tint = favoriteTint,
-                    )
-                }
-                IconButton(onClick = onShare) {
-                    Icon(
-                        Icons.Filled.Share,
-                        contentDescription = stringResource(R.string.share_contact),
-                    )
-                }
-                IconButton(
                     onClick = { menuExpanded = true },
                     modifier = Modifier.testTag("details_more_button"),
                 ) {
@@ -127,6 +78,24 @@ internal fun DetailsTopBar(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false },
                 ) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.action_edit)) },
+                        leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
+                        onClick = {
+                            menuExpanded = false
+                            onEdit()
+                        },
+                        modifier = Modifier.testTag("edit_menu_item"),
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.share_contact)) },
+                        leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
+                        onClick = {
+                            menuExpanded = false
+                            onShare()
+                        },
+                        modifier = Modifier.testTag("share_menu_item"),
+                    )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.share_contact_text)) },
                         onClick = {
