@@ -55,7 +55,7 @@ The home screen is a `Column` with a permanently visible outlined search field, 
 
 ## Status
 
-Done in code and automated checks; the visual and TalkBack walk is still manual.
+Done; the 320 dp / 2.0 font-scale check is verified, wider-width screenshots and TalkBack remain manual.
 
 ### What was implemented
 
@@ -79,4 +79,5 @@ Done in code and automated checks; the visual and TalkBack walk is still manual.
 - New instrumented tests: `searchModeClosesBeforeLeavingTheScreen` in `ContactListUiTest` and `HomeNavigationRailTest`; both pass on the emulator.
 - The full instrumented suite passes on the `Pixel_10_Pro_Fold` AVD (API 37): `:app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.notClass=com.m4isper.contactsapp.data.LargeListPerformanceTest` → 127 tests in 23 classes, 0 failures. The perf test is excluded because it is gated behind `contacts.perf=true` and would report an assumption violation as a failure. The emulator must run with a window: headless mode leaves the test window unfocused and `Espresso.closeSoftKeyboard()` fails across `ContactEditorUiTest`.
 - `:app:lintDebug` was red on `HEAD` before this issue: the Glance widget read strings through `LocalContext` inside composition. Fixed separately in `aadf6f7` by resolving the strings in `provideGlance`.
-- Still manual: compact/medium/expanded screenshots, the 320 dp / 2.0 font-scale check, and TalkBack over the app bar, search expansion, and rail.
+- Manual 320 dp / 2.0 font-scale check on the `Pixel_10_Pro_Fold` AVD (`wm size 720x1560`, `wm density 360` → 320 dp; `font_scale 2.0`): the top bar keeps the brand, Settings, and overflow with no clipping or overlap; the overflow opens with all six items readable; search mode replaces the bar with the field and its back arrow without clipping; the first Back dismisses the IME and the second closes search, restoring the bar; the filter chips wrap to three rows and stay visible. Captured locally, not committed.
+- Still manual: medium/expanded screenshots and TalkBack over the app bar, search expansion, and rail.
