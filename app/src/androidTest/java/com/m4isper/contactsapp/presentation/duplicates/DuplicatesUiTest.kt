@@ -4,10 +4,13 @@ import android.Manifest
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.m4isper.contactsapp.FakeAndroidRepository
+import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.usecase.contacts.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.contacts.MergeContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.contacts.UnmergeContactsUseCase
@@ -61,6 +64,30 @@ class DuplicatesUiTest {
         compose.onNodeWithTag("duplicate_group_7").assertIsDisplayed()
         compose.onNodeWithTag("duplicate_member_7").assertIsDisplayed()
         compose.onNodeWithTag("duplicate_member_8").assertIsDisplayed()
+    }
+
+    @Test
+    fun emptyStateExplainsDuplicatesAndReturnsToContacts() {
+        val viewModel = viewModel(FakeAndroidRepository(listOf(testDetails(1, "Anna", "111"))))
+        val backPressed =
+            java.util.concurrent.atomic
+                .AtomicBoolean(false)
+        compose.setContent {
+            DuplicatesScreen(
+                onBack = { backPressed.set(true) },
+                viewModel = viewModel,
+            )
+        }
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.content is Loadable.Empty
+        }
+
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        compose.onNodeWithText(context.getString(R.string.duplicates_empty)).assertIsDisplayed()
+        compose.onNodeWithText(context.getString(R.string.duplicates_empty_desc)).assertIsDisplayed()
+        compose.onNodeWithText(context.getString(R.string.action_browse_contacts)).performClick()
+
+        assertEquals(true, backPressed.get())
     }
 
     @Test

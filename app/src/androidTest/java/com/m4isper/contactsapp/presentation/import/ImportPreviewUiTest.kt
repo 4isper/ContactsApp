@@ -77,6 +77,29 @@ class ImportPreviewUiTest {
     }
 
     @Test
+    fun showsProgressWhileContactsAreCreated() {
+        val repository = FakeAndroidRepository().apply { createDelayMillis = 1_000 }
+        val codec = FakeVCardCodec(forms = listOf(form("Anna")))
+        val viewModel = viewModel(repository, codec)
+        compose.setContent {
+            ImportPreviewScreen(onBack = {}, onDone = {}, viewModel = viewModel)
+        }
+
+        viewModel.prepare("file")
+        compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.entries.size == 1 }
+
+        compose.onNodeWithTag("import_confirm_button").performClick()
+        compose.onNodeWithTag("import_progress").assertIsDisplayed()
+        compose.onNodeWithTag("import_decision_skip_0").assertIsNotEnabled()
+
+        compose.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.outcome != null }
+        compose.onNodeWithTag("import_progress").assertDoesNotExist()
+        // Итог на экране сразу, даже если в файле сотни контактов.
+        compose.onNodeWithTag("import_result_card").assertIsDisplayed()
+        compose.onNodeWithTag("import_preview_list").assertDoesNotExist()
+    }
+
+    @Test
     fun skippedContactIsNotCreated() {
         val repository = FakeAndroidRepository()
         val codec = FakeVCardCodec(forms = listOf(form("Anna"), form("Bob")))

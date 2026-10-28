@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
@@ -15,6 +16,7 @@ import com.m4isper.contactsapp.domain.usecase.contacts.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.contacts.ToggleFavoriteUseCase
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.testDetails
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -65,12 +67,15 @@ class RecentsUiTest {
     }
 
     @Test
-    fun showsEmptyStateWithoutRecentContacts() {
+    fun emptyStateExplainsRecentsAndReturnsToContacts() {
         val viewModel = viewModel(FakeAndroidRepository(listOf(testDetails(1, "Anna", "111"))))
+        val backPressed =
+            java.util.concurrent.atomic
+                .AtomicBoolean(false)
 
         compose.setContent {
             RecentsScreen(
-                onBack = {},
+                onBack = { backPressed.set(true) },
                 onContactClick = {},
                 viewModel = viewModel,
             )
@@ -80,11 +85,11 @@ class RecentsUiTest {
             viewModel.uiState.value.content is Loadable.Empty
         }
 
-        val emptyText =
-            InstrumentationRegistry
-                .getInstrumentation()
-                .targetContext
-                .getString(R.string.recents_empty)
-        compose.onNodeWithText(emptyText).assertIsDisplayed()
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        compose.onNodeWithText(context.getString(R.string.recents_empty)).assertIsDisplayed()
+        compose.onNodeWithText(context.getString(R.string.recents_empty_desc)).assertIsDisplayed()
+        compose.onNodeWithText(context.getString(R.string.action_browse_contacts)).performClick()
+
+        assertEquals(true, backPressed.get())
     }
 }

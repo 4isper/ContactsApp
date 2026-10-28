@@ -98,6 +98,9 @@ internal class FakeAndroidRepository(
     private val favoritesFlow = MutableStateFlow(initialFavorites)
     val created = mutableListOf<ContactForm>()
     val createdAccounts = mutableListOf<ContactAccount>()
+
+    /** Задержка записи: тесты успевают увидеть промежуточное состояние импорта. */
+    var createDelayMillis: Long = 0
     var accounts: List<ContactAccount> = listOf(ContactAccount.Local)
     val updated = mutableListOf<Pair<Long, ContactForm>>()
     val deleted = mutableListOf<Long>()
@@ -144,6 +147,7 @@ internal class FakeAndroidRepository(
         account: ContactAccount,
     ): Long {
         failure?.let { throw it }
+        if (createDelayMillis > 0) kotlinx.coroutines.delay(createDelayMillis)
         created += form
         createdAccounts += account
         return created.size.toLong()
