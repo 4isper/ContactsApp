@@ -1,5 +1,9 @@
 package com.m4isper.contactsapp.presentation.details
 
+import android.Manifest
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
@@ -9,8 +13,11 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToKey
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.rule.GrantPermissionRule
 import com.m4isper.contactsapp.FakeAndroidRepository
 import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.FakeVCardCodec
@@ -20,6 +27,8 @@ import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 import com.m4isper.contactsapp.domain.model.contact.ContactEvent
 import com.m4isper.contactsapp.domain.model.contact.ContactGroup
 import com.m4isper.contactsapp.domain.model.contact.ContactRelation
+import com.m4isper.contactsapp.domain.model.contact.EmailAddress
+import com.m4isper.contactsapp.domain.model.contact.EmailKind
 import com.m4isper.contactsapp.domain.model.contact.EventKind
 import com.m4isper.contactsapp.domain.model.contact.ImProtocol
 import com.m4isper.contactsapp.domain.model.contact.InstantMessage
@@ -53,6 +62,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 class ContactDetailsUiTest {
     @get:Rule
     val compose = createComposeRule()
+
+    // Переключение избранного идёт через гейт права на запись.
+    @get:Rule
+    val permission: GrantPermissionRule = GrantPermissionRule.grant(Manifest.permission.WRITE_CONTACTS)
 
     private fun viewModel(
         repository: FakeAndroidRepository,
@@ -89,10 +102,117 @@ class ContactDetailsUiTest {
         }
         awaitContent(viewModel)
 
-        // Имя дублируется в топ-баре и шапке — проверяем оба узла.
-        compose.onAllNodesWithText("Anna").assertCountEquals(2)
+        // Пока шапка видна, имя живёт только в ней; топ-бар подхватит его после скролла.
+        compose.onAllNodesWithText("Anna").assertCountEquals(1)
         compose.onNodeWithText("111").assertIsDisplayed()
         compose.onNodeWithText("112").assertIsDisplayed()
+    }
+
+    @Test
+    fun titleAppearsInTheBarOnlyAfterTheHeroScrollsAway() {
+        // Контент должен быть выше шапки, иначе карточку нельзя прокрутить до конца.
+        val details =
+            testDetails(
+                7,
+                "Anna",
+                "111",
+                "112",
+                emails = listOf(EmailAddress("anna@example.com", EmailKind.HOME)),
+                relations = listOf(ContactRelation(name = "Bob", kind = RelationKind.FRIEND)),
+            ).copy(
+                addresses = listOf(PostalAddress(address = "Lenina 1", kind = AddressKind.HOME)),
+                websites = listOf(Website("https://blog.example", WebsiteKind.BLOG)),
+                note = "Заметка, которая уводит шапку за пределы экрана.",
+            )
+        val viewModel = viewModel(FakeAndroidRepository(listOf(details)))
+        compose.setContent {
+            Box(modifier = Modifier.height(240.dp)) {
+                ContactDetailsScreen(contactId = 7, onBack = {}, onEdit = {}, viewModel = viewModel)
+            }
+        }
+        awaitContent(viewModel)
+
+        compose.onNodeWithTag("details_title").assertDoesNotExist()
+        compose.onNodeWithTag("details_list").performScrollToNode(hasTestTag("note_row"))
+
+        compose.onNodeWithTag("details_title").assertIsDisplayed()
+        compose.onAllNodesWithText("Anna").assertCountEquals(1)
+    }
+
+    @Test
+    fun titleAppearsEvenWhenTheListCannotScrollTheHeroAway() {
+        // У короткого контакта шапка не уезжает целиком: имя должно перейти в топ-бар,
+        // а не оставить экран с полосой без имени.
+        val viewModel = viewModel(FakeAndroidRepository(listOf(testDetails(7, "Anna", "111"))))
+        compose.setContent {
+            Box(modifier = Modifier.height(240.dp)) {
+                ContactDetailsScreen(contactId = 7, onBack = {}, onEdit = {}, viewModel = viewModel)
+            }
+        }
+        awaitContent(viewModel)
+
+        compose.onNodeWithTag("details_title").assertDoesNotExist()
+        compose.onNodeWithTag("details_list").performScrollToKey("phone_111")
+
+        compose.onNodeWithTag("details_title").assertIsDisplayed()
+    }
+
+    @Test
+    fun heroOffersCallSmsEmailAndFavorite() {
+        val details =
+            testDetails(
+                7,
+                "Anna",
+                "111",
+                emails = listOf(EmailAddress("anna@example.com", EmailKind.HOME)),
+            )
+        val viewModel = viewModel(FakeAndroidRepository(listOf(details)))
+        compose.setContent {
+            ContactDetailsScreen(contactId = 7, onBack = {}, onEdit = {}, viewModel = viewModel)
+        }
+        awaitContent(viewModel)
+
+        compose.onNodeWithTag("hero_call").assertIsDisplayed()
+        compose.onNodeWithTag("hero_sms").assertIsDisplayed()
+        compose.onNodeWithTag("hero_email").assertIsDisplayed()
+        compose.onNodeWithTag("favorite_button").assertIsDisplayed()
+    }
+
+    @Test
+    fun groupsFieldsIntoSections() {
+        val address =
+            PostalAddress(
+                address = "",
+                kind = AddressKind.HOME,
+                street = "Lenina 1",
+                city = "Moscow",
+            )
+        val details =
+            testDetails(
+                7,
+                "Anna",
+                "111",
+                emails = listOf(EmailAddress("anna@example.com", EmailKind.HOME)),
+                birthday = Birthday(day = 1, month = 6, year = 2000),
+            ).copy(
+                addresses = listOf(address),
+                note = "Call after 6",
+            )
+        val viewModel = viewModel(FakeAndroidRepository(listOf(details)))
+        compose.setContent {
+            ContactDetailsScreen(contactId = 7, onBack = {}, onEdit = {}, viewModel = viewModel)
+        }
+        awaitContent(viewModel)
+
+        compose.onNodeWithTag("details_section_phones").assertIsDisplayed()
+        compose.onNodeWithTag("details_list").performScrollToNode(hasTestTag("details_section_email"))
+        compose.onNodeWithTag("details_section_email").assertIsDisplayed()
+        compose.onNodeWithTag("details_list").performScrollToNode(hasTestTag("details_section_addresses"))
+        compose.onNodeWithTag("details_section_addresses").assertIsDisplayed()
+        compose.onNodeWithTag("details_list").performScrollToNode(hasTestTag("details_section_dates"))
+        compose.onNodeWithTag("details_section_dates").assertIsDisplayed()
+        compose.onNodeWithTag("details_list").performScrollToNode(hasTestTag("details_section_note"))
+        compose.onNodeWithTag("details_section_note").assertIsDisplayed()
     }
 
     @Test
@@ -289,7 +409,7 @@ class ContactDetailsUiTest {
     }
 
     @Test
-    fun editButtonReportsOnEdit() {
+    fun editIsReachableFromTheOverflow() {
         val edited = AtomicBoolean(false)
         val viewModel = viewModel(FakeAndroidRepository(listOf(testDetails(7, "Anna", "111"))))
         compose.setContent {
@@ -302,7 +422,8 @@ class ContactDetailsUiTest {
         }
         awaitContent(viewModel)
 
-        compose.onNodeWithTag("edit_button").performClick()
+        compose.onNodeWithTag("details_more_button").performClick()
+        compose.onNodeWithTag("edit_menu_item").performClick()
 
         assertEquals(true, edited.get())
     }
