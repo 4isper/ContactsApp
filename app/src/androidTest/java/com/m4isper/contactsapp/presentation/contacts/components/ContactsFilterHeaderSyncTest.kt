@@ -32,11 +32,12 @@ class ContactsFilterHeaderSyncTest {
             ContactsAppTheme(dynamicColor = false) {
                 FilterHeader(
                     searchQuery = "",
+                    isSearchMode = false,
                     showFavoritesOnly = false,
                     onSearchQueryChange = {},
+                    onSearchExpandedChange = {},
+                    onSearchClose = {},
                     onFavoritesOnlyChange = {},
-                    onImportClick = {},
-                    onExportClick = {},
                     accounts = listOf(ContactAccount.Local, google),
                     selectedAccount = selectedAccount,
                     accountSyncInfos = syncInfos,

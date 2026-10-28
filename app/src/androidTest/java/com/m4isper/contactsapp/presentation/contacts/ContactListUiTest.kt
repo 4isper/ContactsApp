@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.m4isper.contactsapp.FakeAndroidRepository
@@ -252,6 +253,46 @@ class ContactListUiTest {
         }
         compose.onNodeWithTag("contact_row_1").assertIsDisplayed()
         compose.onNodeWithTag("contact_row_2").assertDoesNotExist()
+    }
+
+    @Test
+    fun searchModeClosesBeforeLeavingTheScreen() {
+        val viewModel = viewModel(FakeAndroidRepository(listOf(anna, bob)))
+        compose.setContent {
+            val uiState by viewModel.uiState.collectAsState()
+            ContactList(
+                uiState = uiState,
+                onAction = { action ->
+                    when (action) {
+                        ContactsListAction.SearchOpened -> viewModel.filters.onSearchActivated()
+                        ContactsListAction.SearchClosed -> viewModel.filters.onSearchClosed()
+                        is ContactsListAction.SearchQueryChanged ->
+                            viewModel.filters.onSearchQueryChange(action.query)
+                        else -> Unit
+                    }
+                },
+            )
+        }
+        viewModel.refresh()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.content is Loadable.Content
+        }
+
+        compose.onNodeWithTag("search_field").performTextInput("An")
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.isSearchMode
+        }
+        compose.onNodeWithTag("home_top_bar").assertDoesNotExist()
+
+        Espresso.closeSoftKeyboard()
+        compose.waitForIdle()
+        Espresso.pressBack()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            !viewModel.uiState.value.isSearchMode
+        }
+        compose.onNodeWithTag("home_top_bar").assertIsDisplayed()
+        assertEquals("An", viewModel.uiState.value.searchQuery)
     }
 
     @Test
@@ -577,9 +618,8 @@ class ContactListUiTest {
     }
 
     @Test
-    fun moreMenuShowsImportAndExport() {
+    fun appBarShowsSettingsAndNavigationMenu() {
         compose.setContent {
-            val scope = rememberCoroutineScope()
             ContactList(
                 uiState = ContactsUiState(content = Loadable.Content(listOf(anna))),
                 onAction = { action ->
@@ -588,13 +628,14 @@ class ContactListUiTest {
             )
         }
 
+        compose.onNodeWithTag("settings_action").assertIsDisplayed()
         compose.onNodeWithTag("more_actions_button").performClick()
 
         compose.onNodeWithTag("recents_menu_item").assertIsDisplayed()
+        compose.onNodeWithTag("groups_menu_item").assertIsDisplayed()
         compose.onNodeWithTag("import_menu_item").assertIsDisplayed()
         compose.onNodeWithTag("export_menu_item").assertIsDisplayed()
         compose.onNodeWithTag("duplicates_menu_item").assertIsDisplayed()
-        compose.onNodeWithTag("settings_menu_item").assertIsDisplayed()
     }
 
     @Test

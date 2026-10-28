@@ -1,6 +1,7 @@
 package com.m4isper.contactsapp.presentation.contacts.components
 
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -67,6 +68,8 @@ internal fun ContactList(
     val ctx = LocalContext.current
     // Листья получают свои лямбды, а контракт экрана остаётся один.
     val onSearchQueryChange: (String) -> Unit = { onAction(ContactsListAction.SearchQueryChanged(it)) }
+    val onSearchOpened: () -> Unit = { onAction(ContactsListAction.SearchOpened) }
+    val onSearchClosed: () -> Unit = { onAction(ContactsListAction.SearchClosed) }
     val onFavoritesOnlyChange: () -> Unit = { onAction(ContactsListAction.FavoritesOnlyToggled) }
     val onClearSearch: () -> Unit = { onSearchQueryChange("") }
     val onContactClick: (Long) -> Unit = { onAction(ContactsNavigationAction.ContactClicked(it)) }
@@ -156,6 +159,11 @@ internal fun ContactList(
         if (!uiState.isSelectionMode) showGroupPicker = false
     }
 
+    // Назад из поиска закрывает поиск, а не экран; выделение важнее, если они совпали.
+    BackHandler(enabled = uiState.isSearchMode && !uiState.isSelectionMode) {
+        onSearchClosed()
+    }
+
     DeleteUndoEffect(
         snackbarHostState = snackbarHostState,
         pendingDeleteIds = uiState.pendingDeleteIds,
@@ -178,23 +186,30 @@ internal fun ContactList(
             )
         },
         topBar = {
-            if (uiState.isSelectionMode) {
-                SelectionTopBar(
-                    count = uiState.selection.size,
-                    allSelected = allSelected,
-                    allFavorite = allFavorite,
-                    onClose = onClearSelection,
-                    onSelectAll = { onSelectAll(visibleIds) },
-                    onToggleFavorite = onToggleFavoriteSelected,
-                    onAddToGroup = {
-                        pendingGroupIds = emptySet()
-                        showGroupPicker = true
-                    },
-                    onShare = onShareSelected,
-                    onExport = { vCardLaunchers.startExportSelection() },
-                    onDelete = { showDeleteDialog = true },
-                )
-            }
+            ContactListTopBar(
+                uiState = uiState,
+                allSelected = allSelected,
+                allFavorite = allFavorite,
+                visibleIds = visibleIds,
+                profileContactId = profileContactId,
+                onClearSelection = onClearSelection,
+                onSelectAll = onSelectAll,
+                onToggleFavoriteSelected = onToggleFavoriteSelected,
+                onAddToGroup = {
+                    pendingGroupIds = emptySet()
+                    showGroupPicker = true
+                },
+                onShare = onShareSelected,
+                onExportSelection = { vCardLaunchers.startExportSelection() },
+                onDelete = { showDeleteDialog = true },
+                onSettingsClick = onSettingsClick,
+                onRecentsClick = onRecentsClick,
+                onDuplicatesClick = onDuplicatesClick,
+                onGroupsClick = onManageGroupsClick,
+                onImportClick = { vCardLaunchers.startImport(ctx) },
+                onExportClick = { vCardLaunchers.startExport() },
+                onProfileClick = onProfileClick,
+            )
         },
         floatingActionButton = {
             if (!uiState.isSelectionMode) {
@@ -219,13 +234,12 @@ internal fun ContactList(
             if (!uiState.isSelectionMode) {
                 FilterHeader(
                     searchQuery = uiState.searchQuery,
+                    isSearchMode = uiState.isSearchMode,
                     showFavoritesOnly = uiState.showFavoritesOnly,
                     onSearchQueryChange = onSearchQueryChange,
+                    onSearchExpandedChange = { onSearchOpened() },
+                    onSearchClose = onSearchClosed,
                     onFavoritesOnlyChange = onFavoritesOnlyChange,
-                    onImportClick = { vCardLaunchers.startImport(ctx) },
-                    onExportClick = { vCardLaunchers.startExport() },
-                    profileContactId = profileContactId,
-                    onProfileClick = { profileContactId?.let { onProfileClick(it) } },
                     groups = groups,
                     selectedGroupId = uiState.selectedGroupId,
                     onGroupSelected = onGroupSelected,
@@ -236,10 +250,6 @@ internal fun ContactList(
                     onRetrySync = onRetrySync,
                     onCreateGroup = onCreateGroup,
                     onManageGroupsClick = onManageGroupsClick,
-                    onDuplicatesClick = onDuplicatesClick,
-                    onRecentsClick = onRecentsClick,
-                    onSettingsClick = onSettingsClick,
-                    onSelectAllClick = { onSelectAll(visibleIds) },
                 )
             }
             ContactListBody(
@@ -292,6 +302,58 @@ internal fun ContactList(
         },
         onDismissGroups = { showGroupPicker = false },
     )
+}
+
+/** Верхняя панель списка: выделение, обычный режим или поиск без панели. */
+@Composable
+private fun ContactListTopBar(
+    uiState: ContactsUiState,
+    allSelected: Boolean,
+    allFavorite: Boolean,
+    visibleIds: List<Long>,
+    profileContactId: Long?,
+    onClearSelection: () -> Unit,
+    onSelectAll: (List<Long>) -> Unit,
+    onToggleFavoriteSelected: () -> Unit,
+    onAddToGroup: () -> Unit,
+    onShare: () -> Unit,
+    onExportSelection: () -> Unit,
+    onDelete: () -> Unit,
+    onSettingsClick: () -> Unit,
+    onRecentsClick: () -> Unit,
+    onDuplicatesClick: () -> Unit,
+    onGroupsClick: () -> Unit,
+    onImportClick: () -> Unit,
+    onExportClick: () -> Unit,
+    onProfileClick: (Long) -> Unit,
+) {
+    when {
+        uiState.isSelectionMode ->
+            SelectionTopBar(
+                count = uiState.selection.size,
+                allSelected = allSelected,
+                allFavorite = allFavorite,
+                onClose = onClearSelection,
+                onSelectAll = { onSelectAll(visibleIds) },
+                onToggleFavorite = onToggleFavoriteSelected,
+                onAddToGroup = onAddToGroup,
+                onShare = onShare,
+                onExport = onExportSelection,
+                onDelete = onDelete,
+            )
+        !uiState.isSearchMode ->
+            HomeTopBar(
+                onSettingsClick = onSettingsClick,
+                onRecentsClick = onRecentsClick,
+                onDuplicatesClick = onDuplicatesClick,
+                onGroupsClick = onGroupsClick,
+                onImportClick = onImportClick,
+                onExportClick = onExportClick,
+                onSelectAllClick = { onSelectAll(visibleIds) },
+                profileContactId = profileContactId,
+                onProfileClick = { profileContactId?.let(onProfileClick) },
+            )
+    }
 }
 
 @Composable

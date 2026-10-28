@@ -1,14 +1,13 @@
 package com.m4isper.contactsapp.presentation.contacts.components
 
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.AccountCircle
@@ -17,12 +16,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Merge
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
@@ -52,20 +46,18 @@ import com.m4isper.contactsapp.domain.model.contact.ContactGroup
 import com.m4isper.contactsapp.presentation.common.account.contactAccountLabel
 import com.m4isper.contactsapp.presentation.common.account.contactAccountTitle
 import com.m4isper.contactsapp.presentation.common.groups.GroupNameDialog
-import com.m4isper.contactsapp.ui.components.SearchField
-import com.m4isper.contactsapp.ui.theme.BrandIcon
-import com.m4isper.contactsapp.ui.theme.BrandIcons
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 import com.m4isper.contactsapp.ui.theme.PillShape
 
 @Composable
 internal fun FilterHeader(
     searchQuery: String,
+    isSearchMode: Boolean,
     showFavoritesOnly: Boolean,
     onSearchQueryChange: (String) -> Unit,
+    onSearchExpandedChange: (Boolean) -> Unit,
+    onSearchClose: () -> Unit,
     onFavoritesOnlyChange: () -> Unit,
-    onImportClick: () -> Unit,
-    onExportClick: () -> Unit,
     modifier: Modifier = Modifier,
     groups: List<ContactGroup> = emptyList(),
     selectedGroupId: Long? = null,
@@ -75,202 +67,75 @@ internal fun FilterHeader(
     onAccountSelected: (ContactAccount?) -> Unit = {},
     onCreateGroup: (String) -> Unit = {},
     onManageGroupsClick: () -> Unit = {},
-    onDuplicatesClick: () -> Unit = {},
-    onRecentsClick: () -> Unit = {},
-    onSettingsClick: () -> Unit = {},
-    profileContactId: Long? = null,
-    onProfileClick: () -> Unit = {},
     accountSyncInfos: List<AccountSyncInfo> = emptyList(),
     onRetrySync: () -> Unit = {},
-    onSelectAllClick: () -> Unit = {},
 ) {
     val spacing = LocalSpacing.current
-    var menuOpen by remember { mutableStateOf(false) }
     var groupsMenuOpen by remember { mutableStateOf(false) }
     var showNewGroupDialog by remember { mutableStateOf(false) }
     val selectedGroup = groups.firstOrNull { it.id == selectedGroupId }
     Column(modifier = modifier.fillMaxWidth()) {
-        SearchField(
-            value = searchQuery,
-            onValueChange = onSearchQueryChange,
+        ContactsSearchField(
+            query = searchQuery,
+            expanded = isSearchMode,
+            onQueryChange = onSearchQueryChange,
+            onExpandedChange = onSearchExpandedChange,
+            onClose = onSearchClose,
         )
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Row(
+        FlowRow(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = spacing.m),
+            horizontalArrangement = Arrangement.spacedBy(spacing.m),
+            verticalArrangement = Arrangement.spacedBy(spacing.xs),
+        ) {
+            FilterChip(
+                selected = showFavoritesOnly,
+                onClick = onFavoritesOnlyChange,
+                shape = PillShape,
+                label = { Text(stringResource(R.string.filter_favorites)) },
+                leadingIcon =
+                    if (showFavoritesOnly) {
+                        {
+                            Icon(
+                                Icons.Filled.Favorite,
+                                contentDescription = null,
+                            )
+                        }
+                    } else {
+                        null
+                    },
                 modifier =
                     Modifier
-                        .weight(1f)
-                        .horizontalScroll(rememberScrollState()),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                FilterChip(
-                    selected = showFavoritesOnly,
-                    onClick = onFavoritesOnlyChange,
-                    shape = PillShape,
-                    label = { Text(stringResource(R.string.filter_favorites)) },
-                    leadingIcon =
-                        if (showFavoritesOnly) {
-                            {
-                                Icon(
-                                    Icons.Filled.Favorite,
-                                    contentDescription = null,
-                                )
-                            }
-                        } else {
-                            null
-                        },
+                        .padding(vertical = spacing.xs)
+                        .testTag("favorites_chip"),
+            )
+            GroupsFilterChip(
+                groups = groups,
+                selectedGroup = selectedGroup,
+                expanded = groupsMenuOpen,
+                onExpandedChange = { groupsMenuOpen = it },
+                onGroupSelected = onGroupSelected,
+                onCreateGroupClick = { showNewGroupDialog = true },
+                onManageGroupsClick = onManageGroupsClick,
+                modifier =
+                    Modifier
+                        .padding(vertical = spacing.xs)
+                        .testTag("groups_chip"),
+            )
+            if (accounts.isNotEmpty()) {
+                AccountFilterChip(
+                    accounts = accounts,
+                    selectedAccount = selectedAccount,
+                    onAccountSelected = onAccountSelected,
+                    accountSyncInfos = accountSyncInfos,
+                    onRetrySync = onRetrySync,
                     modifier =
                         Modifier
-                            .padding(horizontal = spacing.m, vertical = spacing.xs)
-                            .testTag("favorites_chip"),
+                            .padding(vertical = spacing.xs)
+                            .testTag("account_chip"),
                 )
-                GroupsFilterChip(
-                    groups = groups,
-                    selectedGroup = selectedGroup,
-                    expanded = groupsMenuOpen,
-                    onExpandedChange = { groupsMenuOpen = it },
-                    onGroupSelected = onGroupSelected,
-                    onCreateGroupClick = { showNewGroupDialog = true },
-                    onManageGroupsClick = onManageGroupsClick,
-                    modifier =
-                        Modifier
-                            .padding(top = spacing.xs, end = spacing.m, bottom = spacing.xs)
-                            .testTag("groups_chip"),
-                )
-                if (accounts.isNotEmpty()) {
-                    AccountFilterChip(
-                        accounts = accounts,
-                        selectedAccount = selectedAccount,
-                        onAccountSelected = onAccountSelected,
-                        accountSyncInfos = accountSyncInfos,
-                        onRetrySync = onRetrySync,
-                        modifier =
-                            Modifier
-                                .padding(top = spacing.xs, end = spacing.m, bottom = spacing.xs)
-                                .testTag("account_chip"),
-                    )
-                }
-            }
-            Box {
-                IconButton(
-                    onClick = { menuOpen = true },
-                    modifier = Modifier.testTag("more_actions_button"),
-                ) {
-                    Icon(
-                        Icons.Filled.MoreVert,
-                        contentDescription = stringResource(R.string.action_more),
-                    )
-                }
-                DropdownMenu(
-                    expanded = menuOpen,
-                    onDismissRequest = { menuOpen = false },
-                ) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.action_select_all)) },
-                        onClick = {
-                            menuOpen = false
-                            onSelectAllClick()
-                        },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Filled.SelectAll,
-                                contentDescription = null,
-                            )
-                        },
-                        modifier = Modifier.testTag("select_all_menu_item"),
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.recents_title)) },
-                        onClick = {
-                            menuOpen = false
-                            onRecentsClick()
-                        },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Filled.History,
-                                contentDescription = null,
-                            )
-                        },
-                        modifier = Modifier.testTag("recents_menu_item"),
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.action_import)) },
-                        onClick = {
-                            menuOpen = false
-                            onImportClick()
-                        },
-                        leadingIcon = {
-                            BrandIcon(
-                                imageVector = BrandIcons.ImportExport,
-                                contentDescription = null,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(20.dp),
-                            )
-                        },
-                        modifier = Modifier.testTag("import_menu_item"),
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.action_export)) },
-                        onClick = {
-                            menuOpen = false
-                            onExportClick()
-                        },
-                        leadingIcon = {
-                            BrandIcon(
-                                imageVector = BrandIcons.ImportExport,
-                                contentDescription = null,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(20.dp),
-                            )
-                        },
-                        modifier = Modifier.testTag("export_menu_item"),
-                    )
-                    if (profileContactId != null) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.contacts_my_profile)) },
-                            onClick = {
-                                menuOpen = false
-                                onProfileClick()
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Filled.Person,
-                                    contentDescription = null,
-                                )
-                            },
-                            modifier = Modifier.testTag("profile_menu_item"),
-                        )
-                    }
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.duplicates_menu)) },
-                        onClick = {
-                            menuOpen = false
-                            onDuplicatesClick()
-                        },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Filled.Merge,
-                                contentDescription = null,
-                            )
-                        },
-                        modifier = Modifier.testTag("duplicates_menu_item"),
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.settings_menu)) },
-                        onClick = {
-                            menuOpen = false
-                            onSettingsClick()
-                        },
-                        leadingIcon = {
-                            BrandIcon(
-                                imageVector = BrandIcons.Settings,
-                                contentDescription = null,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp),
-                            )
-                        },
-                        modifier = Modifier.testTag("settings_menu_item"),
-                    )
-                }
             }
         }
     }

@@ -7,6 +7,7 @@
 
     <string name="search_label">Поиск</string>
     <string name="action_clear_search">Очистить поиск</string>
+    <string name="action_close_search">Закрыть поиск</string>
     <string name="contacts_empty">Контакты не найдены</string>
     <string name="contacts_empty_cta_create">Создать контакт</string>
     <string name="contacts_empty_cta_import">Импортировать из файла</string>
