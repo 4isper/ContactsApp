@@ -109,10 +109,7 @@ fun ContactsAppTheme(
             else -> LightColorScheme
         }
 
-    CompositionLocalProvider(
-        LocalSpacing provides Spacing(),
-        LocalBrandTypography provides BrandTypography(),
-    ) {
+    CompositionLocalProvider(LocalSpacing provides Spacing()) {
         MaterialTheme(
             colorScheme = colorScheme,
             shapes = AppShapes,

@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp.ui.theme
 
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Shapes
 import androidx.compose.ui.unit.dp
@@ -12,3 +13,6 @@ val AppShapes =
         large = RoundedCornerShape(22.dp),
         extraLarge = RoundedCornerShape(30.dp),
     )
+
+/** Primary actions and filter chips: a full pill instead of a rounded rectangle. */
+val PillShape = CircleShape
