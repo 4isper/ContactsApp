@@ -61,4 +61,22 @@ The bar also has no `scrollBehavior`, so while scrolling the app name eats exact
 
 ## Status
 
-Open
+Done; the medium/expanded screenshots and the TalkBack pass remain manual (same as issue 56).
+
+### What was implemented
+
+- `presentation/contacts/components/HomeTopBar.kt` renders a single merged row: `ContactsSearchField` gains a `trailing` slot and hosts Settings (tag `settings_action`) and the `MoreVert` overflow with the unchanged six items; the M3 `TopAppBar`, the brand icon, and the app-name text are gone from the home screen. The row applies `statusBarsPadding()` itself and is tagged `home_top_bar` in the idle state, `home_search_row` in search mode — the row and the field are two separate semantic nodes, so the `search_field` tag still resolves for `performTextInput`.
+- `ContactListTopBar` (`ContactList.kt`) renders the merged bar in both idle and search modes (the field never moves between modes, preserving focus continuity); `SelectionTopBar` is untouched. `FilterHeader` (`ContactsFilterHeader.kt`) now renders only the chips row, and its search parameters were removed.
+- The overflow menu content, its grouping and test tags are unchanged; `ImportExportIcon` helper kept.
+
+### Deviations from the plan
+
+- The first attempt stacked the row tag and the field tag on one semantic node; Compose keeps a single `testTag` per node, which broke `performTextInput("search_field")` in three existing tests. Fixed by wrapping the field in a tagged `Column` so the row wrapper and the field are distinct nodes — no existing test was rewritten, only `ContactsFilterHeaderSyncTest` lost its now-removed search parameters.
+- Search mode still occupies the same top region inside the `topBar` slot with its own status-bar inset; the status-bar band now shows the Scaffold background instead of the `TopAppBar` surface color.
+
+### Verification
+
+- TDD: `homeIdleKeepsActionsAndDropsTheAppTitleRow` was written first and failed on `HEAD` with the expected reason (the `Text 'Contacts'` node found inside `home_top_bar`), then passed after the merge.
+- `./gradlew :app:connectedDebugAndroidTest` for `ContactListUiTest` (22 tests) + `ContactsFilterHeaderSyncTest` (4 tests): 26/26 green on the `Pixel_10_Pro_Fold` AVD (API 37, 320 dp).
+- `./gradlew :app:testDebugUnitTest :app:detekt :app:ktlintCheck` pass.
+- Still manual: medium/expanded-width screenshots and the TalkBack pass over Settings and the overflow.

@@ -185,7 +185,7 @@ A density review of the home screen found that issue 56's app bar and search fie
 
 | # | File | Title | Priority | Status |
 |---|---|---|---|---|
-| 62 | [62-home-header-density.md](62-home-header-density.md) | Merge the home app bar and search row to reclaim vertical space | P2 | Open |
+| 62 | [62-home-header-density.md](62-home-header-density.md) | Merge the home app bar and search row to reclaim vertical space | P2 | Done (26/26 connected on the 320 dp AVD; screenshots and TalkBack manual) |
 | 63 | [63-home-header-scroll-collapse.md](63-home-header-scroll-collapse.md) | Collapse the home header on scroll (enter-always behavior) | P3 | Open |
 
 This item partially supersedes issue 56's "top app bar with the app name/brand" acceptance criterion for the idle home state; search-mode and selection bars from 56 and 38 stay as they are. 63 depends on 62 and can reuse the M3 `TopAppBar` + `enterAlwaysScrollBehavior` path only if 62 keeps the row inside an M3 app bar — the two composition choices are documented in both files.
