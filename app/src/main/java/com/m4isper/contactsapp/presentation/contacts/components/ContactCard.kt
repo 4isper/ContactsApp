@@ -1,6 +1,5 @@
 package com.m4isper.contactsapp.presentation.contacts.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,10 +16,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SwipeToDismissBox
@@ -36,9 +34,9 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -58,8 +56,7 @@ import com.m4isper.contactsapp.ui.theme.BrandIcons
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 import kotlinx.coroutines.launch
 
-private val QuickActionSize = 40.dp
-
+/** Строка списка: плоская поверхность плюс разделитель до следующей строки секции. */
 @Composable
 internal fun ContactCard(
     contact: ContactDetails,
@@ -72,10 +69,52 @@ internal fun ContactCard(
     onCall: (() -> Unit)? = null,
     onSms: (() -> Unit)? = null,
     onToggleFavorite: (() -> Unit)? = null,
-    showFavoriteQuickAction: Boolean = true,
+    showFavoriteQuickAction: Boolean,
+    showDivider: Boolean,
+) {
+    val spacing = LocalSpacing.current
+    val avatar =
+        if (density == ListDensity.COMPACT) spacing.avatarList - spacing.s else spacing.avatarList
+    Box(modifier = Modifier.fillMaxWidth()) {
+        RowContent(
+            contact = contact,
+            isFavorite = isFavorite,
+            selected = selected,
+            isSelectionMode = isSelectionMode,
+            onClick = onClick,
+            onLongClick = onLongClick,
+            density = density,
+            onCall = onCall,
+            onSms = onSms,
+            onToggleFavorite = onToggleFavorite,
+            showFavoriteQuickAction = showFavoriteQuickAction,
+        )
+        if (showDivider) {
+            HorizontalDivider(
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(start = spacing.m + avatar + spacing.m),
+            )
+        }
+    }
+}
+
+@Composable
+private fun RowContent(
+    contact: ContactDetails,
+    isFavorite: Boolean,
+    selected: Boolean,
+    isSelectionMode: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    density: ListDensity,
+    onCall: (() -> Unit)?,
+    onSms: (() -> Unit)?,
+    onToggleFavorite: (() -> Unit)?,
+    showFavoriteQuickAction: Boolean,
 ) {
     val ctx = LocalContext.current
-    val spacing = LocalSpacing.current
     val call = onCall?.takeIf { contact.phones.isNotEmpty() }
     val sms = onSms?.takeIf { contact.phones.isNotEmpty() }
 
@@ -92,10 +131,7 @@ internal fun ContactCard(
             onSms = sms,
             onToggleFavorite = onToggleFavorite,
             showFavoriteQuickAction = showFavoriteQuickAction,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = spacing.m, vertical = spacing.xs),
+            modifier = Modifier.fillMaxWidth(),
         )
         return
     }
@@ -124,10 +160,7 @@ internal fun ContactCard(
         }
     SwipeToDismissBox(
         state = swipeState,
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = spacing.m, vertical = spacing.xs),
+        modifier = Modifier.fillMaxWidth(),
         enableDismissFromStartToEnd = sms != null,
         enableDismissFromEndToStart = call != null,
         onDismiss = onSwipeDismiss,
@@ -169,7 +202,7 @@ private fun ContactCardSurface(
     onSms: (() -> Unit)?,
     onToggleFavorite: (() -> Unit)?,
     modifier: Modifier = Modifier,
-    showFavoriteQuickAction: Boolean = true,
+    showFavoriteQuickAction: Boolean,
 ) {
     val spacing = LocalSpacing.current
     val ctx = LocalContext.current
@@ -178,11 +211,12 @@ private fun ContactCardSurface(
     // или почта (письмо/копия) — email-only контакты тоже получают быстрые действия.
     val hasQuickActions = onCall != null || onSms != null || contact.primaryEmail != null
 
+    // Одна читаемая поверхность: строка лежит на surface, выделение — тональная заливка.
     val containerColor =
         if (selected) {
             MaterialTheme.colorScheme.secondaryContainer
         } else {
-            MaterialTheme.colorScheme.surfaceContainerLow
+            MaterialTheme.colorScheme.surface
         }
     val subtitleColor =
         if (selected) {
@@ -191,17 +225,11 @@ private fun ContactCardSurface(
             MaterialTheme.colorScheme.onSurfaceVariant
         }
 
-    Card(
-        colors = CardDefaults.cardColors(containerColor = containerColor),
-        border =
-            if (selected) {
-                BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
-            } else {
-                null
-            },
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier =
             modifier
-                .clip(MaterialTheme.shapes.medium)
+                .background(containerColor)
                 .testTag("contact_row_${contact.contactId}")
                 .then(
                     if (isSelectionMode) {
@@ -216,56 +244,50 @@ private fun ContactCardSurface(
                             onLongClick = onLongClick,
                         )
                     },
-                ),
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier =
-                Modifier.padding(
+                ).padding(
                     horizontal = spacing.m,
                     vertical = if (compact) spacing.xs else spacing.m,
                 ),
-        ) {
-            ListAvatar(
-                name = contact.name,
-                photoUri = contact.photo?.uri,
-                size = if (compact) spacing.avatarList - spacing.s else spacing.avatarList,
-                selected = selected && isSelectionMode,
+    ) {
+        ListAvatar(
+            name = contact.name,
+            photoUri = contact.photo?.uri,
+            size = if (compact) spacing.avatarList - spacing.s else spacing.avatarList,
+            selected = selected && isSelectionMode,
+        )
+
+        Spacer(modifier = Modifier.width(spacing.m))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = contact.name,
+                style = MaterialTheme.typography.titleMedium,
+                // При крупном шрифте имени даём две строки: обрывок из 5–7 символов нечитаем.
+                maxLines = if (LocalDensity.current.fontScale >= 1.5f) 2 else 1,
+                overflow = TextOverflow.Ellipsis,
             )
+            Text(
+                text = contactSubtitle(contact),
+                style = MaterialTheme.typography.bodyMedium,
+                color = subtitleColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
 
-            Spacer(modifier = Modifier.width(spacing.m))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = contact.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    // При крупном шрифте имени даём две строки: обрывок из 5–7 символов нечитаем.
-                    maxLines = if (LocalDensity.current.fontScale >= 1.5f) 2 else 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = contactSubtitle(contact),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = subtitleColor,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-
-            if (isSelectionMode) {
-                // Выбор теперь считывается через аватар (фон primary + галочку)
-                // и рамку карточки; отдельный Checkbox убран, чтобы не дублировать признак.
-            } else {
-                FavoriteAndOverflowActions(
-                    contact = contact,
-                    isFavorite = isFavorite,
-                    showFavoriteQuickAction = showFavoriteQuickAction,
-                    hasQuickActions = hasQuickActions,
-                    onCall = onCall,
-                    onSms = onSms,
-                    onToggleFavorite = onToggleFavorite,
-                )
-            }
+        if (isSelectionMode) {
+            // Выбор считывается через аватар (фон primary + галочку) и заливку строки;
+            // отдельный Checkbox убран, чтобы не дублировать признак.
+        } else {
+            FavoriteAndOverflowActions(
+                contact = contact,
+                isFavorite = isFavorite,
+                showFavoriteQuickAction = showFavoriteQuickAction,
+                hasQuickActions = hasQuickActions,
+                onCall = onCall,
+                onSms = onSms,
+                onToggleFavorite = onToggleFavorite,
+            )
         }
     }
 }
@@ -333,7 +355,7 @@ private fun FavoriteQuickAction(
             BrandIcon(
                 imageVector = BrandIcons.Favorite,
                 contentDescription = null,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.tertiary,
                 modifier = Modifier.size(spacing.xl),
             )
         }
@@ -353,10 +375,10 @@ private fun FavoriteQuickAction(
                 stringResource(
                     if (isFavorite) R.string.action_remove_favorite else R.string.action_add_favorite,
                 ),
-            // Активное избранное — акцентное и заполненное, неактивное — нейтральное;
-            // кнопка активна в обоих состояниях, disabled-тинт здесь ошибочен.
+            // Активное избранное — tertiary, как в шапке деталей; кнопка активна
+            // в обоих состояниях, disabled-тинт здесь ошибочен.
             color =
-                if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                if (isFavorite) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(spacing.xl),
         )
     }
@@ -478,7 +500,6 @@ private fun SwipeActionBackground(
     Row(
         modifier =
             modifier
-                .clip(MaterialTheme.shapes.medium)
                 .background(color.copy(alpha = 0.16f))
                 .padding(horizontal = spacing.xl),
         horizontalArrangement = if (isCall) Arrangement.End else Arrangement.Start,
@@ -516,8 +537,11 @@ internal fun contactSubtitle(contact: ContactDetails): String =
         }
     }
 
-/** Постоянная ширина хрома строки: поля карточки, аватар, overflow-кнопка и скроллер. */
-internal const val ROW_FIXED_WIDTH_DP = 204
+/**
+ * Постоянная ширина хрома строки: поля строки, аватар, промежуток до текста,
+ * favourite, overflow и колонка быстрой прокрутки (48 dp).
+ */
+internal const val ROW_FIXED_WIDTH_DP = 228
 
 /** Минимальная читаемая ширина колонки имени. */
 internal const val MIN_NAME_WIDTH_DP = 136
@@ -530,3 +554,18 @@ internal fun favoriteQuickActionVisible(
     screenWidthDp: Int,
     fontScale: Float,
 ): Boolean = screenWidthDp - ROW_FIXED_WIDTH_DP >= MIN_NAME_WIDTH_DP * fontScale
+
+/**
+ * Решение для экрана списка. containerSize — фактический размер окна в пикселях:
+ * Configuration.screenWidthDp скругляется и по-разному учитывает вставки
+ * в зависимости от targetSdk.
+ */
+@Composable
+internal fun rememberShowFavoriteQuickAction(): Boolean {
+    val density = LocalDensity.current
+    val containerSize = LocalWindowInfo.current.containerSize
+    return favoriteQuickActionVisible(
+        screenWidthDp = (containerSize.width / density.density).toInt(),
+        fontScale = density.fontScale,
+    )
+}

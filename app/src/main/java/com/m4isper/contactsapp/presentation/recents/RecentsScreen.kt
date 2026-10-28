@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.History
@@ -40,6 +40,7 @@ import com.m4isper.contactsapp.presentation.common.permissions.hasPermission
 import com.m4isper.contactsapp.presentation.common.permissions.openAppSettings
 import com.m4isper.contactsapp.presentation.common.share.openSms
 import com.m4isper.contactsapp.presentation.contacts.components.ContactCard
+import com.m4isper.contactsapp.presentation.contacts.components.rememberShowFavoriteQuickAction
 import com.m4isper.contactsapp.ui.components.EmptyState
 import com.m4isper.contactsapp.ui.components.ErrorState
 import com.m4isper.contactsapp.ui.components.LoadingState
@@ -63,6 +64,7 @@ fun RecentsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val requestCall = rememberCallHandler()
     var pendingCall by remember { mutableStateOf<RecentsCallTarget?>(null) }
+    val showFavoriteQuickAction = rememberShowFavoriteQuickAction()
     var hasReadPermission by remember {
         mutableStateOf(hasPermission(context, Manifest.permission.READ_CONTACTS))
     }
@@ -147,10 +149,10 @@ fun RecentsScreen(
                     LazyColumn(
                         modifier = screenModifier.testTag("recents_list"),
                     ) {
-                        items(
+                        itemsIndexed(
                             items = content.data,
-                            key = { it.contactId },
-                        ) { contact ->
+                            key = { _, contact -> contact.contactId },
+                        ) { index, contact ->
                             ContactCard(
                                 contact = contact,
                                 isFavorite = contact.contactId in uiState.favorites,
@@ -167,6 +169,8 @@ fun RecentsScreen(
                                     contact.primaryPhone?.let { openSms(context, it.number) }
                                 },
                                 onToggleFavorite = { viewModel.toggleFavorite(contact.contactId) },
+                                showFavoriteQuickAction = showFavoriteQuickAction,
+                                showDivider = index < content.data.lastIndex,
                             )
                         }
                     }

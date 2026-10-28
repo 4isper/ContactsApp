@@ -41,7 +41,7 @@ internal fun ContactListBody(
     onImportClick: (() -> Unit)? = null,
     onClearSearch: () -> Unit = {},
     onClearFilters: () -> Unit = {},
-    showFavoriteQuickAction: Boolean = true,
+    showFavoriteQuickAction: Boolean,
 ) {
     val pullState = rememberPullToRefreshState()
     PullToRefreshBox(

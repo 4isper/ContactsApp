@@ -9,18 +9,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -37,7 +36,7 @@ import kotlinx.coroutines.launch
 @Composable
 internal fun GroupedContacts(
     contacts: List<ContactDetails>,
-    showFavoriteQuickAction: Boolean = true,
+    showFavoriteQuickAction: Boolean,
     favorites: Set<Long>,
     selection: Set<Long>,
     isSelectionMode: Boolean,
@@ -61,6 +60,33 @@ internal fun GroupedContacts(
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     var activeLetter by remember { mutableStateOf<Char?>(null) }
+    val scrollProgress by remember(listState) {
+        derivedStateOf {
+            val info = listState.layoutInfo
+            val total = info.totalItemsCount
+            val first = info.visibleItemsInfo.firstOrNull()
+            if (total <= 1 || first == null) {
+                0f
+            } else {
+                val fraction =
+                    if (first.size == 0) {
+                        0f
+                    } else {
+                        ((info.viewportStartOffset - first.offset).toFloat() / first.size)
+                            .coerceIn(0f, 1f)
+                    }
+                ((first.index + fraction) / (total - 1)).coerceIn(0f, 1f)
+            }
+        }
+    }
+
+    val sectionStarts = remember(letters, indices) { letters.map { it to indices.getValue(it) } }
+    val currentLetter by remember(sectionStarts) {
+        derivedStateOf {
+            val firstVisible = listState.firstVisibleItemIndex
+            sectionStarts.lastOrNull { (_, start) -> start <= firstVisible }?.first
+        }
+    }
 
     fun jumpTo(letter: Char) {
         activeLetter = letter
@@ -104,27 +130,11 @@ internal fun GroupedContacts(
                 FastScroller(
                     letters = letters,
                     activeLetter = activeLetter,
+                    currentLetter = currentLetter,
+                    scrollProgress = scrollProgress,
                     barDescription = stringResource(R.string.fast_scroller_desc),
                     onLetter = ::jumpTo,
                     onRelease = { activeLetter = null },
-                )
-            }
-        }
-        activeLetter?.let { letter ->
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = letter.toString(),
-                    style = MaterialTheme.typography.displayLarge,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    modifier =
-                        Modifier
-                            .background(
-                                MaterialTheme.colorScheme.primary,
-                                CircleShape,
-                            ).padding(spacing.xl),
                 )
             }
         }
@@ -154,10 +164,10 @@ private fun LazyListScope.contactGroup(
     if (showHeader) {
         stickyHeader { ContactGroupHeader(letter) }
     }
-    items(
+    itemsIndexed(
         items = group,
-        key = { it.contactId },
-    ) { contact ->
+        key = { _, contact -> contact.contactId },
+    ) { index, contact ->
         ContactCard(
             contact = contact,
             isFavorite = contact.contactId in favorites,
@@ -170,6 +180,9 @@ private fun LazyListScope.contactGroup(
             onSms = onSms?.let { action -> { action(contact) } },
             onToggleFavorite = onToggleFavorite?.let { action -> { action(contact.contactId) } },
             showFavoriteQuickAction = showFavoriteQuickAction,
+            // Разделитель рисуется внутри строки: он не добавляет элемент
+            // в LazyColumn и не сдвигает letterIndices.
+            showDivider = index < group.lastIndex,
         )
     }
 }
@@ -185,15 +198,15 @@ private fun ContactGroupHeader(letter: Char) {
             } else {
                 letter.toString()
             },
-        style = MaterialTheme.typography.labelMedium,
+        style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier =
             Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surface)
                 .padding(
-                    // Заголовок и текст карточки делят одну стартовую грань: 12 + 12.
-                    horizontal = spacing.xl,
+                    // Заголовок делит левую грань с аватаром строки.
+                    horizontal = spacing.m,
                     vertical = spacing.s,
                 ).then(
                     if (isFavorites) {
