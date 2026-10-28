@@ -73,7 +73,7 @@ internal fun ContactListSelectionPreview() {
 }
 
 @Composable
-private fun ContactListContent(selection: Set<Long> = emptySet()) {
+internal fun ContactListContent(selection: Set<Long> = emptySet()) {
     ContactList(
         uiState =
             ContactsUiState(
