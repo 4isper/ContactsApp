@@ -1,7 +1,6 @@
 package com.m4isper.contactsapp.presentation.details
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +14,8 @@ import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
@@ -65,106 +66,113 @@ internal fun DetailsHeader(
             label = "heroFavoriteTint",
         )
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
+    Card(
+        colors = CardDefaults.cardColors(containerColor = colors.secondaryContainer),
         modifier =
             Modifier
                 .fillMaxWidth()
-                .background(colors.secondaryContainer)
-                .padding(horizontal = spacing.m, vertical = spacing.xl)
+                .padding(horizontal = spacing.m, vertical = spacing.xs)
                 .testTag("details_hero"),
     ) {
-        DetailsAvatar(
-            name = details.name,
-            photoUri = details.photo?.uri,
-            size = spacing.avatarHero,
-        )
-        Spacer(modifier = Modifier.height(spacing.m))
-        Text(
-            text = details.name,
-            style = MaterialTheme.typography.headlineMedium,
-            color = colors.onSecondaryContainer,
-            textAlign = TextAlign.Center,
-            // Низ имени в координатах шапки: по нему топ-бар решает, когда подхватить имя.
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier =
-                Modifier.onGloballyPositioned { coordinates ->
-                    val hero = coordinates.parentLayoutCoordinates ?: return@onGloballyPositioned
-                    val top = hero.localPositionOf(coordinates, Offset.Zero).y
-                    onNameBottom(top + coordinates.size.height)
-                },
-        )
-        if (subtitle != null) {
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = colors.onSecondaryContainer.copy(alpha = 0.75f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.testTag("hero_subtitle"),
-            )
-        }
-        Spacer(modifier = Modifier.height(spacing.l))
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(spacing.s),
-            verticalAlignment = Alignment.CenterVertically,
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = spacing.m, vertical = spacing.xl),
         ) {
-            if (details.phones.isNotEmpty()) {
-                FilledIconButton(
-                    onClick = onCallPrimary,
-                    modifier = Modifier.testTag("hero_call"),
-                ) {
-                    Icon(
-                        Icons.Filled.Call,
-                        contentDescription = stringResource(R.string.action_call),
-                    )
-                }
-                FilledTonalIconButton(
-                    onClick = onSmsPrimary,
-                    colors =
-                        IconButtonDefaults.filledTonalIconButtonColors(
-                            containerColor = colors.surface,
-                            contentColor = colors.onSurface,
-                        ),
-                    modifier = Modifier.testTag("hero_sms"),
-                ) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.Message,
-                        contentDescription = stringResource(R.string.action_send_sms),
-                    )
-                }
-            }
-            if (details.emails.isNotEmpty()) {
-                FilledTonalIconButton(
-                    onClick = onEmailPrimary,
-                    colors =
-                        IconButtonDefaults.filledTonalIconButtonColors(
-                            containerColor = colors.surface,
-                            contentColor = colors.onSurface,
-                        ),
-                    modifier = Modifier.testTag("hero_email"),
-                ) {
-                    Icon(
-                        Icons.Filled.Email,
-                        contentDescription = stringResource(R.string.action_send_email),
-                    )
-                }
-            }
-            IconButton(
-                onClick = onToggleFavorite,
-                modifier = Modifier.testTag("favorite_button"),
-            ) {
-                Icon(
-                    if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                    contentDescription =
-                        stringResource(
-                            if (isFavorite) {
-                                R.string.action_remove_favorite
-                            } else {
-                                R.string.action_add_favorite
-                            },
-                        ),
-                    tint = favoriteTint,
+            DetailsAvatar(
+                name = details.name,
+                photoUri = details.photo?.uri,
+                size = spacing.avatarHero,
+            )
+            Spacer(modifier = Modifier.height(spacing.m))
+            Text(
+                text = details.name,
+                style = MaterialTheme.typography.headlineMedium,
+                color = colors.onSecondaryContainer,
+                textAlign = TextAlign.Center,
+                // Низ имени в координатах шапки: по нему топ-бар решает, когда подхватить имя.
+                modifier =
+                    Modifier.onGloballyPositioned { coordinates ->
+                        val hero = coordinates.parentLayoutCoordinates ?: return@onGloballyPositioned
+                        val top = hero.localPositionOf(coordinates, Offset.Zero).y
+                        onNameBottom(top + coordinates.size.height)
+                    },
+            )
+            if (subtitle != null) {
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colors.onSecondaryContainer.copy(alpha = 0.75f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.testTag("hero_subtitle"),
                 )
+            }
+            Spacer(modifier = Modifier.height(spacing.l))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(spacing.s),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (details.phones.isNotEmpty()) {
+                    FilledIconButton(
+                        onClick = onCallPrimary,
+                        modifier = Modifier.testTag("hero_call"),
+                    ) {
+                        Icon(
+                            Icons.Filled.Call,
+                            contentDescription = stringResource(R.string.action_call),
+                        )
+                    }
+                    FilledTonalIconButton(
+                        onClick = onSmsPrimary,
+                        colors =
+                            IconButtonDefaults.filledTonalIconButtonColors(
+                                containerColor = colors.surface,
+                                contentColor = colors.onSurface,
+                            ),
+                        modifier = Modifier.testTag("hero_sms"),
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.Message,
+                            contentDescription = stringResource(R.string.action_send_sms),
+                        )
+                    }
+                }
+                if (details.emails.isNotEmpty()) {
+                    FilledTonalIconButton(
+                        onClick = onEmailPrimary,
+                        colors =
+                            IconButtonDefaults.filledTonalIconButtonColors(
+                                containerColor = colors.surface,
+                                contentColor = colors.onSurface,
+                            ),
+                        modifier = Modifier.testTag("hero_email"),
+                    ) {
+                        Icon(
+                            Icons.Filled.Email,
+                            contentDescription = stringResource(R.string.action_send_email),
+                        )
+                    }
+                }
+                IconButton(
+                    onClick = onToggleFavorite,
+                    modifier = Modifier.testTag("favorite_button"),
+                ) {
+                    Icon(
+                        if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                        contentDescription =
+                            stringResource(
+                                if (isFavorite) {
+                                    R.string.action_remove_favorite
+                                } else {
+                                    R.string.action_add_favorite
+                                },
+                            ),
+                        tint = favoriteTint,
+                    )
+                }
             }
         }
     }

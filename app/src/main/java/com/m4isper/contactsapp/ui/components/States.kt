@@ -20,7 +20,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -55,7 +56,7 @@ fun LoadingState(modifier: Modifier = Modifier) {
     }
 }
 
-/** Скелетон-строки контактов: та же плоская поверхность списка, пока грузятся данные. */
+/** Скелетон-карточки контактов: показывают ту же форму строк, пока грузятся данные. */
 @Composable
 fun ListSkeleton(
     modifier: Modifier = Modifier,
@@ -89,38 +90,46 @@ fun ListSkeleton(
         }
     val animatedAlpha = skeletonAlpha(pulse)
 
-    val dividerInset = spacing.m + spacing.avatarList + spacing.m
     Column(
-        // Скелетон для TalkBack — одно «загружаем контакты», а не набор пустых строк.
+        // Скелетон для TalkBack — одно «загружаем контакты», а не набор пустых карточек.
         modifier =
             modifier
                 .fillMaxSize()
+                .padding(horizontal = spacing.m)
                 .clearAndSetSemantics { contentDescription = loadingText },
     ) {
-        repeat(itemCount) { index ->
-            Row(
+        repeat(itemCount) {
+            Card(
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    ),
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = spacing.m, vertical = spacing.m),
-                verticalAlignment = Alignment.CenterVertically,
+                        .padding(vertical = spacing.xs)
+                        .clip(MaterialTheme.shapes.medium),
             ) {
-                Box(
-                    modifier =
-                        Modifier
-                            .size(spacing.avatarList)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-                )
-                Spacer(modifier = Modifier.width(spacing.m))
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    SkeletonLine(width = 60f, height = 16f, alpha = animatedAlpha)
-                    Spacer(modifier = Modifier.height(spacing.xs))
-                    SkeletonLine(width = 90f, height = 14f, alpha = animatedAlpha)
+                Column(modifier = Modifier.padding(spacing.m)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            modifier =
+                                Modifier
+                                    .size(spacing.avatarList)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                        )
+                        Spacer(modifier = Modifier.width(spacing.m))
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            SkeletonLine(width = 60f, height = 16f, alpha = animatedAlpha)
+                            Spacer(modifier = Modifier.height(spacing.xs))
+                            SkeletonLine(width = 90f, height = 14f, alpha = animatedAlpha)
+                        }
+                    }
                 }
-            }
-            if (index < itemCount - 1) {
-                HorizontalDivider(modifier = Modifier.padding(start = dividerInset))
             }
         }
     }

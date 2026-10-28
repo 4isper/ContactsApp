@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.History
@@ -152,10 +152,10 @@ fun RecentsScreen(
                     LazyColumn(
                         modifier = screenModifier.testTag("recents_list"),
                     ) {
-                        itemsIndexed(
+                        items(
                             items = content.data,
-                            key = { _, contact -> contact.contactId },
-                        ) { index, contact ->
+                            key = { it.contactId },
+                        ) { contact ->
                             ContactCard(
                                 contact = contact,
                                 isFavorite = contact.contactId in uiState.favorites,
@@ -173,7 +173,6 @@ fun RecentsScreen(
                                 },
                                 onToggleFavorite = { viewModel.toggleFavorite(contact.contactId) },
                                 showFavoriteQuickAction = showFavoriteQuickAction,
-                                showDivider = index < content.data.lastIndex,
                             )
                         }
                     }

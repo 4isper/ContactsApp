@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -60,25 +60,6 @@ internal fun GroupedContacts(
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     var activeLetter by remember { mutableStateOf<Char?>(null) }
-    val scrollProgress by remember(listState) {
-        derivedStateOf {
-            val info = listState.layoutInfo
-            val total = info.totalItemsCount
-            val first = info.visibleItemsInfo.firstOrNull()
-            if (total <= 1 || first == null) {
-                0f
-            } else {
-                val fraction =
-                    if (first.size == 0) {
-                        0f
-                    } else {
-                        ((info.viewportStartOffset - first.offset).toFloat() / first.size)
-                            .coerceIn(0f, 1f)
-                    }
-                ((first.index + fraction) / (total - 1)).coerceIn(0f, 1f)
-            }
-        }
-    }
 
     val sectionStarts = remember(letters, indices) { letters.map { it to indices.getValue(it) } }
     val currentLetter by remember(sectionStarts) {
@@ -131,7 +112,6 @@ internal fun GroupedContacts(
                     letters = letters,
                     activeLetter = activeLetter,
                     currentLetter = currentLetter,
-                    scrollProgress = scrollProgress,
                     barDescription = stringResource(R.string.fast_scroller_desc),
                     onLetter = ::jumpTo,
                     onRelease = { activeLetter = null },
@@ -164,10 +144,10 @@ private fun LazyListScope.contactGroup(
     if (showHeader) {
         stickyHeader { ContactGroupHeader(letter) }
     }
-    itemsIndexed(
+    items(
         items = group,
-        key = { _, contact -> contact.contactId },
-    ) { index, contact ->
+        key = { it.contactId },
+    ) { contact ->
         ContactCard(
             contact = contact,
             isFavorite = contact.contactId in favorites,
@@ -180,9 +160,6 @@ private fun LazyListScope.contactGroup(
             onSms = onSms?.let { action -> { action(contact) } },
             onToggleFavorite = onToggleFavorite?.let { action -> { action(contact.contactId) } },
             showFavoriteQuickAction = showFavoriteQuickAction,
-            // Разделитель рисуется внутри строки: он не добавляет элемент
-            // в LazyColumn и не сдвигает letterIndices.
-            showDivider = index < group.lastIndex,
         )
     }
 }

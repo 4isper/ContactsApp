@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.AccountCircle
@@ -52,7 +51,7 @@ import com.m4isper.contactsapp.ui.adaptive.ReadingColumn
 import java.time.LocalDate
 
 /** Поле карточки: всё, что нужно строке, собрано заранее — порядок и разделители задаёт секция. */
-private data class DetailsField(
+internal data class DetailsField(
     val key: String,
     val icon: ImageVector,
     val primary: String,
@@ -63,7 +62,7 @@ private data class DetailsField(
 )
 
 /** Секция полей: подпись опциональна, строки идут плоским списком. */
-private data class DetailsSection(
+internal data class DetailsSection(
     val key: String,
     val title: String?,
     val fields: List<DetailsField>,
@@ -122,19 +121,8 @@ internal fun DetailsContent(
                         )
                     }
                 }
-                itemsIndexed(
-                    items = section.fields,
-                    key = { _, field -> field.key },
-                ) { index, field ->
-                    DetailsFieldRow(
-                        icon = field.icon,
-                        primary = field.primary,
-                        secondary = field.secondary,
-                        actions = field.actions,
-                        onClick = field.onClick,
-                        showDivider = index < section.fields.lastIndex,
-                        modifier = field.tag?.let { Modifier.testTag(it) } ?: Modifier,
-                    )
+                item(key = "card_${section.key}") {
+                    DetailsSectionCard(section)
                 }
             }
         }

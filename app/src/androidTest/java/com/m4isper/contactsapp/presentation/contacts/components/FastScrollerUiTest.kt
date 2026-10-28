@@ -3,6 +3,7 @@ package com.m4isper.contactsapp.presentation.contacts.components
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
@@ -31,19 +32,19 @@ class FastScrollerUiTest {
         }
 
     @Test
-    fun bubbleAppearsWhileDraggingAndDisappearsOnRelease() {
+    fun alphabetColumnListsEverySectionAndJumpsOnTap() {
         setList()
 
-        compose.onNodeWithTag("fast_scroller_bubble").assertDoesNotExist()
-
-        compose.onNodeWithTag("fast_scroller").performTouchInput {
-            down(center)
-            moveBy(Offset(0f, 40f))
+        names.map { it.first() }.forEach { letter ->
+            compose.onNodeWithTag("fast_scroller_letter_$letter").assertIsDisplayed()
         }
-        compose.onNodeWithTag("fast_scroller_bubble").assertIsDisplayed()
 
-        compose.onNodeWithTag("fast_scroller").performTouchInput { up() }
-        compose.onNodeWithTag("fast_scroller_bubble").assertDoesNotExist()
+        // Тап по D — первая строка секции D, id 37 (3 × 12 + 1).
+        compose.onNodeWithTag("fast_scroller").performTouchInput {
+            click(Offset(center.x, height * 3.5f / 6f))
+        }
+        compose.waitForIdle()
+        compose.onNodeWithTag("contact_row_37").assertIsDisplayed()
     }
 
     @Test

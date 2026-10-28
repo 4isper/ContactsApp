@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp.presentation.contacts.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,9 +17,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SwipeToDismissBox
@@ -34,6 +36,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -56,7 +59,7 @@ import com.m4isper.contactsapp.ui.theme.BrandIcons
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 import kotlinx.coroutines.launch
 
-/** Строка списка: плоская поверхность плюс разделитель до следующей строки секции. */
+/** Строка списка: карточка на `surfaceContainerLow` с зазором до соседних строк. */
 @Composable
 internal fun ContactCard(
     contact: ContactDetails,
@@ -70,34 +73,25 @@ internal fun ContactCard(
     onSms: (() -> Unit)? = null,
     onToggleFavorite: (() -> Unit)? = null,
     showFavoriteQuickAction: Boolean,
-    showDivider: Boolean,
 ) {
     val spacing = LocalSpacing.current
-    val avatar =
-        if (density == ListDensity.COMPACT) spacing.avatarList - spacing.s else spacing.avatarList
-    Box(modifier = Modifier.fillMaxWidth()) {
-        RowContent(
-            contact = contact,
-            isFavorite = isFavorite,
-            selected = selected,
-            isSelectionMode = isSelectionMode,
-            onClick = onClick,
-            onLongClick = onLongClick,
-            density = density,
-            onCall = onCall,
-            onSms = onSms,
-            onToggleFavorite = onToggleFavorite,
-            showFavoriteQuickAction = showFavoriteQuickAction,
-        )
-        if (showDivider) {
-            HorizontalDivider(
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(start = spacing.m + avatar + spacing.m),
-            )
-        }
-    }
+    RowContent(
+        contact = contact,
+        isFavorite = isFavorite,
+        selected = selected,
+        isSelectionMode = isSelectionMode,
+        onClick = onClick,
+        onLongClick = onLongClick,
+        density = density,
+        onCall = onCall,
+        onSms = onSms,
+        onToggleFavorite = onToggleFavorite,
+        showFavoriteQuickAction = showFavoriteQuickAction,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = spacing.m, vertical = spacing.xs),
+    )
 }
 
 @Composable
@@ -113,6 +107,7 @@ private fun RowContent(
     onSms: (() -> Unit)?,
     onToggleFavorite: (() -> Unit)?,
     showFavoriteQuickAction: Boolean,
+    modifier: Modifier = Modifier,
 ) {
     val ctx = LocalContext.current
     val call = onCall?.takeIf { contact.phones.isNotEmpty() }
@@ -131,7 +126,7 @@ private fun RowContent(
             onSms = sms,
             onToggleFavorite = onToggleFavorite,
             showFavoriteQuickAction = showFavoriteQuickAction,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = modifier,
         )
         return
     }
@@ -160,7 +155,7 @@ private fun RowContent(
         }
     SwipeToDismissBox(
         state = swipeState,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier,
         enableDismissFromStartToEnd = sms != null,
         enableDismissFromEndToStart = call != null,
         onDismiss = onSwipeDismiss,
@@ -211,12 +206,13 @@ private fun ContactCardSurface(
     // или почта (письмо/копия) — email-only контакты тоже получают быстрые действия.
     val hasQuickActions = onCall != null || onSms != null || contact.primaryEmail != null
 
-    // Одна читаемая поверхность: строка лежит на surface, выделение — тональная заливка.
+    // Каждая строка — карточка: в светлой теме surfaceContainerLow даёт заметный,
+    // но мягкий контур; выделение добавляет тональную заливку и рамку.
     val containerColor =
         if (selected) {
             MaterialTheme.colorScheme.secondaryContainer
         } else {
-            MaterialTheme.colorScheme.surface
+            MaterialTheme.colorScheme.surfaceContainerLow
         }
     val subtitleColor =
         if (selected) {
@@ -225,11 +221,17 @@ private fun ContactCardSurface(
             MaterialTheme.colorScheme.onSurfaceVariant
         }
 
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+    Card(
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        border =
+            if (selected) {
+                BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+            } else {
+                null
+            },
         modifier =
             modifier
-                .background(containerColor)
+                .clip(MaterialTheme.shapes.medium)
                 .testTag("contact_row_${contact.contactId}")
                 .then(
                     if (isSelectionMode) {
@@ -244,50 +246,56 @@ private fun ContactCardSurface(
                             onLongClick = onLongClick,
                         )
                     },
-                ).padding(
+                ),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier =
+                Modifier.padding(
                     horizontal = spacing.m,
                     vertical = if (compact) spacing.xs else spacing.m,
                 ),
-    ) {
-        ListAvatar(
-            name = contact.name,
-            photoUri = contact.photo?.uri,
-            size = if (compact) spacing.avatarList - spacing.s else spacing.avatarList,
-            selected = selected && isSelectionMode,
-        )
-
-        Spacer(modifier = Modifier.width(spacing.m))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = contact.name,
-                style = MaterialTheme.typography.titleMedium,
-                // При крупном шрифте имени даём две строки: обрывок из 5–7 символов нечитаем.
-                maxLines = if (LocalDensity.current.fontScale >= 1.5f) 2 else 1,
-                overflow = TextOverflow.Ellipsis,
+        ) {
+            ListAvatar(
+                name = contact.name,
+                photoUri = contact.photo?.uri,
+                size = if (compact) spacing.avatarList - spacing.s else spacing.avatarList,
+                selected = selected && isSelectionMode,
             )
-            Text(
-                text = contactSubtitle(contact),
-                style = MaterialTheme.typography.bodyMedium,
-                color = subtitleColor,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
 
-        if (isSelectionMode) {
-            // Выбор считывается через аватар (фон primary + галочку) и заливку строки;
-            // отдельный Checkbox убран, чтобы не дублировать признак.
-        } else {
-            FavoriteAndOverflowActions(
-                contact = contact,
-                isFavorite = isFavorite,
-                showFavoriteQuickAction = showFavoriteQuickAction,
-                hasQuickActions = hasQuickActions,
-                onCall = onCall,
-                onSms = onSms,
-                onToggleFavorite = onToggleFavorite,
-            )
+            Spacer(modifier = Modifier.width(spacing.m))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = contact.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    // При крупном шрифте имени даём две строки: обрывок из 5–7 символов нечитаем.
+                    maxLines = if (LocalDensity.current.fontScale >= 1.5f) 2 else 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = contactSubtitle(contact),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = subtitleColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+
+            if (isSelectionMode) {
+                // Выбор считывается через аватар (фон primary + галочку) и рамку карточки;
+                // отдельный Checkbox убран, чтобы не дублировать признак.
+            } else {
+                FavoriteAndOverflowActions(
+                    contact = contact,
+                    isFavorite = isFavorite,
+                    showFavoriteQuickAction = showFavoriteQuickAction,
+                    hasQuickActions = hasQuickActions,
+                    onCall = onCall,
+                    onSms = onSms,
+                    onToggleFavorite = onToggleFavorite,
+                )
+            }
         }
     }
 }
@@ -500,6 +508,7 @@ private fun SwipeActionBackground(
     Row(
         modifier =
             modifier
+                .clip(MaterialTheme.shapes.medium)
                 .background(color.copy(alpha = 0.16f))
                 .padding(horizontal = spacing.xl),
         horizontalArrangement = if (isCall) Arrangement.End else Arrangement.Start,
