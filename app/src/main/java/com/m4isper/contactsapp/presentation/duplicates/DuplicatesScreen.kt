@@ -145,6 +145,9 @@ fun DuplicatesScreen(
                 EmptyState(
                     icon = Icons.Filled.Merge,
                     title = stringResource(R.string.duplicates_empty),
+                    description = stringResource(R.string.duplicates_empty_desc),
+                    primaryLabel = stringResource(R.string.action_browse_contacts),
+                    onPrimaryClick = onBack,
                     modifier = screenModifier,
                 )
             is Loadable.Error ->

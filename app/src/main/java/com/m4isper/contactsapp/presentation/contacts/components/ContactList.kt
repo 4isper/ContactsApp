@@ -35,11 +35,13 @@ import com.m4isper.contactsapp.presentation.common.call.rememberCallHandler
 import com.m4isper.contactsapp.presentation.common.format.phoneText
 import com.m4isper.contactsapp.presentation.common.groups.GroupPickerSheet
 import com.m4isper.contactsapp.presentation.common.share.openSms
+import com.m4isper.contactsapp.presentation.contacts.ContactsEvent
 import com.m4isper.contactsapp.presentation.contacts.ContactsFileAction
 import com.m4isper.contactsapp.presentation.contacts.ContactsListAction
 import com.m4isper.contactsapp.presentation.contacts.ContactsNavigationAction
 import com.m4isper.contactsapp.presentation.contacts.ContactsUiAction
 import com.m4isper.contactsapp.presentation.contacts.ContactsUiState
+import com.m4isper.contactsapp.presentation.contacts.effects.ExportSummary
 import com.m4isper.contactsapp.presentation.contacts.effects.handleContactsEvent
 import com.m4isper.contactsapp.presentation.contacts.effects.rememberVCardLaunchers
 import com.m4isper.contactsapp.ui.components.ConfirmDialog
@@ -118,6 +120,8 @@ internal fun ContactList(
     var showGroupPicker by remember { mutableStateOf(false) }
     var pendingGroupIds by remember { mutableStateOf(emptySet<Long>()) }
     var pendingExportUri by remember { mutableStateOf<Uri?>(null) }
+    var exportInProgress by remember { mutableStateOf(false) }
+    var exportSummary by remember { mutableStateOf<ExportSummary?>(null) }
     var pendingQuickCall by remember { mutableStateOf<QuickCallTarget?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val requestCall = rememberCallHandler()
@@ -140,7 +144,10 @@ internal fun ContactList(
         if (event != null) {
             val exportUri = pendingExportUri
             pendingExportUri = null
-            handleContactsEvent(ctx, event, exportUri, onEventHandled)
+            exportInProgress = event is ContactsEvent.ExportReady
+            val summary = handleContactsEvent(ctx, event, exportUri, onEventHandled)
+            exportInProgress = false
+            if (summary != null) exportSummary = summary
         }
     }
 
@@ -221,6 +228,11 @@ internal fun ContactList(
                     .fillMaxSize()
                     .padding(innerPadding),
         ) {
+            ExportStatusBanner(
+                inProgress = exportInProgress,
+                summary = exportSummary,
+                onDismiss = { exportSummary = null },
+            )
             if (!uiState.isSelectionMode) {
                 FilterHeader(
                     searchQuery = uiState.searchQuery,

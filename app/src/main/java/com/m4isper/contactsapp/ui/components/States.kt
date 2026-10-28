@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
@@ -190,6 +191,7 @@ fun EmptyState(
     icon: ImageVector,
     title: String,
     modifier: Modifier = Modifier,
+    description: String? = null,
     primaryLabel: String? = null,
     onPrimaryClick: (() -> Unit)? = null,
     secondaryLabel: String? = null,
@@ -207,21 +209,42 @@ fun EmptyState(
             modifier =
                 Modifier
                     .padding(spacing.xl)
+                    .widthIn(max = spacing.contentMaxWidth)
                     .semantics(mergeDescendants = true) {},
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.outline,
-                modifier = Modifier.size(spacing.xxl + spacing.m),
-            )
+            // Тонированный контейнер даёт экрану акцент, а текст — контекст,
+            // почему здесь пусто и что сделать дальше.
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier =
+                    Modifier
+                        .size(spacing.xxl * 2)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(spacing.xxl),
+                )
+            }
             Spacer(modifier = Modifier.height(spacing.m))
             Text(
                 text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
             )
+            if (description != null) {
+                Spacer(modifier = Modifier.height(spacing.xs))
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
             if (primaryLabel != null && onPrimaryClick != null) {
                 Spacer(modifier = Modifier.height(spacing.l))
                 Button(

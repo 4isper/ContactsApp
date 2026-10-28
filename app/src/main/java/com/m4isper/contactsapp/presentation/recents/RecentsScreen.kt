@@ -137,6 +137,9 @@ fun RecentsScreen(
                     EmptyState(
                         icon = Icons.Filled.History,
                         title = stringResource(R.string.recents_empty),
+                        description = stringResource(R.string.recents_empty_desc),
+                        primaryLabel = stringResource(R.string.action_browse_contacts),
+                        onPrimaryClick = onBack,
                         modifier = screenModifier,
                     )
                 is Loadable.Error ->

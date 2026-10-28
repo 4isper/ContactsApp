@@ -127,6 +127,9 @@ fun GroupsScreen(
                 EmptyState(
                     icon = Icons.AutoMirrored.Filled.Label,
                     title = stringResource(R.string.groups_empty),
+                    description = stringResource(R.string.groups_empty_desc),
+                    primaryLabel = stringResource(R.string.groups_create_action),
+                    onPrimaryClick = { showCreateDialog = true },
                     modifier = screenModifier,
                 )
             is Loadable.Error ->

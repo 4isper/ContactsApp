@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PersonSearch
@@ -21,6 +23,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
@@ -38,6 +41,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.R
@@ -74,36 +79,57 @@ fun ImportPreviewScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.import_preview_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.action_back),
-                        )
-                    }
-                },
-                actions = {
-                    if (uiState.outcome == null) {
-                        TextButton(
-                            onClick = viewModel::onImport,
-                            enabled = uiState.canImport,
-                            modifier = Modifier.testTag("import_confirm_button"),
-                        ) {
-                            Text(stringResource(R.string.import_action_import))
+            Column {
+                TopAppBar(
+                    title = { Text(stringResource(R.string.import_preview_title)) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.action_back),
+                            )
                         }
-                    }
-                },
-            )
+                    },
+                    actions = {
+                        if (uiState.outcome == null) {
+                            TextButton(
+                                onClick = viewModel::onImport,
+                                enabled = uiState.canImport,
+                                modifier = Modifier.testTag("import_confirm_button"),
+                            ) {
+                                Text(stringResource(R.string.import_action_import))
+                            }
+                        }
+                    },
+                )
+                if (uiState.isImporting) {
+                    // Прогресс всегда на виду: список может быть прокручен вниз.
+                    val progressLabel = stringResource(R.string.import_progress)
+                    LinearProgressIndicator(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .testTag("import_progress")
+                                .semantics { contentDescription = progressLabel },
+                    )
+                }
+            }
         },
     ) { innerPadding ->
+        val outcome = uiState.outcome
         when {
             uiState.isPreparing -> ImportLoading(Modifier.padding(innerPadding))
             uiState.failed ->
                 EmptyState(
                     icon = Icons.Filled.PersonSearch,
                     title = stringResource(R.string.import_parse_failed),
+                    modifier = Modifier.padding(innerPadding),
+                )
+            outcome != null ->
+                // Итог сразу на экране: в файле на сотни контактов карточка в конце списка не видна.
+                ImportResultScreen(
+                    outcome = outcome,
+                    onDone = onDone,
                     modifier = Modifier.padding(innerPadding),
                 )
             uiState.entries.isEmpty() && uiState.invalid.isEmpty() ->
@@ -117,7 +143,6 @@ fun ImportPreviewScreen(
                     uiState = uiState,
                     onDecisionChange = viewModel::onDecisionChange,
                     onAccountClick = { showAccountPicker = true },
-                    onDone = onDone,
                     modifier = Modifier.padding(innerPadding),
                 )
         }
@@ -146,7 +171,6 @@ private fun ImportPreviewList(
     uiState: ImportPreviewUiState,
     onDecisionChange: (Int, ImportDecision) -> Unit,
     onAccountClick: () -> Unit,
-    onDone: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val spacing = LocalSpacing.current
@@ -173,6 +197,7 @@ private fun ImportPreviewList(
             items(uiState.entries, key = { it.index }) { entry ->
                 ImportEntryCard(
                     entry = entry,
+                    enabled = !uiState.isImporting,
                     onDecisionChange = { decision -> onDecisionChange(entry.index, decision) },
                 )
             }
@@ -181,11 +206,27 @@ private fun ImportPreviewList(
                     ImportInvalidCard(uiState.invalid)
                 }
             }
-            uiState.outcome?.let { outcome ->
-                item(key = "result") {
-                    ImportResultCard(outcome, onDone)
-                }
-            }
+        }
+    }
+}
+
+/** Итог импорта одним экраном: числа и причины ошибок не теряются при закрытии. */
+@Composable
+private fun ImportResultScreen(
+    outcome: ImportOutcome,
+    onDone: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val spacing = LocalSpacing.current
+    ReadingColumn(modifier = modifier) {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(spacing.m),
+        ) {
+            ImportResultCard(outcome, onDone)
         }
     }
 }
@@ -225,6 +266,7 @@ private fun ImportSummary(uiState: ImportPreviewUiState) {
 @Composable
 private fun ImportEntryCard(
     entry: ImportPreviewEntry,
+    enabled: Boolean,
     onDecisionChange: (ImportDecision) -> Unit,
 ) {
     val spacing = LocalSpacing.current
@@ -292,6 +334,7 @@ private fun ImportEntryCard(
                 FilterChip(
                     selected = entry.decision is ImportDecision.Create,
                     onClick = { onDecisionChange(ImportDecision.Create) },
+                    enabled = enabled,
                     label = { Text(stringResource(R.string.import_decision_create)) },
                     modifier = Modifier.testTag("import_decision_create_${entry.index}"),
                 )
@@ -304,7 +347,8 @@ private fun ImportEntryCard(
                         if (target != null) onDecisionChange(ImportDecision.Merge(target))
                     },
                     enabled =
-                        entry.duplicates.isNotEmpty() &&
+                        enabled &&
+                            entry.duplicates.isNotEmpty() &&
                             (!multipleCandidates || chosenTarget != null),
                     label = { Text(stringResource(R.string.import_decision_merge)) },
                     modifier = Modifier.testTag("import_decision_merge_${entry.index}"),
@@ -312,6 +356,7 @@ private fun ImportEntryCard(
                 FilterChip(
                     selected = entry.decision is ImportDecision.Skip,
                     onClick = { onDecisionChange(ImportDecision.Skip) },
+                    enabled = enabled,
                     label = { Text(stringResource(R.string.import_decision_skip)) },
                     modifier = Modifier.testTag("import_decision_skip_${entry.index}"),
                 )

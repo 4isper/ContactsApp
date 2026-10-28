@@ -15,23 +15,19 @@ internal suspend fun handleContactsEvent(
     event: ContactsEvent,
     exportUri: Uri?,
     onEventHandled: () -> Unit,
-) {
+): ExportSummary? {
     val toast = { resId: Int -> Toast.makeText(context, resId, Toast.LENGTH_SHORT).show() }
+    var export: ExportSummary? = null
     when (event) {
         is ContactsEvent.Share -> shareContacts(context, event.content)
         ContactsEvent.DeleteFailed -> toast(R.string.batch_delete_failed)
         is ContactsEvent.GroupAddFinished,
         ContactsEvent.GroupActionFailed,
         -> handleGroupEvent(context, event, toast)
-        is ContactsEvent.ExportReady -> {
-            if (exportUri != null && writeVCardFile(context, exportUri, event.content)) {
-                showPluralToast(context, R.plurals.export_success, event.count)
-            } else {
-                toast(R.string.export_failed)
-            }
-        }
-        ContactsEvent.ExportEmpty -> toast(R.string.export_empty)
-        ContactsEvent.ExportFailed -> toast(R.string.export_failed)
+        is ContactsEvent.ExportReady,
+        ContactsEvent.ExportEmpty,
+        ContactsEvent.ExportFailed,
+        -> export = handleExportEvent(context, event, exportUri)
         is ContactsEvent.SyncRetryFinished ->
             toast(
                 if (event.success) {
@@ -42,7 +38,33 @@ internal suspend fun handleContactsEvent(
             )
     }
     onEventHandled()
+    return export
 }
+
+/** Запись .vcf и её итог: успех, отказ записи или пустой выбор. */
+private suspend fun handleExportEvent(
+    context: Context,
+    event: ContactsEvent,
+    exportUri: Uri?,
+): ExportSummary =
+    when (event) {
+        is ContactsEvent.ExportReady ->
+            if (exportUri != null && writeVCardFile(context, exportUri, event.content)) {
+                ExportSummary(
+                    message =
+                        context.resources.getQuantityString(
+                            R.plurals.export_success,
+                            event.count,
+                            event.count,
+                        ),
+                )
+            } else {
+                ExportSummary(context.getString(R.string.export_failed), failed = true)
+            }
+        ContactsEvent.ExportEmpty -> ExportSummary(context.getString(R.string.export_empty))
+        // Вызывается только для событий экспорта, но when требует ветку.
+        else -> ExportSummary(context.getString(R.string.export_failed), failed = true)
+    }
 
 /** События добавления в группу: тост об успехе или ошибке. */
 private fun handleGroupEvent(
