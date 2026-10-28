@@ -1,8 +1,12 @@
 package com.m4isper.contactsapp.presentation.contacts
 
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.longClick
@@ -11,6 +15,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntSize
 import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -692,6 +698,40 @@ class ContactListUiTest {
     }
 
     @Test
+    fun narrowWindowAtLargeFontScaleDropsTheFavoriteStar() {
+        setListAt(widthDp = 320, fontScale = 2f)
+
+        compose.onNodeWithTag("quick_favorite_1").assertDoesNotExist()
+        compose.onNodeWithTag("quick_actions_1").assertIsDisplayed()
+    }
+
+    @Test
+    fun phoneWidthAtNormalFontScaleKeepsTheFavoriteStar() {
+        setListAt(widthDp = 411, fontScale = 1f)
+
+        compose.onNodeWithTag("quick_favorite_1").assertIsDisplayed()
+    }
+
+    private fun setListAt(
+        widthDp: Int,
+        fontScale: Float,
+    ) {
+        compose.setContent {
+            val density = LocalDensity.current
+            val widthPx = (widthDp * density.density).toInt()
+            CompositionLocalProvider(
+                LocalDensity provides Density(density = density.density, fontScale = fontScale),
+                LocalWindowInfo provides FixedWindowInfo(IntSize(widthPx, widthPx * 2)),
+            ) {
+                ContactList(
+                    uiState = ContactsUiState(content = Loadable.Content(listOf(anna))),
+                    onAction = { },
+                )
+            }
+        }
+    }
+
+    @Test
     fun quickFavoriteTogglesWithoutOpeningDetails() {
         val repository = FakeAndroidRepository(listOf(anna))
         val viewModel = viewModel(repository)
@@ -924,4 +964,11 @@ class ContactListUiTest {
         compose.onNodeWithText("Email").assertIsDisplayed()
         compose.onNodeWithText("Call").assertDoesNotExist()
     }
+}
+
+private class FixedWindowInfo(
+    private val size: IntSize,
+) : WindowInfo {
+    override val isWindowFocused: Boolean = true
+    override val containerSize: IntSize = size
 }
