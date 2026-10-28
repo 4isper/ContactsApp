@@ -107,9 +107,13 @@ class ContactsGlanceWidget : GlanceAppWidget() {
         id: GlanceId,
     ) {
         val favorites = loadFavorites(context)
+        // Строки резолвим до композиции: Glance не перестраивает composition
+        // при смене конфигурации, поэтому LocalContext внутри был бы stale.
+        val title = context.getString(R.string.widget_title)
+        val emptyText = context.getString(R.string.widget_empty)
         provideContent {
             GlanceTheme {
-                FavoritesWidgetContent(favorites)
+                FavoritesWidgetContent(favorites, title, emptyText)
             }
         }
     }
@@ -124,21 +128,24 @@ class ContactsGlanceWidget : GlanceAppWidget() {
 }
 
 @Composable
-private fun FavoritesWidgetContent(favorites: List<ContactDetails>) {
-    val context = LocalContext.current
+private fun FavoritesWidgetContent(
+    favorites: List<ContactDetails>,
+    title: String,
+    emptyText: String,
+) {
     Scaffold(
         backgroundColor = GlanceTheme.colors.widgetBackground,
         titleBar = {
             TitleBar(
                 startIcon = androidx.glance.ImageProvider(R.drawable.ic_notification),
-                title = context.getString(R.string.widget_title),
+                title = title,
             )
         },
     ) {
         if (favorites.isEmpty()) {
             Box(modifier = GlanceModifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
-                    text = context.getString(R.string.widget_empty),
+                    text = emptyText,
                     style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant),
                 )
             }
