@@ -37,6 +37,7 @@ import com.m4isper.contactsapp.R
 internal fun PinSetupDialog(
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit,
+    title: String = stringResource(R.string.app_lock_pin),
 ) {
     val repeatFocus = remember { FocusRequester() }
     var pin by remember { mutableStateOf("") }
@@ -46,7 +47,7 @@ internal fun PinSetupDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.app_lock_pin)) },
+        title = { Text(title) },
         text = {
             Column {
                 OutlinedTextField(

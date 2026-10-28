@@ -72,7 +72,7 @@ internal fun RemindersSection(
 
     SettingsSection(title = stringResource(R.string.settings_reminders)) {
         SettingsSwitch(
-            label = stringResource(R.string.settings_reminders),
+            label = stringResource(R.string.settings_reminders_enable),
             description = stringResource(R.string.settings_reminders_desc),
             checked = deliverable,
             onCheckedChange = { enabled ->

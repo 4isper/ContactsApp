@@ -260,17 +260,21 @@
     <string name="import_action_import">Import</string>
     <string name="import_action_done">Done</string>
     <string name="import_parse_failed">Couldn\'t read the file</string>
+    <string name="import_progress">Importing contacts…</string>
     <string name="export_empty">Nothing to export</string>
     <string name="export_failed">Couldn\'t export contacts</string>
+    <string name="export_progress">Exporting contacts…</string>
 
     <string name="recents_title">Recents</string>
     <string name="recents_device_wide">Calls and messages on this device</string>
     <string name="recents_empty">No recent contacts</string>
+    <string name="recents_empty_desc">Contacts you open, call, or message appear here.</string>
 
     <string name="duplicates_title">Duplicates</string>
     <string name="duplicates_select_prompt">Select a duplicate group to review</string>
     <string name="duplicates_menu">Find duplicates</string>
     <string name="duplicates_empty">No duplicates found</string>
+    <string name="duplicates_empty_desc">Contacts with the same name or number appear here so you can merge them.</string>
     <string name="duplicates_primary_label">Primary contact</string>
     <string name="duplicates_name_only_hint">Matched by name only — make sure this is the same person</string>
     <string name="duplicates_merged">Duplicates merged</string>
@@ -303,6 +307,14 @@
     <string name="settings_language">Language</string>
     <string name="settings_language_system">System language</string>
     <string name="settings_appearance">Appearance</string>
+    <string name="settings_behavior">Behavior</string>
+    <string name="settings_security">Security</string>
+    <string name="settings_danger_zone">Danger zone</string>
+    <string name="settings_app_lock_state_on">Enabled · 4–8 digits</string>
+    <string name="settings_app_lock_state_off">Disabled</string>
+    <string name="settings_app_lock_change_pin">Change PIN</string>
+    <string name="settings_licenses">Open-source licenses</string>
+    <string name="settings_licenses_note">Third-party libraries used by the app</string>
     <string name="settings_dynamic_color">Dynamic colors</string>
     <string name="settings_dynamic_color_desc">Use the wallpaper colors on Android 12 and newer</string>
     <string name="settings_show_photos">Show photos</string>
@@ -325,6 +337,7 @@
     <string name="reminders_birthday">birthday</string>
     <string name="reminders_event">event</string>
     <string name="settings_reminders">Reminders</string>
+    <string name="settings_reminders_enable">Birthdays and events</string>
     <string name="settings_reminders_permission">Reminders need the notification permission</string>
     <string name="settings_reminders_blocked">Notifications are turned off for the app. Reminders cannot be delivered</string>
     <string name="settings_reminders_desc">Notify about upcoming birthdays and events</string>
@@ -371,6 +384,9 @@
     <string name="groups_title">Groups</string>
     <string name="group_select_prompt">Select a group from the list</string>
     <string name="groups_empty">No groups yet</string>
+    <string name="groups_empty_desc">Create groups to filter contacts and find people faster.</string>
+    <string name="groups_create_action">Create group</string>
+    <string name="action_browse_contacts">Browse contacts</string>
     <string name="group_name_label">Group name</string>
     <string name="group_label">Group</string>
     <string name="group_add_members">Add contacts</string>

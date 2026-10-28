@@ -270,17 +270,21 @@
     <string name="import_action_import">Импортировать</string>
     <string name="import_action_done">Готово</string>
     <string name="import_parse_failed">Не удалось прочитать файл</string>
+    <string name="import_progress">Импорт контактов…</string>
     <string name="export_empty">Нет контактов для экспорта</string>
+    <string name="export_progress">Экспорт контактов…</string>
     <string name="export_failed">Не удалось экспортировать контакты</string>
 
     <string name="recents_title">Недавние</string>
     <string name="recents_device_wide">Звонки и сообщения на этом устройстве</string>
     <string name="recents_empty">Нет недавних контактов</string>
+    <string name="recents_empty_desc">Здесь появятся контакты, которые вы открывали, кому звонили или писали.</string>
 
     <string name="duplicates_title">Дубликаты</string>
     <string name="duplicates_select_prompt">Выберите группу дублей для предпросмотра</string>
     <string name="duplicates_menu">Найти дубликаты</string>
     <string name="duplicates_empty">Дубликаты не найдены</string>
+    <string name="duplicates_empty_desc">Здесь появятся контакты с одинаковым именем или номером, чтобы их можно было объединить.</string>
     <string name="duplicates_primary_label">Основной контакт</string>
     <string name="duplicates_name_only_hint">Совпадение только по имени — проверьте, что это один человек</string>
     <string name="duplicates_merged">Дубликаты объединены</string>
@@ -313,6 +317,14 @@
     <string name="settings_language">Язык</string>
     <string name="settings_language_system">Язык системы</string>
     <string name="settings_appearance">Оформление</string>
+    <string name="settings_behavior">Поведение</string>
+    <string name="settings_security">Безопасность</string>
+    <string name="settings_danger_zone">Опасная зона</string>
+    <string name="settings_app_lock_state_on">Включено · 4–8 цифр</string>
+    <string name="settings_app_lock_state_off">Выключено</string>
+    <string name="settings_app_lock_change_pin">Изменить PIN-код</string>
+    <string name="settings_licenses">Лицензии открытого кода</string>
+    <string name="settings_licenses_note">Сторонние библиотеки, которые использует приложение</string>
     <string name="settings_dynamic_color">Динамические цвета</string>
     <string name="settings_dynamic_color_desc">Цвета обоев на Android 12 и новее</string>
     <string name="settings_show_photos">Показывать фото</string>
@@ -335,6 +347,7 @@
     <string name="reminders_birthday">день рождения</string>
     <string name="reminders_event">событие</string>
     <string name="settings_reminders">Напоминания</string>
+    <string name="settings_reminders_enable">Дни рождения и события</string>
     <string name="settings_reminders_permission">Для напоминаний нужно разрешение на уведомления</string>
     <string name="settings_reminders_blocked">Уведомления отключены для приложения. Напоминания не будут доставлены</string>
     <string name="settings_reminders_desc">Уведомлять о ближайших днях рождения и событиях</string>
@@ -383,6 +396,9 @@
     <string name="groups_title">Группы</string>
     <string name="group_select_prompt">Выберите группу из списка</string>
     <string name="groups_empty">Групп пока нет</string>
+    <string name="groups_empty_desc">Создавайте группы, чтобы фильтровать контакты и быстрее находить нужных людей.</string>
+    <string name="groups_create_action">Создать группу</string>
+    <string name="action_browse_contacts">К списку контактов</string>
     <string name="group_name_label">Название группы</string>
     <string name="group_label">Группа</string>
     <string name="group_add_members">Добавить контакты</string>
