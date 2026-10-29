@@ -66,6 +66,24 @@ internal fun DetailsTopBar(
         actions = {
             if (shareable != null) {
                 IconButton(
+                    onClick = onEdit,
+                    modifier = Modifier.testTag("edit_button"),
+                ) {
+                    Icon(
+                        Icons.Filled.Edit,
+                        contentDescription = stringResource(R.string.action_edit),
+                    )
+                }
+                IconButton(
+                    onClick = onShare,
+                    modifier = Modifier.testTag("share_button"),
+                ) {
+                    Icon(
+                        Icons.Filled.Share,
+                        contentDescription = stringResource(R.string.share_contact),
+                    )
+                }
+                IconButton(
                     onClick = { menuExpanded = true },
                     modifier = Modifier.testTag("details_more_button"),
                 ) {
@@ -78,24 +96,6 @@ internal fun DetailsTopBar(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false },
                 ) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.action_edit)) },
-                        leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
-                        onClick = {
-                            menuExpanded = false
-                            onEdit()
-                        },
-                        modifier = Modifier.testTag("edit_menu_item"),
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.share_contact)) },
-                        leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
-                        onClick = {
-                            menuExpanded = false
-                            onShare()
-                        },
-                        modifier = Modifier.testTag("share_menu_item"),
-                    )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.share_contact_text)) },
                         onClick = {

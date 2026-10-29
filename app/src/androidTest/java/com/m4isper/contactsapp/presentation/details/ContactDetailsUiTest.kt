@@ -3,6 +3,7 @@ package com.m4isper.contactsapp.presentation.details
 import android.Manifest
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
@@ -152,7 +153,7 @@ class ContactDetailsUiTest {
         awaitContent(viewModel)
 
         compose.onNodeWithTag("details_title").assertDoesNotExist()
-        compose.onNodeWithTag("details_list").performScrollToKey("phone_111")
+        compose.onNodeWithTag("details_list").performScrollToKey("card_phones")
 
         compose.onNodeWithTag("details_title").assertIsDisplayed()
     }
@@ -409,7 +410,7 @@ class ContactDetailsUiTest {
     }
 
     @Test
-    fun editIsReachableFromTheOverflow() {
+    fun editIsReachableFromTheTopBar() {
         val edited = AtomicBoolean(false)
         val viewModel = viewModel(FakeAndroidRepository(listOf(testDetails(7, "Anna", "111"))))
         compose.setContent {
@@ -422,10 +423,42 @@ class ContactDetailsUiTest {
         }
         awaitContent(viewModel)
 
-        compose.onNodeWithTag("details_more_button").performClick()
-        compose.onNodeWithTag("edit_menu_item").performClick()
+        compose.onNodeWithTag("edit_button").assertIsDisplayed().performClick()
 
         assertEquals(true, edited.get())
+
+        compose.onNodeWithTag("details_more_button").performClick()
+        compose.onNodeWithTag("edit_menu_item").assertDoesNotExist()
+    }
+
+    @Test
+    fun shareIsReachableFromTheTopBarAtNarrowWidth() {
+        val shared = AtomicBoolean(false)
+        compose.setContent {
+            Box(modifier = Modifier.width(240.dp)) {
+                DetailsTopBar(
+                    title = "A very long contact name",
+                    showTitle = true,
+                    shareable = testDetails(7, "Anna", "111"),
+                    onBack = {},
+                    onEdit = {},
+                    onShare = { shared.set(true) },
+                    onShareAsText = {},
+                    onShareAsQr = {},
+                    onShowQr = {},
+                    onCopyToAccount = {},
+                    onMoveToAccount = {},
+                )
+            }
+        }
+
+        compose.onNodeWithTag("share_button").assertIsDisplayed().performClick()
+
+        assertEquals(true, shared.get())
+
+        compose.onNodeWithTag("details_more_button").performClick()
+        compose.onNodeWithTag("share_menu_item").assertDoesNotExist()
+        compose.onNodeWithTag("share_as_text_menu_item").assertIsDisplayed()
     }
 
     @Test
