@@ -1,5 +1,7 @@
 package com.m4isper.contactsapp.presentation.settings
 
+import android.Manifest
+import android.os.Build
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsSelected
@@ -20,6 +22,7 @@ import com.m4isper.contactsapp.data.security.Pbkdf2PinHasher
 import com.m4isper.contactsapp.domain.model.settings.AppSettings
 import com.m4isper.contactsapp.domain.model.settings.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.settings.ListDensity
+import com.m4isper.contactsapp.domain.model.settings.ReminderTime
 import com.m4isper.contactsapp.domain.model.settings.ThemeMode
 import com.m4isper.contactsapp.domain.usecase.contacts.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.contacts.SetDefaultContactAccountUseCase
@@ -105,6 +108,39 @@ class SettingsUiTest {
             .getInstrumentation()
             .targetContext
             .getString(resId)
+
+    /** Раздел напоминаний показывает строки только при реально доставляемых уведомлениях. */
+    private fun grantPostNotifications() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        instrumentation.uiAutomation.grantRuntimePermission(
+            instrumentation.targetContext.packageName,
+            Manifest.permission.POST_NOTIFICATIONS,
+        )
+    }
+
+    @Test
+    fun reminderTimeRowOpensSheetAndSavesThePickedTime() {
+        // Время нестандартное: подтверждение должно сохранить именно выбор, а не дефолт.
+        val repository =
+            FakeSettingsRepository(
+                AppSettings(remindersEnabled = true, reminderTime = ReminderTime(14, 30)),
+            )
+        grantPostNotifications()
+        compose.setContent {
+            SettingsScreen(onBack = {}, viewModel = viewModel(repository))
+        }
+
+        compose.onNodeWithTag("reminder_time").performScrollTo().performClick()
+        compose.onNodeWithTag("reminder_time_sheet").assertIsDisplayed()
+        compose.onNodeWithTag("reminder_time_done").performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { repository.reminderValues.isNotEmpty() }
+        val (enabled, _, time) = repository.reminderValues.single()
+        assertEquals(true, enabled)
+        assertEquals(ReminderTime(14, 30), time)
+        compose.onNodeWithTag("reminder_time_sheet").assertDoesNotExist()
+    }
 
     @Test
     fun showsStoredSettingsAsCurrentValues() {

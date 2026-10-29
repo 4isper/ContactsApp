@@ -1,12 +1,14 @@
 package com.m4isper.contactsapp.presentation.settings
 
 import com.m4isper.contactsapp.FakeSettingsRepository
+import com.m4isper.contactsapp.domain.model.settings.ReminderTime
 import com.m4isper.contactsapp.domain.usecase.settings.ObserveSettingsUseCase
 import com.m4isper.contactsapp.domain.usecase.settings.SetRemindersUseCase
 import com.m4isper.contactsapp.presentation.reminders.ReminderScheduler
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -16,11 +18,13 @@ class ReminderSettingsCoordinatorTest {
         private val failure: Throwable? = null,
     ) : ReminderScheduler {
         var scheduled = false
+        var scheduledAt: ReminderTime? = null
         var cancelled = false
 
-        override fun schedule() {
+        override fun schedule(at: ReminderTime) {
             failure?.let { throw it }
             scheduled = true
+            scheduledAt = at
         }
 
         override fun cancel() {
@@ -44,12 +48,36 @@ class ReminderSettingsCoordinatorTest {
             val repository = FakeSettingsRepository()
             val scheduler = FakeReminderScheduler()
 
-            val result = coordinator(repository, scheduler).apply(enabled = true, leadDays = 3)
+            val result =
+                coordinator(repository, scheduler).apply(
+                    enabled = true,
+                    leadDays = 3,
+                    time = ReminderTime(9, 0),
+                )
 
             assertTrue(result)
             assertTrue(scheduler.scheduled)
+            assertEquals(ReminderTime(9, 0), scheduler.scheduledAt)
             assertEquals(true, repository.settings.value.remindersEnabled)
             assertEquals(3, repository.settings.value.reminderLeadDays)
+        }
+
+    @Test
+    fun `the chosen time is saved and passed to the scheduler`() =
+        runTest {
+            val repository = FakeSettingsRepository()
+            val scheduler = FakeReminderScheduler()
+
+            val result =
+                coordinator(repository, scheduler).apply(
+                    enabled = true,
+                    leadDays = 7,
+                    time = ReminderTime(8, 15),
+                )
+
+            assertTrue(result)
+            assertEquals(ReminderTime(8, 15), scheduler.scheduledAt)
+            assertEquals(ReminderTime(8, 15), repository.settings.value.reminderTime)
         }
 
     @Test
@@ -58,12 +86,18 @@ class ReminderSettingsCoordinatorTest {
             val repository = FakeSettingsRepository()
             val scheduler = FakeReminderScheduler(failure = RuntimeException("no alarm"))
 
-            val result = coordinator(repository, scheduler).apply(enabled = true, leadDays = 3)
+            val result =
+                coordinator(repository, scheduler).apply(
+                    enabled = true,
+                    leadDays = 3,
+                    time = ReminderTime(8, 15),
+                )
 
             assertFalse(result)
             assertFalse(scheduler.scheduled)
-            // Настройки вернулись к прежним: будильник и состояние не расходятся.
+            // Настройки вернулись к прежним, время тоже: будильник и состояние не расходятся.
             assertEquals(false, repository.settings.value.remindersEnabled)
+            assertEquals(ReminderTime(9, 0), repository.settings.value.reminderTime)
         }
 
     @Test
@@ -75,5 +109,6 @@ class ReminderSettingsCoordinatorTest {
             coordinator(repository, scheduler).cancel()
 
             assertFalse(scheduler.cancelled)
+            assertNull(scheduler.scheduledAt)
         }
 }

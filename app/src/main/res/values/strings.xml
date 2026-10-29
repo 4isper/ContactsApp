@@ -349,6 +349,8 @@
         <item quantity="one">%1$d day before</item>
         <item quantity="other">%1$d days before</item>
     </plurals>
+    <string name="settings_reminder_time">Reminder time</string>
+    <string name="settings_reminder_time_desc">The daily notification arrives at this time</string>
     <string name="shortcut_new_contact">New contact</string>
     <string name="shortcut_favorites">Favorites</string>
     <string name="action_add_to_calendar">Add to calendar</string>

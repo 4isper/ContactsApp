@@ -7,6 +7,7 @@ import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 import com.m4isper.contactsapp.domain.model.settings.AppSettings
 import com.m4isper.contactsapp.domain.model.settings.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.settings.ListDensity
+import com.m4isper.contactsapp.domain.model.settings.ReminderTime
 import com.m4isper.contactsapp.domain.model.settings.ThemeMode
 import com.m4isper.contactsapp.domain.usecase.contacts.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.contacts.SetDefaultContactAccountUseCase
@@ -123,12 +124,13 @@ internal class SettingsViewModel(
     /** Скрывать содержимое окна в недавних задачах. */
     fun onSecureWindowChanged(enabled: Boolean) = update { setSecureWindowUseCase(enabled) }
 
-    /** Напоминания о днях рождения: включение и планирование будильника. */
+    /** Напоминания о днях рождения: включение, срок предупреждения и время суток. */
     fun onRemindersChanged(
         enabled: Boolean,
         leadDays: Int,
+        time: ReminderTime,
     ) = update {
-        if (!reminders.apply(enabled, leadDays)) {
+        if (!reminders.apply(enabled, leadDays, time)) {
             errorFlow.value = AppError.SCHEDULE_FAILED
         }
     }

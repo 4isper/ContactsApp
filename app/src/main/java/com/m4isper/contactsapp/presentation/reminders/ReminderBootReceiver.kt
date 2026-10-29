@@ -32,7 +32,7 @@ class ReminderBootReceiver : BroadcastReceiver() {
                 val graph = (appContext as? ContactsApp)?.appGraph ?: return@launch
                 val settings = graph.observeSettings().first()
                 if (settings.remindersEnabled) {
-                    BirthdayReminderScheduler(appContext).schedule()
+                    BirthdayReminderScheduler(appContext).schedule(settings.reminderTime)
                 }
             } finally {
                 pending.finish()

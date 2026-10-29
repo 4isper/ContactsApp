@@ -361,6 +361,8 @@
         <item quantity="many">за %1$d дней до</item>
         <item quantity="other">за %1$d дня до</item>
     </plurals>
+    <string name="settings_reminder_time">Время напоминания</string>
+    <string name="settings_reminder_time_desc">Ежедневное уведомление приходит в это время</string>
     <string name="shortcut_new_contact">Новый контакт</string>
     <string name="shortcut_favorites">Избранное</string>
     <string name="action_add_to_calendar">В календарь</string>

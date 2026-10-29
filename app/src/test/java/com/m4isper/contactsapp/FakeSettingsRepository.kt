@@ -4,6 +4,7 @@ import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 import com.m4isper.contactsapp.domain.model.settings.AppSettings
 import com.m4isper.contactsapp.domain.model.settings.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.settings.ListDensity
+import com.m4isper.contactsapp.domain.model.settings.ReminderTime
 import com.m4isper.contactsapp.domain.model.settings.ThemeMode
 import com.m4isper.contactsapp.domain.repository.settings.AccountSettings
 import com.m4isper.contactsapp.domain.repository.settings.AppearanceSettings
@@ -43,7 +44,7 @@ class FakeSettingsRepository(
     val showPhotosValues = mutableListOf<Boolean>()
     val appLocks = mutableListOf<Pair<Boolean, String>>()
     val secureWindowValues = mutableListOf<Boolean>()
-    val reminderValues = mutableListOf<Pair<Boolean, Int>>()
+    val reminderValues = mutableListOf<Triple<Boolean, Int, ReminderTime>>()
     var resetCalled = false
 
     override fun observeSettings(): StateFlow<AppSettings> = state
@@ -109,9 +110,11 @@ class FakeSettingsRepository(
     override suspend fun setReminders(
         enabled: Boolean,
         leadDays: Int,
+        time: ReminderTime,
     ) {
-        reminderValues += enabled to leadDays
-        state.value = state.value.copy(remindersEnabled = enabled, reminderLeadDays = leadDays)
+        reminderValues += Triple(enabled, leadDays, time)
+        state.value =
+            state.value.copy(remindersEnabled = enabled, reminderLeadDays = leadDays, reminderTime = time)
     }
 
     override suspend fun resetSettings() {

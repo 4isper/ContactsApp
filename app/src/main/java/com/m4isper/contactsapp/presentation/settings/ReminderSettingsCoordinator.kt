@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp.presentation.settings
 
+import com.m4isper.contactsapp.domain.model.settings.ReminderTime
 import com.m4isper.contactsapp.domain.usecase.settings.ObserveSettingsUseCase
 import com.m4isper.contactsapp.domain.usecase.settings.SetRemindersUseCase
 import com.m4isper.contactsapp.presentation.common.safeCall
@@ -28,17 +29,18 @@ internal class ReminderSettingsCoordinator(
     suspend fun apply(
         enabled: Boolean,
         leadDays: Int,
+        time: ReminderTime,
     ): Boolean {
         val previous = readSettings().first()
-        setReminders(enabled, leadDays)
+        setReminders(enabled, leadDays, time)
         val scheduled =
             safeCall(REMINDERS_TAG, "schedule reminders failed") {
-                if (enabled) scheduler.schedule() else scheduler.cancel()
+                if (enabled) scheduler.schedule(time) else scheduler.cancel()
             }.isSuccess
         if (!scheduled) {
             // Будильник не поставлен: возвращаем прежние настройки, чтобы они не расходились.
             safeCall(REMINDERS_TAG, "rollback reminders failed") {
-                setReminders(previous.remindersEnabled, previous.reminderLeadDays)
+                setReminders(previous.remindersEnabled, previous.reminderLeadDays, previous.reminderTime)
             }
         }
         return scheduled

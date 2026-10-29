@@ -4,6 +4,7 @@ import android.content.Context
 import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 import com.m4isper.contactsapp.domain.model.settings.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.settings.ListDensity
+import com.m4isper.contactsapp.domain.model.settings.ReminderTime
 import com.m4isper.contactsapp.domain.model.settings.ThemeMode
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -160,7 +161,7 @@ class SettingsDataSourceImplTest {
         runBlocking {
             val context = RuntimeEnvironment.getApplication() as Context
             val ds = createDataSource(context)
-            ds.setReminders(false, 0)
+            ds.setReminders(false, 0, ReminderTime(0, 0))
             val settings = ds.settings.first()
             assertFalse(settings.remindersEnabled)
             assertEquals(0, settings.reminderLeadDays)

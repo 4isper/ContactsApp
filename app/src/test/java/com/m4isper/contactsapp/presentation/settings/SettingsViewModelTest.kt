@@ -8,6 +8,7 @@ import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 import com.m4isper.contactsapp.domain.model.settings.AppSettings
 import com.m4isper.contactsapp.domain.model.settings.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.settings.ListDensity
+import com.m4isper.contactsapp.domain.model.settings.ReminderTime
 import com.m4isper.contactsapp.domain.model.settings.ThemeMode
 import com.m4isper.contactsapp.domain.repository.ContactsAccounts
 import com.m4isper.contactsapp.domain.usecase.contacts.GetContactAccountsUseCase
@@ -62,7 +63,7 @@ private class FakeAppLanguageStore : AppLanguageStore {
 
 /** Планировщик напоминаний, который не может поставить будильник. */
 private class FailingReminderScheduler : ReminderScheduler {
-    override fun schedule() = throw IllegalStateException("no alarm")
+    override fun schedule(at: ReminderTime) = throw IllegalStateException("no alarm")
 
     override fun cancel() = Unit
 }
@@ -71,7 +72,7 @@ private class FailingReminderScheduler : ReminderScheduler {
 private class FakeReminderScheduler : ReminderScheduler {
     var scheduled = false
 
-    override fun schedule() {
+    override fun schedule(at: ReminderTime) {
         scheduled = true
     }
 
@@ -201,7 +202,7 @@ class SettingsViewModelTest {
                 )
             backgroundScope.launch { viewModel.uiState.collect { } }
 
-            viewModel.onRemindersChanged(true, 3)
+            viewModel.onRemindersChanged(true, 3, ReminderTime(9, 0))
             advanceUntilIdle()
 
             assertEquals(AppError.SCHEDULE_FAILED, viewModel.uiState.value.error)

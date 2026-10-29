@@ -51,9 +51,14 @@ data class AppSettings(
     val remindersEnabled: Boolean = false,
     /** За сколько дней предупреждать о дне рождения. */
     val reminderLeadDays: Int = DEFAULT_REMINDER_LEAD_DAYS,
+    /** Время суток ежедневного напоминания. */
+    val reminderTime: ReminderTime = DEFAULT_REMINDER_TIME,
 ) {
     companion object {
         /** Напоминание за неделю до праздника. */
         const val DEFAULT_REMINDER_LEAD_DAYS = 7
+
+        /** Напоминание приходит утром, в девять. */
+        val DEFAULT_REMINDER_TIME = ReminderTime(hour = 9, minute = 0)
     }
 }

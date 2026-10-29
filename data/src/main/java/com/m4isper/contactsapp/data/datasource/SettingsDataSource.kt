@@ -5,6 +5,7 @@ package com.m4isper.contactsapp.data.datasource
 
 import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 import com.m4isper.contactsapp.domain.model.settings.AppSettings
+import com.m4isper.contactsapp.domain.model.settings.ReminderTime
 import kotlinx.coroutines.flow.Flow
 
 /** Настройки приложения в локальном хранилище. */
@@ -46,6 +47,7 @@ interface SettingsDataSource {
     suspend fun setReminders(
         enabled: Boolean,
         leadDays: Int,
+        time: ReminderTime,
     )
 
     /** Вернуть настройки к значениям по умолчанию. */

@@ -23,6 +23,7 @@ import com.m4isper.contactsapp.domain.model.contact.RawContactRef
 import com.m4isper.contactsapp.domain.model.settings.AppSettings
 import com.m4isper.contactsapp.domain.model.settings.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.settings.ListDensity
+import com.m4isper.contactsapp.domain.model.settings.ReminderTime
 import com.m4isper.contactsapp.domain.model.settings.ThemeMode
 import com.m4isper.contactsapp.domain.repository.ContactsAccounts
 import com.m4isper.contactsapp.domain.repository.ContactsChangeSource
@@ -358,6 +359,7 @@ internal class FakeSettingsRepository(
     val showPhotosValues = mutableListOf<Boolean>()
     val appLocks = mutableListOf<Pair<Boolean, String>>()
     val secureWindowValues = mutableListOf<Boolean>()
+    val reminderValues = mutableListOf<Triple<Boolean, Int, ReminderTime>>()
     var resetCalled = false
 
     override fun observeSettings(): Flow<AppSettings> = state
@@ -423,7 +425,12 @@ internal class FakeSettingsRepository(
     override suspend fun setReminders(
         enabled: Boolean,
         leadDays: Int,
-    ) = Unit
+        time: ReminderTime,
+    ) {
+        reminderValues += Triple(enabled, leadDays, time)
+        state.value =
+            state.value.copy(remindersEnabled = enabled, reminderLeadDays = leadDays, reminderTime = time)
+    }
 
     override suspend fun resetSettings() {
         resetCalled = true

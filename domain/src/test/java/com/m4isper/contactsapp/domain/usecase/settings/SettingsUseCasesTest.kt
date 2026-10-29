@@ -1,7 +1,9 @@
 package com.m4isper.contactsapp.domain.usecase.settings
 
+import com.m4isper.contactsapp.domain.model.settings.AppSettings
 import com.m4isper.contactsapp.domain.model.settings.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.settings.ListDensity
+import com.m4isper.contactsapp.domain.model.settings.ReminderTime
 import com.m4isper.contactsapp.domain.model.settings.ThemeMode
 import com.m4isper.contactsapp.domain.repository.settings.AppearanceSettings
 import com.m4isper.contactsapp.domain.repository.settings.LanguageSettings
@@ -59,13 +61,17 @@ private class FakeReminderSettings : ReminderSettings {
         private set
     var leadDays: Int = 1
         private set
+    var time: ReminderTime = AppSettings.DEFAULT_REMINDER_TIME
+        private set
 
     override suspend fun setReminders(
         enabled: Boolean,
         leadDays: Int,
+        time: ReminderTime,
     ) {
         this.enabled = enabled
         this.leadDays = leadDays
+        this.time = time
     }
 }
 
@@ -147,9 +153,10 @@ class SettingsUseCasesTest {
         runBlocking {
             val settings = FakeReminderSettings()
             val uc = SetRemindersUseCase(settings)
-            uc(false, 0)
+            uc(false, 0, ReminderTime(8, 15))
             assertEquals(false, settings.enabled)
             assertEquals(0, settings.leadDays)
+            assertEquals(ReminderTime(8, 15), settings.time)
         }
 
     @Test

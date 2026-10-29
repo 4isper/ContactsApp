@@ -3,6 +3,7 @@ package com.m4isper.contactsapp.data.datasource
 import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 import com.m4isper.contactsapp.domain.model.settings.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.settings.ListDensity
+import com.m4isper.contactsapp.domain.model.settings.ReminderTime
 import com.m4isper.contactsapp.domain.model.settings.ThemeMode
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -73,11 +74,31 @@ class SettingsDataSourceTest {
     @Test
     fun `the reminders are stored`() =
         runTest {
-            dataSource.setReminders(enabled = true, leadDays = 7)
+            dataSource.setReminders(enabled = true, leadDays = 7, time = ReminderTime(9, 0))
 
             val settings = dataSource.settings.first()
             assertTrue(settings.remindersEnabled)
             assertEquals(7, settings.reminderLeadDays)
+        }
+
+    @Test
+    fun `the reminder time is stored and read back`() =
+        runTest {
+            dataSource.setReminders(enabled = true, leadDays = 7, time = ReminderTime(7, 30))
+
+            val settings = dataSource.settings.first()
+
+            assertTrue(settings.remindersEnabled)
+            assertEquals(ReminderTime(7, 30), settings.reminderTime)
+        }
+
+    @Test
+    fun `without stored keys the reminder time falls back to nine in the morning`() =
+        runTest {
+            // Хранилище одно на процесс: сброс гарантирует, что ключей нет.
+            dataSource.resetSettings()
+
+            assertEquals(ReminderTime(9, 0), dataSource.settings.first().reminderTime)
         }
 
     @Test

@@ -12,6 +12,7 @@ import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 import com.m4isper.contactsapp.domain.model.settings.AppSettings
 import com.m4isper.contactsapp.domain.model.settings.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.settings.ListDensity
+import com.m4isper.contactsapp.domain.model.settings.ReminderTime
 import com.m4isper.contactsapp.domain.model.settings.ThemeMode
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
@@ -40,6 +41,8 @@ private val APP_LOCK_PIN_HASH = stringPreferencesKey("app_lock_pin_hash")
 private val SECURE_WINDOW = booleanPreferencesKey("secure_window")
 private val REMINDERS_ENABLED = booleanPreferencesKey("reminders_enabled")
 private val REMINDER_LEAD_DAYS = intPreferencesKey("reminder_lead_days")
+private val REMINDER_HOUR = intPreferencesKey("reminder_hour")
+private val REMINDER_MINUTE = intPreferencesKey("reminder_minute")
 
 /**
  * Неизвестные значения (старая версия, битые данные) откатываются к дефолтам модели.
@@ -78,6 +81,15 @@ class SettingsDataSourceImpl(
                 secureWindow = prefs[SECURE_WINDOW] ?: false,
                 remindersEnabled = prefs[REMINDERS_ENABLED] ?: false,
                 reminderLeadDays = prefs[REMINDER_LEAD_DAYS] ?: AppSettings.DEFAULT_REMINDER_LEAD_DAYS,
+                reminderTime =
+                    ReminderTime(
+                        hour =
+                            prefs[REMINDER_HOUR]?.coerceIn(ReminderTime.MIN_HOUR, ReminderTime.MAX_HOUR)
+                                ?: AppSettings.DEFAULT_REMINDER_TIME.hour,
+                        minute =
+                            prefs[REMINDER_MINUTE]?.coerceIn(ReminderTime.MIN_MINUTE, ReminderTime.MAX_MINUTE)
+                                ?: AppSettings.DEFAULT_REMINDER_TIME.minute,
+                    ),
             )
         }
 
@@ -158,10 +170,13 @@ class SettingsDataSourceImpl(
     override suspend fun setReminders(
         enabled: Boolean,
         leadDays: Int,
+        time: ReminderTime,
     ) {
         context.settingsDataStore.edit { prefs ->
             prefs[REMINDERS_ENABLED] = enabled
             prefs[REMINDER_LEAD_DAYS] = leadDays
+            prefs[REMINDER_HOUR] = time.hour
+            prefs[REMINDER_MINUTE] = time.minute
         }
     }
 
@@ -183,6 +198,8 @@ class SettingsDataSourceImpl(
             prefs.remove(SECURE_WINDOW)
             prefs.remove(REMINDERS_ENABLED)
             prefs.remove(REMINDER_LEAD_DAYS)
+            prefs.remove(REMINDER_HOUR)
+            prefs.remove(REMINDER_MINUTE)
         }
     }
 }
