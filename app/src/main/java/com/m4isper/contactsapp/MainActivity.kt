@@ -3,8 +3,8 @@ package com.m4isper.contactsapp
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -34,7 +34,9 @@ import com.m4isper.contactsapp.presentation.navigation.ContactsNavHost
 import com.m4isper.contactsapp.presentation.settings.AppLockScreen
 import com.m4isper.contactsapp.presentation.settings.AppLockViewModel
 import com.m4isper.contactsapp.presentation.settings.AppSettingsViewModel
+import com.m4isper.contactsapp.presentation.settings.LocaleManagerSystemAppLanguage
 import com.m4isper.contactsapp.presentation.settings.SharedPrefsAppLanguageStore
+import com.m4isper.contactsapp.presentation.settings.withAppLanguage
 import com.m4isper.contactsapp.ui.components.LocalShowPhotos
 import com.m4isper.contactsapp.ui.theme.ContactsAppTheme
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
@@ -44,9 +46,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.Locale
 
 /** Запуск приложения из системы: действие и его порядковый номер. */
 data class StartRequest(
@@ -59,14 +61,35 @@ class MainActivity : ComponentActivity() {
     private val startRequests = MutableStateFlow<StartRequest?>(null)
 
     override fun attachBaseContext(newBase: Context) {
-        // Язык приложения хранится в обычных настройках: он нужен до запуска Activity.
-        val language = SharedPrefsAppLanguageStore(newBase).language
-        super.attachBaseContext(language.wrap(newBase))
+        // Язык может меняться и с системной страницы «Язык приложения» (Android 13+):
+        // хранилище синхронизируем до выбора локали, иначе fallback возьмёт устаревшее.
+        syncStoredAppLanguage(newBase)
+        super.attachBaseContext(newBase.withAppLanguage())
+    }
+
+    /** Держит хранилище языка равным системному выбору, чтобы fallback после «языка системы» не воскресил старый. */
+    private fun syncStoredAppLanguage(context: Context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val store = SharedPrefsAppLanguageStore(context)
+        val system = LocaleManagerSystemAppLanguage(context).current()
+        if (system != store.language) store.language = system
+    }
+
+    /** Настройки показывают выбранный язык: после смены с системной страницы актуализируем настройку. */
+    private fun syncLanguageSetting() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val graph = (applicationContext as? ContactsApp)?.appGraph ?: return
+        lifecycleScope.launch {
+            val system = LocaleManagerSystemAppLanguage(applicationContext).current()
+            val settings = graph.observeSettings().first()
+            if (settings.appLanguage != system) graph.setAppLanguage(system)
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         publishStartAction(intent)
+        syncLanguageSetting()
 
         val vmFactory = (application as ContactsApp).appGraph.metroViewModelFactory
 
@@ -201,14 +224,3 @@ private fun ThemeMode.isDark(): Boolean =
         ThemeMode.LIGHT -> false
         ThemeMode.DARK -> true
     }
-
-/** Оборачивает контекст выбранным языком приложения. */
-private fun String.wrap(base: Context): Context {
-    if (isBlank()) return base
-    val locale = Locale.forLanguageTag(this)
-    Locale.setDefault(locale)
-    val configuration = Configuration(base.resources.configuration)
-    configuration.setLocale(locale)
-    configuration.setLayoutDirection(locale)
-    return base.createConfigurationContext(configuration)
-}

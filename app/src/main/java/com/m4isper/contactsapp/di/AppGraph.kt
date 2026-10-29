@@ -6,10 +6,13 @@ import com.m4isper.contactsapp.domain.usecase.contacts.GetContactDetailsUseCase
 import com.m4isper.contactsapp.domain.usecase.contacts.GetContactsUseCase
 import com.m4isper.contactsapp.domain.usecase.contacts.ObserveFavoritesUseCase
 import com.m4isper.contactsapp.domain.usecase.settings.ObserveSettingsUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.SetAppLanguageUseCase
 import com.m4isper.contactsapp.presentation.reminders.BirthdayReminderScheduler
 import com.m4isper.contactsapp.presentation.reminders.ReminderScheduler
 import com.m4isper.contactsapp.presentation.settings.AppLanguageStore
+import com.m4isper.contactsapp.presentation.settings.LocaleManagerSystemAppLanguage
 import com.m4isper.contactsapp.presentation.settings.SharedPrefsAppLanguageStore
+import com.m4isper.contactsapp.presentation.settings.SystemAppLanguage
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.Provides
@@ -27,12 +30,17 @@ interface AppGraph :
     val getContactDetails: GetContactDetailsUseCase
     val observeSettings: ObserveSettingsUseCase
     val observeFavorites: ObserveFavoritesUseCase
+    val setAppLanguage: SetAppLanguageUseCase
 
     @Provides
     fun provideContext(application: Application): Context = application.applicationContext
 
     @Provides
     fun provideAppLanguageStore(application: Application): AppLanguageStore = SharedPrefsAppLanguageStore(application)
+
+    @Provides
+    fun provideSystemAppLanguage(application: Application): SystemAppLanguage =
+        LocaleManagerSystemAppLanguage(application)
 
     @Provides
     fun provideReminderScheduler(application: Application): ReminderScheduler = BirthdayReminderScheduler(application)

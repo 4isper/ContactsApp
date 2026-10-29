@@ -49,6 +49,8 @@ android {
         unitTests {
             // Стенды android.util.Log и подобных классов в JVM-тестах не должны падать.
             isReturnDefaultValues = true
+            // Robolectric-тестам обёртки языка нужны ресурсы приложения.
+            isIncludeAndroidResources = true
         }
     }
 
@@ -95,6 +97,7 @@ dependencies {
     implementation(libs.androidx.adaptive.navigation3)
     testImplementation(libs.junit)
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.robolectric)
     testRuntimeOnly(libs.junit.platform.launcher)
     testRuntimeOnly(libs.junit.vintage)
     testImplementation(libs.kotlinx.coroutines.test)

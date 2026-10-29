@@ -315,7 +315,8 @@ private fun SettingsSheetHost(
                     viewModel.onLanguageSelected(it)
                     onDismiss()
                     // Язык применяется при создании Activity: окно пересоздаёт хост.
-                    onRestartRequired()
+                    // На Android 13+ система пересоздаёт его сама после setApplicationLocales.
+                    if (viewModel.languageChangeRestarts) onRestartRequired()
                 },
                 onDismiss = onDismiss,
             )

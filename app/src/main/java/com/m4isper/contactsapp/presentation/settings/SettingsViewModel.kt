@@ -106,8 +106,12 @@ internal class SettingsViewModel(
     /** Аккаунт по умолчанию для новых контактов. */
     fun onDefaultAccountSelected(account: ContactAccount) = update { setDefaultContactAccountUseCase(account) }
 
-    /** Язык приложения: сохраняем и в настройках, и в общих настройках — нужен до запуска Activity. */
+    /** Выбрать язык приложения: сохраняем и в настройках, и в общих настройках, и в системе. */
     fun onLanguageSelected(language: String) = update { this.language.set(language) }
+
+    /** Пересоздавать ли окно после смены языка: решает координатор по уровню API. */
+    val languageChangeRestarts: Boolean
+        get() = language.restartRequired
 
     /** Динамические цвета Android 12+ вместо фирменной палитры. */
     fun onDynamicColorChanged(enabled: Boolean) = update { setDynamicColorUseCase(enabled) }

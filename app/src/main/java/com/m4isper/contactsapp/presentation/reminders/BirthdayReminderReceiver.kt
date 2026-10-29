@@ -20,6 +20,7 @@ import com.m4isper.contactsapp.domain.reminders.OccasionKind
 import com.m4isper.contactsapp.domain.reminders.UpcomingOccasion
 import com.m4isper.contactsapp.domain.reminders.upcomingOccasions
 import com.m4isper.contactsapp.presentation.settings.REMINDERS_CHANNEL_ID
+import com.m4isper.contactsapp.presentation.settings.withAppLanguage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -44,13 +45,13 @@ class BirthdayReminderReceiver : BroadcastReceiver() {
         }
     }
 
-    private suspend fun showReminder(context: Context) {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) !=
+    private suspend fun showReminder(rawContext: Context) {
+        if (ContextCompat.checkSelfPermission(rawContext, Manifest.permission.READ_CONTACTS) !=
             PackageManager.PERMISSION_GRANTED
         ) {
             return
         }
-        val graph = (context.applicationContext as? ContactsApp)?.appGraph ?: return
+        val graph = (rawContext.applicationContext as? ContactsApp)?.appGraph ?: return
         val settings = graph.observeSettings().first()
         val upcoming =
             if (settings.remindersEnabled) {
@@ -62,6 +63,8 @@ class BirthdayReminderReceiver : BroadcastReceiver() {
             } else {
                 emptyList()
             }
+        // Строки уведомления — на языке приложения, а не на языке системы.
+        val context = rawContext.withAppLanguage()
         // Уведомление показываем только с разрешения: на Android 13+ его нужно запросить.
         if (upcoming.isNotEmpty()) {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||

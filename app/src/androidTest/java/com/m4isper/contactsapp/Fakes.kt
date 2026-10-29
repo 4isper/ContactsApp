@@ -44,6 +44,7 @@ import com.m4isper.contactsapp.domain.vcard.VCardCodec
 import com.m4isper.contactsapp.domain.vcard.VCardContact
 import com.m4isper.contactsapp.domain.vcard.VCardExportContact
 import com.m4isper.contactsapp.domain.vcard.VCardParseResult
+import com.m4isper.contactsapp.presentation.settings.SystemAppLanguage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -435,5 +436,16 @@ internal class FakeSettingsRepository(
     override suspend fun resetSettings() {
         resetCalled = true
         state.value = AppSettings()
+    }
+}
+
+/** Системный выбор языка в памяти: инструментальные тесты не трогают LocaleManager устройства. */
+internal class NoopSystemAppLanguage : SystemAppLanguage {
+    var language: String = ""
+
+    override fun current(): String = language
+
+    override fun set(language: String) {
+        this.language = language
     }
 }

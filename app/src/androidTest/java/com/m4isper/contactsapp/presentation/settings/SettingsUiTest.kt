@@ -17,6 +17,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.m4isper.contactsapp.FakeAndroidRepository
 import com.m4isper.contactsapp.FakeSettingsRepository
+import com.m4isper.contactsapp.NoopSystemAppLanguage
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.data.security.Pbkdf2PinHasher
 import com.m4isper.contactsapp.domain.model.settings.AppSettings
@@ -74,6 +75,7 @@ class SettingsUiTest {
                         SharedPrefsAppLanguageStore(
                             InstrumentationRegistry.getInstrumentation().targetContext,
                         ),
+                    system = NoopSystemAppLanguage(),
                     reminders =
                         ReminderSettingsCoordinator(
                             setReminders = SetRemindersUseCase(repository),
@@ -100,6 +102,7 @@ class SettingsUiTest {
                         SharedPrefsAppLanguageStore(
                             InstrumentationRegistry.getInstrumentation().targetContext,
                         ),
+                    system = NoopSystemAppLanguage(),
                 ),
         )
 

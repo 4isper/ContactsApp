@@ -39,6 +39,7 @@ import com.m4isper.contactsapp.ContactsApp
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import com.m4isper.contactsapp.domain.model.contact.normalizeContactText
+import com.m4isper.contactsapp.presentation.settings.withAppLanguage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -109,8 +110,10 @@ class ContactsGlanceWidget : GlanceAppWidget() {
         val favorites = loadFavorites(context)
         // Строки резолвим до композиции: Glance не перестраивает composition
         // при смене конфигурации, поэтому LocalContext внутри был бы stale.
-        val title = context.getString(R.string.widget_title)
-        val emptyText = context.getString(R.string.widget_empty)
+        // Язык — приложения, а не системы: приложение умеет переключать его само.
+        val localized = context.withAppLanguage()
+        val title = localized.getString(R.string.widget_title)
+        val emptyText = localized.getString(R.string.widget_empty)
         provideContent {
             GlanceTheme {
                 FavoritesWidgetContent(favorites, title, emptyText)
