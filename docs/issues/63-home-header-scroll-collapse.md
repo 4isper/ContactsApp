@@ -55,4 +55,19 @@ The bar is one row (~56–72 dp + status-bar inset after 62). On lists with a ha
 
 ## Status
 
-Open
+Done (implementation merged in `dev`; issue 62 follow-up).
+
+**Approach**: (b) — a custom enter-always behavior, not an M3 `TopAppBar` wrapper. After the 62 merge the idle bar is a bare composite row (search field + trailing actions) that is only rendered in the `topBar` slot for idle and search modes; wrapping it into an M3 `TopAppBar` title slot would re-introduce the M3 container metrics the merge removed. The whole decision lives in one new file, `HeaderCollapseState.kt`: `HeaderCollapseState` (measured full height + consumed offset), `Modifier.collapsingHeader` (the bar reports `naturalHeight − offset`, the same bookkeeping as M3 `SingleRowTopAppBar`'s `layoutHeight = maxHeight + heightOffset`), and `rememberHeaderCollapseConnection` (nested scroll wired on the Scaffold content column).
+
+**Sign convention** (confirmed on-device with a temporary logged probe): Compose dispatches pre-scroll parent-first, and with `moveBy(0, -120)` the connection sees `y = −100`; M3 `EnterAlwaysScrollBehavior` does `heightOffset += available.y`, so negative = collapse, positive = expand. The consume path mirrors that; the returned consumed offset must carry the same sign as the delta (`before − after`), otherwise the scrollable computes its leftover as `available − consumed` and scrolls twice (this exact bug was caught by the collapsibility probe: one −100 gesture produced a −300 row shift).
+
+**Reset points**: the collapse state is recreated via `remember(uiState.isSearchMode, uiState.isSelectionMode)`, so search and selection round-trips always start expanded; the fast-scroller letter jump calls `onProgrammaticScroll` → `state.expand()` (`jumpTo` in `GroupedContacts.kt`). `enabled = headerCollapseEnabled(uiState)` keeps the bar pinned when there is no scrollable content (search, selection, skeleton/empty/error).
+
+**Test corrections made along the way**: the fixed-row premise ("the same row stays visible after a full collapse") was wrong for every M3-style bar — the content legitimately flows up by the collapse amount; the instrumented test (`headerCollapsesOnScrollDownAndExpandsOnScrollUp`) now asserts the real invariant: one small gesture must not double-consume (row shift == bar shrink within 2 px), the panel reaches height 0, and the exact pre-gesture state is restored after expanding back. The `home_top_bar` tag sits outside the collapse layout so its bounds are the panel bounds, not the overflowing inner content.
+
+**Verified**:
+- `ContactListUiTest` 23 tests + `ContactsFilterHeaderSyncTest` 4 + `FastScrollerUiTest` 2 + `SelectionTopBarTest` 3 = 32/32 green on the emulator (folding Pixel AVD, API 37), including the two new UI tests: idle bar collapses on scroll down and returns on scroll up; letter-jump reset states are covered by the existing fast-scroller suite.
+- `HeaderCollapseStateTest` (8 JVM tests) pins the state mechanics: clamped consume in both directions, offset normalization on remeasure, idempotent `expand`, `canConsume` boundary zones, zero-height no-ops.
+- Gates: `:app:testDebugUnitTest :app:detekt :app:ktlintCheck` green; `compileDebugKotlin`/`compileDebugAndroidTestKotlin` clean.
+
+**Still manual (not covered by this issue)**: visual pull-to-refresh coexistence during fling, 320 dp / 2.0 font-scale clipping pass, TalkBack announcements, rotation.
