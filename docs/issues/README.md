@@ -214,3 +214,13 @@ A gap review against what a typical contacts manager already offers as a given. 
 - 66 is independent per locale, but the override-gap fixes (widget and notification language, `localeConfig`) should land with the first new locale, not after.
 - 67 is independent of 65 and 66, but both it and 66 touch `MainActivity`: 66 may rework `attachBaseContext` wrapping, 67 changes the activity base class to `FragmentActivity` — coordinate those two changes.
 
+## PIN entry follow-up (2026-10-30)
+
+A design review of the lock screen after issue 67: as a security screen it holds, but as a PIN input it relies on the system IME, stays silent when the entry is below the minimum, has no haptics, and never explains the forgotten-PIN trade-off. One self-contained issue; not implemented yet.
+
+| # | File | Title | Priority | Status |
+|---|---|---|---|---|
+| 68 | [68-pin-entry-redesign.md](68-pin-entry-redesign.md) | Make the PIN entry a genre-standard numeric pad with explicit feedback | P3 | Proposed |
+
+68 builds on 67's biometric branch ("Use PIN" reveals the pad) and deliberately stays out of the hashing/throttling territory of issues 12 and 29.
+
