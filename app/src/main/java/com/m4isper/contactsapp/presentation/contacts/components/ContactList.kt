@@ -19,6 +19,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
@@ -52,6 +53,10 @@ private data class QuickCallTarget(
     val name: String,
     val phone: PhoneNumber,
 )
+
+/** Панель скользит за скроллом только в основном режиме с данными списка. */
+private fun headerCollapseEnabled(uiState: ContactsUiState): Boolean =
+    !uiState.isSearchMode && !uiState.isSelectionMode && uiState.content is Loadable.Content
 
 @Composable
 internal fun ContactList(
@@ -173,6 +178,9 @@ internal fun ContactList(
     val allSelected = visibleIds.isNotEmpty() && uiState.selection.containsAll(visibleIds)
     val allFavorite =
         uiState.selection.isNotEmpty() && uiState.selection.all { it in uiState.favorites }
+    // Скольжение панели за скроллом: сброс при смене режимов панели — новое состояние.
+    val headerCollapse =
+        remember(uiState.isSearchMode, uiState.isSelectionMode) { HeaderCollapseState() }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -192,6 +200,7 @@ internal fun ContactList(
                 onSearchQueryChange = onSearchQueryChange,
                 onSearchOpened = onSearchOpened,
                 onSearchClosed = onSearchClosed,
+                headerCollapse = headerCollapse,
                 onClearSelection = onClearSelection,
                 onSelectAll = onSelectAll,
                 onToggleFavoriteSelected = onToggleFavoriteSelected,
@@ -229,7 +238,13 @@ internal fun ContactList(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(innerPadding),
+                    .padding(innerPadding)
+                    .nestedScroll(
+                        rememberHeaderCollapseConnection(
+                            state = headerCollapse,
+                            enabled = headerCollapseEnabled(uiState),
+                        ),
+                    ),
         ) {
             ExportStatusBanner(
                 inProgress = exportInProgress,
@@ -273,6 +288,7 @@ internal fun ContactList(
                 onImportClick = onImportClick ?: { vCardLaunchers.startImport(ctx) },
                 onClearSearch = onClearSearch,
                 onClearFilters = onClearFilters,
+                onProgrammaticScroll = { headerCollapse.expand() },
                 showFavoriteQuickAction = showFavoriteQuickAction,
             )
         }
@@ -316,6 +332,7 @@ private fun ContactListTopBar(
     onSearchQueryChange: (String) -> Unit,
     onSearchOpened: () -> Unit,
     onSearchClosed: () -> Unit,
+    headerCollapse: HeaderCollapseState,
     onClearSelection: () -> Unit,
     onSelectAll: (List<Long>) -> Unit,
     onToggleFavoriteSelected: () -> Unit,
@@ -359,6 +376,7 @@ private fun ContactListTopBar(
                 onImportClick = onImportClick,
                 onExportClick = onExportClick,
                 onSelectAllClick = { onSelectAll(visibleIds) },
+                collapse = headerCollapse,
                 profileContactId = profileContactId,
                 onProfileClick = { profileContactId?.let(onProfileClick) },
             )

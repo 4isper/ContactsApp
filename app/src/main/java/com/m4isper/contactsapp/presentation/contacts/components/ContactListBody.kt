@@ -41,6 +41,7 @@ internal fun ContactListBody(
     onImportClick: (() -> Unit)? = null,
     onClearSearch: () -> Unit = {},
     onClearFilters: () -> Unit = {},
+    onProgrammaticScroll: () -> Unit = {},
     showFavoriteQuickAction: Boolean,
 ) {
     val pullState = rememberPullToRefreshState()
@@ -86,6 +87,7 @@ internal fun ContactListBody(
                     onCall = onCallContact,
                     onSms = onSmsContact,
                     onToggleFavorite = onToggleFavorite,
+                    onProgrammaticScroll = onProgrammaticScroll,
                 )
         }
     }

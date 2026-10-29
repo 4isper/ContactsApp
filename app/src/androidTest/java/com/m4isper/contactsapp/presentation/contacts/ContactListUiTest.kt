@@ -4,9 +4,11 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.WindowInfo
+import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.longClick
@@ -17,6 +19,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -315,6 +318,83 @@ class ContactListUiTest {
         compose.onNodeWithTag("home_top_bar").assertIsDisplayed()
         compose.onNodeWithTag("settings_action").assertIsDisplayed()
         compose.onNodeWithText(context.getString(R.string.app_name)).assertDoesNotExist()
+    }
+
+    @Test
+    fun headerCollapsesOnScrollDownAndExpandsOnScrollUp() {
+        val contacts = (1..20).map { testDetails((it - 1).toLong(), "Name%02d".format(it), "123") }
+        compose.setContent {
+            ContactList(
+                uiState = ContactsUiState(content = Loadable.Content(contacts)),
+                onAction = {},
+            )
+        }
+        compose.waitForIdle()
+
+        val bar = compose.onNodeWithTag("home_top_bar")
+        val list = compose.onNodeWithTag("contacts_list")
+        bar.assertIsDisplayed()
+        compose.onNodeWithText("Name02").assertIsDisplayed()
+        val barHeight0 = bar.fetchSemanticsNode().boundsInRoot.height
+        val name02Top0 =
+            compose
+                .onNodeWithText("Name02")
+                .fetchSemanticsNode()
+                .positionInRoot.y
+
+        // Один жест: панели хватает измеренной высоты, все дельты уходят в неё,
+        // список не прокручивается — сдвиг контента равен сжатию панели.
+        list.performTouchInput {
+            down(center)
+            moveBy(Offset(0f, -120f))
+            up()
+        }
+        compose.waitForIdle()
+        val barHeight1 = bar.fetchSemanticsNode().boundsInRoot.height
+        val name02Top1 =
+            compose
+                .onNodeWithText("Name02")
+                .fetchSemanticsNode()
+                .positionInRoot.y
+        // Панель сжалась.
+        assertEquals(true, barHeight1 < barHeight0)
+        // Нет двойного потребления: сдвиг строки = сжатию панели.
+        assertEquals(name02Top0 - (barHeight0 - barHeight1), name02Top1, 2f)
+
+        // Добиваем панель до нуля шагами без флинга.
+        repeat(3) {
+            list.performTouchInput {
+                down(center)
+                moveBy(Offset(0f, -120f))
+                up()
+            }
+            compose.waitForIdle()
+        }
+        bar.assertHeightIsEqualTo(0.dp)
+
+        // Те же шаги назад: панель раскрывается, список запоминает скролл.
+        repeat(4) {
+            list.performTouchInput {
+                down(center)
+                moveBy(Offset(0f, 120f))
+                up()
+            }
+            compose.waitForIdle()
+        }
+
+        // Итоговое состояние совпало со стартовым: дельты не потреблены дважды.
+        assertEquals(true, bar.fetchSemanticsNode().boundsInRoot.height > 0f)
+        bar.assertIsDisplayed()
+        assertEquals(true, bar.fetchSemanticsNode().boundsInRoot.height >= barHeight0 - 2f)
+        compose.onNodeWithText("Name02").assertIsDisplayed()
+        assertEquals(
+            name02Top0,
+            compose
+                .onNodeWithText("Name02")
+                .fetchSemanticsNode()
+                .positionInRoot.y,
+            2f,
+        )
     }
 
     @Test

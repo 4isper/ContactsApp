@@ -48,6 +48,7 @@ internal fun GroupedContacts(
     onCall: ((ContactDetails) -> Unit)? = null,
     onSms: ((ContactDetails) -> Unit)? = null,
     onToggleFavorite: ((Long) -> Unit)? = null,
+    onProgrammaticScroll: () -> Unit = {},
 ) {
     val spacing = LocalSpacing.current
     val grouped =
@@ -71,6 +72,8 @@ internal fun GroupedContacts(
 
     fun jumpTo(letter: Char) {
         activeLetter = letter
+        // Программная прокрутка не шлёт nested-scroll дельт — панель раскрываем явно.
+        onProgrammaticScroll()
         indices[letter]?.let { index ->
             scope.launch { listState.scrollToItem(index) }
         }
@@ -87,7 +90,8 @@ internal fun GroupedContacts(
                 modifier =
                     Modifier
                         .weight(1f)
-                        .fillMaxSize(),
+                        .fillMaxSize()
+                        .testTag("contacts_list"),
             ) {
                 grouped.forEach { (letter, group) ->
                     contactGroup(

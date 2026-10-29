@@ -54,6 +54,7 @@ internal fun HomeTopBar(
     onImportClick: () -> Unit,
     onExportClick: () -> Unit,
     onSelectAllClick: () -> Unit,
+    collapse: HeaderCollapseState,
     modifier: Modifier = Modifier,
     profileContactId: Long? = null,
     onProfileClick: () -> Unit = {},
@@ -62,8 +63,10 @@ internal fun HomeTopBar(
     Column(
         modifier =
             modifier
-                .statusBarsPadding()
+                // Тег снаружи collapse-layout: высота узла = высота панели (0 при полном сжатии).
                 .testTag(if (isSearchMode) "home_search_row" else "home_top_bar")
+                .collapsingHeader(collapse)
+                .statusBarsPadding()
                 .fillMaxWidth(),
     ) {
         ContactsSearchField(
