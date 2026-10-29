@@ -32,8 +32,13 @@ internal class ContactsListState(
 
     /** Идёт ли загрузка. */
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+    private val _hasLoaded = MutableStateFlow(false)
+    val hasLoaded: StateFlow<Boolean> = _hasLoaded.asStateFlow()
+    private val _isRefreshIndicatorVisible = MutableStateFlow(false)
+    val isRefreshIndicatorVisible: StateFlow<Boolean> = _isRefreshIndicatorVisible.asStateFlow()
     private val _failure = MutableStateFlow<Throwable?>(null)
     private var pendingReload = false
+    private var pendingRefreshIndicator = false
 
     /** Ошибка последней загрузки. */
     val failure: StateFlow<Throwable?> = _failure.asStateFlow()
@@ -48,31 +53,38 @@ internal class ContactsListState(
      * остальные добавляются следом. Если список уже грузится, следующая попытка
      * запоминается и выполняется после текущей: изменения провайдера не теряются.
      */
-    suspend fun load() {
+    suspend fun load(showRefreshIndicator: Boolean = false) {
         if (_isLoading.value) {
             pendingReload = true
+            pendingRefreshIndicator = pendingRefreshIndicator || showRefreshIndicator
             return
         }
         _failure.value = null
         _isLoading.value = true
+        _isRefreshIndicatorVisible.value = showRefreshIndicator
         try {
             safeCall(LIST_TAG, "refresh contacts failed") {
                 loadByPages()
+                _hasLoaded.value = true
             }.onFailure { failure ->
                 _failure.value = failure
             }
         } finally {
             _isLoading.value = false
+            _isRefreshIndicatorVisible.value = false
         }
         if (pendingReload) {
+            val showPendingIndicator = pendingRefreshIndicator
             pendingReload = false
-            load()
+            pendingRefreshIndicator = false
+            load(showPendingIndicator)
         }
     }
 
     /** Сбрасывает список: экран очищен, следующая загрузка начнётся с нуля. */
     fun clear() {
         _contacts.value = emptyList()
+        _hasLoaded.value = false
         _failure.value = null
     }
 

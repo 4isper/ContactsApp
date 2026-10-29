@@ -106,6 +106,87 @@ class ContactsViewModelTest {
         }
 
     @Test
+    fun `initial load shows loading without refresh indicator`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeContactsRepository(listOf(testDetails(1, "Anna", "111"))).apply {
+                    pageLoadDelayMillis = 1_000
+                }
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+
+            viewModel.refresh()
+            runCurrent()
+
+            val state = viewModel.uiState.value
+            assertEquals(false, state.isRefreshing)
+            assertTrue(state.content is Loadable.Loading)
+            advanceUntilIdle()
+        }
+
+    @Test
+    fun `background refresh keeps loaded content and hides refresh indicator`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeContactsRepository(listOf(testDetails(1, "Anna", "111")))
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+            repository.pageLoadDelayMillis = 1_000
+
+            viewModel.refresh()
+            runCurrent()
+
+            val state = viewModel.uiState.value
+            assertEquals(false, state.isRefreshing)
+            assertTrue(state.content is Loadable.Content)
+            advanceUntilIdle()
+        }
+
+    @Test
+    fun `background refresh keeps empty state without loading`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeContactsRepository()
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+            repository.pageLoadDelayMillis = 1_000
+
+            viewModel.refresh()
+            runCurrent()
+
+            val state = viewModel.uiState.value
+            assertEquals(false, state.isRefreshing)
+            assertTrue(state.content is Loadable.Empty)
+            advanceUntilIdle()
+        }
+
+    @Test
+    fun `manual refresh shows indicator without replacing loaded content`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeContactsRepository(listOf(testDetails(1, "Anna", "111")))
+            val viewModel = viewModel(repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            viewModel.refresh()
+            advanceUntilIdle()
+            repository.pageLoadDelayMillis = 1_000
+
+            viewModel.refresh(showRefreshIndicator = true)
+            runCurrent()
+
+            val state = viewModel.uiState.value
+            assertEquals(true, state.isRefreshing)
+            assertTrue(state.content is Loadable.Content)
+            advanceUntilIdle()
+            assertEquals(false, viewModel.uiState.value.isRefreshing)
+        }
+
+    @Test
     fun `provider change refreshes contacts automatically`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
