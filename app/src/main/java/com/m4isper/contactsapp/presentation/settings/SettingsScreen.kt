@@ -352,12 +352,16 @@ private fun SettingsSheetHost(
     }
 }
 
-/** Языки приложения: пустой код — язык системы. */
+/** Языки приложения: пустой код — язык системы. Подписи на самих языках. */
 private val APP_LANGUAGES =
     listOf(
         "" to null,
         "en" to "English",
         "ru" to "Русский",
+        "es" to "Español",
+        "de" to "Deutsch",
+        "fr" to "Français",
+        "pt-BR" to "Português (Brasil)",
     )
 
 /** Подписи языков, выбранных явно. */
