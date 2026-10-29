@@ -307,6 +307,9 @@
     <string name="app_lock_unlock">Déverrouiller</string>
 
     <string name="app_lock_use_pin">Utiliser le code PIN</string>
+    <string name="app_lock_setup_next">Suivant</string>
+    <string name="app_lock_setup_step_first">Choisissez un code PIN</string>
+    <string name="app_lock_setup_step_repeat">Répétez le code PIN</string>
 
     <string name="app_lock_length_hint">4 à 8 chiffres</string>
     <string name="app_lock_key_delete">Supprimer le dernier chiffre</string>

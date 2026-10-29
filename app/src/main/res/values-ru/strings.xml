@@ -317,6 +317,9 @@
     <string name="app_lock_unlock">Разблокировать</string>
 
     <string name="app_lock_use_pin">Ввести PIN</string>
+    <string name="app_lock_setup_next">Далее</string>
+    <string name="app_lock_setup_step_first">Придумайте PIN-код</string>
+    <string name="app_lock_setup_step_repeat">Повторите PIN-код</string>
 
     <string name="app_lock_length_hint">От 4 до 8 цифр</string>
     <string name="app_lock_key_delete">Удалить последнюю цифру</string>

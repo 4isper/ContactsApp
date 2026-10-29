@@ -307,6 +307,9 @@
     <string name="app_lock_unlock">Desbloquear</string>
 
     <string name="app_lock_use_pin">Usar o PIN</string>
+    <string name="app_lock_setup_next">Próximo</string>
+    <string name="app_lock_setup_step_first">Crie um PIN</string>
+    <string name="app_lock_setup_step_repeat">Repita o PIN</string>
 
     <string name="app_lock_length_hint">De 4 a 8 dígitos</string>
     <string name="app_lock_key_delete">Excluir o último dígito</string>

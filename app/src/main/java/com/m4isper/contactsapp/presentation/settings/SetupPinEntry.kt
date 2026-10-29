@@ -20,6 +20,7 @@ internal class SetupPinEntry {
         private set
     var pin: String by mutableStateOf("")
         private set
+
     /** Код с первого шага; на нём же хранится итог установки. */
     var first: String by mutableStateOf("")
         private set

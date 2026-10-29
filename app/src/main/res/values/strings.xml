@@ -307,6 +307,9 @@
     <string name="app_lock_unlock">Unlock</string>
 
     <string name="app_lock_use_pin">Use PIN</string>
+    <string name="app_lock_setup_next">Next</string>
+    <string name="app_lock_setup_step_first">Enter a PIN</string>
+    <string name="app_lock_setup_step_repeat">Repeat the PIN</string>
 
     <string name="app_lock_length_hint">4–8 digits</string>
     <string name="app_lock_key_delete">Delete the last digit</string>

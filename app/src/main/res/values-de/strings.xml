@@ -307,6 +307,9 @@
     <string name="app_lock_unlock">Entsperren</string>
 
     <string name="app_lock_use_pin">PIN verwenden</string>
+    <string name="app_lock_setup_next">Weiter</string>
+    <string name="app_lock_setup_step_first">PIN festlegen</string>
+    <string name="app_lock_setup_step_repeat">PIN wiederholen</string>
 
     <string name="app_lock_length_hint">4–8 Ziffern</string>
     <string name="app_lock_key_delete">Letzte Ziffer löschen</string>

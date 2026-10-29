@@ -12,7 +12,6 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.m4isper.contactsapp.FakeAndroidRepository
@@ -249,6 +248,12 @@ class SettingsUiTest {
         assertEquals(listOf(true), repository.secureWindowValues)
     }
 
+    private fun tapPinKeys(vararg digits: Int) {
+        digits.forEach { digit ->
+            compose.onNodeWithTag("app_lock_key_$digit").performClick()
+        }
+    }
+
     @Test
     fun appLockAsksForPinBeforeEnabling() {
         val repository = FakeSettingsRepository()
@@ -259,12 +264,16 @@ class SettingsUiTest {
         compose.onNodeWithTag("app_lock_switch").performScrollTo().performClick()
 
         compose.onNodeWithTag("app_lock_pin_dialog").assertIsDisplayed()
-        compose.onNodeWithTag("app_lock_pin_field").performTextInput("1234")
-        compose.onNodeWithTag("app_lock_pin_repeat_field").performTextInput("1234")
+        // Шаг 1: код, галочка; шаг 2: повтор, «Готово».
+        tapPinKeys(1, 2, 3, 4)
+        compose.onNodeWithTag("app_lock_setup_next").performClick()
+        tapPinKeys(1, 2, 3, 4)
         compose.onNodeWithTag("app_lock_pin_confirm").performClick()
 
         compose.waitUntil(timeoutMillis = 5_000) { repository.appLocks.isNotEmpty() }
-        assertEquals(true, repository.appLocks.single().first)
+        val (enabled, _, length) = repository.appLocks.single()
+        assertEquals(true, enabled)
+        assertEquals(4, length)
     }
 
     @Test
@@ -339,12 +348,16 @@ class SettingsUiTest {
         compose.onNodeWithTag("app_lock_state").assertTextEquals(string(R.string.settings_app_lock_state_on))
         compose.onNodeWithTag("app_lock_change_pin").performClick()
 
-        compose.onNodeWithTag("app_lock_pin_field").performTextInput("5678")
-        compose.onNodeWithTag("app_lock_pin_repeat_field").performTextInput("5678")
+        compose.onNodeWithTag("app_lock_pin_dialog").assertIsDisplayed()
+        tapPinKeys(5, 6, 7, 8)
+        compose.onNodeWithTag("app_lock_setup_next").performClick()
+        tapPinKeys(5, 6, 7, 8)
         compose.onNodeWithTag("app_lock_pin_confirm").performClick()
 
         compose.waitUntil(timeoutMillis = 5_000) { repository.appLocks.isNotEmpty() }
-        assertEquals(true, repository.appLocks.single().first)
+        val (enabled, _, length) = repository.appLocks.single()
+        assertEquals(true, enabled)
+        assertEquals(4, length)
     }
 
     @Test

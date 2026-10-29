@@ -80,7 +80,7 @@ internal fun SettingsScreen(
     val systemLanguage = stringResource(R.string.settings_language_system)
     val languageValue = LANGUAGE_LABELS[settings.appLanguage] ?: systemLanguage
     var openSheet by remember { mutableStateOf<SettingsSheet?>(null) }
-    var showPinDialog by remember { mutableStateOf(false) }
+    var showPinSheet by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -189,7 +189,7 @@ internal fun SettingsScreen(
                         checked = settings.appLockEnabled,
                         onCheckedChange = { enabled ->
                             if (enabled) {
-                                showPinDialog = true
+                                showPinSheet = true
                             } else {
                                 viewModel.onAppLockChanged(false, "")
                             }
@@ -198,7 +198,7 @@ internal fun SettingsScreen(
                     )
                     SettingsPinState(
                         enabled = settings.appLockEnabled,
-                        onChangePin = { showPinDialog = true },
+                        onChangePin = { showPinSheet = true },
                     )
                     if (biometricsAvailable(context)) {
                         SettingsSwitch(
@@ -248,13 +248,13 @@ internal fun SettingsScreen(
         onRestartRequired = onRestartRequired,
     )
 
-    if (showPinDialog) {
-        PinSetupDialog(
+    if (showPinSheet) {
+        PinSetupSheet(
             onConfirm = { pin ->
-                showPinDialog = false
+                showPinSheet = false
                 viewModel.onAppLockChanged(true, pin)
             },
-            onDismiss = { showPinDialog = false },
+            onDismiss = { showPinSheet = false },
             title =
                 stringResource(
                     if (settings.appLockEnabled) {
