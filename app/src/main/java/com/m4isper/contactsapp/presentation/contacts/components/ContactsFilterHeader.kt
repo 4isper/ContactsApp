@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
@@ -17,12 +16,12 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,7 +29,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -269,64 +267,47 @@ private fun AccountFilterChip(
     var expanded by remember { mutableStateOf(false) }
     val nowMs = rememberSyncNow(accountSyncInfos)
     val selectedSyncInfo = selectedAccount.syncInfo(accountSyncInfos)
-    val selectedStatus = selectedSyncInfo?.let { syncStatusText(it, nowMs) }
     Box(modifier = modifier) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            FilterChip(
-                selected = selectedAccount != null,
-                onClick = { expanded = true },
-                shape = PillShape,
-                label = {
-                    Column {
-                        Text(
-                            text =
-                                selectedAccount?.let { contactAccountTitle(it) }
-                                    ?: stringResource(R.string.filter_accounts),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        if (selectedStatus != null) {
-                            Text(
-                                text = selectedStatus,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
+        FilterChip(
+            selected = selectedAccount != null,
+            onClick = { expanded = true },
+            shape = PillShape,
+            label = {
+                Text(
+                    text =
+                        selectedAccount?.let { contactAccountTitle(it) }
+                            ?: stringResource(R.string.filter_accounts),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            },
+            leadingIcon =
+                if (selectedAccount != null) {
+                    {
+                        if (selectedSyncInfo?.syncStatus == AccountSyncStatus.ERROR) {
+                            Icon(
+                                Icons.Filled.Warning,
+                                contentDescription = stringResource(R.string.account_sync_error),
+                                tint = MaterialTheme.colorScheme.error,
                             )
-                        }
-                    }
-                },
-                leadingIcon =
-                    if (selectedAccount != null) {
-                        {
+                        } else {
                             Icon(
                                 Icons.Filled.AccountCircle,
                                 contentDescription = null,
                             )
                         }
-                    } else {
-                        null
-                    },
-                trailingIcon = {
-                    Icon(
-                        Icons.Filled.ArrowDropDown,
-                        contentDescription = null,
-                    )
+                    }
+                } else {
+                    null
                 },
-                modifier = Modifier.widthIn(max = 220.dp),
-            )
-            if (selectedSyncInfo?.syncStatus == AccountSyncStatus.ERROR) {
-                IconButton(
-                    onClick = onRetrySync,
-                    modifier = Modifier.testTag("account_sync_retry"),
-                ) {
-                    Icon(
-                        Icons.Filled.Refresh,
-                        contentDescription = stringResource(R.string.account_sync_retry),
-                    )
-                }
-            }
-        }
+            trailingIcon = {
+                Icon(
+                    Icons.Filled.ArrowDropDown,
+                    contentDescription = null,
+                )
+            },
+            modifier = Modifier.widthIn(max = 220.dp),
+        )
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },

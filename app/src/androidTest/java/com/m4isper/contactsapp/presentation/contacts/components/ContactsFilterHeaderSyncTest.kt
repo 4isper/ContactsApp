@@ -2,6 +2,7 @@ package com.m4isper.contactsapp.presentation.contacts.components
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -43,13 +44,17 @@ class ContactsFilterHeaderSyncTest {
     }
 
     @Test
-    fun selectedSyncedAccountShowsStatusUnderName() {
+    fun selectedSyncedAccountHidesStatusUntilDropdownOpened() {
         setHeader(
             selectedAccount = google,
             syncInfos = listOf(AccountSyncInfo(google, AccountSyncStatus.SYNCED, lastSyncTimeMs = null)),
         )
 
-        compose.onNodeWithText("Synced").assertIsDisplayed()
+        compose.onNodeWithText("Synced").assertDoesNotExist()
+
+        compose.onNodeWithTag("account_chip").performClick()
+
+        compose.onNodeWithText("Google · Synced").assertIsDisplayed()
     }
 
     @Test
@@ -75,7 +80,7 @@ class ContactsFilterHeaderSyncTest {
     }
 
     @Test
-    fun errorAccountOffersRetryAction() {
+    fun errorAccountShowsWarningAndOffersRetryInDropdown() {
         val retried = AtomicBoolean(false)
         setHeader(
             selectedAccount = google,
@@ -83,7 +88,11 @@ class ContactsFilterHeaderSyncTest {
             onRetrySync = { retried.set(true) },
         )
 
-        compose.onNodeWithTag("account_sync_retry").assertIsDisplayed().performClick()
+        compose.onNodeWithContentDescription("Sync error", useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithTag("account_sync_retry").assertDoesNotExist()
+
+        compose.onNodeWithTag("account_chip").performClick()
+        compose.onNodeWithTag("account_sync_retry_com.google_user@gmail.com").performClick()
 
         assertTrue(retried.get())
     }
