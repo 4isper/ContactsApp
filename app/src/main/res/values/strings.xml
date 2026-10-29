@@ -222,11 +222,15 @@
     <string name="batch_delete_failed">Couldn\'t delete contacts</string>
     <string name="action_more">More actions</string>
     <string name="action_import">Import from file</string>
+    <string name="action_scan_qr">Scan QR code</string>
     <string name="action_export">Export to file</string>
     <string name="contacts_my_profile">My profile</string>
     <string name="import_empty">No contacts found in the file</string>
     <string name="import_failed">Couldn\'t import contacts</string>
     <string name="import_no_permission">No permission to import contacts</string>
+    <string name="scan_qr_prompt">Point the camera at a QR code with a contact</string>
+    <string name="scan_qr_no_permission">No permission to use the camera</string>
+    <string name="scan_qr_not_contact">This QR code doesn\'t contain a contact</string>
     <string name="import_preview_title">Import contacts</string>
     <string name="import_preview_total">Contacts in file: %1$d</string>
     <string name="import_preview_duplicates">Duplicates: %1$d</string>

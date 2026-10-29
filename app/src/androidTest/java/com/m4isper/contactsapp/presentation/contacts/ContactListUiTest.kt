@@ -736,6 +736,7 @@ class ContactListUiTest {
         compose.onNodeWithTag("recents_menu_item").assertIsDisplayed()
         compose.onNodeWithTag("groups_menu_item").assertIsDisplayed()
         compose.onNodeWithTag("import_menu_item").assertIsDisplayed()
+        compose.onNodeWithTag("scan_qr_menu_item").assertIsDisplayed()
         compose.onNodeWithTag("export_menu_item").assertIsDisplayed()
         compose.onNodeWithTag("duplicates_menu_item").assertIsDisplayed()
     }

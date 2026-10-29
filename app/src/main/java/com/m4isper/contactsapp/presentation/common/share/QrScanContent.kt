@@ -3,7 +3,9 @@ package com.m4isper.contactsapp.presentation.common.share
 /** Содержимое отсканированного QR: контакт можно отправить в предпросмотр импорта. */
 sealed interface QrScanContent {
     /** QR с vCard: текст уходит в предпросмотр импорта как есть. */
-    data class VCard(val text: String) : QrScanContent
+    data class VCard(
+        val text: String,
+    ) : QrScanContent
 
     /** QR без контакта: ссылка, обычный текст, MECARD. */
     data object NotContact : QrScanContent

@@ -216,6 +216,7 @@ internal fun ContactList(
                 onDuplicatesClick = onDuplicatesClick,
                 onGroupsClick = onManageGroupsClick,
                 onImportClick = { vCardLaunchers.startImport(ctx) },
+                onScanQrClick = { vCardLaunchers.startScan(ctx) },
                 onExportClick = { vCardLaunchers.startExport() },
                 onProfileClick = onProfileClick,
             )
@@ -345,6 +346,7 @@ private fun ContactListTopBar(
     onDuplicatesClick: () -> Unit,
     onGroupsClick: () -> Unit,
     onImportClick: () -> Unit,
+    onScanQrClick: () -> Unit,
     onExportClick: () -> Unit,
     onProfileClick: (Long) -> Unit,
 ) {
@@ -374,6 +376,7 @@ private fun ContactListTopBar(
                 onDuplicatesClick = onDuplicatesClick,
                 onGroupsClick = onGroupsClick,
                 onImportClick = onImportClick,
+                onScanQrClick = onScanQrClick,
                 onExportClick = onExportClick,
                 onSelectAllClick = { onSelectAll(visibleIds) },
                 collapse = headerCollapse,

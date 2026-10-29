@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Merge
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -52,6 +53,7 @@ internal fun HomeTopBar(
     onDuplicatesClick: () -> Unit,
     onGroupsClick: () -> Unit,
     onImportClick: () -> Unit,
+    onScanQrClick: () -> Unit,
     onExportClick: () -> Unit,
     onSelectAllClick: () -> Unit,
     collapse: HeaderCollapseState,
@@ -152,6 +154,17 @@ internal fun HomeTopBar(
                                 },
                                 leadingIcon = { ImportExportIcon() },
                                 modifier = Modifier.testTag("import_menu_item"),
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.action_scan_qr)) },
+                                onClick = {
+                                    menuExpanded = false
+                                    onScanQrClick()
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Filled.QrCodeScanner, contentDescription = null)
+                                },
+                                modifier = Modifier.testTag("scan_qr_menu_item"),
                             )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.action_export)) },
