@@ -3,6 +3,24 @@
 **Priority:** P3 — the unlock screen now rehearses a specific motor skill (issue 68's pad); setting the PIN on a different input (two IME text fields in a cramped dialog) breaks that skill at the moment it is being formed. Setup happens rarely, so this is polish — but the marginal cost is small now that the pad exists
 **Area:** security / app lock / ux
 
+## Status
+
+Done.
+
+What changed:
+
+- `PinSetupDialog` is replaced by `PinSetupSheet` (`AppBottomSheet`, the issue 60 pattern): step 1 "Enter a PIN" with growing dots and a checkmark key, step 2 "Repeat the PIN" with a fixed dot target, the mismatch message (liveRegion) and a LongPress buzz, Done pinned at the bottom.
+- The two-step machine lives in a plain `SetupPinEntry` class (FIRST/REPEAT stages, short-entry flash, mismatch at full length, done on a matching pair) — JVM-tested, the sheet only wires haptics (KeyboardTap on keys, LongPress on errors, Confirm on a saved pair).
+- `LockPinPad`, `LockPinDots`, `PadKey`, and the PIN length constants moved into a shared `LockPinPad.kt` with a new optional checkmark slot — one pad implementation for both screens.
+- `SettingsScreen` wires the sheet for both enable and change-PIN; the `onConfirm(pin)` contract and `SetAppLockUseCase` (hash + length in one write) are unchanged. Strings for all six locales (step headers, Next).
+- Follow-up fix from the connected run: the sheet content exceeded the modal height and pad taps failed to inject — the reminder-sheet structure (fixed header, scrollable pad, pinned button) resolved it.
+
+Verification:
+
+- JVM: `SetupPinEntryTest` (7 cases: short flash, stage transition, done/mismatch/partials, delete semantics, cap at 8); full suites, detekt, ktlint, `lintDebug` green.
+- Connected: `SettingsUiTest` 11/11 (the two dialog tests now drive the pad: keys, checkmark, confirm, and assert the saved `(enabled, hash, length 4)` triple) and `AppLockScreenUiTest` 7/7.
+- Manual on the fold AVD: enabling the lock through the sheet (1234 → Next → 1234 → Done) closed the gate and stored the length; the lock screen then unlocked by auto-submit in the known mode. The sheet's pad sits higher on step 2 than on step 1, so a scripted pass with stale coordinates pressed the wrong keys first — fresh per-step coordinates behaved; real users see the screen. Haptics are not observable on the emulator; the API calls are code-reviewed.
+
 ## Problem
 
 The PIN is set in `PinSetupDialog` — an `AlertDialog` with two IME-driven text fields (PIN, repeat). After issue 68 the asymmetry is noticeable:
