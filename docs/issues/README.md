@@ -28,8 +28,8 @@ Pick an item, create a branch, and use its acceptance criteria as the definition
 ## Not covered by the roadmap
 
 - The "My profile" card (`ContactsContract.Profile`) is not implemented: the app has no own-profile screen and does not write changes back to the profile.
-- The language picker offers the languages the app is translated into (system, English, Russian); other translations would need their own `values-xx` resources.
-- The reminders fire once a day in the morning; the time of day is fixed, only the lead time (1, 3, 7 or 14 days) is configurable.
+- The language picker offers the languages the app is translated into (system, English, Russian); other translations would need their own `values-xx` resources — see [66-more-app-languages.md](66-more-app-languages.md).
+- The reminders fire once a day in the morning; the time of day is fixed, only the lead time (1, 3, 7 or 14 days) is configurable — see [65-reminder-time-of-day.md](65-reminder-time-of-day.md).
 
 ## Architecture audit backlog (2026-10-22)
 
@@ -197,4 +197,20 @@ A follow-up from issue 53's "Out of scope" note: the app could show a contact QR
 | # | File | Title | Priority | Status |
 |---|---|---|---|---|
 | 64 | [64-scan-contact-qr.md](64-scan-contact-qr.md) | Accept a contact by scanning a QR code | P2 | Done (`fc1de8f`, `a10be6f`; manual device pass pending) |
+
+## Feature gap backlog (2026-10-29)
+
+A gap review against what a typical contacts manager already offers as a given. None of these was ever planned in the backlogs above; each file is a self-contained proposal with a problem statement, proposed scope, acceptance criteria, and technical notes. No Status sections yet — they appear when an item is implemented.
+
+| # | File | Title | Priority | Status |
+|---|---|---|---|---|
+| 65 | [65-reminder-time-of-day.md](65-reminder-time-of-day.md) | Let the user pick the daily reminder time | P3 | Proposed |
+| 66 | [66-more-app-languages.md](66-more-app-languages.md) | Expand localization beyond English and Russian | P2 | Proposed |
+| 67 | [67-biometric-unlock.md](67-biometric-unlock.md) | Unlock the app with biometrics | P2 | Proposed |
+
+### Feature gap dependencies
+
+- 65 is independent and the smallest of the three: the scheduler, coordinator rollback, and boot receiver only need the time value threaded through.
+- 66 is independent per locale, but the override-gap fixes (widget and notification language, `localeConfig`) should land with the first new locale, not after.
+- 67 is independent of 65 and 66, but both it and 66 touch `MainActivity`: 66 may rework `attachBaseContext` wrapping, 67 changes the activity base class to `FragmentActivity` — coordinate those two changes.
 
