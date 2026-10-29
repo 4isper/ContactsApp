@@ -84,17 +84,22 @@ internal fun AppLockScreen(
     val prompt = remember(activity) { BiometricUnlock.from(activity) }
     val biometricsOnDevice = remember(context) { biometricsAvailable(context) }
     val biometricActive = biometricsEnabled && prompt != null && biometricsOnDevice
-    var showPinEntry by remember { mutableStateOf(!biometricActive) }
+    // Пока биометрия не подтверждена как активная, показываем PIN сразу;
+    // после её появления промпт на экране, поле — по кнопке «Ввести PIN».
+    var pinRevealed by remember { mutableStateOf(false) }
+    val showPinEntry = !biometricActive || pinRevealed
 
     val showPrompt: () -> Unit = {
         prompt?.authenticate(
             onUnlock = onBiometricUnlock,
-            onPinFallback = { showPinEntry = true },
+            onPinFallback = { pinRevealed = true },
         )
     }
     // Промпт показывается на каждый вход в блокировку: экран собирается заново после разблокировки.
     if (biometricActive) {
-        LifecycleResumeEffect(Unit) {
+        // Ключ по активности: промпт показывается и на входе в блокировку,
+        // и когда настройки донастроили биометрию уже под закрытым гейтом.
+        LifecycleResumeEffect(biometricActive) {
             showPrompt()
             onPauseOrDispose { }
         }
@@ -164,7 +169,7 @@ internal fun AppLockScreen(
             } else {
                 LockBiometricEntry(
                     showPrompt = showPrompt,
-                    onUsePin = { showPinEntry = true },
+                    onUsePin = { pinRevealed = true },
                 )
             }
         }

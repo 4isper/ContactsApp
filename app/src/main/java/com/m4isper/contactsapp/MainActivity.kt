@@ -185,11 +185,15 @@ private fun AppContent(
         dynamicColor = settings.dynamicColor,
     ) {
         CompositionLocalProvider(LocalShowPhotos provides settings.showPhotos) {
-            if (settings.appLockEnabled && !unlocked) {
+            // До загрузки настроек защита считается включённой, но биометрию
+            // не предлагаем: иначе промпт вспыхивал бы при выключенной защите.
+            val lockActive = settings.appLockEnabled || !settings.settingsLoaded
+            if (lockActive && !unlocked) {
+                val biometricsOffered = settings.appLockEnabled && settings.settingsLoaded && settings.appLockBiometrics
                 AppLockScreen(
                     onUnlock = { pin -> lockViewModel.unlock(pin, settings.appLockPinHash) },
                     onBiometricUnlock = lockViewModel::unlockBiometric,
-                    biometricsEnabled = settings.appLockBiometrics,
+                    biometricsEnabled = biometricsOffered,
                     lockedFor = lockRemaining,
                 )
             } else {

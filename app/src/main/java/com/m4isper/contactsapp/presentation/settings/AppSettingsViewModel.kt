@@ -23,6 +23,8 @@ data class AppUiSettings(
     val appLockPinHash: String = "",
     val secureWindow: Boolean = false,
     val appLanguage: String = "",
+    /** Настройки загружены из DataStore: до этого защита считается включённой. */
+    val settingsLoaded: Boolean = false,
 )
 
 /** Настройки приложения для корня: читаются до отрисовки навигации. */
@@ -44,6 +46,7 @@ class AppSettingsViewModel(
                     appLockPinHash = settings.appLockPinHash,
                     secureWindow = settings.secureWindow,
                     appLanguage = settings.appLanguage,
+                    settingsLoaded = true,
                 )
             }.stateIn(
                 scope = viewModelScope,
