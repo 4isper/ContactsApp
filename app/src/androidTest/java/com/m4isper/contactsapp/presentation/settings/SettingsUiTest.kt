@@ -123,6 +123,24 @@ class SettingsUiTest {
     }
 
     @Test
+    fun languageSheetOffersAllShippedLanguages() {
+        val repository = FakeSettingsRepository()
+        compose.setContent {
+            SettingsScreen(onBack = {}, viewModel = viewModel(repository))
+        }
+
+        compose.onNodeWithTag("settings_language").performScrollTo().performClick()
+
+        compose.onNodeWithTag("language_system").assertIsDisplayed()
+        compose.onNodeWithTag("language_en").assertIsDisplayed()
+        compose.onNodeWithTag("language_ru").assertIsDisplayed()
+        compose.onNodeWithTag("language_es").assertIsDisplayed()
+        compose.onNodeWithTag("language_de").assertIsDisplayed()
+        compose.onNodeWithTag("language_fr").assertIsDisplayed()
+        compose.onNodeWithTag("language_pt-BR").assertIsDisplayed()
+    }
+
+    @Test
     fun reminderTimeRowOpensSheetAndSavesThePickedTime() {
         // Время нестандартное: подтверждение должно сохранить именно выбор, а не дефолт.
         val repository =

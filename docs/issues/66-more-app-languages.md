@@ -3,6 +3,30 @@
 **Priority:** P2 — the language picker exists and the mechanism works for any BCP-47 tag, but only `values` (English) and `values-ru` ship, and the override has gaps outside MainActivity
 **Area:** i18n / settings / widget
 
+## Status
+
+Done.
+
+What changed:
+
+- Four full locale catalogs — `values-es`, `values-de`, `values-fr`, `values-pt-rBR` (463 keys each: 445 strings + 18 plurals), with locale-correct quotation marks, plural rules, and placeholder order; brand and protocol names stay untranslated.
+- The override gap is closed by one shared decision: `Context.withAppLanguage()` (extracted from MainActivity's private wrap) is now applied to the favorites widget and the reminder notification in addition to the activity. On Android 13+ a non-empty system per-app choice wins — the system has already applied it to the context, and a manual wrap would fight it.
+- `SystemAppLanguage` wraps `LocaleManager`: the in-app pick is mirrored into the system (`setApplicationLocales`), so the system per-app language page shows the same choice; on 33+ the screen skips the manual `recreate()` because the system recreates activities itself. Reset clears the mirror. After a system-page change, MainActivity syncs the stored language before wrapping (so "system default" doesn't resurrect the old pick) and updates the settings row's stored value.
+- `locales_config.xml` + `android:localeConfig` — the app now appears in the Android 13+ per-app language page. The picker offers system/English/Russian/Spanish/German/French/Português (Brasil).
+- Parity is enforced, not trusted: `MissingTranslation` is promoted to an error for `:app`, and `AppLocalesSmokeTest` renders every shipped locale through the wrap (per-locale settings title, plural resolution).
+
+Verification:
+
+- Key parity checked mechanically (all four locales carry the same 463 keys) and by `:app:lintDebug`, which now fails on a missing translation — proven by mutation: removing one es key fails the build, restoring it passes.
+- JVM: `AppLanguageWrapTest` (stored language localizes a non-activity context, empty store passes through, system choice suppresses the wrap via `ShadowLocaleManager`), mirror and reset-clear tests in `SettingsViewModelTest`; full suites, detekt, and ktlint green.
+- Connected: `SettingsUiTest` 11/11 on the fold AVD, including the language sheet offering all shipped languages.
+- Manual on the fold AVD (Android 17): `cmd locale set-app-locales … es` (what the system page does) → cold start renders Spanish end to end ("Contactos", "Ajustes", the permission primer), and the settings row shows "Idioma — Español" after the sync; picking Deutsch in-app mirrors `[de]` into the system and the window re-creates without a double restart; picking "System language" clears the system choice, falls back to English (the device language), and the row shows "System language".
+
+Known limitations:
+
+- Below Android 13 the reverse direction (an external change of the app language) does not exist by design; the stored preference is the only source there.
+- The first release of each new locale is machine-assisted and human-reviewed in one pass; further string changes are guarded by the lint gate.
+
 ## Problem
 
 The app is translated into English and Russian only, and the in-app language override is incomplete:

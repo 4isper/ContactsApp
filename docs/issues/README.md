@@ -28,7 +28,7 @@ Pick an item, create a branch, and use its acceptance criteria as the definition
 ## Not covered by the roadmap
 
 - The "My profile" card (`ContactsContract.Profile`) is not implemented: the app has no own-profile screen and does not write changes back to the profile.
-- The language picker offers the languages the app is translated into (system, English, Russian); other translations would need their own `values-xx` resources — see [66-more-app-languages.md](66-more-app-languages.md).
+- ~~The language picker offers the languages the app is translated into (system, English, Russian)~~ — resolved by [66-more-app-languages.md](66-more-app-languages.md): the app ships six languages and takes part in the Android 13+ per-app language page.
 - ~~The reminders fire once a day in the morning; the time of day is fixed~~ — resolved by [65-reminder-time-of-day.md](65-reminder-time-of-day.md); only the lead time (1, 3, 7 or 14 days) and the time of day are configurable, the digest stays once a day.
 
 ## Architecture audit backlog (2026-10-22)
@@ -205,7 +205,7 @@ A gap review against what a typical contacts manager already offers as a given. 
 | # | File | Title | Priority | Status |
 |---|---|---|---|---|
 | 65 | [65-reminder-time-of-day.md](65-reminder-time-of-day.md) | Let the user pick the daily reminder time | P3 | Done |
-| 66 | [66-more-app-languages.md](66-more-app-languages.md) | Expand localization beyond English and Russian | P2 | Proposed |
+| 66 | [66-more-app-languages.md](66-more-app-languages.md) | Expand localization beyond English and Russian | P2 | Done |
 | 67 | [67-biometric-unlock.md](67-biometric-unlock.md) | Unlock the app with biometrics | P2 | Proposed |
 
 ### Feature gap dependencies

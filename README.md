@@ -1,6 +1,6 @@
 # ContactsApp
 
-A native Android contacts manager built with modern Jetpack libraries and Clean Architecture: browse, search and favorite contacts, view details, create, edit, delete, merge and share them (vCard, plain text or QR code), accept a contact by scanning its QR code, organize them into groups, place calls, and get reminders about birthdays — in English and Russian, on phones, tablets and foldables, in light and dark themes.
+A native Android contacts manager built with modern Jetpack libraries and Clean Architecture: browse, search and favorite contacts, view details, create, edit, delete, merge and share them (vCard, plain text or QR code), accept a contact by scanning its QR code, organize them into groups, place calls, and get reminders about birthdays — in English, Russian, Spanish, German, French, and Brazilian Portuguese, on phones, tablets and foldables, in light and dark themes.
 
 | Fold, dark theme | Phone, light theme, details |
 |---|---|
