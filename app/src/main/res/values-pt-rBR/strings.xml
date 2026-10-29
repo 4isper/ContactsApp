@@ -307,6 +307,15 @@
     <string name="app_lock_unlock">Desbloquear</string>
 
     <string name="app_lock_use_pin">Usar o PIN</string>
+
+    <string name="app_lock_length_hint">De 4 a 8 dígitos</string>
+    <string name="app_lock_key_delete">Excluir o último dígito</string>
+    <string name="app_lock_dots_state">%1$d de %2$d dígitos</string>
+    <string name="settings_forgot_pin">Esqueceu o PIN? Limpar os dados do app o redefine. Os contatos não são afetados.</string>
+    <plurals name="app_lock_digits_entered">
+        <item quantity="one">%1$d dígito inserido</item>
+        <item quantity="other">%1$d dígitos inseridos</item>
+    </plurals>
     <string name="app_lock_retry_biometrics">Tentar o desbloqueio biométrico de novo</string>
     <string name="settings_app_lock_biometrics">Desbloqueio biométrico</string>
     <string name="settings_app_lock_biometrics_desc">Usar a impressão digital ou o rosto em vez do PIN quando disponíveis</string>

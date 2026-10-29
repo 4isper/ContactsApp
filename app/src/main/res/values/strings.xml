@@ -307,6 +307,15 @@
     <string name="app_lock_unlock">Unlock</string>
 
     <string name="app_lock_use_pin">Use PIN</string>
+
+    <string name="app_lock_length_hint">4–8 digits</string>
+    <string name="app_lock_key_delete">Delete the last digit</string>
+    <string name="app_lock_dots_state">%1$d of %2$d digits</string>
+    <string name="settings_forgot_pin">Forgot the PIN? Clearing the app\'s data resets it. Contacts are not affected.</string>
+    <plurals name="app_lock_digits_entered">
+        <item quantity="one">%1$d digit entered</item>
+        <item quantity="other">%1$d digits entered</item>
+    </plurals>
     <string name="app_lock_retry_biometrics">Retry biometric unlock</string>
     <string name="settings_app_lock_biometrics">Unlock with biometrics</string>
     <string name="settings_app_lock_biometrics_desc">Use fingerprint or face instead of the PIN when available</string>

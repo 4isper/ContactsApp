@@ -307,6 +307,15 @@
     <string name="app_lock_unlock">Déverrouiller</string>
 
     <string name="app_lock_use_pin">Utiliser le code PIN</string>
+
+    <string name="app_lock_length_hint">4 à 8 chiffres</string>
+    <string name="app_lock_key_delete">Supprimer le dernier chiffre</string>
+    <string name="app_lock_dots_state">%1$d sur %2$d chiffres</string>
+    <string name="settings_forgot_pin">Code PIN oublié ? Effacer les données de l\'application le réinitialise. Les contacts ne sont pas affectés.</string>
+    <plurals name="app_lock_digits_entered">
+        <item quantity="one">%1$d chiffre saisi</item>
+        <item quantity="other">%1$d chiffres saisis</item>
+    </plurals>
     <string name="app_lock_retry_biometrics">Réessayer le déverrouillage biométrique</string>
     <string name="settings_app_lock_biometrics">Déverrouillage biométrique</string>
     <string name="settings_app_lock_biometrics_desc">Utiliser l\'empreinte ou le visage au lieu du code PIN si disponible</string>

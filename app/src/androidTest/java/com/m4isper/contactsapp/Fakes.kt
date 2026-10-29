@@ -358,7 +358,7 @@ internal class FakeSettingsRepository(
     val languages = mutableListOf<String>()
     val dynamicColorValues = mutableListOf<Boolean>()
     val showPhotosValues = mutableListOf<Boolean>()
-    val appLocks = mutableListOf<Pair<Boolean, String>>()
+    val appLocks = mutableListOf<Triple<Boolean, String, Int>>()
     val secureWindowValues = mutableListOf<Boolean>()
     val reminderValues = mutableListOf<Triple<Boolean, Int, ReminderTime>>()
     var resetCalled = false
@@ -413,9 +413,11 @@ internal class FakeSettingsRepository(
     override suspend fun setAppLock(
         enabled: Boolean,
         pinHash: String,
+        pinLength: Int,
     ) {
-        appLocks += enabled to pinHash
-        state.value = state.value.copy(appLockEnabled = enabled, appLockPinHash = pinHash)
+        appLocks += Triple(enabled, pinHash, pinLength)
+        state.value =
+            state.value.copy(appLockEnabled = enabled, appLockPinHash = pinHash, appLockPinLength = pinLength)
     }
 
     override suspend fun setSecureWindow(enabled: Boolean) {

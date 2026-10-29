@@ -162,7 +162,7 @@ class SettingsDataSourceImpl(
             prefs[APP_LOCK_ENABLED] = enabled
             if (pinHash.isBlank()) {
                 prefs.remove(APP_LOCK_PIN_HASH)
-            prefs.remove(APP_LOCK_PIN_LENGTH)
+                prefs.remove(APP_LOCK_PIN_LENGTH)
                 prefs.remove(APP_LOCK_PIN_LENGTH)
             } else {
                 prefs[APP_LOCK_PIN_HASH] = pinHash
