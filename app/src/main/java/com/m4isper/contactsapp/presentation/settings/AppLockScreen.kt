@@ -37,7 +37,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -304,7 +303,7 @@ private fun LockPinDots(
         modifier =
             Modifier
                 .padding(top = spacing.xs)
-                .clearAndSetSemantics { stateDescription = stateText }
+                .semantics(mergeDescendants = true) { stateDescription = stateText }
                 .testTag("app_lock_dots"),
     ) {
         val count = if (target > 0) target else entered
