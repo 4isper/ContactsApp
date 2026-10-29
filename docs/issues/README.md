@@ -220,7 +220,7 @@ A design review of the lock screen after issue 67: as a security screen it holds
 
 | # | File | Title | Priority | Status |
 |---|---|---|---|---|
-| 68 | [68-pin-entry-redesign.md](68-pin-entry-redesign.md) | Make the PIN entry a genre-standard numeric pad with explicit feedback | P3 | Proposed |
+| 68 | [68-pin-entry-redesign.md](68-pin-entry-redesign.md) | Make the PIN entry a genre-standard numeric pad with explicit feedback | P3 | Done |
 
-68 builds on 67's biometric branch ("Use PIN" reveals the pad) and deliberately stays out of the hashing/throttling territory of issues 12 and 29.
+68 builds on 67's biometric branch ("Use PIN" reveals the pad) and deliberately stays out of the hashing/throttling territory of issues 12 and 29. All nine items of the local roadmap are now implemented.
 
