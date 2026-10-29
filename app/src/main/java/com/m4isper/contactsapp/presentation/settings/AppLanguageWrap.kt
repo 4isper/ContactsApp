@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.res.Configuration
 import android.os.Build
 import android.os.LocaleList
+import androidx.annotation.RequiresApi
 import java.util.Locale
 
 /**
@@ -41,6 +42,7 @@ class LocaleManagerSystemAppLanguage(
             if (language.isBlank()) LocaleList.getEmptyLocaleList() else LocaleList.forLanguageTags(language)
     }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun localeManager(): LocaleManager? = context.getSystemService(LocaleManager::class.java)
 }
 
