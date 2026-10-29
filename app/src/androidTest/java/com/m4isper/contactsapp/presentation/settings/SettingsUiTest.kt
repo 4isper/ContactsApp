@@ -250,7 +250,10 @@ class SettingsUiTest {
 
     private fun tapPinKeys(vararg digits: Int) {
         digits.forEach { digit ->
-            compose.onNodeWithTag("app_lock_key_$digit").performClick()
+            compose
+                .onNodeWithTag("app_lock_key_$digit")
+                .performScrollTo()
+                .performClick()
         }
     }
 

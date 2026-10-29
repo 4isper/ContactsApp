@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp.presentation.settings
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -10,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -42,10 +44,7 @@ internal fun PinSetupSheet(
 
     AppBottomSheet(
         onDismissRequest = onDismiss,
-        modifier =
-            Modifier
-                .testTag("app_lock_pin_dialog")
-                .verticalScroll(rememberScrollState()),
+        modifier = Modifier.testTag("app_lock_pin_dialog"),
     ) {
         Text(
             text =
@@ -92,30 +91,39 @@ internal fun PinSetupSheet(
                         .semantics { liveRegion = LiveRegionMode.Polite },
             )
         }
-        LockPinPad(
-            enabled = true,
-            onDigit = { digit ->
-                tap()
-                entry.append(digit)
-            },
-            onBackspace = {
-                tap()
-                entry.delete()
-            },
-            onBiometricRetry = null,
-            onConfirmEntry =
-                if (entry.stage == SetupStage.FIRST) {
-                    {
-                        if (!entry.confirmFirst()) {
-                            error()
-                        } else {
-                            tap()
-                        }
-                    }
-                } else {
-                    null
+        // Пад скроллится при нужде, «Готово» закреплено и всегда доступно —
+        // та же схема, что в листе времени напоминания (issue 68).
+        Box(
+            modifier =
+                Modifier
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState()),
+        ) {
+            LockPinPad(
+                enabled = true,
+                onDigit = { digit ->
+                    tap()
+                    entry.append(digit)
                 },
-        )
+                onBackspace = {
+                    tap()
+                    entry.delete()
+                },
+                onBiometricRetry = null,
+                onConfirmEntry =
+                    if (entry.stage == SetupStage.FIRST) {
+                        {
+                            if (!entry.confirmFirst()) {
+                                error()
+                            } else {
+                                tap()
+                            }
+                        }
+                    } else {
+                        null
+                    },
+            )
+        }
         if (entry.stage == SetupStage.REPEAT) {
             Button(
                 onClick = {
@@ -127,7 +135,11 @@ internal fun PinSetupSheet(
                     }
                 },
                 enabled = entry.done,
-                modifier = Modifier.testTag("app_lock_pin_confirm"),
+                modifier =
+                    Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(top = spacing.xs, bottom = spacing.s)
+                        .testTag("app_lock_pin_confirm"),
             ) {
                 Text(stringResource(R.string.action_done))
             }
