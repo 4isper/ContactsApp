@@ -29,6 +29,8 @@ class PrivacySettingsImpl(
 
     override suspend fun setSecureWindow(enabled: Boolean) = dataSource.setSecureWindow(enabled)
 
+    override suspend fun setAppLockBiometrics(enabled: Boolean) = dataSource.setAppLockBiometrics(enabled)
+
     override suspend fun setReminders(
         enabled: Boolean,
         leadDays: Int,

@@ -8,6 +8,7 @@ import com.m4isper.contactsapp.domain.model.settings.ThemeMode
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -64,11 +65,22 @@ class SettingsDataSourceTest {
         runTest {
             dataSource.setAppLock(enabled = true, pinHash = "hash")
             dataSource.setSecureWindow(enabled = true)
+            dataSource.setAppLockBiometrics(enabled = false)
 
             val settings = dataSource.settings.first()
             assertTrue(settings.appLockEnabled)
             assertEquals("hash", settings.appLockPinHash)
             assertTrue(settings.secureWindow)
+            assertFalse(settings.appLockBiometrics)
+        }
+
+    @Test
+    fun `the biometric unlock defaults to on`() =
+        runTest {
+            // Хранилище одно на процесс: сброс гарантирует, что ключей нет.
+            dataSource.resetSettings()
+
+            assertEquals(true, dataSource.settings.first().appLockBiometrics)
         }
 
     @Test

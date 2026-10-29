@@ -16,6 +16,7 @@ import com.m4isper.contactsapp.domain.usecase.contacts.SetDefaultContactAccountU
 import com.m4isper.contactsapp.domain.usecase.settings.ObserveSettingsUseCase
 import com.m4isper.contactsapp.domain.usecase.settings.ResetSettingsUseCase
 import com.m4isper.contactsapp.domain.usecase.settings.SetAppLanguageUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.SetAppLockBiometricsUseCase
 import com.m4isper.contactsapp.domain.usecase.settings.SetAppLockUseCase
 import com.m4isper.contactsapp.domain.usecase.settings.SetDynamicColorUseCase
 import com.m4isper.contactsapp.domain.usecase.settings.SetFavoritesFirstUseCase
@@ -113,6 +114,7 @@ class SettingsViewModelTest {
         setDynamicColorUseCase = SetDynamicColorUseCase(repository),
         setShowPhotosUseCase = SetShowPhotosUseCase(repository),
         setAppLockUseCase = SetAppLockUseCase(repository, Pbkdf2PinHasher()),
+        setAppLockBiometricsUseCase = SetAppLockBiometricsUseCase(repository),
         setSecureWindowUseCase = SetSecureWindowUseCase(repository),
         reset =
             SettingsResetCoordinator(
@@ -224,6 +226,7 @@ class SettingsViewModelTest {
                     setDynamicColorUseCase = SetDynamicColorUseCase(repository),
                     setShowPhotosUseCase = SetShowPhotosUseCase(repository),
                     setAppLockUseCase = SetAppLockUseCase(repository, Pbkdf2PinHasher()),
+                    setAppLockBiometricsUseCase = SetAppLockBiometricsUseCase(repository),
                     setSecureWindowUseCase = SetSecureWindowUseCase(repository),
                     reset =
                         SettingsResetCoordinator(

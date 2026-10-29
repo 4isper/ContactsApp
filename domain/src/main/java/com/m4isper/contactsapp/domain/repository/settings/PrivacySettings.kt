@@ -10,4 +10,7 @@ interface PrivacySettings {
 
     /** Скрывать содержимое окна в недавних задачах. */
     suspend fun setSecureWindow(enabled: Boolean)
+
+    /** Разблокировка по биометрии: действует, только если на устройстве есть биометрия. */
+    suspend fun setAppLockBiometrics(enabled: Boolean)
 }

@@ -315,6 +315,11 @@
     <string name="app_lock_wrong_pin">Неверный PIN-код</string>
     <string name="app_lock_too_many_attempts">Слишком много попыток. Повторите через %1$d с</string>
     <string name="app_lock_unlock">Разблокировать</string>
+
+    <string name="app_lock_use_pin">Ввести PIN</string>
+    <string name="app_lock_retry_biometrics">Повторить разблокировку по биометрии</string>
+    <string name="settings_app_lock_biometrics">Разблокировка по биометрии</string>
+    <string name="settings_app_lock_biometrics_desc">Использовать отпечаток или лицо вместо PIN, когда они доступны</string>
     <string name="details_favorite_failed">Не удалось обновить избранное. Проверьте право на запись контактов</string>
     <string name="app_lock_show_pin">Показать PIN-код</string>
     <string name="app_lock_hide_pin">Скрыть PIN-код</string>

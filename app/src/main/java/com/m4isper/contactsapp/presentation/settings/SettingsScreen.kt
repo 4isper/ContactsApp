@@ -200,6 +200,15 @@ internal fun SettingsScreen(
                         enabled = settings.appLockEnabled,
                         onChangePin = { showPinDialog = true },
                     )
+                    if (biometricsAvailable(context)) {
+                        SettingsSwitch(
+                            label = stringResource(R.string.settings_app_lock_biometrics),
+                            description = stringResource(R.string.settings_app_lock_biometrics_desc),
+                            checked = settings.appLockBiometrics,
+                            onCheckedChange = viewModel::onAppLockBiometricsChanged,
+                            testTag = "app_lock_biometrics_switch",
+                        )
+                    }
                     SettingsSwitch(
                         label = stringResource(R.string.settings_secure_window),
                         description = stringResource(R.string.settings_secure_window_desc),

@@ -47,6 +47,8 @@ data class AppSettings(
     val appLockPinHash: String = "",
     /** Скрывать содержимое окна в списке недавних задач. */
     val secureWindow: Boolean = false,
+    /** Разблокировка по биометрии, когда защита включена; PIN остаётся запасным путём. */
+    val appLockBiometrics: Boolean = true,
     /** Напоминать о днях рождения и событиях. */
     val remindersEnabled: Boolean = false,
     /** За сколько дней предупреждать о дне рождения. */

@@ -423,6 +423,8 @@ internal class FakeSettingsRepository(
         state.value = state.value.copy(secureWindow = enabled)
     }
 
+    override suspend fun setAppLockBiometrics(enabled: Boolean) = Unit
+
     override suspend fun setReminders(
         enabled: Boolean,
         leadDays: Int,

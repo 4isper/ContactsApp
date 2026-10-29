@@ -17,7 +17,9 @@ coroutines = "1.11.0"
 nav3 = "1.2.0"
 serializationCore = "1.12.0"
 coil = "3.6.3"
+biometric = "1.1.0"
 zxing = "3.5.4"
+zxingEmbedded = "4.3.0"
 exifinterface = "1.4.2"
 glance = "1.2.0"
 detekt = "2.0.0-alpha.6"
@@ -60,7 +62,8 @@ androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", vers
 kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "serializationCore" }
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
 zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
-zxing-embedded = { group = "com.journeyapps", name = "zxing-android-embedded", version = "4.3.0" }
+zxing-embedded = { group = "com.journeyapps", name = "zxing-android-embedded", version.ref = "zxingEmbedded" }
+androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "biometric" }
 androidx-exifinterface = { group = "androidx.exifinterface", name = "exifinterface", version.ref = "exifinterface" }
 androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glance" }
 androidx-glance-material3 = { group = "androidx.glance", name = "glance-material3", version.ref = "glance" }

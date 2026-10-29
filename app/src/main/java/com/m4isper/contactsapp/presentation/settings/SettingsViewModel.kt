@@ -12,6 +12,7 @@ import com.m4isper.contactsapp.domain.model.settings.ThemeMode
 import com.m4isper.contactsapp.domain.usecase.contacts.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.contacts.SetDefaultContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.settings.ObserveSettingsUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.SetAppLockBiometricsUseCase
 import com.m4isper.contactsapp.domain.usecase.settings.SetAppLockUseCase
 import com.m4isper.contactsapp.domain.usecase.settings.SetDynamicColorUseCase
 import com.m4isper.contactsapp.domain.usecase.settings.SetFavoritesFirstUseCase
@@ -59,6 +60,7 @@ internal class SettingsViewModel(
     private val setDynamicColorUseCase: SetDynamicColorUseCase,
     private val setShowPhotosUseCase: SetShowPhotosUseCase,
     private val setAppLockUseCase: SetAppLockUseCase,
+    private val setAppLockBiometricsUseCase: SetAppLockBiometricsUseCase,
     private val setSecureWindowUseCase: SetSecureWindowUseCase,
     private val reset: SettingsResetCoordinator,
     private val reminders: ReminderSettingsCoordinator,
@@ -124,6 +126,9 @@ internal class SettingsViewModel(
         enabled: Boolean,
         pin: String,
     ) = update { setAppLockUseCase(enabled, pin) }
+
+    /** Разблокировка по биометрии: действует, только если биометрия есть на устройстве. */
+    fun onAppLockBiometricsChanged(enabled: Boolean) = update { setAppLockBiometricsUseCase(enabled) }
 
     /** Скрывать содержимое окна в недавних задачах. */
     fun onSecureWindowChanged(enabled: Boolean) = update { setSecureWindowUseCase(enabled) }

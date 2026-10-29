@@ -173,6 +173,8 @@ class SettingsUseCasesTest {
                     override suspend fun setSecureWindow(enabled: Boolean) {
                         secureWindow = enabled
                     }
+
+                    override suspend fun setAppLockBiometrics(enabled: Boolean) = Unit
                 }
             val uc = SetSecureWindowUseCase(settings)
             uc(true)

@@ -97,4 +97,34 @@ class AppLockViewModelTest {
 
             assertTrue(repository.appLocks.isEmpty())
         }
+
+    @Test
+    fun `biometric success unlocks without a pin`() {
+        val viewModel = viewModel()
+
+        viewModel.unlockBiometric()
+
+        assertTrue(viewModel.isUnlocked.value)
+        assertTrue(repository.appLocks.isEmpty())
+    }
+
+    @Test
+    fun `biometric success clears the pin lockout`() =
+        runTest {
+            val viewModel = viewModel()
+            val hash = hasher.hash("1234")
+
+            repeat(AppLockAttempts.DEFAULT_MAX_ATTEMPTS) {
+                viewModel.unlock("9999", hash)
+            }
+            assertTrue(viewModel.lockRemaining.value > Duration.ZERO)
+
+            viewModel.unlockBiometric()
+
+            assertTrue(viewModel.isUnlocked.value)
+            assertEquals(Duration.ZERO, viewModel.lockRemaining.value)
+            // Следующий PIN-ввод снова принимается: бюджет попыток сброшен.
+            viewModel.lock()
+            assertTrue(viewModel.unlock("1234", hash))
+        }
 }

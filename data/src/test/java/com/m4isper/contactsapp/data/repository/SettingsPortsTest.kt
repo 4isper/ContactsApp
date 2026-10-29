@@ -65,6 +65,8 @@ private class FakeSettingsDataSource(
 
     override suspend fun setSecureWindow(enabled: Boolean) = Unit
 
+    override suspend fun setAppLockBiometrics(enabled: Boolean) = Unit
+
     override suspend fun resetSettings() {
         failure?.let { throw it }
     }

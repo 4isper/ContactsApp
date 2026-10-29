@@ -59,6 +59,13 @@ class AppLockViewModel(
         return ok
     }
 
+    /** Биометрическая разблокировка: снимает блокировку и сбрасывает бюджет попыток PIN. */
+    fun unlockBiometric() {
+        attempts.registerSuccess()
+        lockWait.value = Duration.ZERO
+        unlocked.value = true
+    }
+
     /** Снова блокирует приложение: уход в фон. */
     fun lock() {
         unlocked.value = false

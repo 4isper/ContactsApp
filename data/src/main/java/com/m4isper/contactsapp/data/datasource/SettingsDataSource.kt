@@ -43,6 +43,9 @@ interface SettingsDataSource {
     /** Скрывать содержимое окна в недавних задачах. */
     suspend fun setSecureWindow(enabled: Boolean)
 
+    /** Разблокировка по биометрии при включённой защите. */
+    suspend fun setAppLockBiometrics(enabled: Boolean)
+
     /** Напоминать о днях рождения и событиях. */
     suspend fun setReminders(
         enabled: Boolean,

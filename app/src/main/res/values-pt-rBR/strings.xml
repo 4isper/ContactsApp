@@ -305,6 +305,11 @@
     <string name="app_lock_wrong_pin">Código PIN incorreto</string>
     <string name="app_lock_too_many_attempts">Muitas tentativas. Tente novamente em %1$d s</string>
     <string name="app_lock_unlock">Desbloquear</string>
+
+    <string name="app_lock_use_pin">Usar o PIN</string>
+    <string name="app_lock_retry_biometrics">Tentar o desbloqueio biométrico de novo</string>
+    <string name="settings_app_lock_biometrics">Desbloqueio biométrico</string>
+    <string name="settings_app_lock_biometrics_desc">Usar a impressão digital ou o rosto em vez do PIN quando disponíveis</string>
     <string name="details_favorite_failed">Não foi possível atualizar os favoritos. Verifique a permissão de escrita nos contatos</string>
     <string name="app_lock_show_pin">Mostrar o código PIN</string>
     <string name="app_lock_hide_pin">Ocultar o código PIN</string>

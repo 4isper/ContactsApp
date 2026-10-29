@@ -305,6 +305,11 @@
     <string name="app_lock_wrong_pin">Falscher PIN-Code</string>
     <string name="app_lock_too_many_attempts">Zu viele Versuche. Erneut versuchen in %1$d s</string>
     <string name="app_lock_unlock">Entsperren</string>
+
+    <string name="app_lock_use_pin">PIN verwenden</string>
+    <string name="app_lock_retry_biometrics">Biometrisches Entsperren wiederholen</string>
+    <string name="settings_app_lock_biometrics">Biometrisches Entsperren</string>
+    <string name="settings_app_lock_biometrics_desc">Fingerabdruck oder Gesicht statt der PIN verwenden, wenn verfügbar</string>
     <string name="details_favorite_failed">Favoriten konnten nicht aktualisiert werden. Bitte die Schreibberechtigung für Kontakte prüfen</string>
     <string name="app_lock_show_pin">PIN-Code anzeigen</string>
     <string name="app_lock_hide_pin">PIN-Code verbergen</string>

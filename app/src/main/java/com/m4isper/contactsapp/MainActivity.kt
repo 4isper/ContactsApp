@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -56,7 +57,7 @@ data class StartRequest(
     val action: StartAction,
 )
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     private var requestCounter = 0L
     private val startRequests = MutableStateFlow<StartRequest?>(null)
 
@@ -187,6 +188,8 @@ private fun AppContent(
             if (settings.appLockEnabled && !unlocked) {
                 AppLockScreen(
                     onUnlock = { pin -> lockViewModel.unlock(pin, settings.appLockPinHash) },
+                    onBiometricUnlock = lockViewModel::unlockBiometric,
+                    biometricsEnabled = settings.appLockBiometrics,
                     lockedFor = lockRemaining,
                 )
             } else {

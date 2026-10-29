@@ -44,6 +44,7 @@ class FakeSettingsRepository(
     val showPhotosValues = mutableListOf<Boolean>()
     val appLocks = mutableListOf<Pair<Boolean, String>>()
     val secureWindowValues = mutableListOf<Boolean>()
+    val appLockBiometricsValues = mutableListOf<Boolean>()
     val reminderValues = mutableListOf<Triple<Boolean, Int, ReminderTime>>()
     var resetCalled = false
 
@@ -105,6 +106,11 @@ class FakeSettingsRepository(
     override suspend fun setSecureWindow(enabled: Boolean) {
         secureWindowValues += enabled
         state.value = state.value.copy(secureWindow = enabled)
+    }
+
+    override suspend fun setAppLockBiometrics(enabled: Boolean) {
+        appLockBiometricsValues += enabled
+        state.value = state.value.copy(appLockBiometrics = enabled)
     }
 
     override suspend fun setReminders(

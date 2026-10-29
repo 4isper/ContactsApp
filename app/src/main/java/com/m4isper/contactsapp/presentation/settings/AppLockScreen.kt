@@ -1,5 +1,6 @@
 package com.m4isper.contactsapp.presentation.settings
 
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,6 +13,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
@@ -21,6 +23,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -32,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -41,6 +45,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.ui.components.AppLoadingIndicator
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
@@ -52,11 +57,15 @@ import java.time.Duration
 /**
  * Экран ввода PIN-кода: приложение открыто, но защищено. Контент скроллится и
  * учитывает клавиатуру, чтобы на малых экранах поле и кнопка оставались доступны.
+ * Когда биометрия включена и доступна, сначала показывается системный промпт,
+ * а поле PIN появляется по кнопке «Ввести PIN».
  */
 @Composable
 internal fun AppLockScreen(
     onUnlock: suspend (String) -> Boolean,
     modifier: Modifier = Modifier,
+    onBiometricUnlock: () -> Unit = {},
+    biometricsEnabled: Boolean = false,
     lockedFor: Duration = Duration.ZERO,
 ) {
     val spacing = LocalSpacing.current
@@ -67,6 +76,29 @@ internal fun AppLockScreen(
     var checking by remember { mutableStateOf(false) }
     var showPin by remember { mutableStateOf(false) }
     var remaining by remember(lockedFor) { mutableStateOf(lockedFor) }
+
+    // Биометрия активна, только если она включена в настройках, доступна на устройстве
+    // и хост умеет строить промпт (FragmentActivity). Иначе — прежний PIN-экран.
+    val activity = LocalActivity.current
+    val context = LocalContext.current
+    val prompt = remember(activity) { BiometricUnlock.from(activity) }
+    val biometricsOnDevice = remember(context) { biometricsAvailable(context) }
+    val biometricActive = biometricsEnabled && prompt != null && biometricsOnDevice
+    var showPinEntry by remember { mutableStateOf(!biometricActive) }
+
+    val showPrompt: () -> Unit = {
+        prompt?.authenticate(
+            onUnlock = onBiometricUnlock,
+            onPinFallback = { showPinEntry = true },
+        )
+    }
+    // Промпт показывается на каждый вход в блокировку: экран собирается заново после разблокировки.
+    if (biometricActive) {
+        LifecycleResumeEffect(Unit) {
+            showPrompt()
+            onPauseOrDispose { }
+        }
+    }
 
     // Обратный отсчёт блокировки: пока ждём, сообщаем, сколько осталось.
     LaunchedEffect(lockedFor) {
@@ -113,66 +145,124 @@ internal fun AppLockScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = spacing.s, bottom = spacing.l),
             )
-            LockPinField(
-                pin = pin,
-                onPinChange = {
-                    pin = it.filter(Char::isDigit).take(MAX_PIN_LENGTH)
-                    failed = false
-                },
-                failed = failed,
-                locked = locked,
-                showPin = showPin,
-                onToggleShowPin = { showPin = !showPin },
-                onDone = unlock,
-                focusRequester = pinFocus,
-            )
-            if (failed) {
-                Text(
-                    text = stringResource(R.string.app_lock_wrong_pin),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier =
-                        Modifier
-                            .padding(top = spacing.xs)
-                            // Появление и повторное появление ошибки читается TalkBack.
-                            .semantics { liveRegion = LiveRegionMode.Polite },
+            if (showPinEntry) {
+                LockPinEntry(
+                    pin = pin,
+                    onPinChange = {
+                        pin = it.filter(Char::isDigit).take(MAX_PIN_LENGTH)
+                        failed = false
+                    },
+                    failed = failed,
+                    locked = locked,
+                    remaining = remaining,
+                    showPin = showPin,
+                    onToggleShowPin = { showPin = !showPin },
+                    onDone = unlock,
+                    focusRequester = pinFocus,
+                    checking = checking,
                 )
-            }
-            if (locked) {
-                Text(
-                    text =
-                        stringResource(
-                            R.string.app_lock_too_many_attempts,
-                            lockoutSecondsLeft(remaining),
-                        ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier =
-                        Modifier
-                            .padding(top = spacing.xs)
-                            .semantics { liveRegion = LiveRegionMode.Polite },
+            } else {
+                LockBiometricEntry(
+                    showPrompt = showPrompt,
+                    onUsePin = { showPinEntry = true },
                 )
-            }
-            if (checking) {
-                AppLoadingIndicator(
-                    modifier =
-                        Modifier
-                            .padding(top = spacing.m)
-                            .size(spacing.xxl),
-                )
-            }
-            Button(
-                onClick = unlock,
-                enabled = pin.length >= MIN_PIN_LENGTH && !checking && !locked,
-                shape = PillShape,
-                modifier =
-                    Modifier
-                        .padding(top = spacing.m)
-                        .testTag("app_lock_unlock_button"),
-            ) {
-                Text(stringResource(R.string.app_lock_unlock))
             }
         }
+    }
+}
+
+/** Ввод PIN: поле, сообщения об ошибке и блокировке, кнопка разблокировки. */
+@Composable
+private fun LockPinEntry(
+    pin: String,
+    onPinChange: (String) -> Unit,
+    failed: Boolean,
+    locked: Boolean,
+    remaining: Duration,
+    showPin: Boolean,
+    onToggleShowPin: () -> Unit,
+    onDone: () -> Unit,
+    focusRequester: FocusRequester,
+    checking: Boolean,
+) {
+    val spacing = LocalSpacing.current
+    LockPinField(
+        pin = pin,
+        onPinChange = onPinChange,
+        failed = failed,
+        locked = locked,
+        showPin = showPin,
+        onToggleShowPin = onToggleShowPin,
+        onDone = onDone,
+        focusRequester = focusRequester,
+    )
+    if (failed) {
+        Text(
+            text = stringResource(R.string.app_lock_wrong_pin),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
+            modifier =
+                Modifier
+                    .padding(top = spacing.xs)
+                    // Появление и повторное появление ошибки читается TalkBack.
+                    .semantics { liveRegion = LiveRegionMode.Polite },
+        )
+    }
+    if (locked) {
+        Text(
+            text =
+                stringResource(
+                    R.string.app_lock_too_many_attempts,
+                    lockoutSecondsLeft(remaining),
+                ),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
+            modifier =
+                Modifier
+                    .padding(top = spacing.xs)
+                    .semantics { liveRegion = LiveRegionMode.Polite },
+        )
+    }
+    if (checking) {
+        AppLoadingIndicator(
+            modifier =
+                Modifier
+                    .padding(top = spacing.m)
+                    .size(spacing.xxl),
+        )
+    }
+    Button(
+        onClick = onDone,
+        enabled = pin.length >= MIN_PIN_LENGTH && !checking && !locked,
+        shape = PillShape,
+        modifier =
+            Modifier
+                .padding(top = spacing.m)
+                .testTag("app_lock_unlock_button"),
+    ) {
+        Text(stringResource(R.string.app_lock_unlock))
+    }
+}
+
+/** Промпт уже показан; на случай его закрытия — ручной повтор и путь к PIN. */
+@Composable
+private fun LockBiometricEntry(
+    showPrompt: () -> Unit,
+    onUsePin: () -> Unit,
+) {
+    val spacing = LocalSpacing.current
+    IconButton(
+        onClick = showPrompt,
+        modifier = Modifier.testTag("app_lock_biometrics_retry"),
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Fingerprint,
+            contentDescription = stringResource(R.string.app_lock_retry_biometrics),
+            modifier = Modifier.size(spacing.xxl),
+        )
+    }
+    TextButton(onClick = onUsePin) {
+        Text(stringResource(R.string.app_lock_use_pin))
     }
 }
 

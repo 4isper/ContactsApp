@@ -305,6 +305,11 @@
     <string name="app_lock_wrong_pin">Code PIN incorrect</string>
     <string name="app_lock_too_many_attempts">Trop de tentatives. Réessayez dans %1$d s</string>
     <string name="app_lock_unlock">Déverrouiller</string>
+
+    <string name="app_lock_use_pin">Utiliser le code PIN</string>
+    <string name="app_lock_retry_biometrics">Réessayer le déverrouillage biométrique</string>
+    <string name="settings_app_lock_biometrics">Déverrouillage biométrique</string>
+    <string name="settings_app_lock_biometrics_desc">Utiliser l\'empreinte ou le visage au lieu du code PIN si disponible</string>
     <string name="details_favorite_failed">Impossible de mettre à jour les favoris. Vérifiez l\'autorisation d\'écriture des contacts</string>
     <string name="app_lock_show_pin">Afficher le code PIN</string>
     <string name="app_lock_hide_pin">Masquer le code PIN</string>
