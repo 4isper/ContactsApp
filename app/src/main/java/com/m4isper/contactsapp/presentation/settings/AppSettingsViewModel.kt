@@ -21,6 +21,7 @@ data class AppUiSettings(
     val appLockEnabled: Boolean = false,
     val appLockBiometrics: Boolean = true,
     val appLockPinHash: String = "",
+    val appLockPinLength: Int = 0,
     val secureWindow: Boolean = false,
     val appLanguage: String = "",
     /** Настройки загружены из DataStore: до этого защита считается включённой. */
@@ -44,6 +45,7 @@ class AppSettingsViewModel(
                     appLockEnabled = settings.appLockEnabled,
                     appLockBiometrics = settings.appLockBiometrics,
                     appLockPinHash = settings.appLockPinHash,
+                    appLockPinLength = settings.appLockPinLength,
                     secureWindow = settings.secureWindow,
                     appLanguage = settings.appLanguage,
                     settingsLoaded = true,

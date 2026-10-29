@@ -45,6 +45,8 @@ data class AppSettings(
     val appLockEnabled: Boolean = false,
     /** Хэш PIN-кода защиты; пусто — код не задан. */
     val appLockPinHash: String = "",
+    /** Длина заданного PIN-кода; 0 — неизвестна (установки до обновления). */
+    val appLockPinLength: Int = 0,
     /** Скрывать содержимое окна в списке недавних задач. */
     val secureWindow: Boolean = false,
     /** Разблокировка по биометрии, когда защита включена; PIN остаётся запасным путём. */

@@ -63,15 +63,25 @@ class SettingsDataSourceTest {
     @Test
     fun `the privacy settings are stored`() =
         runTest {
-            dataSource.setAppLock(enabled = true, pinHash = "hash")
+            dataSource.setAppLock(enabled = true, pinHash = "hash", pinLength = 6)
             dataSource.setSecureWindow(enabled = true)
             dataSource.setAppLockBiometrics(enabled = false)
 
             val settings = dataSource.settings.first()
             assertTrue(settings.appLockEnabled)
             assertEquals("hash", settings.appLockPinHash)
+            assertEquals(6, settings.appLockPinLength)
             assertTrue(settings.secureWindow)
             assertFalse(settings.appLockBiometrics)
+        }
+
+    @Test
+    fun `the pin length defaults to unknown`() =
+        runTest {
+            // Хранилище одно на процесс: сброс гарантирует, что ключей нет.
+            dataSource.resetSettings()
+
+            assertEquals(0, dataSource.settings.first().appLockPinLength)
         }
 
     @Test

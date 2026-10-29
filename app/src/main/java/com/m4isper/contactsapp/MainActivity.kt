@@ -191,7 +191,7 @@ private fun AppContent(
             if (lockActive && !unlocked) {
                 val biometricsOffered = settings.appLockEnabled && settings.settingsLoaded && settings.appLockBiometrics
                 AppLockScreen(
-                    onUnlock = { pin -> lockViewModel.unlock(pin, settings.appLockPinHash) },
+                    onUnlock = { pin -> lockViewModel.unlock(pin, settings.appLockPinHash, settings.appLockPinLength) },
                     onBiometricUnlock = lockViewModel::unlockBiometric,
                     biometricsEnabled = biometricsOffered,
                     lockedFor = lockRemaining,

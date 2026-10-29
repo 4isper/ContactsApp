@@ -88,12 +88,36 @@ class AppLockViewModelTest {
         }
 
     @Test
-    fun `a new hash is not rewritten`() =
+    fun `a new hash with a known length is not rewritten`() =
         runTest {
             val viewModel = viewModel()
             val hash = hasher.hash("1234")
 
-            assertTrue(viewModel.unlock("1234", hash))
+            assertTrue(viewModel.unlock("1234", hash, storedLength = 4))
+
+            assertTrue(repository.appLocks.isEmpty())
+        }
+
+    @Test
+    fun `the first unlock stores the pin length for legacy installs`() =
+        runTest {
+            val viewModel = viewModel()
+            val hash = hasher.hash("1234")
+
+            // Установка до обновления: длина не сохранена.
+            assertTrue(viewModel.unlock("1234", hash, storedLength = 0))
+
+            val saved = repository.appLocks.single()
+            assertEquals(4, saved.third)
+        }
+
+    @Test
+    fun `a known length is not rewritten`() =
+        runTest {
+            val viewModel = viewModel()
+            val hash = hasher.hash("1234")
+
+            assertTrue(viewModel.unlock("1234", hash, storedLength = 4))
 
             assertTrue(repository.appLocks.isEmpty())
         }

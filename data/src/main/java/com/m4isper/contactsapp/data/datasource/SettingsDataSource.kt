@@ -38,6 +38,7 @@ interface SettingsDataSource {
     suspend fun setAppLock(
         enabled: Boolean,
         pinHash: String,
+        pinLength: Int,
     )
 
     /** Скрывать содержимое окна в недавних задачах. */
