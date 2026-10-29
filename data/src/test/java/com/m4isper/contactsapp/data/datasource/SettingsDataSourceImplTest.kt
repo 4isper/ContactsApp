@@ -140,7 +140,7 @@ class SettingsDataSourceImplTest {
         runBlocking {
             val context = RuntimeEnvironment.getApplication() as Context
             val ds = createDataSource(context)
-            ds.setAppLock(true, "hash123")
+            ds.setAppLock(true, "hash123", 6)
             val settings = ds.settings.first()
             assertTrue(settings.appLockEnabled)
             assertEquals("hash123", settings.appLockPinHash)
@@ -174,7 +174,7 @@ class SettingsDataSourceImplTest {
             val ds = createDataSource(context)
             ds.setThemeMode(ThemeMode.DARK.name)
             ds.setAppLanguage("en")
-            ds.setAppLock(true, "hash")
+            ds.setAppLock(true, "hash", 4)
             ds.resetSettings()
             val settings = ds.settings.first()
             assertEquals(ThemeMode.SYSTEM, settings.themeMode)

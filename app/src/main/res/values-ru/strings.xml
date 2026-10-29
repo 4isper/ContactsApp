@@ -317,6 +317,17 @@
     <string name="app_lock_unlock">Разблокировать</string>
 
     <string name="app_lock_use_pin">Ввести PIN</string>
+
+    <string name="app_lock_length_hint">От 4 до 8 цифр</string>
+    <string name="app_lock_key_delete">Удалить последнюю цифру</string>
+    <string name="app_lock_dots_state">%1$d из %2$d цифр</string>
+    <string name="settings_forgot_pin">Забыли PIN? Сброс данных приложения отключит защиту. Контакты не пострадают.</string>
+    <plurals name="app_lock_digits_entered">
+        <item quantity="one">Введена %1$d цифра</item>
+        <item quantity="few">Введено %1$d цифры</item>
+        <item quantity="many">Введено %1$d цифр</item>
+        <item quantity="other">Введено %1$d цифры</item>
+    </plurals>
     <string name="app_lock_retry_biometrics">Повторить разблокировку по биометрии</string>
     <string name="settings_app_lock_biometrics">Разблокировка по биометрии</string>
     <string name="settings_app_lock_biometrics_desc">Использовать отпечаток или лицо вместо PIN, когда они доступны</string>

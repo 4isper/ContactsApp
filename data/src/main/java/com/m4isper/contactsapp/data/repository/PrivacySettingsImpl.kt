@@ -25,7 +25,8 @@ class PrivacySettingsImpl(
     override suspend fun setAppLock(
         enabled: Boolean,
         pinHash: String,
-    ) = dataSource.setAppLock(enabled, pinHash)
+        pinLength: Int,
+    ) = dataSource.setAppLock(enabled, pinHash, pinLength)
 
     override suspend fun setSecureWindow(enabled: Boolean) = dataSource.setSecureWindow(enabled)
 

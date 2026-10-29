@@ -41,6 +41,7 @@ class AppLockViewModel(
     suspend fun unlock(
         pin: String,
         hash: String,
+        storedLength: Int = 0,
     ): Boolean {
         if (attempts.isLocked()) {
             publishLockWait()
@@ -51,7 +52,7 @@ class AppLockViewModel(
             attempts.registerSuccess()
             lockWait.value = Duration.ZERO
             unlocked.value = true
-            migrateLegacyHash(pin, hash)
+            migrateLegacyHash(pin, hash, storedLength)
         } else {
             attempts.registerFailure()
             publishLockWait()
@@ -71,14 +72,18 @@ class AppLockViewModel(
         unlocked.value = false
     }
 
-    /** Старый хэш SHA-256 заменяем на PBKDF2 после первого успешного ввода. */
+    /**
+     * После первого успешного ввода дозаписываем то, чего не было у старых установок:
+     * хэш SHA-256 заменяем на PBKDF2, неизвестную длину PIN сохраняем для пада.
+     */
     private suspend fun migrateLegacyHash(
         pin: String,
         hash: String,
+        storedLength: Int,
     ) {
-        if (!pinHasher.needsMigration(hash)) return
+        if (!pinHasher.needsMigration(hash) && storedLength != 0) return
         withContext(Dispatchers.Default) {
-            privacySettings.setAppLock(true, pinHasher.hash(pin))
+            privacySettings.setAppLock(true, pinHasher.hash(pin), pin.length)
         }
     }
 

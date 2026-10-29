@@ -209,6 +209,18 @@ internal fun SettingsScreen(
                             testTag = "app_lock_biometrics_switch",
                         )
                     }
+                    if (settings.appLockEnabled) {
+                        // Восстановления PIN нет: пользователь должен знать цену до блокировки.
+                        Text(
+                            text = stringResource(R.string.settings_forgot_pin),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier =
+                                Modifier
+                                    .padding(horizontal = spacing.m, vertical = spacing.xs)
+                                    .testTag("forgot_pin_note"),
+                        )
+                    }
                     SettingsSwitch(
                         label = stringResource(R.string.settings_secure_window),
                         description = stringResource(R.string.settings_secure_window_desc),

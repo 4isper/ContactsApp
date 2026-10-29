@@ -38,6 +38,7 @@ private val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
 private val SHOW_PHOTOS = booleanPreferencesKey("show_photos")
 private val APP_LOCK_ENABLED = booleanPreferencesKey("app_lock_enabled")
 private val APP_LOCK_PIN_HASH = stringPreferencesKey("app_lock_pin_hash")
+private val APP_LOCK_PIN_LENGTH = intPreferencesKey("app_lock_pin_length")
 private val SECURE_WINDOW = booleanPreferencesKey("secure_window")
 private val APP_LOCK_BIOMETRICS = booleanPreferencesKey("app_lock_biometrics")
 private val REMINDERS_ENABLED = booleanPreferencesKey("reminders_enabled")
@@ -79,6 +80,7 @@ class SettingsDataSourceImpl(
                 showPhotos = prefs[SHOW_PHOTOS] ?: true,
                 appLockEnabled = prefs[APP_LOCK_ENABLED] ?: false,
                 appLockPinHash = prefs[APP_LOCK_PIN_HASH].orEmpty(),
+                appLockPinLength = prefs[APP_LOCK_PIN_LENGTH] ?: 0,
                 secureWindow = prefs[SECURE_WINDOW] ?: false,
                 appLockBiometrics = prefs[APP_LOCK_BIOMETRICS] ?: true,
                 remindersEnabled = prefs[REMINDERS_ENABLED] ?: false,
@@ -154,13 +156,17 @@ class SettingsDataSourceImpl(
     override suspend fun setAppLock(
         enabled: Boolean,
         pinHash: String,
+        pinLength: Int,
     ) {
         context.settingsDataStore.edit { prefs ->
             prefs[APP_LOCK_ENABLED] = enabled
             if (pinHash.isBlank()) {
                 prefs.remove(APP_LOCK_PIN_HASH)
+                prefs.remove(APP_LOCK_PIN_LENGTH)
+                prefs.remove(APP_LOCK_PIN_LENGTH)
             } else {
                 prefs[APP_LOCK_PIN_HASH] = pinHash
+                prefs[APP_LOCK_PIN_LENGTH] = pinLength
             }
         }
     }
@@ -201,6 +207,7 @@ class SettingsDataSourceImpl(
             prefs.remove(SHOW_PHOTOS)
             prefs.remove(APP_LOCK_ENABLED)
             prefs.remove(APP_LOCK_PIN_HASH)
+            prefs.remove(APP_LOCK_PIN_LENGTH)
             prefs.remove(SECURE_WINDOW)
             prefs.remove(APP_LOCK_BIOMETRICS)
             prefs.remove(REMINDERS_ENABLED)

@@ -15,6 +15,8 @@ class SetAppLockUseCase(
         pin: String,
     ) = withContext(Dispatchers.Default) {
         val hash = if (enabled && pin.isNotBlank()) pinHasher.hash(pin) else ""
-        privacySettings.setAppLock(enabled, hash)
+        // Длина не секрет: пад использует её для точек и автоотправки.
+        val length = if (enabled && pin.isNotBlank()) pin.length else 0
+        privacySettings.setAppLock(enabled, hash, length)
     }
 }

@@ -168,6 +168,7 @@ class SettingsUseCasesTest {
                     override suspend fun setAppLock(
                         enabled: Boolean,
                         pinHash: String,
+                        pinLength: Int,
                     ) = Unit
 
                     override suspend fun setSecureWindow(enabled: Boolean) {

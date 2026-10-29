@@ -216,12 +216,11 @@ A gap review against what a typical contacts manager already offers as a given. 
 
 ## PIN entry follow-up (2026-10-30)
 
-A design review of the lock screen after issue 67: as a security screen it holds, but as a PIN input it relies on the system IME, stays silent when the entry is below the minimum, has no haptics, and never explains the forgotten-PIN trade-off. Item 68 is implemented on the `issue-68-pin-pad` branch (not yet merged); the follow-up 69 extends the same pad to the setup flow.
+A design review of the lock screen after issue 67: as a security screen it holds, but as a PIN input it relies on the system IME, stays silent when the entry is below the minimum, has no haptics, and never explains the forgotten-PIN trade-off. Item 68 is implemented; the follow-up 69 extends the same pad to the setup flow.
 
 | # | File | Title | Priority | Status |
 |---|---|---|---|---|
-| 68 | [68-pin-entry-redesign.md](68-pin-entry-redesign.md) | Make the PIN entry a genre-standard numeric pad with explicit feedback | P3 | Done (issue-68 branch) |
+| 68 | [68-pin-entry-redesign.md](68-pin-entry-redesign.md) | Make the PIN entry a genre-standard numeric pad with explicit feedback | P3 | Done |
 | 69 | [69-pin-setup-sheet.md](69-pin-setup-sheet.md) | Set the PIN on the same numeric pad, in a bottom sheet | P3 | Proposed |
 
-68 builds on 67's biometric branch ("Use PIN" reveals the pad) and deliberately stays out of the hashing/throttling territory of issues 12 and 29. 69 reuses 68's pad for the setup flow (two-step sheet: enter, repeat) so the motor skill is rehearsed where it is formed; it inherits the same out-of-scope boundaries.
-
+68 builds on 67's biometric branch ("Use PIN" reveals the pad) and deliberately stays out of the hashing/throttling territory of issues 12 and 29. 69 reuses 68's pad for the setup flow (two-step sheet: enter, repeat) so the motor skill is rehearsed where it is formed; it inherits the same out-of-scope boundaries. All nine items of the local roadmap are now implemented.

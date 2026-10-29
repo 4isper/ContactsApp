@@ -3,6 +3,27 @@
 **Priority:** P3 — the lock screen is secure and accessible, but as a PIN input it is half a generation behind what banking apps and system screens consider a given; the cheapest items are pure feedback, the biggest one is the input paradigm
 **Area:** security / app lock / ux
 
+## Status
+
+Done.
+
+What changed:
+
+- The lock screen entry is a numeric pad (`LockPinPad`: 1–9, a biometric-retry key or a blank slot, 0, backspace) with a dots row — the system IME and the whole text-field machinery (`KeyboardOptions`, `imePadding`, focus juggling, the show/hide toggle) are gone.
+- The stored PIN length (`AppSettings.appLockPinLength`, written by `SetAppLockUseCase` together with the hash) gives a fixed dot target and auto-submit on the last digit. Length is not treated as a secret: it is already behind the PBKDF2 hash and the attempt rate limiter.
+- Legacy installs without a stored length (before this change) run in a legacy mode: growing dots, an always-visible "4–8 digits" hint that flashes on a short submit, and the manual Unlock button; the first successful unlock migrates the length in `AppLockViewModel` the same way the legacy hash migrates.
+- The entry state machine lives in a plain `LockPinEntry` class (digits, short-submit flag, checking state) — JVM-tested, the composable only wires haptics (KeyboardTap on keys, LongPress on wrong PIN and short submit, Confirm on success) and launches the check.
+- The dots row reads as one TalkBack state ("N of M digits" / plural "N digits entered"); pad keys are labeled buttons; the biometric retry key sits in the pad's empty slot.
+- The settings app-lock section explains the forgotten-PIN trade-off (data reset; contacts unaffected) while the lock is enabled.
+- Follow-up fix: the call site did not pass the stored length, so the pad always ran in legacy mode — caught in the live pass.
+
+Verification:
+
+- JVM: `LockPinEntryTest` (auto-submit signal, cap at 8, short-submit flag, finish semantics), `SettingsDataSourceTest` (length round-trip, unknown default), `AppLockViewModelTest` (length migration on first unlock, no rewrite when known); full suites, detekt, ktlint, `lintDebug` green.
+- Connected: `AppLockScreenUiTest` 7/7 on the fold AVD (auto-submit once, wrong PIN clears dots to "0 of 4 digits", backspace, legacy hint, legacy unlock, lockout) and `SettingsUiTest` 11/11.
+- Manual on the fold AVD: the pre-update install (no stored length) ran the legacy mode and unlocked via the button; enabling the lock through the new code stored the length (DataStore carries `app_lock_pin_length`), and the pad then shows four fixed dots and unlocks by auto-submit — no Unlock button exists in that mode; re-lock after backgrounding returns to the same mode with the biometric prompt; the forgot-PIN note is visible in settings. Haptics are not observable on the emulator; the API calls are code-reviewed.
+- Follow-up fix: the call site did not pass the stored length, so the pad always ran in legacy mode — caught in the live pass.
+
 ## Problem
 
 The PIN entry is built as a text field, and several small frictions add up to a screen that behaves unlike any PIN screen the user knows:
