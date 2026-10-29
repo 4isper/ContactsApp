@@ -1,11 +1,17 @@
 package com.m4isper.contactsapp.presentation.contacts.components
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.m4isper.contactsapp.domain.model.contact.AccountSyncInfo
 import com.m4isper.contactsapp.domain.model.contact.AccountSyncStatus
@@ -77,6 +83,36 @@ class ContactsFilterHeaderSyncTest {
         compose.onNodeWithText("Accounts").performClick()
 
         compose.onNodeWithText("Google · Synced").assertIsDisplayed()
+    }
+
+    @Test
+    fun narrowWidthKeepsFiltersInOneScrollableRow() {
+        compose.setContent {
+            ContactsAppTheme(dynamicColor = false) {
+                Box(modifier = Modifier.width(240.dp).testTag("narrow_header")) {
+                    FilterHeader(
+                        showFavoritesOnly = false,
+                        onFavoritesOnlyChange = {},
+                        accounts = listOf(ContactAccount.Local, google),
+                        selectedAccount = google,
+                    )
+                }
+            }
+        }
+
+        val headerHeight =
+            compose
+                .onNodeWithTag("narrow_header")
+                .fetchSemanticsNode()
+                .boundsInRoot.height
+        val chipHeight =
+            compose
+                .onNodeWithTag("favorites_chip")
+                .fetchSemanticsNode()
+                .boundsInRoot.height
+        assertTrue("Header height: $headerHeight, chip height: $chipHeight", headerHeight < chipHeight * 2)
+
+        compose.onNodeWithTag("account_chip").performScrollTo().assertIsDisplayed()
     }
 
     @Test

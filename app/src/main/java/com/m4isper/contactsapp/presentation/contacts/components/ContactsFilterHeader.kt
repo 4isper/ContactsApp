@@ -1,12 +1,14 @@
 package com.m4isper.contactsapp.presentation.contacts.components
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.AccountCircle
@@ -69,13 +71,13 @@ internal fun FilterHeader(
     val selectedGroup = groups.firstOrNull { it.id == selectedGroupId }
     Column(modifier = modifier.fillMaxWidth()) {
         // Поле поиска переехало в HomeTopBar (issue 62); здесь остались только фильтры.
-        FlowRow(
+        Row(
             modifier =
                 Modifier
                     .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
                     .padding(horizontal = spacing.m),
             horizontalArrangement = Arrangement.spacedBy(spacing.m),
-            verticalArrangement = Arrangement.spacedBy(spacing.xs),
         ) {
             FilterChip(
                 selected = showFavoritesOnly,
