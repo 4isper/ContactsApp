@@ -3,6 +3,25 @@
 **Priority:** P2 — app lock exists but asks for the PIN on every unlock; biometrics are the platform-standard middle ground between typing a PIN each time and turning the lock off
 **Area:** security / app lock
 
+## Status
+
+Done.
+
+What changed:
+
+- `androidx.biometric:biometric` added; `MainActivity` extends `FragmentActivity` (a drop-in supertype of `ComponentActivity`).
+- `AppLockScreen` offers two branches: with the toggle on and biometrics available on a `FragmentActivity` host, the system `BiometricPrompt` is shown on every entry into the lock (cold start, settings landing under the closed gate, and re-lock after the background grace) with a fingerprint retry button; otherwise the screen is the previous PIN-only experience byte for byte. The prompt's negative button ("Use PIN") and any cancellation/timeout/error reveal the PIN field.
+- `AppLockViewModel.unlockBiometric()` sets the unlocked state and resets the PIN attempt budget — biometric cancellations never consume the PIN budget; the legacy-hash migration stays PIN-path only.
+- Settings gained an "Unlock with biometrics" switch (default on, shown when the device reports available biometrics), persisted via `PrivacySettings.setAppLockBiometrics` and reset with the rest.
+- The PIN hash remains the root of trust; no secret material is stored for biometrics and no `CryptoObject` is used (per the issue's out-of-scope note).
+- Follow-up fix found during the manual pass: the lock gate renders fail-closed before DataStore settings load (issue 29), which made the auto-shown prompt flash on every cold start of an app whose lock is disabled. `AppUiSettings` now reports `settingsLoaded`; the gate keeps its fail-closed behavior while the biometric offer waits for real settings, and the prompt effect is keyed on the effective availability so it also fires when settings land under an already-closed gate.
+
+Verification:
+
+- JVM: `AppLockViewModelTest` (biometric unlock, lockout reset, budget cleared for the next PIN), `SettingsDataSourceTest` (toggle round-trip, on by default); a Robolectric availability test was dropped as impractical (no `shadowOf` overload for the platform `BiometricManager`) — the real prompt is covered by the device pass. Full suites, detekt, ktlint, and `lintDebug` green.
+- Connected: `SettingsUiTest` 11/11 and `AppLockScreenUiTest` 5/5 on the fold AVD — the lock screen is unchanged without biometrics.
+- Manual on the fold AVD (Android 17), fingerprint enrolled through the system settings: cold start shows the prompt and `adb emu finger touch 1` unlocks; background for 3 s and return re-shows the prompt; "Use PIN" reveals the PIN field and the PIN is accepted on the first try (budget untouched); with the toggle off, re-locking shows the PIN field immediately with no prompt; with the lock disabled there is no prompt flash on cold start.
+
 ## Problem
 
 The app lock supports only manual PIN entry:

@@ -206,7 +206,7 @@ A gap review against what a typical contacts manager already offers as a given. 
 |---|---|---|---|---|
 | 65 | [65-reminder-time-of-day.md](65-reminder-time-of-day.md) | Let the user pick the daily reminder time | P3 | Done |
 | 66 | [66-more-app-languages.md](66-more-app-languages.md) | Expand localization beyond English and Russian | P2 | Done |
-| 67 | [67-biometric-unlock.md](67-biometric-unlock.md) | Unlock the app with biometrics | P2 | Proposed |
+| 67 | [67-biometric-unlock.md](67-biometric-unlock.md) | Unlock the app with biometrics | P2 | Done |
 
 ### Feature gap dependencies
 
