@@ -194,6 +194,7 @@ private fun AppContent(
                     onUnlock = { pin -> lockViewModel.unlock(pin, settings.appLockPinHash, settings.appLockPinLength) },
                     onBiometricUnlock = lockViewModel::unlockBiometric,
                     biometricsEnabled = biometricsOffered,
+                    pinLength = settings.appLockPinLength,
                     lockedFor = lockRemaining,
                 )
             } else {
