@@ -190,3 +190,11 @@ A density review of the home screen found that issue 56's app bar and search fie
 
 This item partially supersedes issue 56's "top app bar with the app name/brand" acceptance criterion for the idle home state; search-mode and selection bars from 56 and 38 stay as they are. 63 depends on 62 and is implemented with a small custom nested-scroll behavior (`HeaderCollapseState.kt`) instead of an M3 `TopAppBar` wrapper — the composition choice made in 62 (bare merged row) is documented in the 63 Status.
 
+## Contact exchange follow-up (2026-10-29)
+
+A follow-up from issue 53's "Out of scope" note: the app could show a contact QR on screen but not accept one, so face-to-face exchange stayed one-sided. The item is implemented; the file has a `Status` section.
+
+| # | File | Title | Priority | Status |
+|---|---|---|---|---|
+| 64 | [64-scan-contact-qr.md](64-scan-contact-qr.md) | Accept a contact by scanning a QR code | P2 | Done (`fc1de8f`, `a10be6f`; manual device pass pending) |
+
