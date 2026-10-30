@@ -24,8 +24,8 @@ fun git(vararg args: String): String =
             workingDir(rootDir)
             commandLine("git", *args)
         }.standardOutput.asText
-            .get()
-            .trim()
+        .get()
+        .trim()
 
 val commitCount = git("rev-list", "--count", "HEAD").toInt()
 val commitHash = git("rev-parse", "--short", "HEAD")
