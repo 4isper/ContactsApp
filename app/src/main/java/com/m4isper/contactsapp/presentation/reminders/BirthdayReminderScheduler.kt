@@ -4,37 +4,53 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import java.util.Calendar
+import com.m4isper.contactsapp.domain.model.settings.ReminderTime
+import java.time.Instant
+import java.time.ZoneId
 
 /**
  * Ежедневное напоминание о днях рождения и событиях: планировщик ставит будильник,
  * получатель по нему собирает список праздников и показывает уведомление.
  */
 interface ReminderScheduler {
-    /** Ставит ежедневный будильник на утро. */
-    fun schedule()
+    /** Ставит ежедневный будильник на выбранное время суток. */
+    fun schedule(at: ReminderTime)
 
     /** Убирает будильник: напоминания выключены. */
     fun cancel()
+}
+
+/**
+ * Следующий момент срабатывания ежедневного напоминания: раньше выбранного времени —
+ * сегодня, в самый момент и позже — завтра. Чистая функция: дата считается в локальной
+ * зоне, поэтому напоминание остаётся на том же времени суток и при переводе часов.
+ */
+fun nextReminderTrigger(
+    nowMillis: Long,
+    at: ReminderTime,
+    zone: ZoneId,
+): Long {
+    val now = Instant.ofEpochMilli(nowMillis).atZone(zone)
+
+    fun localTimeOn(daysToAdd: Long = 0): Long =
+        now
+            .toLocalDate()
+            .plusDays(daysToAdd)
+            .atTime(at.hour, at.minute)
+            .atZone(zone)
+            .toInstant()
+            .toEpochMilli()
+
+    return if (localTimeOn() <= nowMillis) localTimeOn(daysToAdd = 1) else localTimeOn()
 }
 
 /** Планировщик на базе AlarmManager. */
 class BirthdayReminderScheduler(
     private val context: Context,
 ) : ReminderScheduler {
-    override fun schedule() {
+    override fun schedule(at: ReminderTime) {
         val manager = context.getSystemService(AlarmManager::class.java) ?: return
-        val trigger =
-            Calendar
-                .getInstance()
-                .apply {
-                    set(Calendar.HOUR_OF_DAY, REMINDER_HOUR)
-                    set(Calendar.MINUTE, 0)
-                    set(Calendar.SECOND, 0)
-                    if (timeInMillis <= System.currentTimeMillis()) {
-                        add(Calendar.DAY_OF_YEAR, 1)
-                    }
-                }.timeInMillis
+        val trigger = nextReminderTrigger(System.currentTimeMillis(), at, ZoneId.systemDefault())
         manager.setInexactRepeating(
             AlarmManager.RTC_WAKEUP,
             trigger,
@@ -58,6 +74,5 @@ class BirthdayReminderScheduler(
 
     private companion object {
         const val REQUEST_CODE = 4201
-        const val REMINDER_HOUR = 9
     }
 }

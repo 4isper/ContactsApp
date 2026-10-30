@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -58,8 +59,7 @@ import com.m4isper.contactsapp.ui.theme.BrandIcons
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 import kotlinx.coroutines.launch
 
-private val QuickActionSize = 40.dp
-
+/** Строка списка: карточка на `surfaceContainerLow` с зазором до соседних строк. */
 @Composable
 internal fun ContactCard(
     contact: ContactDetails,
@@ -72,10 +72,44 @@ internal fun ContactCard(
     onCall: (() -> Unit)? = null,
     onSms: (() -> Unit)? = null,
     onToggleFavorite: (() -> Unit)? = null,
-    showFavoriteQuickAction: Boolean = true,
+    showFavoriteQuickAction: Boolean,
+) {
+    val spacing = LocalSpacing.current
+    RowContent(
+        contact = contact,
+        isFavorite = isFavorite,
+        selected = selected,
+        isSelectionMode = isSelectionMode,
+        onClick = onClick,
+        onLongClick = onLongClick,
+        density = density,
+        onCall = onCall,
+        onSms = onSms,
+        onToggleFavorite = onToggleFavorite,
+        showFavoriteQuickAction = showFavoriteQuickAction,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = spacing.m, vertical = spacing.xs),
+    )
+}
+
+@Composable
+private fun RowContent(
+    contact: ContactDetails,
+    isFavorite: Boolean,
+    selected: Boolean,
+    isSelectionMode: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    density: ListDensity,
+    onCall: (() -> Unit)?,
+    onSms: (() -> Unit)?,
+    onToggleFavorite: (() -> Unit)?,
+    showFavoriteQuickAction: Boolean,
+    modifier: Modifier = Modifier,
 ) {
     val ctx = LocalContext.current
-    val spacing = LocalSpacing.current
     val call = onCall?.takeIf { contact.phones.isNotEmpty() }
     val sms = onSms?.takeIf { contact.phones.isNotEmpty() }
 
@@ -92,10 +126,7 @@ internal fun ContactCard(
             onSms = sms,
             onToggleFavorite = onToggleFavorite,
             showFavoriteQuickAction = showFavoriteQuickAction,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = spacing.m, vertical = spacing.xs),
+            modifier = modifier,
         )
         return
     }
@@ -124,10 +155,7 @@ internal fun ContactCard(
         }
     SwipeToDismissBox(
         state = swipeState,
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = spacing.m, vertical = spacing.xs),
+        modifier = modifier,
         enableDismissFromStartToEnd = sms != null,
         enableDismissFromEndToStart = call != null,
         onDismiss = onSwipeDismiss,
@@ -169,7 +197,7 @@ private fun ContactCardSurface(
     onSms: (() -> Unit)?,
     onToggleFavorite: (() -> Unit)?,
     modifier: Modifier = Modifier,
-    showFavoriteQuickAction: Boolean = true,
+    showFavoriteQuickAction: Boolean,
 ) {
     val spacing = LocalSpacing.current
     val ctx = LocalContext.current
@@ -178,6 +206,8 @@ private fun ContactCardSurface(
     // или почта (письмо/копия) — email-only контакты тоже получают быстрые действия.
     val hasQuickActions = onCall != null || onSms != null || contact.primaryEmail != null
 
+    // Каждая строка — карточка: в светлой теме surfaceContainerLow даёт заметный,
+    // но мягкий контур; выделение добавляет тональную заливку и рамку.
     val containerColor =
         if (selected) {
             MaterialTheme.colorScheme.secondaryContainer
@@ -253,8 +283,8 @@ private fun ContactCardSurface(
             }
 
             if (isSelectionMode) {
-                // Выбор теперь считывается через аватар (фон primary + галочку)
-                // и рамку карточки; отдельный Checkbox убран, чтобы не дублировать признак.
+                // Выбор считывается через аватар (фон primary + галочку) и рамку карточки;
+                // отдельный Checkbox убран, чтобы не дублировать признак.
             } else {
                 FavoriteAndOverflowActions(
                     contact = contact,
@@ -333,7 +363,7 @@ private fun FavoriteQuickAction(
             BrandIcon(
                 imageVector = BrandIcons.Favorite,
                 contentDescription = null,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.tertiary,
                 modifier = Modifier.size(spacing.xl),
             )
         }
@@ -353,10 +383,10 @@ private fun FavoriteQuickAction(
                 stringResource(
                     if (isFavorite) R.string.action_remove_favorite else R.string.action_add_favorite,
                 ),
-            // Активное избранное — акцентное и заполненное, неактивное — нейтральное;
-            // кнопка активна в обоих состояниях, disabled-тинт здесь ошибочен.
+            // Активное избранное — tertiary, как в шапке деталей; кнопка активна
+            // в обоих состояниях, disabled-тинт здесь ошибочен.
             color =
-                if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                if (isFavorite) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(spacing.xl),
         )
     }
@@ -516,8 +546,11 @@ internal fun contactSubtitle(contact: ContactDetails): String =
         }
     }
 
-/** Постоянная ширина хрома строки: поля карточки, аватар, overflow-кнопка и скроллер. */
-internal const val ROW_FIXED_WIDTH_DP = 204
+/**
+ * Постоянная ширина хрома строки: поля строки, аватар, промежуток до текста,
+ * favourite, overflow и колонка быстрой прокрутки (48 dp).
+ */
+internal const val ROW_FIXED_WIDTH_DP = 228
 
 /** Минимальная читаемая ширина колонки имени. */
 internal const val MIN_NAME_WIDTH_DP = 136
@@ -530,3 +563,18 @@ internal fun favoriteQuickActionVisible(
     screenWidthDp: Int,
     fontScale: Float,
 ): Boolean = screenWidthDp - ROW_FIXED_WIDTH_DP >= MIN_NAME_WIDTH_DP * fontScale
+
+/**
+ * Решение для экрана списка. containerSize — фактический размер окна в пикселях:
+ * Configuration.screenWidthDp скругляется и по-разному учитывает вставки
+ * в зависимости от targetSdk.
+ */
+@Composable
+internal fun rememberShowFavoriteQuickAction(): Boolean {
+    val density = LocalDensity.current
+    val containerSize = LocalWindowInfo.current.containerSize
+    return favoriteQuickActionVisible(
+        screenWidthDp = (containerSize.width / density.density).toInt(),
+        fontScale = density.fontScale,
+    )
+}

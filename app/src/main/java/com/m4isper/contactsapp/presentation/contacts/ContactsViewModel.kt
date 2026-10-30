@@ -41,6 +41,7 @@ import kotlinx.coroutines.launch
 
 data class ContactsUiState(
     val searchQuery: String = "",
+    val isSearchMode: Boolean = false,
     val showFavoritesOnly: Boolean = false,
     val favorites: Set<Long> = emptySet(),
     val isRefreshing: Boolean = false,
@@ -117,6 +118,15 @@ private data class ContactsLoad(
     val loading: Boolean,
     val query: String,
     val failure: Throwable?,
+    val searchActive: Boolean,
+    val hasLoaded: Boolean,
+    val showRefreshIndicator: Boolean,
+)
+
+private data class ContactsListProgress(
+    val loading: Boolean,
+    val hasLoaded: Boolean,
+    val showRefreshIndicator: Boolean,
 )
 
 private data class ContactsMiddleBase(
@@ -163,7 +173,7 @@ private fun contactsContent(
 ): Loadable<List<ContactDetails>> =
     when {
         load.failure != null -> Loadable.Error(AppError.from(load.failure))
-        load.loading && visible.isEmpty() -> Loadable.Loading
+        load.loading && visible.isEmpty() && !load.hasLoaded -> Loadable.Loading
         visible.isEmpty() -> Loadable.Empty
         else -> Loadable.Content(visible)
     }
@@ -189,9 +199,10 @@ private fun contactsUiState(
     val content = contactsContent(load, visible)
     return ContactsUiState(
         searchQuery = load.query,
+        isSearchMode = load.searchActive,
         showFavoritesOnly = middle.favoritesOnly,
         favorites = middle.favorites,
-        isRefreshing = load.loading,
+        isRefreshing = load.showRefreshIndicator,
         content = content,
         selection = middle.selection,
         pendingDeleteIds = pending,
@@ -225,8 +236,9 @@ private suspend fun reloadScreen(
     list: ContactsListState,
     groups: ContactsGroupState,
     favorites: ContactsFavoriteState,
+    showRefreshIndicator: Boolean = false,
 ) {
-    list.load()
+    list.load(showRefreshIndicator)
     groups.refresh()
     favorites.refresh()
 }
@@ -325,11 +337,26 @@ internal class ContactsViewModel(
         combine(
             combine(
                 list.contacts,
-                list.isLoading,
+                combine(
+                    list.isLoading,
+                    list.hasLoaded,
+                    list.isRefreshIndicatorVisible,
+                    ::ContactsListProgress,
+                ),
                 filters.searchQuery,
                 list.failure,
-                ::ContactsLoad,
-            ),
+                filters.searchActive,
+            ) { all, progress, query, failure, searchActive ->
+                ContactsLoad(
+                    all = all,
+                    loading = progress.loading,
+                    query = query,
+                    failure = failure,
+                    searchActive = searchActive,
+                    hasLoaded = progress.hasLoaded,
+                    showRefreshIndicator = progress.showRefreshIndicator,
+                )
+            },
             combine(
                 combine(
                     favoritesFlow,
@@ -424,10 +451,13 @@ internal class ContactsViewModel(
     }
 
     /** Перечитывает список и связанные с ним группы, аккаунты и избранное. */
-    fun refresh(reportSyncResult: Boolean = false) {
+    fun refresh(
+        reportSyncResult: Boolean = false,
+        showRefreshIndicator: Boolean = false,
+    ) {
         selection.clear()
         viewModelScope.launch {
-            reloadScreen(list, groups, favorites)
+            reloadScreen(list, groups, favorites, showRefreshIndicator)
             if (reportSyncResult) {
                 eventFlow.value = ContactsEvent.SyncRetryFinished(success = list.failure.value == null)
             }
@@ -438,6 +468,7 @@ internal class ContactsViewModel(
     fun clear() {
         list.clear()
         filters.onSearchQueryChange("")
+        filters.onSearchClosed()
         filters.resetFavoritesOnly()
         selection.clear()
         groups.clear()

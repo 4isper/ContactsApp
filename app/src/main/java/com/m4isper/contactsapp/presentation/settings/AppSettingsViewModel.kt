@@ -19,9 +19,13 @@ data class AppUiSettings(
     val dynamicColor: Boolean = true,
     val showPhotos: Boolean = true,
     val appLockEnabled: Boolean = false,
+    val appLockBiometrics: Boolean = true,
     val appLockPinHash: String = "",
+    val appLockPinLength: Int = 0,
     val secureWindow: Boolean = false,
     val appLanguage: String = "",
+    /** Настройки загружены из DataStore: до этого защита считается включённой. */
+    val settingsLoaded: Boolean = false,
 )
 
 /** Настройки приложения для корня: читаются до отрисовки навигации. */
@@ -39,9 +43,12 @@ class AppSettingsViewModel(
                     dynamicColor = settings.dynamicColor,
                     showPhotos = settings.showPhotos,
                     appLockEnabled = settings.appLockEnabled,
+                    appLockBiometrics = settings.appLockBiometrics,
                     appLockPinHash = settings.appLockPinHash,
+                    appLockPinLength = settings.appLockPinLength,
                     secureWindow = settings.secureWindow,
                     appLanguage = settings.appLanguage,
+                    settingsLoaded = true,
                 )
             }.stateIn(
                 scope = viewModelScope,

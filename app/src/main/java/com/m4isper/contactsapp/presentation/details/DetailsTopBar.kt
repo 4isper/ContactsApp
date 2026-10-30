@@ -3,8 +3,6 @@ package com.m4isper.contactsapp.presentation.details
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.DropdownMenu
@@ -12,7 +10,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -27,29 +24,33 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 
+/** Топ-бар карточки: имя появляется только после того, как шапка ушла под скролл. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun DetailsTopBar(
     title: String?,
+    showTitle: Boolean,
     shareable: ContactDetails?,
-    isFavorite: Boolean,
     onBack: () -> Unit,
     onEdit: () -> Unit,
     onShare: () -> Unit,
     onShareAsText: () -> Unit,
     onShareAsQr: () -> Unit,
-    onToggleFavorite: () -> Unit,
+    onShowQr: () -> Unit,
     onCopyToAccount: () -> Unit,
     onMoveToAccount: () -> Unit,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     TopAppBar(
         title = {
-            Text(
-                text = title ?: stringResource(R.string.action_back),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            if (showTitle && title != null) {
+                Text(
+                    text = title,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.testTag("details_title"),
+                )
+            }
         },
         navigationIcon = {
             IconButton(
@@ -74,32 +75,9 @@ internal fun DetailsTopBar(
                     )
                 }
                 IconButton(
-                    onClick = onToggleFavorite,
-                    modifier = Modifier.testTag("favorite_button"),
+                    onClick = onShare,
+                    modifier = Modifier.testTag("share_button"),
                 ) {
-                    Icon(
-                        if (isFavorite) {
-                            Icons.Filled.Favorite
-                        } else {
-                            Icons.Filled.FavoriteBorder
-                        },
-                        contentDescription =
-                            stringResource(
-                                if (isFavorite) {
-                                    R.string.action_remove_favorite
-                                } else {
-                                    R.string.action_add_favorite
-                                },
-                            ),
-                        tint =
-                            if (isFavorite) {
-                                MaterialTheme.colorScheme.tertiary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                    )
-                }
-                IconButton(onClick = onShare) {
                     Icon(
                         Icons.Filled.Share,
                         contentDescription = stringResource(R.string.share_contact),
@@ -125,6 +103,14 @@ internal fun DetailsTopBar(
                             onShareAsText()
                         },
                         modifier = Modifier.testTag("share_as_text_menu_item"),
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.show_qr)) },
+                        onClick = {
+                            menuExpanded = false
+                            onShowQr()
+                        },
+                        modifier = Modifier.testTag("show_qr_menu_item"),
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.share_contact_qr)) },

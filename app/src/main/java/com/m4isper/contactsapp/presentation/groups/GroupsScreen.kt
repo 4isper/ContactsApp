@@ -44,7 +44,7 @@ import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.contact.ContactGroup
 import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.account.contactAccountLabel
-import com.m4isper.contactsapp.presentation.common.groups.GroupNameDialog
+import com.m4isper.contactsapp.presentation.common.groups.GroupNameSheet
 import com.m4isper.contactsapp.presentation.common.message
 import com.m4isper.contactsapp.presentation.common.permissions.rememberWritePermissionGate
 import com.m4isper.contactsapp.ui.components.ConfirmDialog
@@ -127,6 +127,9 @@ fun GroupsScreen(
                 EmptyState(
                     icon = Icons.AutoMirrored.Filled.Label,
                     title = stringResource(R.string.groups_empty),
+                    description = stringResource(R.string.groups_empty_desc),
+                    primaryLabel = stringResource(R.string.groups_create_action),
+                    onPrimaryClick = { showCreateDialog = true },
                     modifier = screenModifier,
                 )
             is Loadable.Error ->
@@ -147,7 +150,7 @@ fun GroupsScreen(
     }
 
     if (showCreateDialog) {
-        GroupNameDialog(
+        GroupNameSheet(
             title = stringResource(R.string.groups_new),
             confirmLabel = stringResource(R.string.action_create),
             onConfirm = { title ->
@@ -160,7 +163,7 @@ fun GroupsScreen(
     }
 
     renameTarget?.let { group ->
-        GroupNameDialog(
+        GroupNameSheet(
             title = stringResource(R.string.group_rename),
             confirmLabel = stringResource(R.string.editor_save),
             initialName = group.title,

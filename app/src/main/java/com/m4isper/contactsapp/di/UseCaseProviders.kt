@@ -54,6 +54,7 @@ import com.m4isper.contactsapp.domain.usecase.groups.RenameGroupUseCase
 import com.m4isper.contactsapp.domain.usecase.settings.ObserveSettingsUseCase
 import com.m4isper.contactsapp.domain.usecase.settings.ResetSettingsUseCase
 import com.m4isper.contactsapp.domain.usecase.settings.SetAppLanguageUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.SetAppLockBiometricsUseCase
 import com.m4isper.contactsapp.domain.usecase.settings.SetAppLockUseCase
 import com.m4isper.contactsapp.domain.usecase.settings.SetDynamicColorUseCase
 import com.m4isper.contactsapp.domain.usecase.settings.SetFavoritesFirstUseCase
@@ -311,6 +312,12 @@ interface UseCaseProviders {
         SetAppLockUseCase(
             privacySettings,
             pinHasher,
+        )
+
+    @Provides
+    fun provideSetAppLockBiometricsUseCase(privacySettings: PrivacySettings): SetAppLockBiometricsUseCase =
+        SetAppLockBiometricsUseCase(
+            privacySettings,
         )
 
     @Provides

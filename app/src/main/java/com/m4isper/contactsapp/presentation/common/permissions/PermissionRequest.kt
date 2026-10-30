@@ -21,6 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
+import com.m4isper.contactsapp.ui.theme.PillShape
 
 @Composable
 internal fun PermissionRequest(
@@ -51,7 +52,10 @@ internal fun PermissionRequest(
                 textAlign = TextAlign.Center,
             )
             Spacer(modifier = Modifier.height(spacing.xl))
-            Button(onClick = onGrantClick) {
+            Button(
+                onClick = onGrantClick,
+                shape = PillShape,
+            ) {
                 Text(stringResource(R.string.permission_allow))
             }
             Spacer(modifier = Modifier.height(spacing.xs))

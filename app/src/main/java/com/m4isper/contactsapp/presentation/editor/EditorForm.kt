@@ -6,7 +6,9 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -25,7 +27,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -46,7 +47,7 @@ import com.m4isper.contactsapp.domain.model.common.AppError
 import com.m4isper.contactsapp.domain.model.contact.ContactDetails
 import com.m4isper.contactsapp.domain.model.contact.FormError
 import com.m4isper.contactsapp.domain.model.contact.FormField
-import com.m4isper.contactsapp.presentation.common.groups.GroupPickerDialog
+import com.m4isper.contactsapp.presentation.common.groups.GroupPickerSheet
 import com.m4isper.contactsapp.presentation.common.message
 import com.m4isper.contactsapp.presentation.editor.components.AccountPickerDialog
 import com.m4isper.contactsapp.presentation.editor.components.AccountRow
@@ -54,26 +55,19 @@ import com.m4isper.contactsapp.presentation.editor.components.SectionHeader
 import com.m4isper.contactsapp.presentation.editor.dialogs.BirthdayPickerDialog
 import com.m4isper.contactsapp.presentation.editor.dialogs.CropPhotoDialog
 import com.m4isper.contactsapp.presentation.editor.edits.withBirthday
-import com.m4isper.contactsapp.presentation.editor.edits.withDisplayName
 import com.m4isper.contactsapp.presentation.editor.edits.withEventDate
-import com.m4isper.contactsapp.presentation.editor.edits.withFamilyName
-import com.m4isper.contactsapp.presentation.editor.edits.withGivenName
-import com.m4isper.contactsapp.presentation.editor.edits.withMiddleName
-import com.m4isper.contactsapp.presentation.editor.edits.withNamePrefix
-import com.m4isper.contactsapp.presentation.editor.edits.withNameSuffix
-import com.m4isper.contactsapp.presentation.editor.edits.withNickname
-import com.m4isper.contactsapp.presentation.editor.edits.withPhoneticFamilyName
-import com.m4isper.contactsapp.presentation.editor.edits.withPhoneticGivenName
-import com.m4isper.contactsapp.presentation.editor.edits.withPhoneticMiddleName
 import com.m4isper.contactsapp.presentation.editor.edits.withPhoto
 import com.m4isper.contactsapp.presentation.editor.edits.withToggledGroup
-import com.m4isper.contactsapp.presentation.editor.edits.withToggledNameMode
 import com.m4isper.contactsapp.presentation.editor.edits.withoutPhoto
 import com.m4isper.contactsapp.presentation.editor.items.editorContactItems
 import com.m4isper.contactsapp.presentation.editor.items.editorExtraItems
-import com.m4isper.contactsapp.presentation.editor.rows.GroupMembershipRow
-import com.m4isper.contactsapp.presentation.editor.rows.NameEditor
+import com.m4isper.contactsapp.presentation.editor.items.errorItem
+import com.m4isper.contactsapp.presentation.editor.items.groupsItem
+import com.m4isper.contactsapp.presentation.editor.items.nameItem
+import com.m4isper.contactsapp.presentation.editor.items.nicknameItem
 import com.m4isper.contactsapp.presentation.editor.rows.PhotoEditor
+import com.m4isper.contactsapp.ui.adaptive.WindowWidthClass
+import com.m4isper.contactsapp.ui.adaptive.rememberWindowWidthClass
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
 
 @Composable
@@ -82,7 +76,6 @@ internal fun EditorForm(
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val spacing = LocalSpacing.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val edit: ((EditorUiState) -> EditorUiState) -> Unit = viewModel::update
     var showDatePicker by remember { mutableStateOf(false) }
@@ -93,7 +86,6 @@ internal fun EditorForm(
     // из switch «Без года» — всегда с годом, чтобы год выбрали явно.
     var birthdayPickerNoYear by remember { mutableStateOf(false) }
     var eventPickerNoYear by remember { mutableStateOf(false) }
-    val context = LocalContext.current
     var cropSource by remember { mutableStateOf<Uri?>(null) }
 
     cropSource?.let { source ->
@@ -116,113 +108,43 @@ internal fun EditorForm(
     }
 
     val listState = rememberLazyListState()
+    val rightListState = rememberLazyListState()
     val itemIndices = remember { FormItemIndices() }
+    val rightItemIndices = remember { FormItemIndices() }
     val focusRequesters = remember { mutableMapOf<String, FocusRequester>() }
 
     fun focusFor(key: String): FocusRequester = focusRequesters.getOrPut(key) { FocusRequester() }
 
     // Блокированное сохранение: показываем баннер и подводим пользователя к первой ошибке.
+    // На широком окне строка с ошибкой может быть в любой из двух колонок.
     LaunchedEffect(uiState.firstErrorRowIds) {
-        scrollToFirstError(uiState.firstErrorRowIds, itemIndices, listState, focusRequesters)
+        val scrolled =
+            scrollToFirstError(uiState.firstErrorRowIds, itemIndices, listState, focusRequesters)
+        if (!scrolled) {
+            scrollToFirstError(uiState.firstErrorRowIds, rightItemIndices, rightListState, focusRequesters)
+        }
     }
 
-    LazyColumn(
-        state = listState,
-        modifier =
-            modifier
-                .fillMaxSize()
-                .imePadding()
-                .testTag("editor_form"),
-    ) {
-        itemIndices.reset()
-        itemIndices.register("photo")
-        item(key = "photo") {
-            EditorPhotoSection(
-                name = uiState.effectiveName,
-                photoUri = uiState.photoUri,
-                context = context,
-                onCrop = { cropSource = it },
-                onRemove = { edit { it.withoutPhoto() } },
-            )
-        }
-        // Аккаунт подсвечивается только собственной ошибкой выбора, а не любой сетевой/полевой.
-        accountItems(
-            uiState = uiState,
-            onClick = { showAccountPicker = true },
-            isError = uiState.error == AppError.LOCAL_ACCOUNT_BLOCKED,
-            itemIndices = itemIndices,
-        )
-        if (uiState.formError != null || uiState.deleteFailed || uiState.fieldErrors.isNotEmpty()) {
-            itemIndices.register("error")
-            item(key = "error") {
-                Text(
-                    text = formMessage(uiState),
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(horizontal = spacing.m, vertical = spacing.s),
-                )
-            }
-        }
-        itemIndices.register("name")
-        item(key = "name") {
-            NameEditor(
-                mode = uiState.nameMode,
-                displayName = uiState.displayName,
-                given = uiState.givenName,
-                family = uiState.familyName,
-                middle = uiState.middleName,
-                prefix = uiState.namePrefix,
-                suffix = uiState.nameSuffix,
-                phoneticGiven = uiState.phoneticGivenName,
-                phoneticMiddle = uiState.phoneticMiddleName,
-                phoneticFamily = uiState.phoneticFamilyName,
-                onDisplayNameChange = { value -> edit { it.withDisplayName(value) } },
-                onGivenNameChange = { value -> edit { it.withGivenName(value) } },
-                onFamilyNameChange = { value -> edit { it.withFamilyName(value) } },
-                onMiddleNameChange = { value -> edit { it.withMiddleName(value) } },
-                onPrefixChange = { value -> edit { it.withNamePrefix(value) } },
-                onSuffixChange = { value -> edit { it.withNameSuffix(value) } },
-                onPhoneticGivenChange = { value -> edit { it.withPhoneticGivenName(value) } },
-                onPhoneticMiddleChange = { value -> edit { it.withPhoneticMiddleName(value) } },
-                onPhoneticFamilyChange = { value -> edit { it.withPhoneticFamilyName(value) } },
-                onToggleMode = { edit { it.withToggledNameMode() } },
-            )
-        }
-        itemIndices.register("nickname-header")
-        item(key = "nickname-header") {
-            SectionHeader(titleRes = R.string.editor_section_nickname)
-        }
-        itemIndices.register("nickname")
-        item(key = "nickname") {
-            OutlinedTextField(
-                value = uiState.nickname.nickname,
-                onValueChange = { value -> edit { it.withNickname(value) } },
-                label = { Text(stringResource(R.string.editor_nickname_label)) },
-                singleLine = true,
-                shape = MaterialTheme.shapes.medium,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = spacing.m)
-                        .testTag("editor_nickname_field"),
-            )
-        }
-        itemIndices.register("groups-header")
-        item(key = "groups-header") {
-            SectionHeader(titleRes = R.string.editor_section_groups)
-        }
-        itemIndices.register("groups")
-        item(key = "groups") {
-            GroupMembershipRow(
-                selected = uiState.selectedGroups,
-                onClick = { showGroupPicker = true },
-            )
-        }
-        editorContactItems(uiState = uiState, edit = edit, itemIndices = itemIndices, focusFor = ::focusFor)
-        editorExtraItems(
+    val twoColumns = rememberWindowWidthClass() == WindowWidthClass.EXPANDED
+
+    // Слева — кто это и как связаться, справа — работа, даты, связи и заметка.
+    val leftItems: LazyListScope.() -> Unit = {
+        identityItems(
             uiState = uiState,
             edit = edit,
             itemIndices = itemIndices,
+            onAccountClick = { showAccountPicker = true },
+            onGroupsClick = { showGroupPicker = true },
+            onPhotoCrop = { cropSource = it },
+            onPhotoRemove = { edit { it.withoutPhoto() } },
+        )
+        editorContactItems(uiState = uiState, edit = edit, itemIndices = itemIndices, focusFor = ::focusFor)
+    }
+    val rightItems: LazyListScope.(FormItemIndices) -> Unit = { indices ->
+        editorExtraItems(
+            uiState = uiState,
+            edit = edit,
+            itemIndices = indices,
             focusFor = ::focusFor,
             onBirthdayClick = {
                 birthdayPickerNoYear = uiState.birthday.value?.year == null
@@ -246,36 +168,28 @@ internal fun EditorForm(
                 eventPickerRowId = rowId
             },
         )
-        if (!uiState.isNew) {
-            itemIndices.register("delete")
-            item(key = "delete") {
-                OutlinedButton(
-                    onClick = onDeleteClick,
-                    colors =
-                        ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error,
-                        ),
-                    border =
-                        BorderStroke(
-                            width = 1.dp,
-                            color = MaterialTheme.colorScheme.error,
-                        ),
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(spacing.m)
-                            .testTag("editor_delete_button"),
-                ) {
-                    Icon(
-                        Icons.Filled.Delete,
-                        contentDescription = null,
-                    )
-                    Spacer(modifier = Modifier.width(spacing.s))
-                    Text(stringResource(R.string.editor_delete))
-                }
-            }
-        }
+        deleteItem(uiState, indices, onDeleteClick)
     }
+
+    EditorBody(
+        twoColumns = twoColumns,
+        modifier = modifier,
+        listState = listState,
+        rightListState = rightListState,
+        left = {
+            itemIndices.reset()
+            leftItems()
+        },
+        right = {
+            if (twoColumns) {
+                rightItemIndices.reset()
+                rightItems(rightItemIndices)
+            } else {
+                // На узком окне вторая половина формы — продолжение того же списка.
+                rightItems(itemIndices)
+            }
+        },
+    )
 
     if (showDatePicker) {
         BirthdayPickerDialog(
@@ -304,7 +218,7 @@ internal fun EditorForm(
     }
 
     if (showGroupPicker) {
-        GroupPickerDialog(
+        GroupPickerSheet(
             title = stringResource(R.string.editor_section_groups),
             groups = uiState.availableGroups,
             selectedIds = uiState.selectedGroupIds,
@@ -326,6 +240,136 @@ internal fun EditorForm(
             },
             onDismiss = { showAccountPicker = false },
         )
+    }
+}
+
+/**
+ * Контейнер формы: один список на узком окне, две колонки — на широком.
+ * Порядок полей сохраняется: колонки читаются сверху вниз, левая, затем правая.
+ */
+@Composable
+internal fun EditorBody(
+    twoColumns: Boolean,
+    left: LazyListScope.() -> Unit,
+    right: LazyListScope.() -> Unit,
+    modifier: Modifier = Modifier,
+    listState: LazyListState = rememberLazyListState(),
+    rightListState: LazyListState = rememberLazyListState(),
+) {
+    if (!twoColumns) {
+        LazyColumn(
+            state = listState,
+            modifier =
+                modifier
+                    .fillMaxSize()
+                    .imePadding()
+                    .testTag("editor_form"),
+        ) {
+            left()
+            right()
+        }
+        return
+    }
+    Row(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .imePadding()
+                .testTag("editor_form"),
+    ) {
+        LazyColumn(
+            state = listState,
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .testTag("editor_form_left"),
+        ) {
+            left()
+        }
+        LazyColumn(
+            state = rightListState,
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .testTag("editor_form_right"),
+        ) {
+            right()
+        }
+    }
+}
+
+/**
+ * Фото, аккаунт, ошибки, имя, ник и группы: начало формы.
+ * На широком окне эта часть — левая колонка, на узком — верх списка.
+ */
+private fun LazyListScope.identityItems(
+    uiState: EditorUiState,
+    edit: ((EditorUiState) -> EditorUiState) -> Unit,
+    itemIndices: FormItemIndices,
+    onAccountClick: () -> Unit,
+    onGroupsClick: () -> Unit,
+    onPhotoCrop: (Uri) -> Unit,
+    onPhotoRemove: () -> Unit,
+) {
+    itemIndices.register("photo")
+    item(key = "photo") {
+        EditorPhotoSection(
+            name = uiState.effectiveName,
+            photoUri = uiState.photoUri,
+            context = LocalContext.current,
+            onCrop = onPhotoCrop,
+            onRemove = onPhotoRemove,
+        )
+    }
+    // Аккаунт подсвечивается только собственной ошибкой выбора, а не любой сетевой/полевой.
+    accountItems(
+        uiState = uiState,
+        onClick = onAccountClick,
+        isError = uiState.error == AppError.LOCAL_ACCOUNT_BLOCKED,
+        itemIndices = itemIndices,
+    )
+    errorItem(uiState, itemIndices)
+    nameItem(uiState, edit, itemIndices)
+    nicknameItem(uiState, edit, itemIndices)
+    groupsItem(uiState, itemIndices, onGroupsClick)
+}
+
+/** Удаление контакта: последняя строка формы в любой раскладке. */
+private fun LazyListScope.deleteItem(
+    uiState: EditorUiState,
+    itemIndices: FormItemIndices,
+    onDeleteClick: () -> Unit,
+) {
+    if (uiState.isNew) return
+    itemIndices.register("delete")
+    item(key = "delete") {
+        val spacing = LocalSpacing.current
+        OutlinedButton(
+            onClick = onDeleteClick,
+            colors =
+                ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error,
+                ),
+            border =
+                BorderStroke(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.error,
+                ),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(spacing.m)
+                    .testTag("editor_delete_button"),
+        ) {
+            Icon(
+                Icons.Filled.Delete,
+                contentDescription = null,
+            )
+            Spacer(modifier = Modifier.width(spacing.s))
+            Text(stringResource(R.string.editor_delete))
+        }
     }
 }
 
@@ -453,7 +497,12 @@ private fun SimilarContactsDialog(
 
 /** Файл для снимка камеры: провайдеру отдаём URI через FileProvider. */
 private fun cameraOutputUri(context: android.content.Context): Uri {
-    val file = java.io.File(context.cacheDir, "camera_${System.currentTimeMillis()}.jpg")
+    val file =
+        java.io.File(
+            com.m4isper.contactsapp.presentation.common.share
+                .sharedCacheDir(context),
+            "camera_${System.currentTimeMillis()}.jpg",
+        )
     return androidx.core.content.FileProvider.getUriForFile(
         context,
         "${context.packageName}.fileprovider",
@@ -476,7 +525,7 @@ internal fun FormError.fieldMessage(): String =
 
 /** Текст ошибки формы: удаление, валидация или сообщение исключения. */
 @Composable
-private fun formMessage(uiState: EditorUiState): String =
+internal fun formMessage(uiState: EditorUiState): String =
     when {
         uiState.deleteFailed -> stringResource(R.string.batch_delete_failed)
         uiState.error != null -> uiState.error.message()
@@ -513,15 +562,21 @@ internal class FormItemIndices {
     operator fun get(key: String): Int? = indices[key]
 }
 
-/** Подводит список к первой строке с ошибкой и ставит фокус в её поле. */
+/**
+ * Подводит список к первой строке с ошибкой и ставит фокус в её поле.
+ * Возвращает false, если строка живёт в другой колонке: тогда её ищет вызывающий.
+ */
 private suspend fun scrollToFirstError(
     targets: Map<FormField, Long>,
     itemIndices: FormItemIndices,
     listState: LazyListState,
     focusRequesters: MutableMap<String, FocusRequester>,
-) {
-    val target = targets.entries.firstOrNull() ?: return
-    val key = "row_${target.value}"
-    itemIndices[key]?.let { listState.animateScrollToItem(it) }
+): Boolean {
+    val target = targets.entries.firstOrNull()
+    val key = target?.let { "row_${it.value}" }
+    val index = key?.let(itemIndices::get)
+    if (key == null || index == null) return false
+    listState.animateScrollToItem(index)
     runCatching { focusRequesters[key]?.requestFocus() }
+    return true
 }

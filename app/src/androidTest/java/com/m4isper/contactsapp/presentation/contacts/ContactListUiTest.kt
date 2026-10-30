@@ -1,8 +1,15 @@
 package com.m4isper.contactsapp.presentation.contacts
 
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.longClick
@@ -11,6 +18,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntSize
+import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.m4isper.contactsapp.FakeAndroidRepository
@@ -252,6 +262,141 @@ class ContactListUiTest {
         }
         compose.onNodeWithTag("contact_row_1").assertIsDisplayed()
         compose.onNodeWithTag("contact_row_2").assertDoesNotExist()
+    }
+
+    @Test
+    fun searchModeClosesBeforeLeavingTheScreen() {
+        val viewModel = viewModel(FakeAndroidRepository(listOf(anna, bob)))
+        compose.setContent {
+            val uiState by viewModel.uiState.collectAsState()
+            ContactList(
+                uiState = uiState,
+                onAction = { action ->
+                    when (action) {
+                        ContactsListAction.SearchOpened -> viewModel.filters.onSearchActivated()
+                        ContactsListAction.SearchClosed -> viewModel.filters.onSearchClosed()
+                        is ContactsListAction.SearchQueryChanged ->
+                            viewModel.filters.onSearchQueryChange(action.query)
+                        else -> Unit
+                    }
+                },
+            )
+        }
+        viewModel.refresh()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.content is Loadable.Content
+        }
+
+        compose.onNodeWithTag("search_field").performTextInput("An")
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.isSearchMode
+        }
+        compose.onNodeWithTag("home_top_bar").assertDoesNotExist()
+
+        Espresso.closeSoftKeyboard()
+        compose.waitForIdle()
+        Espresso.pressBack()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            !viewModel.uiState.value.isSearchMode
+        }
+        compose.onNodeWithTag("home_top_bar").assertIsDisplayed()
+        assertEquals("An", viewModel.uiState.value.searchQuery)
+    }
+
+    @Test
+    fun homeIdleKeepsActionsAndDropsTheAppTitleRow() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        compose.setContent {
+            ContactList(
+                uiState = ContactsUiState(content = Loadable.Content(listOf(anna))),
+                onAction = {},
+            )
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("home_top_bar").assertIsDisplayed()
+        compose.onNodeWithTag("settings_action").assertIsDisplayed()
+        compose.onNodeWithText(context.getString(R.string.app_name)).assertDoesNotExist()
+    }
+
+    @Test
+    fun headerCollapsesOnScrollDownAndExpandsOnScrollUp() {
+        val contacts = (1..20).map { testDetails((it - 1).toLong(), "Name%02d".format(it), "123") }
+        var statusBarHeightPx = 0f
+        compose.setContent {
+            statusBarHeightPx = WindowInsets.statusBars.getTop(LocalDensity.current).toFloat()
+            ContactList(
+                uiState = ContactsUiState(content = Loadable.Content(contacts)),
+                onAction = {},
+            )
+        }
+        compose.waitForIdle()
+
+        val bar = compose.onNodeWithTag("home_top_bar")
+        val list = compose.onNodeWithTag("contacts_list")
+        bar.assertIsDisplayed()
+        compose.onNodeWithText("Name02").assertIsDisplayed()
+        val barHeight0 = bar.fetchSemanticsNode().boundsInRoot.height
+        val name02Top0 =
+            compose
+                .onNodeWithText("Name02")
+                .fetchSemanticsNode()
+                .positionInRoot.y
+
+        // Один жест: панели хватает измеренной высоты, все дельты уходят в неё,
+        // список не прокручивается — сдвиг контента равен сжатию панели.
+        list.performTouchInput {
+            down(center)
+            moveBy(Offset(0f, -120f))
+            up()
+        }
+        compose.waitForIdle()
+        val barHeight1 = bar.fetchSemanticsNode().boundsInRoot.height
+        val name02Top1 =
+            compose
+                .onNodeWithText("Name02")
+                .fetchSemanticsNode()
+                .positionInRoot.y
+        // Панель сжалась.
+        assertEquals(true, barHeight1 < barHeight0)
+        // Нет двойного потребления: сдвиг строки = сжатию панели.
+        assertEquals(name02Top0 - (barHeight0 - barHeight1), name02Top1, 2f)
+
+        // Добиваем панель до нуля шагами без флинга.
+        repeat(3) {
+            list.performTouchInput {
+                down(center)
+                moveBy(Offset(0f, -120f))
+                up()
+            }
+            compose.waitForIdle()
+        }
+        assertEquals(statusBarHeightPx, bar.fetchSemanticsNode().boundsInRoot.height, 2f)
+
+        // Те же шаги назад: панель раскрывается, список запоминает скролл.
+        repeat(4) {
+            list.performTouchInput {
+                down(center)
+                moveBy(Offset(0f, 120f))
+                up()
+            }
+            compose.waitForIdle()
+        }
+
+        // Итоговое состояние совпало со стартовым: дельты не потреблены дважды.
+        assertEquals(true, bar.fetchSemanticsNode().boundsInRoot.height > 0f)
+        bar.assertIsDisplayed()
+        assertEquals(true, bar.fetchSemanticsNode().boundsInRoot.height >= barHeight0 - 2f)
+        compose.onNodeWithText("Name02").assertIsDisplayed()
+        assertEquals(
+            name02Top0,
+            compose
+                .onNodeWithText("Name02")
+                .fetchSemanticsNode()
+                .positionInRoot.y,
+            2f,
+        )
     }
 
     @Test
@@ -577,9 +722,8 @@ class ContactListUiTest {
     }
 
     @Test
-    fun moreMenuShowsImportAndExport() {
+    fun appBarShowsSettingsAndNavigationMenu() {
         compose.setContent {
-            val scope = rememberCoroutineScope()
             ContactList(
                 uiState = ContactsUiState(content = Loadable.Content(listOf(anna))),
                 onAction = { action ->
@@ -588,13 +732,15 @@ class ContactListUiTest {
             )
         }
 
+        compose.onNodeWithTag("settings_action").assertIsDisplayed()
         compose.onNodeWithTag("more_actions_button").performClick()
 
         compose.onNodeWithTag("recents_menu_item").assertIsDisplayed()
+        compose.onNodeWithTag("groups_menu_item").assertIsDisplayed()
         compose.onNodeWithTag("import_menu_item").assertIsDisplayed()
+        compose.onNodeWithTag("scan_qr_menu_item").assertIsDisplayed()
         compose.onNodeWithTag("export_menu_item").assertIsDisplayed()
         compose.onNodeWithTag("duplicates_menu_item").assertIsDisplayed()
-        compose.onNodeWithTag("settings_menu_item").assertIsDisplayed()
     }
 
     @Test
@@ -648,6 +794,40 @@ class ContactListUiTest {
 
         compose.onNodeWithTag("quick_actions_3").assertDoesNotExist()
         compose.onNodeWithTag("quick_favorite_3").assertIsDisplayed()
+    }
+
+    @Test
+    fun narrowWindowAtLargeFontScaleDropsTheFavoriteStar() {
+        setListAt(widthDp = 320, fontScale = 2f)
+
+        compose.onNodeWithTag("quick_favorite_1").assertDoesNotExist()
+        compose.onNodeWithTag("quick_actions_1").assertIsDisplayed()
+    }
+
+    @Test
+    fun phoneWidthAtNormalFontScaleKeepsTheFavoriteStar() {
+        setListAt(widthDp = 411, fontScale = 1f)
+
+        compose.onNodeWithTag("quick_favorite_1").assertIsDisplayed()
+    }
+
+    private fun setListAt(
+        widthDp: Int,
+        fontScale: Float,
+    ) {
+        compose.setContent {
+            val density = LocalDensity.current
+            val widthPx = (widthDp * density.density).toInt()
+            CompositionLocalProvider(
+                LocalDensity provides Density(density = density.density, fontScale = fontScale),
+                LocalWindowInfo provides FixedWindowInfo(IntSize(widthPx, widthPx * 2)),
+            ) {
+                ContactList(
+                    uiState = ContactsUiState(content = Loadable.Content(listOf(anna))),
+                    onAction = { },
+                )
+            }
+        }
     }
 
     @Test
@@ -883,4 +1063,11 @@ class ContactListUiTest {
         compose.onNodeWithText("Email").assertIsDisplayed()
         compose.onNodeWithText("Call").assertDoesNotExist()
     }
+}
+
+private class FixedWindowInfo(
+    private val size: IntSize,
+) : WindowInfo {
+    override val isWindowFocused: Boolean = true
+    override val containerSize: IntSize = size
 }

@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <cache-path name="shared_contacts" path="." />
+    <!-- Наружу отдаём только файлы из подкаталога shared/: least privilege. -->
+    <cache-path name="shared_contacts" path="shared/" />
 </paths>

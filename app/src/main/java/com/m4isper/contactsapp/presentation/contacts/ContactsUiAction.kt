@@ -14,6 +14,12 @@ sealed interface ContactsListAction : ContactsUiAction {
         val query: String,
     ) : ContactsListAction
 
+    /** Поле поиска получило фокус: экран показывает режим поиска. */
+    data object SearchOpened : ContactsListAction
+
+    /** Поиск закрыт: запрос сохраняется. */
+    data object SearchClosed : ContactsListAction
+
     data object FavoritesOnlyToggled : ContactsListAction
 
     data class ContactSelected(

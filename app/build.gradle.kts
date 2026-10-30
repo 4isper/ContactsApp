@@ -8,6 +8,28 @@ plugins {
     alias(libs.plugins.kover)
 }
 
+// Имя приложения в именах собранных файлов — константой: чтение rootProject.name
+// из скрипта модуля мешает configuration cache.
+val appFileName = "ContactsApp"
+
+// versionName ведётся руками, versionCode — число коммитов: растёт сам, ручной
+// бамп не нужен. Rebase или squash уменьшают счётчик, и следующий билд получит
+// меньший versionCode, чем уже выпущенный, — после переписывания истории
+// проверить счётчик перед релизом.
+val appVersionName = "1.0.7"
+
+fun git(vararg args: String): String =
+    providers
+        .exec {
+            workingDir(rootDir)
+            commandLine("git", *args)
+        }.standardOutput.asText
+        .get()
+        .trim()
+
+val commitCount = git("rev-list", "--count", "HEAD").toInt()
+val commitHash = git("rev-parse", "--short", "HEAD")
+
 android {
     namespace = "com.m4isper.contactsapp"
     compileSdk = 37
@@ -16,8 +38,8 @@ android {
         applicationId = "com.m4isper.contactsapp"
         minSdk = 26
         targetSdk = 37
-        versionCode = 3
-        versionName = "1.0.2"
+        versionCode = commitCount
+        versionName = appVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -25,6 +47,9 @@ android {
     buildTypes {
         debug {
             enableAndroidTestCoverage = true
+            // Суффикс виден в настройках телефона: сразу ясно, что стоит не
+            // релиз, и виден коммит этой сборки.
+            versionNameSuffix = "-dev-$commitHash"
         }
         release {
             isMinifyEnabled = true
@@ -49,7 +74,14 @@ android {
         unitTests {
             // Стенды android.util.Log и подобных классов в JVM-тестах не должны падать.
             isReturnDefaultValues = true
+            // Robolectric-тестам обёртки языка нужны ресурсы приложения.
+            isIncludeAndroidResources = true
         }
+    }
+
+    lint {
+        // Паритет локалей обязателен: пропущенный перевод ломает локаль молча.
+        error += "MissingTranslation"
     }
 
     // Язык переключается внутри приложения, поэтому локали не должны
@@ -61,11 +93,28 @@ android {
     }
 }
 
+// Имя APK: ContactsApp-debug-1.0.7-252-208a967.apk — вариант, версия и коммит
+// видны без открывания build/outputs. На имя .aab в Play это не влияет.
+androidComponents {
+    onVariants { variant ->
+        variant.outputs.forEach { output ->
+            output.outputFileName.set(
+                "$appFileName-${variant.name}-$appVersionName-$commitCount-$commitHash.apk",
+            )
+        }
+    }
+}
+
 dependencies {
     implementation(project(":domain"))
     implementation(project(":data"))
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.biometric)
     implementation(libs.androidx.exifinterface)
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
+    implementation(libs.androidx.glance.appwidget.preview)
+    implementation(libs.androidx.glance.preview)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
@@ -85,11 +134,13 @@ dependencies {
     implementation(libs.kotlinx.serialization.core)
     implementation(libs.coil.compose)
     implementation(libs.zxing.core)
+    implementation(libs.zxing.embedded)
     implementation(libs.androidx.adaptive)
     implementation(libs.androidx.adaptive.layout)
     implementation(libs.androidx.adaptive.navigation3)
     testImplementation(libs.junit)
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.robolectric)
     testRuntimeOnly(libs.junit.platform.launcher)
     testRuntimeOnly(libs.junit.vintage)
     testImplementation(libs.kotlinx.coroutines.test)

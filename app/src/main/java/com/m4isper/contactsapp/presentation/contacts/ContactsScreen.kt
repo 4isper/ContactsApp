@@ -21,6 +21,7 @@ import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.presentation.common.permissions.PermissionRequest
 import com.m4isper.contactsapp.presentation.common.permissions.hasPermission
 import com.m4isper.contactsapp.presentation.common.permissions.openAppSettings
+import com.m4isper.contactsapp.presentation.common.permissions.openSettingsIfPermanentlyDenied
 import com.m4isper.contactsapp.presentation.contacts.components.ContactList
 import com.m4isper.contactsapp.presentation.contacts.effects.syncContactsPermission
 import com.m4isper.contactsapp.presentation.import.ImportPreviewViewModel
@@ -64,6 +65,8 @@ internal fun ContactsScreen(
             if (isGranted) {
                 pendingWriteAction?.invoke()
                 pendingWriteAction = null
+            } else {
+                openSettingsIfPermanentlyDenied(context, Manifest.permission.WRITE_CONTACTS)
             }
         }
 
@@ -77,6 +80,9 @@ internal fun ContactsScreen(
                 if (!hasPermission(context, Manifest.permission.WRITE_CONTACTS)) {
                     writePermissionLauncher.launch(Manifest.permission.WRITE_CONTACTS)
                 }
+            } else {
+                // Постоянный отказ: диалог больше не покажется — ведём в настройки.
+                openSettingsIfPermanentlyDenied(context, Manifest.permission.READ_CONTACTS)
             }
         }
 
@@ -205,27 +211,59 @@ private fun ContactsActionScope.handle(action: ContactsUiAction) {
 
 /** Фильтры, выделение, избранное и группы. */
 private fun ContactsActionScope.handleState(action: ContactsListAction) {
+    if (handleSearch(action)) return
+    if (handleGroup(action)) return
     when (action) {
-        is ContactsListAction.SearchQueryChanged -> viewModel.filters.onSearchQueryChange(action.query)
         ContactsListAction.FavoritesOnlyToggled -> viewModel.filters.onToggleFavoritesOnly()
         is ContactsListAction.ContactSelected -> viewModel.selection.onContactSelected(action.contactId)
         ContactsListAction.ClearSelection -> viewModel.selection.clear()
         is ContactsListAction.SelectAll -> viewModel.selection.selectAll(action.contactIds)
         is ContactsListAction.GroupSelected -> viewModel.filters.onGroupSelected(action.groupId)
         is ContactsListAction.AccountSelected -> viewModel.filters.onAccountSelected(action.account)
-        is ContactsListAction.CreateGroup -> scope.launch { viewModel.groups.onCreateGroup(action.title) }
-        is ContactsListAction.AddSelectedToGroup ->
-            scope.launch { viewModel.groups.onAddSelectedToGroup(action.groupIds) }
         is ContactsListAction.ToggleFavorite -> toggleFavorite(action.contactId)
         ContactsListAction.ToggleFavoriteSelected -> toggleFavoriteSelected()
+        // Поиск и группы обработаны выше.
+        else -> Unit
     }
 }
+
+/** Группы: создание и добавление выделенных. Возвращает true, если действие обработано. */
+private fun ContactsActionScope.handleGroup(action: ContactsListAction): Boolean =
+    when (action) {
+        is ContactsListAction.CreateGroup -> {
+            scope.launch { viewModel.groups.onCreateGroup(action.title) }
+            true
+        }
+        is ContactsListAction.AddSelectedToGroup -> {
+            scope.launch { viewModel.groups.onAddSelectedToGroup(action.groupIds) }
+            true
+        }
+        else -> false
+    }
+
+/** Поиск: запрос и режим экрана. Возвращает true, если действие обработано. */
+private fun ContactsActionScope.handleSearch(action: ContactsListAction): Boolean =
+    when (action) {
+        is ContactsListAction.SearchQueryChanged -> {
+            viewModel.filters.onSearchQueryChange(action.query)
+            true
+        }
+        ContactsListAction.SearchOpened -> {
+            viewModel.filters.onSearchActivated()
+            true
+        }
+        ContactsListAction.SearchClosed -> {
+            viewModel.filters.onSearchClosed()
+            true
+        }
+        else -> false
+    }
 
 /** Файлы, удаление и обновление списка. */
 private fun ContactsActionScope.handleFile(action: ContactsFileAction) {
     when (action) {
         ContactsFileAction.Retry -> viewModel.refresh()
-        ContactsFileAction.Refresh -> viewModel.refresh()
+        ContactsFileAction.Refresh -> viewModel.refresh(showRefreshIndicator = true)
         ContactsFileAction.RetrySync -> viewModel.refresh(reportSyncResult = true)
         ContactsFileAction.DeleteSelected -> viewModel.onDeleteSelected()
         ContactsFileAction.UndoDelete -> viewModel.onUndoDelete()

@@ -50,7 +50,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.contact.ContactDetails
-import com.m4isper.contactsapp.presentation.common.groups.GroupNameDialog
+import com.m4isper.contactsapp.presentation.common.groups.GroupNameSheet
 import com.m4isper.contactsapp.presentation.common.permissions.WritePermissionGate
 import com.m4isper.contactsapp.presentation.common.permissions.rememberWritePermissionGate
 import com.m4isper.contactsapp.presentation.contacts.components.contactSubtitle
@@ -228,7 +228,7 @@ private fun GroupDetailDialogs(
 ) {
     if (showPicker) {
         val memberIds = uiState.members.map { it.contactId }.toSet()
-        ContactPickerDialog(
+        ContactPickerSheet(
             contacts = uiState.allContacts,
             excludedIds = memberIds,
             onConfirm = { ids ->
@@ -240,7 +240,7 @@ private fun GroupDetailDialogs(
     }
 
     if (renameTarget) {
-        GroupNameDialog(
+        GroupNameSheet(
             title = stringResource(R.string.group_rename),
             confirmLabel = stringResource(R.string.editor_save),
             initialName = uiState.group?.title.orEmpty(),

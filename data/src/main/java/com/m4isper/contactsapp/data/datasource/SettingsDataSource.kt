@@ -5,6 +5,7 @@ package com.m4isper.contactsapp.data.datasource
 
 import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 import com.m4isper.contactsapp.domain.model.settings.AppSettings
+import com.m4isper.contactsapp.domain.model.settings.ReminderTime
 import kotlinx.coroutines.flow.Flow
 
 /** Настройки приложения в локальном хранилище. */
@@ -37,15 +38,20 @@ interface SettingsDataSource {
     suspend fun setAppLock(
         enabled: Boolean,
         pinHash: String,
+        pinLength: Int,
     )
 
     /** Скрывать содержимое окна в недавних задачах. */
     suspend fun setSecureWindow(enabled: Boolean)
 
+    /** Разблокировка по биометрии при включённой защите. */
+    suspend fun setAppLockBiometrics(enabled: Boolean)
+
     /** Напоминать о днях рождения и событиях. */
     suspend fun setReminders(
         enabled: Boolean,
         leadDays: Int,
+        time: ReminderTime,
     )
 
     /** Вернуть настройки к значениям по умолчанию. */

@@ -2,20 +2,33 @@ package com.m4isper.contactsapp.presentation.editor
 
 import android.Manifest
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.DeviceConfigurationOverride
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.WindowSize
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performCustomAccessibilityActionWithLabel
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipe
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
@@ -86,10 +99,36 @@ class ContactEditorUiTest {
         tag: String,
         text: String,
     ) {
-        Espresso.closeSoftKeyboard()
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag(tag))
+        scrollFormTo(hasTestTag(tag))
         compose.waitForIdle()
         compose.onNodeWithTag(tag).performTextInput(text)
+    }
+
+    /**
+     * Прокрутка формы к узлу. На узком окне `editor_form` — это сам список,
+     * на широком `editor_form` — `Row` из двух колонок, поэтому скроллим
+     * `editor_form_left` и `editor_form_right`.
+     */
+    private fun scrollFormTo(matcher: SemanticsMatcher) {
+        Espresso.closeSoftKeyboard()
+        compose.waitForIdle()
+        val columns =
+            if (compose.onAllNodesWithTag("editor_form_left").fetchSemanticsNodes().isNotEmpty()) {
+                listOf("editor_form_left", "editor_form_right")
+            } else {
+                listOf("editor_form")
+            }
+        var failure: AssertionError? = null
+        for (column in columns) {
+            try {
+                compose.onNodeWithTag(column).performScrollToNode(matcher)
+                return
+            } catch (scrollFailure: AssertionError) {
+                // Узел мог остаться в другой колонке: пробуем следующий контейнер.
+                failure = scrollFailure
+            }
+        }
+        throw failure!!
     }
 
     /** Ввод в поле вне списка формы, например в диалоге. */
@@ -123,7 +162,7 @@ class ContactEditorUiTest {
         compose.onNodeWithTag("editor_account_row").performClick()
         compose.onNodeWithTag("account_option_com.google/user@gmail.com").performClick()
         typeInForm("editor_name_field", "Anna")
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_phone_field"))
+        scrollFormTo(hasTestTag("editor_phone_field"))
         typeInForm("editor_phone_field", "111")
         compose.onNodeWithTag("editor_save_button").performClick()
 
@@ -147,7 +186,7 @@ class ContactEditorUiTest {
         }
 
         typeInForm("editor_name_field", "Anna")
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_phone_field"))
+        scrollFormTo(hasTestTag("editor_phone_field"))
         typeInForm("editor_phone_field", "111")
         compose.onNodeWithTag("editor_save_button").performClick()
 
@@ -256,9 +295,9 @@ class ContactEditorUiTest {
             )
         }
 
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_add_email_button"))
+        scrollFormTo(hasTestTag("editor_add_email_button"))
         compose.onNodeWithTag("editor_add_email_button").performClick()
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_email_field"))
+        scrollFormTo(hasTestTag("editor_email_field"))
         typeInForm("editor_email_field", "anna@example.com")
         compose.onNodeWithTag("editor_save_button").performClick()
 
@@ -291,40 +330,39 @@ class ContactEditorUiTest {
         val phoneRowId =
             viewModel.uiState.value.phones[0]
                 .rowId
-        Espresso.closeSoftKeyboard()
-        compose
-            .onNodeWithTag("editor_form")
-            .performScrollToNode(hasTestTag("editor_phone_primary_$phoneRowId"))
+        scrollFormTo(hasTestTag("editor_phone_more_$phoneRowId"))
+        compose.onNodeWithTag("editor_phone_more_$phoneRowId").performClick()
+        compose.onNodeWithTag("editor_phone_primary_$phoneRowId").assertTextContains("Set as primary value")
         compose.onNodeWithTag("editor_phone_primary_$phoneRowId").performClick()
 
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_add_address_button"))
+        scrollFormTo(hasTestTag("editor_add_address_button"))
         compose.onNodeWithTag("editor_add_address_button").performClick()
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_address_field"))
+        scrollFormTo(hasTestTag("editor_address_field"))
         typeInForm("editor_address_field", "Lenina 1")
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_address_city_field"))
+        scrollFormTo(hasTestTag("editor_address_city_field"))
         typeInForm("editor_address_city_field", "Moscow")
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_address_country_field"))
+        scrollFormTo(hasTestTag("editor_address_country_field"))
         typeInForm("editor_address_country_field", "Russia")
 
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_add_sip_button"))
+        scrollFormTo(hasTestTag("editor_add_sip_button"))
         compose.onNodeWithTag("editor_add_sip_button").performClick()
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_sip_field"))
+        scrollFormTo(hasTestTag("editor_sip_field"))
         typeInForm("editor_sip_field", "sip:anna@example.com")
 
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_add_website_button"))
+        scrollFormTo(hasTestTag("editor_add_website_button"))
         compose.onNodeWithTag("editor_add_website_button").performClick()
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_website_field"))
+        scrollFormTo(hasTestTag("editor_website_field"))
         typeInForm("editor_website_field", "https://blog.example")
         compose.onNodeWithText("Homepage").performClick()
         compose.onNodeWithText("Blog").performClick()
 
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_company_field"))
+        scrollFormTo(hasTestTag("editor_company_field"))
         typeInForm("editor_company_field", "ACME")
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_department_field"))
+        scrollFormTo(hasTestTag("editor_department_field"))
         typeInForm("editor_department_field", "Platform")
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_job_description_field"))
+        scrollFormTo(hasTestTag("editor_job_description_field"))
         typeInForm("editor_job_description_field", "Leads engineering")
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_office_location_field"))
+        scrollFormTo(hasTestTag("editor_office_location_field"))
         typeInForm("editor_office_location_field", "London")
         compose.onNodeWithTag("editor_save_button").performClick()
 
@@ -356,15 +394,15 @@ class ContactEditorUiTest {
             )
         }
 
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_add_email_button"))
+        scrollFormTo(hasTestTag("editor_add_email_button"))
         compose.onNodeWithTag("editor_add_email_button").performClick()
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_email_field"))
+        scrollFormTo(hasTestTag("editor_email_field"))
         typeInForm("editor_email_field", "not-an-email")
         compose.onNodeWithTag("editor_save_button").performClick()
         compose.waitForIdle()
 
         assertTrue(repository.created.isEmpty())
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasText("Check the email address"))
+        scrollFormTo(hasText("Check the email address"))
         compose.onNodeWithText("Check the email address").assertExists()
     }
 
@@ -381,11 +419,11 @@ class ContactEditorUiTest {
             )
         }
 
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_add_im_button"))
+        scrollFormTo(hasTestTag("editor_add_im_button"))
         compose.onNodeWithTag("editor_add_im_button").performClick()
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_im_field"))
+        scrollFormTo(hasTestTag("editor_im_field"))
         typeInForm("editor_im_field", "tg_anna")
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_im_service_field"))
+        scrollFormTo(hasTestTag("editor_im_service_field"))
         typeInForm("editor_im_service_field", "Telegram")
         compose.onNodeWithTag("editor_save_button").performClick()
 
@@ -442,7 +480,7 @@ class ContactEditorUiTest {
         compose.onNodeWithTag("editor_toggle_name_mode").performClick()
         typeInForm("editor_name_given", "Иван")
         compose.onNodeWithTag("editor_toggle_name_details").performClick()
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_name_phonetic_given"))
+        scrollFormTo(hasTestTag("editor_name_phonetic_given"))
         typeInForm("editor_name_phonetic_given", "Ivan")
         compose.onNodeWithTag("editor_save_button").performClick()
 
@@ -466,11 +504,11 @@ class ContactEditorUiTest {
         }
 
         typeInForm("editor_name_field", "Anna")
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_nickname_field"))
+        scrollFormTo(hasTestTag("editor_nickname_field"))
         typeInForm("editor_nickname_field", "Нюша")
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_add_relation_button"))
+        scrollFormTo(hasTestTag("editor_add_relation_button"))
         compose.onNodeWithTag("editor_add_relation_button").performClick()
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_relation_field"))
+        scrollFormTo(hasTestTag("editor_relation_field"))
         typeInForm("editor_relation_field", "Bob")
         compose.onNodeWithTag("editor_save_button").performClick()
 
@@ -511,9 +549,9 @@ class ContactEditorUiTest {
             viewModel.uiState.value.displayName == "Anna"
         }
 
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_nickname_field"))
+        scrollFormTo(hasTestTag("editor_nickname_field"))
         compose.onNodeWithTag("editor_nickname_field").assertTextContains("Нюша")
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_event_date_button"))
+        scrollFormTo(hasTestTag("editor_event_date_button"))
         compose.onNodeWithTag("editor_event_date_button").performClick()
         compose.onNodeWithTag("editor_event_date_confirm").assertIsDisplayed()
         Espresso.pressBack()
@@ -544,7 +582,7 @@ class ContactEditorUiTest {
             viewModel.uiState.value.displayName == "Anna"
         }
 
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_delete_button"))
+        scrollFormTo(hasTestTag("editor_delete_button"))
         compose.onNodeWithTag("editor_delete_button").performClick()
         compose.onNodeWithTag("confirm_delete_button").performClick()
 
@@ -587,17 +625,17 @@ class ContactEditorUiTest {
             viewModel.uiState.value.accounts.size == 2 && viewModel.uiState.value.allGroups.size == 2
         }
 
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_groups_row"))
+        scrollFormTo(hasTestTag("editor_groups_row"))
         compose.onNodeWithTag("editor_groups_row").performClick()
         compose.onNodeWithTag("group_check_row_Семья").assertIsDisplayed()
         compose.onNodeWithTag("group_check_row_Работа").assertDoesNotExist()
         Espresso.pressBack()
 
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_account_row"))
+        scrollFormTo(hasTestTag("editor_account_row"))
         compose.onNodeWithTag("editor_account_row").performClick()
         compose.onNodeWithTag("account_option_com.google/user@gmail.com").performClick()
 
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_groups_row"))
+        scrollFormTo(hasTestTag("editor_groups_row"))
         compose.onNodeWithTag("editor_groups_row").performClick()
         compose.onNodeWithTag("group_check_row_Работа").assertIsDisplayed()
         compose.onNodeWithTag("group_check_row_Семья").assertDoesNotExist()
@@ -637,11 +675,11 @@ class ContactEditorUiTest {
                 viewModel.uiState.value.selectedAccount == google
         }
 
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_account_row"))
+        scrollFormTo(hasTestTag("editor_account_row"))
         compose.onNodeWithTag("editor_account_row").assertIsDisplayed()
         compose.onNodeWithText("user@gmail.com").assertIsDisplayed()
 
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_groups_row"))
+        scrollFormTo(hasTestTag("editor_groups_row"))
         compose.onNodeWithTag("editor_groups_row").performClick()
         compose.onNodeWithTag("group_check_row_Работа").assertIsDisplayed()
         compose.onNodeWithTag("group_check_row_Семья").assertDoesNotExist()
@@ -668,7 +706,7 @@ class ContactEditorUiTest {
 
         compose.onNodeWithTag("editor_account_row").performClick()
         compose.onNodeWithTag("account_option_com.google/user@gmail.com").performClick()
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_groups_row"))
+        scrollFormTo(hasTestTag("editor_groups_row"))
         compose.onNodeWithTag("editor_groups_row").performClick()
         typeText("new_group_field", "Проект")
         compose.onNodeWithTag("new_group_confirm").performClick()
@@ -697,7 +735,7 @@ class ContactEditorUiTest {
         }
 
         typeInForm("editor_name_field", "Anna")
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_groups_row"))
+        scrollFormTo(hasTestTag("editor_groups_row"))
         compose.onNodeWithTag("editor_groups_row").performClick()
         compose.onNodeWithTag("group_check_row_Семья").performClick()
         compose.onNodeWithTag("group_picker_confirm").performClick()
@@ -733,9 +771,7 @@ class ContactEditorUiTest {
         val viewModel = viewModel(repository)
         openEditor(details, viewModel)
 
-        compose
-            .onNodeWithTag("editor_form")
-            .performScrollToNode(hasTestTag("editor_birthday_button"))
+        scrollFormTo(hasTestTag("editor_birthday_button"))
         compose.onNodeWithTag("editor_birthday_button").performClick()
         compose.onNodeWithTag("editor_no_year_dialog_switch").assertIsDisplayed()
         compose.onNodeWithTag("editor_birthday_confirm").performClick()
@@ -755,9 +791,7 @@ class ContactEditorUiTest {
         val viewModel = viewModel(repository)
         openEditor(details, viewModel)
 
-        compose
-            .onNodeWithTag("editor_form")
-            .performScrollToNode(hasTestTag("editor_birthday_switch"))
+        scrollFormTo(hasTestTag("editor_birthday_switch"))
         compose.onNodeWithTag("editor_birthday_switch").performClick()
         compose.onNodeWithTag("editor_birthday_confirm").assertIsDisplayed()
         compose.onNodeWithTag("editor_birthday_confirm").performClick()
@@ -777,9 +811,7 @@ class ContactEditorUiTest {
         val viewModel = viewModel(repository)
         openEditor(details, viewModel)
 
-        compose
-            .onNodeWithTag("editor_form")
-            .performScrollToNode(hasTestTag("editor_birthday_button"))
+        scrollFormTo(hasTestTag("editor_birthday_button"))
         compose.onNodeWithTag("editor_birthday_button").performClick()
         compose.onNodeWithTag("editor_no_year_dialog_switch").performClick()
         compose.onNodeWithTag("editor_birthday_confirm").performClick()
@@ -799,9 +831,7 @@ class ContactEditorUiTest {
         val viewModel = viewModel(repository)
         openEditor(details, viewModel)
 
-        compose
-            .onNodeWithTag("editor_form")
-            .performScrollToNode(hasTestTag("editor_birthday_switch"))
+        scrollFormTo(hasTestTag("editor_birthday_switch"))
         compose.onNodeWithTag("editor_birthday_switch").performClick()
         compose.onNodeWithTag("editor_birthday_confirm").assertIsDisplayed()
         Espresso.pressBack()
@@ -830,9 +860,7 @@ class ContactEditorUiTest {
         val viewModel = viewModel(repository)
         openEditor(details, viewModel)
 
-        compose
-            .onNodeWithTag("editor_form")
-            .performScrollToNode(hasTestTag("editor_event_switch"))
+        scrollFormTo(hasTestTag("editor_event_switch"))
         compose.onNodeWithTag("editor_event_switch").performClick()
         compose.onNodeWithTag("editor_event_date_confirm").assertIsDisplayed()
         compose.onNodeWithTag("editor_event_date_confirm").performClick()
@@ -859,14 +887,18 @@ class ContactEditorUiTest {
 
         typeInForm("editor_name_field", "Anna")
         typeInForm("editor_phone_field", "+79161234567")
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_add_phone_button"))
+        scrollFormTo(hasTestTag("editor_add_phone_button"))
         compose.onNodeWithTag("editor_add_phone_button").performClick()
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_phone_field"))
+        scrollFormTo(hasTestTag("editor_phone_field"))
         compose.waitForIdle()
         compose.onAllNodesWithTag("editor_phone_field")[1].performTextInput("abc")
+        val invalidRowId =
+            viewModel.uiState.value.phones[1]
+                .rowId
 
         // Уводим невалидную строку за пределы экрана и нажимаем Save в топбаре.
-        compose.onNodeWithTag("editor_form").performScrollToNode(hasTestTag("editor_note_field"))
+        // Цель берём из той же колонки, что и телефоны: на широком окне заметка — в правой.
+        scrollFormTo(hasTestTag("editor_add_sip_button"))
         compose.waitForIdle()
         compose.onNodeWithTag("editor_save_button").performClick()
         compose.waitForIdle()
@@ -875,17 +907,15 @@ class ContactEditorUiTest {
         compose.onNodeWithText("Check the highlighted fields").assertIsDisplayed()
         // Скролл проверяем по границам: узел в дереве, но assertIsDisplayed капризничает
         // рядом со снекбаром.
-        val viewport =
-            compose
-                .onNodeWithTag("editor_form")
-                .fetchSemanticsNode()
-                .size.height
-        val secondPhone = compose.onAllNodesWithTag("editor_phone_field").fetchSemanticsNodes()[1]
-        val top = secondPhone.positionInRoot.y.toInt()
-        val bottom = top + secondPhone.size.height
+        val form = compose.onNodeWithTag("editor_form").fetchSemanticsNode()
+        val formTop = form.positionInRoot.y.toInt()
+        val formBottom = formTop + form.size.height
+        val invalidRow = compose.onNodeWithTag("editor_phone_row_$invalidRowId").fetchSemanticsNode()
+        val top = invalidRow.positionInRoot.y.toInt()
+        val bottom = top + invalidRow.size.height
         assertTrue(
-            "second phone row must be on screen: top=$top bottom=$bottom viewport=$viewport",
-            top >= 0 && bottom <= viewport,
+            "invalid phone row must be on screen: top=$top bottom=$bottom form=$formTop..$formBottom",
+            top >= formTop && bottom <= formBottom,
         )
     }
 
@@ -901,5 +931,195 @@ class ContactEditorUiTest {
         compose.onNodeWithTag("editor_photo_camera").assertIsDisplayed()
         compose.onNodeWithTag("editor_photo_pick").assertIsDisplayed()
         compose.onNodeWithTag("editor_photo_remove").assertDoesNotExist()
+    }
+
+    @Test
+    fun expandedWidth_splitsFormIntoTwoColumns() {
+        val viewModel = viewModel(FakeAndroidRepository())
+        compose.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.WindowSize(DpSize(1000.dp, 800.dp))) {
+                ContactEditorScreen(contactId = null, onDone = {}, onBack = {}, viewModel = viewModel)
+            }
+        }
+
+        compose.onNodeWithTag("editor_form_left").assertIsDisplayed()
+        compose.onNodeWithTag("editor_form_right").assertIsDisplayed()
+        // Порядок полей сохранён: имя — в левой колонке, работа и даты — в правой.
+        compose.onNodeWithTag("editor_name_field").assertIsDisplayed()
+        compose.onNodeWithTag("editor_form_right").performScrollToNode(hasTestTag("editor_birthday_button"))
+        compose.onNodeWithTag("editor_birthday_button").assertIsDisplayed()
+    }
+
+    @Test
+    fun compactWidth_keepsSingleFormList() {
+        val viewModel = viewModel(FakeAndroidRepository())
+        compose.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.WindowSize(DpSize(411.dp, 891.dp))) {
+                ContactEditorScreen(contactId = null, onDone = {}, onBack = {}, viewModel = viewModel)
+            }
+        }
+
+        compose.onNodeWithTag("editor_form").assertIsDisplayed()
+        compose.onNodeWithTag("editor_form_right").assertDoesNotExist()
+    }
+
+    @Test
+    fun compactWidth_phoneRowStaysOneLineWithoutClipping() {
+        val viewModel = viewModel(FakeAndroidRepository())
+        compose.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.WindowSize(DpSize(320.dp, 700.dp))) {
+                ContactEditorScreen(contactId = null, onDone = {}, onBack = {}, viewModel = viewModel)
+            }
+        }
+        val phoneRowId =
+            viewModel.uiState.value.phones
+                .single()
+                .rowId
+        scrollFormTo(hasTestTag("editor_phone_row_$phoneRowId"))
+
+        val row = compose.onNodeWithTag("editor_phone_row_$phoneRowId").getUnclippedBoundsInRoot()
+        val rowHeight = row.bottom - row.top
+        assertTrue("row is $rowHeight tall", rowHeight <= 64.5.dp)
+        assertTrue("row ends at ${row.right}", row.right <= 320.dp)
+        compose.onNodeWithTag("editor_phone_field").assertIsDisplayed()
+        compose.onNodeWithTag("editor_phone_drag_$phoneRowId").assertIsDisplayed()
+        compose.onNodeWithTag("editor_phone_more_$phoneRowId").assertIsDisplayed()
+    }
+
+    @Test
+    fun draggingTheHandleMovesARowUp() {
+        val viewModel = twoPhones()
+
+        val secondRowId =
+            viewModel.uiState.value.phones[1]
+                .rowId
+        scrollFormTo(hasTestTag("editor_phone_drag_$secondRowId"))
+        Espresso.closeSoftKeyboard()
+        compose.waitForIdle()
+        compose.onNodeWithTag("editor_phone_drag_$secondRowId").performTouchInput {
+            swipe(start = center, end = center + Offset(0f, -80.dp.toPx()))
+        }
+        compose.waitForIdle()
+
+        assertEquals(
+            listOf("222", "111"),
+            viewModel.uiState.value.phones
+                .map { it.value.number },
+        )
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun reorderHandleOffersMoveActionsToTalkBack() {
+        val viewModel = twoPhones()
+
+        val secondRowId =
+            viewModel.uiState.value.phones[1]
+                .rowId
+        scrollFormTo(hasTestTag("editor_phone_drag_$secondRowId"))
+        compose.waitForIdle()
+        compose
+            .onNodeWithTag("editor_phone_drag_$secondRowId")
+            .performCustomAccessibilityActionWithLabel("Move up")
+        compose.waitForIdle()
+
+        assertEquals(
+            listOf("222", "111"),
+            viewModel.uiState.value.phones
+                .map { it.value.number },
+        )
+    }
+
+    private fun twoPhones(): ContactEditorViewModel {
+        val viewModel = viewModel(FakeAndroidRepository())
+        compose.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.WindowSize(DpSize(320.dp, 700.dp))) {
+                ContactEditorScreen(contactId = null, onDone = {}, onBack = {}, viewModel = viewModel)
+            }
+        }
+        typeInForm("editor_phone_field", "111")
+        scrollFormTo(hasTestTag("editor_add_phone_button"))
+        compose.onNodeWithTag("editor_add_phone_button").performClick()
+        scrollFormTo(hasTestTag("editor_phone_field"))
+        compose.waitForIdle()
+        compose.onAllNodesWithTag("editor_phone_field")[1].performTextInput("222")
+        compose.waitForIdle()
+        return viewModel
+    }
+
+    @Test
+    fun dismissingTheGroupsSheetKeepsFieldFocus() {
+        val groups = FakeGroupsRepository(groups = listOf(ContactGroup(id = 100, title = "Семья")))
+        val viewModel = viewModel(FakeAndroidRepository(), groups)
+        compose.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.WindowSize(DpSize(320.dp, 800.dp))) {
+                ContactEditorScreen(contactId = null, onDone = {}, onBack = {}, viewModel = viewModel)
+            }
+        }
+        compose.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.allGroups
+                .isNotEmpty()
+        }
+
+        scrollFormTo(hasTestTag("editor_groups_row"))
+        scrollFormTo(hasTestTag("editor_nickname_field"))
+        compose.onNodeWithTag("editor_nickname_field").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("editor_nickname_field").assertIsFocused()
+
+        scrollFormTo(hasTestTag("editor_groups_row"))
+        compose.onNodeWithTag("editor_groups_row").performClick()
+        compose.onNodeWithTag("group_picker_confirm").assertIsDisplayed()
+        Espresso.pressBack()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("editor_nickname_field").assertIsFocused()
+    }
+
+    @Test
+    fun expandedWidth_invalidFieldBlocksSave() {
+        val repository = FakeAndroidRepository()
+        val viewModel = viewModel(repository)
+        compose.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.WindowSize(DpSize(1000.dp, 800.dp))) {
+                ContactEditorScreen(contactId = null, onDone = {}, onBack = {}, viewModel = viewModel)
+            }
+        }
+
+        compose.onNodeWithTag("editor_form_left").performScrollToNode(hasTestTag("editor_add_email_button"))
+        compose.onNodeWithTag("editor_add_email_button").performClick()
+        compose.onNodeWithTag("editor_form_left").performScrollToNode(hasTestTag("editor_email_field"))
+        Espresso.closeSoftKeyboard()
+        compose.waitForIdle()
+        compose.onNodeWithTag("editor_email_field").performTextInput("not-an-email")
+        compose.onNodeWithTag("editor_save_button").performClick()
+        compose.waitForIdle()
+
+        assertTrue(repository.created.isEmpty())
+        compose.onNodeWithTag("editor_form_left").performScrollToNode(hasText("Check the email address"))
+        compose.onNodeWithText("Check the email address").assertExists()
+    }
+
+    @Test
+    fun rotation_restoresScrollAndUnsavedInput() {
+        val viewModel = viewModel(FakeAndroidRepository())
+        val restorer = StateRestorationTester(compose)
+        // Поворот телефона: узкое окно, один список, а не две колонки планшета.
+        restorer.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.WindowSize(DpSize(411.dp, 891.dp))) {
+                ContactEditorScreen(contactId = null, onDone = {}, onBack = {}, viewModel = viewModel)
+            }
+        }
+
+        typeInForm("editor_nickname_field", "anna")
+        Espresso.closeSoftKeyboard()
+        scrollFormTo(hasTestTag("editor_birthday_button"))
+        compose.onNodeWithTag("editor_birthday_button").assertIsDisplayed()
+
+        restorer.emulateSavedInstanceStateRestore()
+
+        compose.onNodeWithTag("editor_birthday_button").assertIsDisplayed()
+        scrollFormTo(hasTestTag("editor_nickname_field"))
+        compose.onNodeWithTag("editor_nickname_field").assertTextContains("anna")
     }
 }

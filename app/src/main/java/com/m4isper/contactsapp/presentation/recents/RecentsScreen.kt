@@ -40,6 +40,7 @@ import com.m4isper.contactsapp.presentation.common.permissions.hasPermission
 import com.m4isper.contactsapp.presentation.common.permissions.openAppSettings
 import com.m4isper.contactsapp.presentation.common.share.openSms
 import com.m4isper.contactsapp.presentation.contacts.components.ContactCard
+import com.m4isper.contactsapp.presentation.contacts.components.rememberShowFavoriteQuickAction
 import com.m4isper.contactsapp.ui.components.EmptyState
 import com.m4isper.contactsapp.ui.components.ErrorState
 import com.m4isper.contactsapp.ui.components.LoadingState
@@ -63,6 +64,7 @@ fun RecentsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val requestCall = rememberCallHandler()
     var pendingCall by remember { mutableStateOf<RecentsCallTarget?>(null) }
+    val showFavoriteQuickAction = rememberShowFavoriteQuickAction()
     var hasReadPermission by remember {
         mutableStateOf(hasPermission(context, Manifest.permission.READ_CONTACTS))
     }
@@ -135,6 +137,9 @@ fun RecentsScreen(
                     EmptyState(
                         icon = Icons.Filled.History,
                         title = stringResource(R.string.recents_empty),
+                        description = stringResource(R.string.recents_empty_desc),
+                        primaryLabel = stringResource(R.string.action_browse_contacts),
+                        onPrimaryClick = onBack,
                         modifier = screenModifier,
                     )
                 is Loadable.Error ->
@@ -167,6 +172,7 @@ fun RecentsScreen(
                                     contact.primaryPhone?.let { openSms(context, it.number) }
                                 },
                                 onToggleFavorite = { viewModel.toggleFavorite(contact.contactId) },
+                                showFavoriteQuickAction = showFavoriteQuickAction,
                             )
                         }
                     }

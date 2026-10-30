@@ -6,14 +6,12 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performImeAction
-import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -21,14 +19,25 @@ import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
-/** Экран блокировки: IME-Done, очистка после ошибки, показ PIN и блокировка попыток. */
+/** Экран блокировки: пад, автоотправка полной длины, очистка после ошибки и блокировка попыток. */
 @RunWith(AndroidJUnit4::class)
 class AppLockScreenUiTest {
     @get:Rule
     val compose = createComposeRule()
 
+    private fun tapPin(vararg digits: Int) {
+        digits.forEach { digit ->
+            compose.onNodeWithTag("app_lock_key_$digit").performClick()
+        }
+    }
+
+    private fun dotsState(): String {
+        val node = compose.onNodeWithTag("app_lock_dots").fetchSemanticsNode()
+        return node.config[SemanticsProperties.StateDescription]
+    }
+
     @Test
-    fun imeDone_triggersUnlockOnce() {
+    fun enteringTheFullPinSubmitsAutomatically() {
         val calls = AtomicInteger(0)
         val unlocked = AtomicBoolean(false)
         compose.setContent {
@@ -38,72 +47,113 @@ class AppLockScreenUiTest {
                     unlocked.set(pin == "1234")
                     true
                 },
+                pinLength = 4,
             )
         }
 
-        compose.onNodeWithTag("app_lock_pin_field").performTextInput("1234")
-        compose.onNodeWithTag("app_lock_pin_field").performImeAction()
+        tapPin(1, 2, 3, 4)
         compose.waitUntil(timeoutMillis = 5_000) { unlocked.get() }
 
         assertEquals(1, calls.get())
     }
 
     @Test
-    fun wrongPin_clearsFieldAndShowsError() {
-        val attemptFinished = AtomicBoolean(false)
+    fun wrongPin_clearsDotsAndShowsError() {
+        val attempts = AtomicInteger(0)
         compose.setContent {
             AppLockScreen(
                 onUnlock = { _ ->
-                    attemptFinished.set(true)
+                    attempts.incrementAndGet()
                     false
                 },
+                pinLength = 4,
             )
         }
 
-        compose.onNodeWithTag("app_lock_pin_field").performTextInput("9999")
-        compose.onNodeWithTag("app_lock_pin_field").performImeAction()
-        compose.waitUntil(timeoutMillis = 5_000) { attemptFinished.get() }
+        tapPin(9, 9, 9, 9)
+        compose.waitUntil(timeoutMillis = 5_000) { attempts.get() == 1 }
         compose.waitForIdle()
 
         compose.onNodeWithText("Wrong PIN code").assertIsDisplayed()
-        // Поле очищено: маска показывает «•», поэтому смотрим EditableText напрямую.
-        val field = compose.onNodeWithTag("app_lock_pin_field").fetchSemanticsNode()
-        assertEquals("", field.config[SemanticsProperties.EditableText].toString())
-        compose.onNodeWithTag("app_lock_unlock_button").assertIsNotEnabled()
+        // Точки очищены: состояние строки снова «0 из 4».
+        assertEquals("0 of 4 digits", dotsState())
+
+        // Очистка не блокирует повторную попытку.
+        tapPin(9, 9, 9, 9)
+        compose.waitUntil(timeoutMillis = 5_000) { attempts.get() == 2 }
+        assertEquals(2, attempts.get())
     }
 
     @Test
-    fun showPinToggle_switchesVisibility() {
+    fun backspaceRemovesTheLastDigit() {
+        compose.setContent {
+            AppLockScreen(onUnlock = { true }, pinLength = 6)
+        }
+
+        tapPin(1, 2, 3)
+        compose.waitForIdle()
+        assertEquals("3 of 6 digits", dotsState())
+
+        compose.onNodeWithTag("app_lock_key_delete").performClick()
+        compose.waitForIdle()
+        assertEquals("2 of 6 digits", dotsState())
+    }
+
+    @Test
+    fun legacyMode_showsLengthHintOnShortSubmit() {
+        // Установка до обновления: длина неизвестна, отправка вручную.
         compose.setContent {
             AppLockScreen(onUnlock = { true })
         }
 
-        compose.onNodeWithContentDescription("Show PIN code").performClick()
-        compose.onNodeWithContentDescription("Hide PIN code").assertIsDisplayed()
+        tapPin(1, 2, 3)
+        compose.onNodeWithTag("app_lock_unlock_button").assertIsEnabled()
+        compose.onNodeWithTag("app_lock_unlock_button").performClick()
 
-        compose.onNodeWithContentDescription("Hide PIN code").performClick()
-        compose.onNodeWithContentDescription("Show PIN code").assertIsDisplayed()
+        // Короткая попытка не молчит: подсказка о длине подсвечивается.
+        compose.onNodeWithTag("app_lock_length_hint").assertIsDisplayed()
+        compose.onNodeWithText("4–8 digits").assertIsDisplayed()
     }
 
     @Test
-    fun lockout_disablesInputAndCountsDown() {
+    fun legacyMode_unlockButtonSubmitsWhenLongEnough() {
+        val unlocked = AtomicBoolean(false)
+        compose.setContent {
+            AppLockScreen(
+                onUnlock = { pin ->
+                    unlocked.set(pin == "1234")
+                    true
+                },
+            )
+        }
+
+        tapPin(1, 2, 3, 4)
+        compose.onNodeWithTag("app_lock_unlock_button").performClick()
+        compose.waitUntil(timeoutMillis = 5_000) { unlocked.get() }
+
+        assertTrue(unlocked.get())
+    }
+
+    @Test
+    fun lockout_disablesPadAndCountsDown() {
         compose.setContent {
             AppLockScreen(
                 onUnlock = { true },
+                pinLength = 4,
                 lockedFor = Duration.ofSeconds(5),
             )
         }
 
-        compose.onNodeWithTag("app_lock_pin_field").assertIsNotEnabled()
-        compose.onNodeWithTag("app_lock_unlock_button").assertIsNotEnabled()
+        compose.onNodeWithTag("app_lock_key_1").assertIsNotEnabled()
         compose.onNodeWithText("Too many attempts. Try again in 5 s").assertIsDisplayed()
     }
 
     @Test
-    fun lockoutEnds_unlocksInput() {
+    fun lockoutEnds_enablesPad() {
         compose.setContent {
             AppLockScreen(
                 onUnlock = { true },
+                pinLength = 4,
                 lockedFor = Duration.ofSeconds(1),
             )
         }
@@ -116,8 +166,6 @@ class AppLockScreenUiTest {
         }
         compose.waitForIdle()
 
-        compose.onNodeWithTag("app_lock_pin_field").assertIsEnabled()
-        compose.onNodeWithTag("app_lock_pin_field").performTextInput("1234")
-        compose.onNodeWithTag("app_lock_unlock_button").assertIsEnabled()
+        compose.onNodeWithTag("app_lock_key_1").assertIsEnabled()
     }
 }

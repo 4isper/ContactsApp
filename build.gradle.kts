@@ -76,7 +76,20 @@ val checkArchitecture =
 
 subprojects {
     tasks.configureEach {
-        if (name == "check") dependsOn(checkArchitecture)
+        if (name == "check") {
+            dependsOn(checkArchitecture)
+            // Metro (1.5+) hidden-dependency checks: fail `check` when a module receives
+            // Metro contribution hints from a dependency that is on the runtime classpath
+            // but not the compile classpath. Main variants only; test variants share the
+            // same component set.
+            dependsOn(
+                tasks.matching { task ->
+                    task.name.startsWith("check") &&
+                        task.name.endsWith("MetroHiddenDependencies") &&
+                        !task.name.contains("Test")
+                },
+            )
+        }
     }
 }
 

@@ -1,6 +1,7 @@
 package com.m4isper.contactsapp.data.repository
 
 import com.m4isper.contactsapp.data.datasource.SettingsDataSource
+import com.m4isper.contactsapp.domain.model.settings.ReminderTime
 import com.m4isper.contactsapp.domain.repository.settings.PrivacySettings
 import com.m4isper.contactsapp.domain.repository.settings.ReminderSettings
 import com.m4isper.contactsapp.domain.repository.settings.SettingsMaintenance
@@ -24,14 +25,18 @@ class PrivacySettingsImpl(
     override suspend fun setAppLock(
         enabled: Boolean,
         pinHash: String,
-    ) = dataSource.setAppLock(enabled, pinHash)
+        pinLength: Int,
+    ) = dataSource.setAppLock(enabled, pinHash, pinLength)
 
     override suspend fun setSecureWindow(enabled: Boolean) = dataSource.setSecureWindow(enabled)
+
+    override suspend fun setAppLockBiometrics(enabled: Boolean) = dataSource.setAppLockBiometrics(enabled)
 
     override suspend fun setReminders(
         enabled: Boolean,
         leadDays: Int,
-    ) = dataSource.setReminders(enabled, leadDays)
+        time: ReminderTime,
+    ) = dataSource.setReminders(enabled, leadDays, time)
 
     override suspend fun resetSettings() = dataSource.resetSettings()
 }

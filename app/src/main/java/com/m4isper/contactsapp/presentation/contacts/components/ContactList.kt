@@ -1,6 +1,7 @@
 package com.m4isper.contactsapp.presentation.contacts.components
 
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -18,9 +19,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -34,13 +34,15 @@ import com.m4isper.contactsapp.presentation.common.Loadable
 import com.m4isper.contactsapp.presentation.common.call.ConfirmCallDialog
 import com.m4isper.contactsapp.presentation.common.call.rememberCallHandler
 import com.m4isper.contactsapp.presentation.common.format.phoneText
-import com.m4isper.contactsapp.presentation.common.groups.GroupPickerDialog
+import com.m4isper.contactsapp.presentation.common.groups.GroupPickerSheet
 import com.m4isper.contactsapp.presentation.common.share.openSms
+import com.m4isper.contactsapp.presentation.contacts.ContactsEvent
 import com.m4isper.contactsapp.presentation.contacts.ContactsFileAction
 import com.m4isper.contactsapp.presentation.contacts.ContactsListAction
 import com.m4isper.contactsapp.presentation.contacts.ContactsNavigationAction
 import com.m4isper.contactsapp.presentation.contacts.ContactsUiAction
 import com.m4isper.contactsapp.presentation.contacts.ContactsUiState
+import com.m4isper.contactsapp.presentation.contacts.effects.ExportSummary
 import com.m4isper.contactsapp.presentation.contacts.effects.handleContactsEvent
 import com.m4isper.contactsapp.presentation.contacts.effects.rememberVCardLaunchers
 import com.m4isper.contactsapp.ui.components.ConfirmDialog
@@ -51,6 +53,10 @@ private data class QuickCallTarget(
     val name: String,
     val phone: PhoneNumber,
 )
+
+/** Панель скользит за скроллом только в основном режиме с данными списка. */
+private fun headerCollapseEnabled(uiState: ContactsUiState): Boolean =
+    !uiState.isSearchMode && !uiState.isSelectionMode && uiState.content is Loadable.Content
 
 @Composable
 internal fun ContactList(
@@ -67,6 +73,8 @@ internal fun ContactList(
     val ctx = LocalContext.current
     // Листья получают свои лямбды, а контракт экрана остаётся один.
     val onSearchQueryChange: (String) -> Unit = { onAction(ContactsListAction.SearchQueryChanged(it)) }
+    val onSearchOpened: () -> Unit = { onAction(ContactsListAction.SearchOpened) }
+    val onSearchClosed: () -> Unit = { onAction(ContactsListAction.SearchClosed) }
     val onFavoritesOnlyChange: () -> Unit = { onAction(ContactsListAction.FavoritesOnlyToggled) }
     val onClearSearch: () -> Unit = { onSearchQueryChange("") }
     val onContactClick: (Long) -> Unit = { onAction(ContactsNavigationAction.ContactClicked(it)) }
@@ -99,15 +107,7 @@ internal fun ContactList(
     val onCreateGroup: (String) -> Unit = { onAction(ContactsListAction.CreateGroup(it)) }
     val onManageGroupsClick: () -> Unit = { onAction(ContactsNavigationAction.ManageGroupsClicked) }
     val onAddSelectedToGroup: (Set<Long>) -> Unit = { onAction(ContactsListAction.AddSelectedToGroup(it)) }
-    // containerSize — фактический размер окна в пикселях: Configuration.screenWidthDp
-    // скругляется и по-разному учитывает вставки в зависимости от targetSdk.
-    val density = LocalDensity.current
-    val containerSize = LocalWindowInfo.current.containerSize
-    val showFavoriteQuickAction =
-        favoriteQuickActionVisible(
-            screenWidthDp = (containerSize.width / density.density).toInt(),
-            fontScale = density.fontScale,
-        )
+    val showFavoriteQuickAction = rememberShowFavoriteQuickAction()
     val onDuplicatesClick: () -> Unit = { onAction(ContactsNavigationAction.DuplicatesClicked) }
     val onRecentsClick: () -> Unit = { onAction(ContactsNavigationAction.RecentsClicked) }
     val onSettingsClick: () -> Unit = { onAction(ContactsNavigationAction.SettingsClicked) }
@@ -125,6 +125,8 @@ internal fun ContactList(
     var showGroupPicker by remember { mutableStateOf(false) }
     var pendingGroupIds by remember { mutableStateOf(emptySet<Long>()) }
     var pendingExportUri by remember { mutableStateOf<Uri?>(null) }
+    var exportInProgress by remember { mutableStateOf(false) }
+    var exportSummary by remember { mutableStateOf<ExportSummary?>(null) }
     var pendingQuickCall by remember { mutableStateOf<QuickCallTarget?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val requestCall = rememberCallHandler()
@@ -147,13 +149,21 @@ internal fun ContactList(
         if (event != null) {
             val exportUri = pendingExportUri
             pendingExportUri = null
-            handleContactsEvent(ctx, event, exportUri, onEventHandled)
+            exportInProgress = event is ContactsEvent.ExportReady
+            val summary = handleContactsEvent(ctx, event, exportUri, onEventHandled)
+            exportInProgress = false
+            if (summary != null) exportSummary = summary
         }
     }
 
     // Выход из режима выделения закрывает пикер групп: контекст действия пропал.
     LaunchedEffect(uiState.isSelectionMode) {
         if (!uiState.isSelectionMode) showGroupPicker = false
+    }
+
+    // Назад из поиска закрывает поиск, а не экран; выделение важнее, если они совпали.
+    BackHandler(enabled = uiState.isSearchMode && !uiState.isSelectionMode) {
+        onSearchClosed()
     }
 
     DeleteUndoEffect(
@@ -168,6 +178,9 @@ internal fun ContactList(
     val allSelected = visibleIds.isNotEmpty() && uiState.selection.containsAll(visibleIds)
     val allFavorite =
         uiState.selection.isNotEmpty() && uiState.selection.all { it in uiState.favorites }
+    // Скольжение панели за скроллом: сброс при смене режимов панели — новое состояние.
+    val headerCollapse =
+        remember(uiState.isSearchMode, uiState.isSelectionMode) { HeaderCollapseState() }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -178,23 +191,35 @@ internal fun ContactList(
             )
         },
         topBar = {
-            if (uiState.isSelectionMode) {
-                SelectionTopBar(
-                    count = uiState.selection.size,
-                    allSelected = allSelected,
-                    allFavorite = allFavorite,
-                    onClose = onClearSelection,
-                    onSelectAll = { onSelectAll(visibleIds) },
-                    onToggleFavorite = onToggleFavoriteSelected,
-                    onAddToGroup = {
-                        pendingGroupIds = emptySet()
-                        showGroupPicker = true
-                    },
-                    onShare = onShareSelected,
-                    onExport = { vCardLaunchers.startExportSelection() },
-                    onDelete = { showDeleteDialog = true },
-                )
-            }
+            ContactListTopBar(
+                uiState = uiState,
+                allSelected = allSelected,
+                allFavorite = allFavorite,
+                visibleIds = visibleIds,
+                profileContactId = profileContactId,
+                onSearchQueryChange = onSearchQueryChange,
+                onSearchOpened = onSearchOpened,
+                onSearchClosed = onSearchClosed,
+                headerCollapse = headerCollapse,
+                onClearSelection = onClearSelection,
+                onSelectAll = onSelectAll,
+                onToggleFavoriteSelected = onToggleFavoriteSelected,
+                onAddToGroup = {
+                    pendingGroupIds = emptySet()
+                    showGroupPicker = true
+                },
+                onShare = onShareSelected,
+                onExportSelection = { vCardLaunchers.startExportSelection() },
+                onDelete = { showDeleteDialog = true },
+                onSettingsClick = onSettingsClick,
+                onRecentsClick = onRecentsClick,
+                onDuplicatesClick = onDuplicatesClick,
+                onGroupsClick = onManageGroupsClick,
+                onImportClick = { vCardLaunchers.startImport(ctx) },
+                onScanQrClick = { vCardLaunchers.startScan(ctx) },
+                onExportClick = { vCardLaunchers.startExport() },
+                onProfileClick = onProfileClick,
+            )
         },
         floatingActionButton = {
             if (!uiState.isSelectionMode) {
@@ -214,18 +239,23 @@ internal fun ContactList(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(innerPadding),
+                    .padding(innerPadding)
+                    .nestedScroll(
+                        rememberHeaderCollapseConnection(
+                            state = headerCollapse,
+                            enabled = headerCollapseEnabled(uiState),
+                        ),
+                    ),
         ) {
+            ExportStatusBanner(
+                inProgress = exportInProgress,
+                summary = exportSummary,
+                onDismiss = { exportSummary = null },
+            )
             if (!uiState.isSelectionMode) {
                 FilterHeader(
-                    searchQuery = uiState.searchQuery,
                     showFavoritesOnly = uiState.showFavoritesOnly,
-                    onSearchQueryChange = onSearchQueryChange,
                     onFavoritesOnlyChange = onFavoritesOnlyChange,
-                    onImportClick = { vCardLaunchers.startImport(ctx) },
-                    onExportClick = { vCardLaunchers.startExport() },
-                    profileContactId = profileContactId,
-                    onProfileClick = { profileContactId?.let { onProfileClick(it) } },
                     groups = groups,
                     selectedGroupId = uiState.selectedGroupId,
                     onGroupSelected = onGroupSelected,
@@ -236,10 +266,6 @@ internal fun ContactList(
                     onRetrySync = onRetrySync,
                     onCreateGroup = onCreateGroup,
                     onManageGroupsClick = onManageGroupsClick,
-                    onDuplicatesClick = onDuplicatesClick,
-                    onRecentsClick = onRecentsClick,
-                    onSettingsClick = onSettingsClick,
-                    onSelectAllClick = { onSelectAll(visibleIds) },
                 )
             }
             ContactListBody(
@@ -263,6 +289,8 @@ internal fun ContactList(
                 onImportClick = onImportClick ?: { vCardLaunchers.startImport(ctx) },
                 onClearSearch = onClearSearch,
                 onClearFilters = onClearFilters,
+                onProgrammaticScroll = { headerCollapse.expand() },
+                showFavoriteQuickAction = showFavoriteQuickAction,
             )
         }
     }
@@ -292,6 +320,70 @@ internal fun ContactList(
         },
         onDismissGroups = { showGroupPicker = false },
     )
+}
+
+/** Верхняя панель списка: выделение или поисковая строка с действиями. */
+@Composable
+private fun ContactListTopBar(
+    uiState: ContactsUiState,
+    allSelected: Boolean,
+    allFavorite: Boolean,
+    visibleIds: List<Long>,
+    profileContactId: Long?,
+    onSearchQueryChange: (String) -> Unit,
+    onSearchOpened: () -> Unit,
+    onSearchClosed: () -> Unit,
+    headerCollapse: HeaderCollapseState,
+    onClearSelection: () -> Unit,
+    onSelectAll: (List<Long>) -> Unit,
+    onToggleFavoriteSelected: () -> Unit,
+    onAddToGroup: () -> Unit,
+    onShare: () -> Unit,
+    onExportSelection: () -> Unit,
+    onDelete: () -> Unit,
+    onSettingsClick: () -> Unit,
+    onRecentsClick: () -> Unit,
+    onDuplicatesClick: () -> Unit,
+    onGroupsClick: () -> Unit,
+    onImportClick: () -> Unit,
+    onScanQrClick: () -> Unit,
+    onExportClick: () -> Unit,
+    onProfileClick: (Long) -> Unit,
+) {
+    when {
+        uiState.isSelectionMode ->
+            SelectionTopBar(
+                count = uiState.selection.size,
+                allSelected = allSelected,
+                allFavorite = allFavorite,
+                onClose = onClearSelection,
+                onSelectAll = { onSelectAll(visibleIds) },
+                onToggleFavorite = onToggleFavoriteSelected,
+                onAddToGroup = onAddToGroup,
+                onShare = onShare,
+                onExport = onExportSelection,
+                onDelete = onDelete,
+            )
+        else ->
+            HomeTopBar(
+                searchQuery = uiState.searchQuery,
+                isSearchMode = uiState.isSearchMode,
+                onSearchQueryChange = onSearchQueryChange,
+                onSearchOpen = onSearchOpened,
+                onSearchClose = onSearchClosed,
+                onSettingsClick = onSettingsClick,
+                onRecentsClick = onRecentsClick,
+                onDuplicatesClick = onDuplicatesClick,
+                onGroupsClick = onGroupsClick,
+                onImportClick = onImportClick,
+                onScanQrClick = onScanQrClick,
+                onExportClick = onExportClick,
+                onSelectAllClick = { onSelectAll(visibleIds) },
+                collapse = headerCollapse,
+                profileContactId = profileContactId,
+                onProfileClick = { profileContactId?.let(onProfileClick) },
+            )
+    }
 }
 
 @Composable
@@ -338,7 +430,7 @@ private fun ContactListDialogs(
     }
 
     if (showGroupPicker) {
-        GroupPickerDialog(
+        GroupPickerSheet(
             title = stringResource(R.string.action_add_to_group),
             groups = groups,
             selectedIds = pendingGroupIds,

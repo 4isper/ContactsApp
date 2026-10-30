@@ -12,6 +12,7 @@ import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 import com.m4isper.contactsapp.domain.model.settings.AppSettings
 import com.m4isper.contactsapp.domain.model.settings.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.settings.ListDensity
+import com.m4isper.contactsapp.domain.model.settings.ReminderTime
 import com.m4isper.contactsapp.domain.model.settings.ThemeMode
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
@@ -37,9 +38,13 @@ private val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
 private val SHOW_PHOTOS = booleanPreferencesKey("show_photos")
 private val APP_LOCK_ENABLED = booleanPreferencesKey("app_lock_enabled")
 private val APP_LOCK_PIN_HASH = stringPreferencesKey("app_lock_pin_hash")
+private val APP_LOCK_PIN_LENGTH = intPreferencesKey("app_lock_pin_length")
 private val SECURE_WINDOW = booleanPreferencesKey("secure_window")
+private val APP_LOCK_BIOMETRICS = booleanPreferencesKey("app_lock_biometrics")
 private val REMINDERS_ENABLED = booleanPreferencesKey("reminders_enabled")
 private val REMINDER_LEAD_DAYS = intPreferencesKey("reminder_lead_days")
+private val REMINDER_HOUR = intPreferencesKey("reminder_hour")
+private val REMINDER_MINUTE = intPreferencesKey("reminder_minute")
 
 /**
  * Неизвестные значения (старая версия, битые данные) откатываются к дефолтам модели.
@@ -75,9 +80,20 @@ class SettingsDataSourceImpl(
                 showPhotos = prefs[SHOW_PHOTOS] ?: true,
                 appLockEnabled = prefs[APP_LOCK_ENABLED] ?: false,
                 appLockPinHash = prefs[APP_LOCK_PIN_HASH].orEmpty(),
+                appLockPinLength = prefs[APP_LOCK_PIN_LENGTH] ?: 0,
                 secureWindow = prefs[SECURE_WINDOW] ?: false,
+                appLockBiometrics = prefs[APP_LOCK_BIOMETRICS] ?: true,
                 remindersEnabled = prefs[REMINDERS_ENABLED] ?: false,
                 reminderLeadDays = prefs[REMINDER_LEAD_DAYS] ?: AppSettings.DEFAULT_REMINDER_LEAD_DAYS,
+                reminderTime =
+                    ReminderTime(
+                        hour =
+                            prefs[REMINDER_HOUR]?.coerceIn(ReminderTime.MIN_HOUR, ReminderTime.MAX_HOUR)
+                                ?: AppSettings.DEFAULT_REMINDER_TIME.hour,
+                        minute =
+                            prefs[REMINDER_MINUTE]?.coerceIn(ReminderTime.MIN_MINUTE, ReminderTime.MAX_MINUTE)
+                                ?: AppSettings.DEFAULT_REMINDER_TIME.minute,
+                    ),
             )
         }
 
@@ -140,13 +156,17 @@ class SettingsDataSourceImpl(
     override suspend fun setAppLock(
         enabled: Boolean,
         pinHash: String,
+        pinLength: Int,
     ) {
         context.settingsDataStore.edit { prefs ->
             prefs[APP_LOCK_ENABLED] = enabled
             if (pinHash.isBlank()) {
                 prefs.remove(APP_LOCK_PIN_HASH)
+                prefs.remove(APP_LOCK_PIN_LENGTH)
+                prefs.remove(APP_LOCK_PIN_LENGTH)
             } else {
                 prefs[APP_LOCK_PIN_HASH] = pinHash
+                prefs[APP_LOCK_PIN_LENGTH] = pinLength
             }
         }
     }
@@ -155,13 +175,20 @@ class SettingsDataSourceImpl(
         context.settingsDataStore.edit { prefs -> prefs[SECURE_WINDOW] = enabled }
     }
 
+    override suspend fun setAppLockBiometrics(enabled: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[APP_LOCK_BIOMETRICS] = enabled }
+    }
+
     override suspend fun setReminders(
         enabled: Boolean,
         leadDays: Int,
+        time: ReminderTime,
     ) {
         context.settingsDataStore.edit { prefs ->
             prefs[REMINDERS_ENABLED] = enabled
             prefs[REMINDER_LEAD_DAYS] = leadDays
+            prefs[REMINDER_HOUR] = time.hour
+            prefs[REMINDER_MINUTE] = time.minute
         }
     }
 
@@ -180,9 +207,13 @@ class SettingsDataSourceImpl(
             prefs.remove(SHOW_PHOTOS)
             prefs.remove(APP_LOCK_ENABLED)
             prefs.remove(APP_LOCK_PIN_HASH)
+            prefs.remove(APP_LOCK_PIN_LENGTH)
             prefs.remove(SECURE_WINDOW)
+            prefs.remove(APP_LOCK_BIOMETRICS)
             prefs.remove(REMINDERS_ENABLED)
             prefs.remove(REMINDER_LEAD_DAYS)
+            prefs.remove(REMINDER_HOUR)
+            prefs.remove(REMINDER_MINUTE)
         }
     }
 }

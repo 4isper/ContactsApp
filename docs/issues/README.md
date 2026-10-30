@@ -28,8 +28,8 @@ Pick an item, create a branch, and use its acceptance criteria as the definition
 ## Not covered by the roadmap
 
 - The "My profile" card (`ContactsContract.Profile`) is not implemented: the app has no own-profile screen and does not write changes back to the profile.
-- The language picker offers the languages the app is translated into (system, English, Russian); other translations would need their own `values-xx` resources.
-- The reminders fire once a day in the morning; the time of day is fixed, only the lead time (1, 3, 7 or 14 days) is configurable.
+- ~~The language picker offers the languages the app is translated into (system, English, Russian)~~ — resolved by [66-more-app-languages.md](66-more-app-languages.md): the app ships six languages and takes part in the Android 13+ per-app language page.
+- ~~The reminders fire once a day in the morning; the time of day is fixed~~ — resolved by [65-reminder-time-of-day.md](65-reminder-time-of-day.md); only the lead time (1, 3, 7 or 14 days) and the time of day are configurable, the digest stays once a day.
 
 ## Architecture audit backlog (2026-10-22)
 
@@ -144,3 +144,83 @@ A second UX/UI pass looked at the implemented screens rather than the feature sp
 ### How to use the second pass
 
 Several issues are UI-visible regressions in features that are already marked Done. Treat their acceptance criteria as the new definition of done, and include before/after screenshots for the remaining layout issues (45, 46, 47, 52) plus a TalkBack recording for 48. 38, 39, 41, 43, and 44 landed without recordings; their files note the manual checks that remain useful.
+
+## Share UX backlog (2026-10-28)
+
+A follow-up from the QR share code review: the app can export a contact QR as a PNG to the share sheet, but never displays the code itself, so face-to-face sharing routes through another app before the second phone can scan anything. The item is implemented; each file has a `Status` section.
+
+| # | File | Title | Priority | Status |
+|---|---|---|---|---|
+| 53 | [53-qr-preview-dialog.md](53-qr-preview-dialog.md) | Show the contact QR code on screen instead of only exporting it as an image | P2 | Done |
+
+## Visual audit backlog, third pass (2026-10-28)
+
+A third UX/UI pass looked at the app as a 2026 product rather than at feature completeness. The findings are visual-systemic rather than correctness bugs: the app is built from default Material 3 tokens, the brand is bypassed by dynamic color, every surface is a rounded card, and the adaptive shell stops at list-detail. Each file follows the same structure (problem, scope, acceptance criteria, technical notes, out of scope, verification). All seven issues, 54 and 56 through 61, are implemented.
+
+| # | File | Title | Priority | Status |
+|---|---|---|---|---|
+| 54 | [54-expressive-design-system.md](54-expressive-design-system.md) | Adopt Material 3 Expressive as the app's visual language | P2 | Done (screenshot check pending) |
+| 56 | [56-home-search-and-navigation.md](56-home-search-and-navigation.md) | Modernize home chrome with a search bar, real app bar, and adaptive navigation | P2 | Done (320 dp verified; TalkBack pending) | `b372ef7`, `5d4fa86`, `2ed1aff` |
+| 57 | [57-list-surfaces-and-fast-scroller.md](57-list-surfaces-and-fast-scroller.md) | Rework contact-list surfaces and replace the iOS-style fast scroller | P2 | Done (129/131 on the AVD; two stale-star failures) | `13fc6dc`, `3dc6619` |
+| 58 | [58-details-hero-and-grouped-fields.md](58-details-hero-and-grouped-fields.md) | Give contact details a hero header and grouped field sections | P2 | Done (details 17/17; full suite 133/135, two stale-star failures; TalkBack pending) | `ec6a72b`, `0ff3e9e` |
+| 59 | [59-adaptive-layouts.md](59-adaptive-layouts.md) | Make every screen adaptive, not just contacts↔details | P2 | Done (142 instrumented tests at 411 dp: 139 passed; two stale-star, one Glance-receiver flake) | `32ec6fc`, `ae5cff4`, `a0a4fbc`, `56f1c7f`, `eb4c0f1` |
+| 60 | [60-dialogs-sheets-and-editor-density.md](60-dialogs-sheets-and-editor-density.md) | Replace oversized dialogs with bottom sheets and compact the editor | P3 | Done (editor 33/33, picker 2/2, QR 5/5; full suite 148 tests, 145 passed: two stale-star, one Glance-receiver flake) | `433005c`, `9732413` |
+| 61 | [61-settings-and-secondary-screens.md](61-settings-and-secondary-screens.md) | Refresh settings and the secondary screens with a scannable style | P3 | Done (settings 9/9, import preview 4/4, export banner 3/3; full suite 157 tests, 153 passed: two stale-star, one Glance-receiver and one focus flake) | `d4068f4`, `05a33a0`, `acf9779` |
+
+### Third-pass dependencies
+
+- 54 (tokens and motion) should land first: 56–61 all consume its type/shape/motion decisions instead of inventing local values.
+- 56 (home chrome and navigation) and 59 (content width and two-pane) overlap in the shell: 56 owns the rail/suite and the home app bar, 59 owns pane strategies and max content width. Land 56 first, then 59.
+- 57 is a partial regression fix for 52 (`showFavoriteQuickAction` is computed but never passed) and unifies the favorite accent with 58; it can ship independently and early.
+- 58 depends on 54 for motion and on 57 for the favorite accent. 60 depends on 54 (sheet motion) and touches the same editor files as 59's two-column work — coordinate the editor branch.
+- 61 depends on 56 (home entry point to settings); it also reuses 57's row tokens for utility screens.
+
+### How to use the third pass
+
+These are visual improvements, not missing features, so they can be scheduled opportunistically. Keep the before/after screenshots for 54–58 and 61, and run the adaptive checks (320/600/840 dp, font scale 2.0) for 56, 58, 59, and 60. If only part of the pass ships, 57 (the wiring regression) gives the largest visual return for the smallest change.
+
+## Home header density follow-up (2026-10-29)
+
+A density review of the home screen found that issue 56's app bar and search field are each standard, but stacked permanently they cost ~175–200 dp of fixed chrome before the first contact row (~3 list rows). The merge is the cheapest large win: the static app-name row is the least valuable element, and in search mode the top bar already disappears. The filter-chip row is deliberately untouched in this item.
+
+| # | File | Title | Priority | Status |
+|---|---|---|---|---|
+| 62 | [62-home-header-density.md](62-home-header-density.md) | Merge the home app bar and search row to reclaim vertical space | P2 | Done (26/26 connected on the 320 dp AVD; screenshots and TalkBack manual) |
+| 63 | [63-home-header-scroll-collapse.md](63-home-header-scroll-collapse.md) | Collapse the home header on scroll (enter-always behavior) | P3 | Done (32/32 connected + new state JVM tests; gates green) |
+
+This item partially supersedes issue 56's "top app bar with the app name/brand" acceptance criterion for the idle home state; search-mode and selection bars from 56 and 38 stay as they are. 63 depends on 62 and is implemented with a small custom nested-scroll behavior (`HeaderCollapseState.kt`) instead of an M3 `TopAppBar` wrapper — the composition choice made in 62 (bare merged row) is documented in the 63 Status.
+
+## Contact exchange follow-up (2026-10-29)
+
+A follow-up from issue 53's "Out of scope" note: the app could show a contact QR on screen but not accept one, so face-to-face exchange stayed one-sided. The item is implemented; the file has a `Status` section.
+
+| # | File | Title | Priority | Status |
+|---|---|---|---|---|
+| 64 | [64-scan-contact-qr.md](64-scan-contact-qr.md) | Accept a contact by scanning a QR code | P2 | Done (`fc1de8f`, `a10be6f`; manual device pass pending) |
+
+## Feature gap backlog (2026-10-29)
+
+A gap review against what a typical contacts manager already offers as a given. None of these was ever planned in the backlogs above; each file is a self-contained proposal with a problem statement, proposed scope, acceptance criteria, and technical notes. No Status sections yet — they appear when an item is implemented.
+
+| # | File | Title | Priority | Status |
+|---|---|---|---|---|
+| 65 | [65-reminder-time-of-day.md](65-reminder-time-of-day.md) | Let the user pick the daily reminder time | P3 | Done |
+| 66 | [66-more-app-languages.md](66-more-app-languages.md) | Expand localization beyond English and Russian | P2 | Done |
+| 67 | [67-biometric-unlock.md](67-biometric-unlock.md) | Unlock the app with biometrics | P2 | Done |
+
+### Feature gap dependencies
+
+- 65 is independent and the smallest of the three: the scheduler, coordinator rollback, and boot receiver only need the time value threaded through.
+- 66 is independent per locale, but the override-gap fixes (widget and notification language, `localeConfig`) should land with the first new locale, not after.
+- 67 is independent of 65 and 66, but both it and 66 touch `MainActivity`: 66 may rework `attachBaseContext` wrapping, 67 changes the activity base class to `FragmentActivity` — coordinate those two changes.
+
+## PIN entry follow-up (2026-10-30)
+
+A design review of the lock screen after issue 67: as a security screen it holds, but as a PIN input it relies on the system IME, stays silent when the entry is below the minimum, has no haptics, and never explains the forgotten-PIN trade-off. Item 68 is implemented; the follow-up 69 extended the same pad to the setup flow — both are Done.
+
+| # | File | Title | Priority | Status |
+|---|---|---|---|---|
+| 68 | [68-pin-entry-redesign.md](68-pin-entry-redesign.md) | Make the PIN entry a genre-standard numeric pad with explicit feedback | P3 | Done |
+| 69 | [69-pin-setup-sheet.md](69-pin-setup-sheet.md) | Set the PIN on the same numeric pad, in a bottom sheet | P3 | Done |
+
+68 builds on 67's biometric branch ("Use PIN" reveals the pad) and deliberately stays out of the hashing/throttling territory of issues 12 and 29. 69 reuses 68's pad for the setup flow (two-step sheet: enter, repeat) so the motor skill is rehearsed where it is formed; it inherits the same out-of-scope boundaries. All nine items of the local roadmap are now implemented.

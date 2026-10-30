@@ -11,16 +11,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -37,7 +36,7 @@ import kotlinx.coroutines.launch
 @Composable
 internal fun GroupedContacts(
     contacts: List<ContactDetails>,
-    showFavoriteQuickAction: Boolean = true,
+    showFavoriteQuickAction: Boolean,
     favorites: Set<Long>,
     selection: Set<Long>,
     isSelectionMode: Boolean,
@@ -49,6 +48,7 @@ internal fun GroupedContacts(
     onCall: ((ContactDetails) -> Unit)? = null,
     onSms: ((ContactDetails) -> Unit)? = null,
     onToggleFavorite: ((Long) -> Unit)? = null,
+    onProgrammaticScroll: () -> Unit = {},
 ) {
     val spacing = LocalSpacing.current
     val grouped =
@@ -62,8 +62,18 @@ internal fun GroupedContacts(
     val scope = rememberCoroutineScope()
     var activeLetter by remember { mutableStateOf<Char?>(null) }
 
+    val sectionStarts = remember(letters, indices) { letters.map { it to indices.getValue(it) } }
+    val currentLetter by remember(sectionStarts) {
+        derivedStateOf {
+            val firstVisible = listState.firstVisibleItemIndex
+            sectionStarts.lastOrNull { (_, start) -> start <= firstVisible }?.first
+        }
+    }
+
     fun jumpTo(letter: Char) {
         activeLetter = letter
+        // Программная прокрутка не шлёт nested-scroll дельт — панель раскрываем явно.
+        onProgrammaticScroll()
         indices[letter]?.let { index ->
             scope.launch { listState.scrollToItem(index) }
         }
@@ -80,7 +90,8 @@ internal fun GroupedContacts(
                 modifier =
                     Modifier
                         .weight(1f)
-                        .fillMaxSize(),
+                        .fillMaxSize()
+                        .testTag("contacts_list"),
             ) {
                 grouped.forEach { (letter, group) ->
                     contactGroup(
@@ -104,27 +115,10 @@ internal fun GroupedContacts(
                 FastScroller(
                     letters = letters,
                     activeLetter = activeLetter,
+                    currentLetter = currentLetter,
                     barDescription = stringResource(R.string.fast_scroller_desc),
                     onLetter = ::jumpTo,
                     onRelease = { activeLetter = null },
-                )
-            }
-        }
-        activeLetter?.let { letter ->
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = letter.toString(),
-                    style = MaterialTheme.typography.displayLarge,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    modifier =
-                        Modifier
-                            .background(
-                                MaterialTheme.colorScheme.primary,
-                                CircleShape,
-                            ).padding(spacing.xl),
                 )
             }
         }
@@ -185,15 +179,15 @@ private fun ContactGroupHeader(letter: Char) {
             } else {
                 letter.toString()
             },
-        style = MaterialTheme.typography.labelMedium,
+        style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier =
             Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surface)
                 .padding(
-                    // Заголовок и текст карточки делят одну стартовую грань: 12 + 12.
-                    horizontal = spacing.xl,
+                    // Заголовок делит левую грань с аватаром строки.
+                    horizontal = spacing.m,
                     vertical = spacing.s,
                 ).then(
                     if (isFavorites) {

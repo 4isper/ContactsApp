@@ -5,6 +5,7 @@ import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 import com.m4isper.contactsapp.domain.model.settings.AppSettings
 import com.m4isper.contactsapp.domain.model.settings.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.settings.ListDensity
+import com.m4isper.contactsapp.domain.model.settings.ReminderTime
 import com.m4isper.contactsapp.domain.model.settings.ThemeMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,9 +61,12 @@ private class FakeSettingsDataSource(
     override suspend fun setAppLock(
         enabled: Boolean,
         pinHash: String,
+        pinLength: Int,
     ) = Unit
 
     override suspend fun setSecureWindow(enabled: Boolean) = Unit
+
+    override suspend fun setAppLockBiometrics(enabled: Boolean) = Unit
 
     override suspend fun resetSettings() {
         failure?.let { throw it }
@@ -71,6 +75,7 @@ private class FakeSettingsDataSource(
     override suspend fun setReminders(
         enabled: Boolean,
         leadDays: Int,
+        time: ReminderTime,
     ) = Unit
 }
 

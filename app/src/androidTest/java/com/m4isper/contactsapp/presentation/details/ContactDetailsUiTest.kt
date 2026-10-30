@@ -1,15 +1,24 @@
 package com.m4isper.contactsapp.presentation.details
 
+import android.Manifest
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToKey
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.rule.GrantPermissionRule
 import com.m4isper.contactsapp.FakeAndroidRepository
 import com.m4isper.contactsapp.FakeGroupsRepository
 import com.m4isper.contactsapp.FakeVCardCodec
@@ -19,6 +28,8 @@ import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 import com.m4isper.contactsapp.domain.model.contact.ContactEvent
 import com.m4isper.contactsapp.domain.model.contact.ContactGroup
 import com.m4isper.contactsapp.domain.model.contact.ContactRelation
+import com.m4isper.contactsapp.domain.model.contact.EmailAddress
+import com.m4isper.contactsapp.domain.model.contact.EmailKind
 import com.m4isper.contactsapp.domain.model.contact.EventKind
 import com.m4isper.contactsapp.domain.model.contact.ImProtocol
 import com.m4isper.contactsapp.domain.model.contact.InstantMessage
@@ -53,9 +64,14 @@ class ContactDetailsUiTest {
     @get:Rule
     val compose = createComposeRule()
 
+    // Переключение избранного идёт через гейт права на запись.
+    @get:Rule
+    val permission: GrantPermissionRule = GrantPermissionRule.grant(Manifest.permission.WRITE_CONTACTS)
+
     private fun viewModel(
         repository: FakeAndroidRepository,
         groups: FakeGroupsRepository = FakeGroupsRepository(),
+        codec: FakeVCardCodec = FakeVCardCodec(),
     ) = ContactDetailsViewModel(
         GetContactDetailsUseCase(repository),
         GetContactGroupsUseCase(groups),
@@ -66,7 +82,7 @@ class ContactDetailsUiTest {
             loadContactPhoto = LoadContactPhotoUseCase(repository),
             getGroups = GetGroupsUseCase(groups),
             getGroupMembership = GetGroupMembershipUseCase(groups),
-            codec = FakeVCardCodec(),
+            codec = codec,
         ),
         GetContactAccountsUseCase(repository),
         CopyContactToAccountUseCase(repository, repository),
@@ -87,10 +103,117 @@ class ContactDetailsUiTest {
         }
         awaitContent(viewModel)
 
-        // Имя дублируется в топ-баре и шапке — проверяем оба узла.
-        compose.onAllNodesWithText("Anna").assertCountEquals(2)
+        // Пока шапка видна, имя живёт только в ней; топ-бар подхватит его после скролла.
+        compose.onAllNodesWithText("Anna").assertCountEquals(1)
         compose.onNodeWithText("111").assertIsDisplayed()
         compose.onNodeWithText("112").assertIsDisplayed()
+    }
+
+    @Test
+    fun titleAppearsInTheBarOnlyAfterTheHeroScrollsAway() {
+        // Контент должен быть выше шапки, иначе карточку нельзя прокрутить до конца.
+        val details =
+            testDetails(
+                7,
+                "Anna",
+                "111",
+                "112",
+                emails = listOf(EmailAddress("anna@example.com", EmailKind.HOME)),
+                relations = listOf(ContactRelation(name = "Bob", kind = RelationKind.FRIEND)),
+            ).copy(
+                addresses = listOf(PostalAddress(address = "Lenina 1", kind = AddressKind.HOME)),
+                websites = listOf(Website("https://blog.example", WebsiteKind.BLOG)),
+                note = "Заметка, которая уводит шапку за пределы экрана.",
+            )
+        val viewModel = viewModel(FakeAndroidRepository(listOf(details)))
+        compose.setContent {
+            Box(modifier = Modifier.height(240.dp)) {
+                ContactDetailsScreen(contactId = 7, onBack = {}, onEdit = {}, viewModel = viewModel)
+            }
+        }
+        awaitContent(viewModel)
+
+        compose.onNodeWithTag("details_title").assertDoesNotExist()
+        compose.onNodeWithTag("details_list").performScrollToNode(hasTestTag("note_row"))
+
+        compose.onNodeWithTag("details_title").assertIsDisplayed()
+        compose.onAllNodesWithText("Anna").assertCountEquals(1)
+    }
+
+    @Test
+    fun titleAppearsEvenWhenTheListCannotScrollTheHeroAway() {
+        // У короткого контакта шапка не уезжает целиком: имя должно перейти в топ-бар,
+        // а не оставить экран с полосой без имени.
+        val viewModel = viewModel(FakeAndroidRepository(listOf(testDetails(7, "Anna", "111"))))
+        compose.setContent {
+            Box(modifier = Modifier.height(240.dp)) {
+                ContactDetailsScreen(contactId = 7, onBack = {}, onEdit = {}, viewModel = viewModel)
+            }
+        }
+        awaitContent(viewModel)
+
+        compose.onNodeWithTag("details_title").assertDoesNotExist()
+        compose.onNodeWithTag("details_list").performScrollToKey("card_phones")
+
+        compose.onNodeWithTag("details_title").assertIsDisplayed()
+    }
+
+    @Test
+    fun heroOffersCallSmsEmailAndFavorite() {
+        val details =
+            testDetails(
+                7,
+                "Anna",
+                "111",
+                emails = listOf(EmailAddress("anna@example.com", EmailKind.HOME)),
+            )
+        val viewModel = viewModel(FakeAndroidRepository(listOf(details)))
+        compose.setContent {
+            ContactDetailsScreen(contactId = 7, onBack = {}, onEdit = {}, viewModel = viewModel)
+        }
+        awaitContent(viewModel)
+
+        compose.onNodeWithTag("hero_call").assertIsDisplayed()
+        compose.onNodeWithTag("hero_sms").assertIsDisplayed()
+        compose.onNodeWithTag("hero_email").assertIsDisplayed()
+        compose.onNodeWithTag("favorite_button").assertIsDisplayed()
+    }
+
+    @Test
+    fun groupsFieldsIntoSections() {
+        val address =
+            PostalAddress(
+                address = "",
+                kind = AddressKind.HOME,
+                street = "Lenina 1",
+                city = "Moscow",
+            )
+        val details =
+            testDetails(
+                7,
+                "Anna",
+                "111",
+                emails = listOf(EmailAddress("anna@example.com", EmailKind.HOME)),
+                birthday = Birthday(day = 1, month = 6, year = 2000),
+            ).copy(
+                addresses = listOf(address),
+                note = "Call after 6",
+            )
+        val viewModel = viewModel(FakeAndroidRepository(listOf(details)))
+        compose.setContent {
+            ContactDetailsScreen(contactId = 7, onBack = {}, onEdit = {}, viewModel = viewModel)
+        }
+        awaitContent(viewModel)
+
+        compose.onNodeWithTag("details_section_phones").assertIsDisplayed()
+        compose.onNodeWithTag("details_list").performScrollToNode(hasTestTag("details_section_email"))
+        compose.onNodeWithTag("details_section_email").assertIsDisplayed()
+        compose.onNodeWithTag("details_list").performScrollToNode(hasTestTag("details_section_addresses"))
+        compose.onNodeWithTag("details_section_addresses").assertIsDisplayed()
+        compose.onNodeWithTag("details_list").performScrollToNode(hasTestTag("details_section_dates"))
+        compose.onNodeWithTag("details_section_dates").assertIsDisplayed()
+        compose.onNodeWithTag("details_list").performScrollToNode(hasTestTag("details_section_note"))
+        compose.onNodeWithTag("details_section_note").assertIsDisplayed()
     }
 
     @Test
@@ -287,7 +410,7 @@ class ContactDetailsUiTest {
     }
 
     @Test
-    fun editButtonReportsOnEdit() {
+    fun editIsReachableFromTheTopBar() {
         val edited = AtomicBoolean(false)
         val viewModel = viewModel(FakeAndroidRepository(listOf(testDetails(7, "Anna", "111"))))
         compose.setContent {
@@ -300,8 +423,84 @@ class ContactDetailsUiTest {
         }
         awaitContent(viewModel)
 
-        compose.onNodeWithTag("edit_button").performClick()
+        compose.onNodeWithTag("edit_button").assertIsDisplayed().performClick()
 
         assertEquals(true, edited.get())
+
+        compose.onNodeWithTag("details_more_button").performClick()
+        compose.onNodeWithTag("edit_menu_item").assertDoesNotExist()
+    }
+
+    @Test
+    fun shareIsReachableFromTheTopBarAtNarrowWidth() {
+        val shared = AtomicBoolean(false)
+        compose.setContent {
+            Box(modifier = Modifier.width(240.dp)) {
+                DetailsTopBar(
+                    title = "A very long contact name",
+                    showTitle = true,
+                    shareable = testDetails(7, "Anna", "111"),
+                    onBack = {},
+                    onEdit = {},
+                    onShare = { shared.set(true) },
+                    onShareAsText = {},
+                    onShareAsQr = {},
+                    onShowQr = {},
+                    onCopyToAccount = {},
+                    onMoveToAccount = {},
+                )
+            }
+        }
+
+        compose.onNodeWithTag("share_button").assertIsDisplayed().performClick()
+
+        assertEquals(true, shared.get())
+
+        compose.onNodeWithTag("details_more_button").performClick()
+        compose.onNodeWithTag("share_menu_item").assertDoesNotExist()
+        compose.onNodeWithTag("share_as_text_menu_item").assertIsDisplayed()
+    }
+
+    @Test
+    fun showQrMenuItemOpensPreviewAndCloseDismissesIt() {
+        val viewModel = viewModel(FakeAndroidRepository(listOf(testDetails(7, "Anna", "111"))))
+        compose.setContent {
+            ContactDetailsScreen(contactId = 7, onBack = {}, onEdit = {}, viewModel = viewModel)
+        }
+        awaitContent(viewModel)
+
+        compose.onNodeWithTag("details_more_button").performClick()
+        compose.onNodeWithTag("show_qr_menu_item").performClick()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("qr_preview_image").fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithTag("qr_preview_dialog").assertIsDisplayed()
+        compose.onNodeWithText("Point another phone's camera at this code to add the contact").assertIsDisplayed()
+
+        compose.onNodeWithTag("qr_preview_close").performClick()
+
+        compose.onNodeWithTag("qr_preview_dialog").assertDoesNotExist()
+    }
+
+    @Test
+    fun showQrDoesNotOpenPreviewWhenVCardIsBlank() {
+        val viewModel =
+            viewModel(
+                FakeAndroidRepository(listOf(testDetails(7, "Anna", "111"))),
+                codec = FakeVCardCodec(encoded = ""),
+            )
+        compose.setContent {
+            ContactDetailsScreen(contactId = 7, onBack = {}, onEdit = {}, viewModel = viewModel)
+        }
+        awaitContent(viewModel)
+
+        compose.onNodeWithTag("details_more_button").performClick()
+        compose.onNodeWithTag("show_qr_menu_item").performClick()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("show_qr_menu_item").fetchSemanticsNodes().isEmpty()
+        }
+
+        compose.onNodeWithTag("qr_preview_dialog").assertDoesNotExist()
     }
 }

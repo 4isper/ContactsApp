@@ -1,11 +1,18 @@
 package com.m4isper.contactsapp.presentation.navigation
 
 import android.content.Context
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Contacts
+import androidx.compose.material.icons.filled.Merge
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
@@ -20,19 +27,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import androidx.window.core.layout.WindowSizeClass
 import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.StartRequest
 import com.m4isper.contactsapp.presentation.contacts.ContactsNavigationAction
 import com.m4isper.contactsapp.presentation.contacts.ContactsScreen
 import com.m4isper.contactsapp.presentation.details.ContactDetailsScreen
+import com.m4isper.contactsapp.presentation.duplicates.DuplicateReviewScreen
 import com.m4isper.contactsapp.presentation.duplicates.DuplicatesScreen
+import com.m4isper.contactsapp.presentation.duplicates.DuplicatesViewModel
 import com.m4isper.contactsapp.presentation.editor.ContactEditorScreen
 import com.m4isper.contactsapp.presentation.groups.GroupDetailScreen
 import com.m4isper.contactsapp.presentation.groups.GroupsScreen
@@ -53,6 +65,12 @@ data object GroupsKey : NavKey
 
 @Serializable
 data object DuplicatesKey : NavKey
+
+@Serializable
+data class DuplicateReviewKey(
+    val targetId: Long,
+    val sourceIds: List<Long>,
+) : NavKey
 
 @Serializable
 data object RecentsKey : NavKey
@@ -79,6 +97,12 @@ data class ContactEditorKey(
     /** Номер сеанса правки: новый сеанс — новая форма, даже для того же контакта. */
     val sessionId: Long = 0L,
 ) : NavKey
+
+// Сцена list-detail на каждую пару «список ↔ деталь»: иначе записи разных разделов
+// попадают в одну сцену, и плейсхолдер детали берётся у чужого списка.
+private const val SCENE_CONTACTS = "contacts"
+private const val SCENE_GROUPS = "groups"
+private const val SCENE_DUPLICATES = "duplicates"
 
 /**
  * Открыть детали: на узком экране — push поверх списка,
@@ -107,6 +131,8 @@ fun ContactsNavHost(
     val context = LocalContext.current
     val backStack = rememberNavBackStack(ContactsListKey)
     val importViewModel: ImportPreviewViewModel = metroViewModel()
+    // Список и панель предпросмотра дубликатов — один экран на двоих.
+    val duplicatesViewModel: DuplicatesViewModel = metroViewModel()
     var pickMode by remember { mutableStateOf(false) }
     var showFavorites by remember { mutableStateOf(false) }
     var editorSession by remember { mutableLongStateOf(0L) }
@@ -138,104 +164,193 @@ fun ContactsNavHost(
     }
 
     // Непрозрачная подложка: прозрачные корни панелей не должны светить фоном окна.
+    val currentDestination = topLevelDestinationOf(backStack.lastOrNull())
+    val isMediumOrWider =
+        windowAdaptiveInfo.windowSizeClass.isWidthAtLeastBreakpoint(
+            WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND,
+        )
+    val showRail =
+        showNavigationRail(
+            isMediumOrWider = isMediumOrWider,
+            destination = currentDestination,
+        )
+
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.surface,
     ) {
-        NavDisplay(
-            backStack = backStack,
-            onBack = { backStack.removeLastOrNull() },
-            sceneStrategies = listOf(listDetailStrategy),
-            transitionSpec = { contactsTransitionSpec().invoke(this) },
-            popTransitionSpec = { contactsPopTransitionSpec().invoke(this) },
-            predictivePopTransitionSpec = { contactsPredictivePopTransitionSpec().invoke(this, it) },
-            entryProvider =
-                entryProvider {
-                    entry<ContactsListKey>(
-                        metadata =
-                            ListDetailSceneStrategy.listPane(
-                                detailPlaceholder = {
-                                    EmptyState(
-                                        icon = Icons.Filled.Contacts,
-                                        title = stringResource(R.string.contact_select_prompt),
+        Row(modifier = Modifier.fillMaxSize()) {
+            if (showRail) {
+                HomeNavigationRail(
+                    current = currentDestination,
+                    onSelect = { navigateToTopLevel(backStack, it) },
+                )
+            }
+            NavDisplay(
+                modifier = Modifier.weight(1f),
+                backStack = backStack,
+                onBack = { backStack.removeLastOrNull() },
+                sceneStrategies = listOf(listDetailStrategy),
+                transitionSpec = { contactsTransitionSpec().invoke(this) },
+                popTransitionSpec = { contactsPopTransitionSpec().invoke(this) },
+                predictivePopTransitionSpec = { contactsPredictivePopTransitionSpec().invoke(this, it) },
+                entryProvider =
+                    entryProvider {
+                        entry<ContactsListKey>(
+                            metadata =
+                                ListDetailSceneStrategy.listPane(
+                                    sceneKey = SCENE_CONTACTS,
+                                    detailPlaceholder = {
+                                        EmptyState(
+                                            icon = Icons.Filled.Contacts,
+                                            title = stringResource(R.string.contact_select_prompt),
+                                        )
+                                    },
+                                ),
+                        ) {
+                            ContactsScreen(
+                                showFavorites = showFavorites,
+                                onNavigation = { action ->
+                                    handleContactsNavigation(
+                                        action = action,
+                                        backStack = backStack,
+                                        pickMode = pickMode,
+                                        context = context,
+                                        editorSession = editorSession,
                                     )
+                                    editorSession++
                                 },
-                            ),
-                    ) {
-                        ContactsScreen(
-                            showFavorites = showFavorites,
-                            onNavigation = { action ->
-                                handleContactsNavigation(
-                                    action = action,
-                                    backStack = backStack,
-                                    pickMode = pickMode,
-                                    context = context,
-                                    editorSession = editorSession,
-                                )
-                                editorSession++
-                            },
-                            onImportPreviewReady = {
-                                backStack.add(ImportPreviewKey)
-                            },
-                        )
-                    }
-                    entry<ImportPreviewKey> {
-                        ImportPreviewScreen(
-                            onBack = dropUnlessResumed { backStack.removeLastOrNull() },
-                            onDone = dropUnlessResumed { backStack.removeLastOrNull() },
-                        )
-                    }
-                    entry<GroupsKey> {
-                        GroupsScreen(
-                            onBack = dropUnlessResumed { backStack.removeLastOrNull() },
-                            onGroupClick = { groupId -> backStack.add(GroupDetailKey(groupId)) },
-                        )
-                    }
-                    entry<GroupDetailKey> { key ->
-                        GroupDetailScreen(
-                            groupId = key.groupId,
-                            onBack = dropUnlessResumed { backStack.removeLastOrNull() },
-                            onContactClick = { contactId -> navigateToDetails(backStack, contactId) },
-                        )
-                    }
-                    entry<DuplicatesKey> {
-                        DuplicatesScreen(
-                            onBack = dropUnlessResumed { backStack.removeLastOrNull() },
-                        )
-                    }
-                    entry<RecentsKey> {
-                        RecentsScreen(
-                            onBack = dropUnlessResumed { backStack.removeLastOrNull() },
-                            onContactClick = { contactId ->
-                                navigateToDetails(backStack, contactId)
-                            },
-                        )
-                    }
-                    entry<SettingsKey> {
-                        SettingsScreen(
-                            onBack = dropUnlessResumed { backStack.removeLastOrNull() },
-                            onRestartRequired = onRestartRequired,
-                        )
-                    }
-                    entry<ContactDetailsKey>(
-                        metadata = ListDetailSceneStrategy.detailPane(),
-                    ) { key ->
-                        ContactDetailsScreen(
-                            contactId = key.contactId,
-                            onBack = dropUnlessResumed { backStack.removeLastOrNull() },
-                            onEdit = { backStack.add(ContactEditorKey(key.contactId, editorSession++)) },
-                        )
-                    }
-                    entry<ContactEditorKey> { key ->
-                        ContactEditorScreen(
-                            contactId = key.contactId,
-                            sessionId = key.sessionId,
-                            onDone = { backStack.removeLastOrNull() },
-                            onBack = dropUnlessResumed { backStack.removeLastOrNull() },
-                        )
-                    }
+                                onImportPreviewReady = {
+                                    backStack.add(ImportPreviewKey)
+                                },
+                            )
+                        }
+                        entry<ImportPreviewKey> {
+                            ImportPreviewScreen(
+                                onBack = dropUnlessResumed { backStack.removeLastOrNull() },
+                                onDone = dropUnlessResumed { backStack.removeLastOrNull() },
+                            )
+                        }
+                        entry<GroupsKey>(
+                            metadata =
+                                ListDetailSceneStrategy.listPane(
+                                    sceneKey = SCENE_GROUPS,
+                                    detailPlaceholder = {
+                                        EmptyState(
+                                            icon = Icons.AutoMirrored.Filled.Label,
+                                            title = stringResource(R.string.group_select_prompt),
+                                        )
+                                    },
+                                ),
+                        ) {
+                            GroupsScreen(
+                                onBack = dropUnlessResumed { backStack.removeLastOrNull() },
+                                onGroupClick = { groupId -> backStack.add(GroupDetailKey(groupId)) },
+                            )
+                        }
+                        entry<GroupDetailKey>(
+                            metadata = ListDetailSceneStrategy.detailPane(sceneKey = SCENE_GROUPS),
+                        ) { key ->
+                            GroupDetailScreen(
+                                groupId = key.groupId,
+                                onBack = dropUnlessResumed { backStack.removeLastOrNull() },
+                                onContactClick = { contactId -> navigateToDetails(backStack, contactId) },
+                            )
+                        }
+                        entry<DuplicatesKey>(
+                            metadata =
+                                ListDetailSceneStrategy.listPane(
+                                    sceneKey = SCENE_DUPLICATES,
+                                    detailPlaceholder = {
+                                        EmptyState(
+                                            icon = Icons.Filled.Merge,
+                                            title = stringResource(R.string.duplicates_select_prompt),
+                                        )
+                                    },
+                                ),
+                        ) {
+                            DuplicatesScreen(
+                                onBack = dropUnlessResumed { backStack.removeLastOrNull() },
+                                onReview = { targetId, sourceIds ->
+                                    backStack.add(DuplicateReviewKey(targetId, sourceIds))
+                                },
+                                viewModel = duplicatesViewModel,
+                            )
+                        }
+                        entry<DuplicateReviewKey>(
+                            metadata = ListDetailSceneStrategy.detailPane(sceneKey = SCENE_DUPLICATES),
+                        ) { key ->
+                            DuplicateReviewScreen(
+                                targetId = key.targetId,
+                                sourceIds = key.sourceIds,
+                                onBack = dropUnlessResumed { backStack.removeLastOrNull() },
+                                viewModel = duplicatesViewModel,
+                            )
+                        }
+                        entry<RecentsKey> {
+                            RecentsScreen(
+                                onBack = dropUnlessResumed { backStack.removeLastOrNull() },
+                                onContactClick = { contactId ->
+                                    navigateToDetails(backStack, contactId)
+                                },
+                            )
+                        }
+                        entry<SettingsKey> {
+                            SettingsScreen(
+                                onBack = dropUnlessResumed { backStack.removeLastOrNull() },
+                                onRestartRequired = onRestartRequired,
+                            )
+                        }
+                        entry<ContactDetailsKey>(
+                            metadata = ListDetailSceneStrategy.detailPane(sceneKey = SCENE_CONTACTS),
+                        ) { key ->
+                            ContactDetailsScreen(
+                                contactId = key.contactId,
+                                onBack = dropUnlessResumed { backStack.removeLastOrNull() },
+                                onEdit = { backStack.add(ContactEditorKey(key.contactId, editorSession++)) },
+                            )
+                        }
+                        entry<ContactEditorKey> { key ->
+                            ContactEditorScreen(
+                                contactId = key.contactId,
+                                sessionId = key.sessionId,
+                                onDone = { backStack.removeLastOrNull() },
+                                onBack = dropUnlessResumed { backStack.removeLastOrNull() },
+                            )
+                        }
+                    },
+            )
+        }
+    }
+}
+
+/** Рейл верхнеуровневых разделов: только для средних и широких окон. */
+@Composable
+internal fun HomeNavigationRail(
+    current: TopLevelDestination?,
+    onSelect: (TopLevelDestination) -> Unit,
+) {
+    NavigationRail(modifier = Modifier.testTag("navigation_rail")) {
+        TopLevelDestination.entries.forEach { destination ->
+            NavigationRailItem(
+                selected = destination == current,
+                onClick = { onSelect(destination) },
+                icon = {
+                    Icon(
+                        imageVector = destination.icon,
+                        contentDescription = null,
+                    )
                 },
-        )
+                label = {
+                    Text(
+                        text = stringResource(destination.labelRes),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                },
+                modifier = Modifier.testTag("rail_${destination.name.lowercase()}"),
+            )
+        }
     }
 }
 

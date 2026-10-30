@@ -7,10 +7,12 @@ import com.m4isper.contactsapp.domain.model.contact.ContactAccount
 import com.m4isper.contactsapp.domain.model.settings.AppSettings
 import com.m4isper.contactsapp.domain.model.settings.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.settings.ListDensity
+import com.m4isper.contactsapp.domain.model.settings.ReminderTime
 import com.m4isper.contactsapp.domain.model.settings.ThemeMode
 import com.m4isper.contactsapp.domain.usecase.contacts.GetContactAccountsUseCase
 import com.m4isper.contactsapp.domain.usecase.contacts.SetDefaultContactAccountUseCase
 import com.m4isper.contactsapp.domain.usecase.settings.ObserveSettingsUseCase
+import com.m4isper.contactsapp.domain.usecase.settings.SetAppLockBiometricsUseCase
 import com.m4isper.contactsapp.domain.usecase.settings.SetAppLockUseCase
 import com.m4isper.contactsapp.domain.usecase.settings.SetDynamicColorUseCase
 import com.m4isper.contactsapp.domain.usecase.settings.SetFavoritesFirstUseCase
@@ -58,6 +60,7 @@ internal class SettingsViewModel(
     private val setDynamicColorUseCase: SetDynamicColorUseCase,
     private val setShowPhotosUseCase: SetShowPhotosUseCase,
     private val setAppLockUseCase: SetAppLockUseCase,
+    private val setAppLockBiometricsUseCase: SetAppLockBiometricsUseCase,
     private val setSecureWindowUseCase: SetSecureWindowUseCase,
     private val reset: SettingsResetCoordinator,
     private val reminders: ReminderSettingsCoordinator,
@@ -105,8 +108,12 @@ internal class SettingsViewModel(
     /** Аккаунт по умолчанию для новых контактов. */
     fun onDefaultAccountSelected(account: ContactAccount) = update { setDefaultContactAccountUseCase(account) }
 
-    /** Язык приложения: сохраняем и в настройках, и в общих настройках — нужен до запуска Activity. */
+    /** Выбрать язык приложения: сохраняем и в настройках, и в общих настройках, и в системе. */
     fun onLanguageSelected(language: String) = update { this.language.set(language) }
+
+    /** Пересоздавать ли окно после смены языка: решает координатор по уровню API. */
+    val languageChangeRestarts: Boolean
+        get() = language.restartRequired
 
     /** Динамические цвета Android 12+ вместо фирменной палитры. */
     fun onDynamicColorChanged(enabled: Boolean) = update { setDynamicColorUseCase(enabled) }
@@ -120,15 +127,19 @@ internal class SettingsViewModel(
         pin: String,
     ) = update { setAppLockUseCase(enabled, pin) }
 
+    /** Разблокировка по биометрии: действует, только если биометрия есть на устройстве. */
+    fun onAppLockBiometricsChanged(enabled: Boolean) = update { setAppLockBiometricsUseCase(enabled) }
+
     /** Скрывать содержимое окна в недавних задачах. */
     fun onSecureWindowChanged(enabled: Boolean) = update { setSecureWindowUseCase(enabled) }
 
-    /** Напоминания о днях рождения: включение и планирование будильника. */
+    /** Напоминания о днях рождения: включение, срок предупреждения и время суток. */
     fun onRemindersChanged(
         enabled: Boolean,
         leadDays: Int,
+        time: ReminderTime,
     ) = update {
-        if (!reminders.apply(enabled, leadDays)) {
+        if (!reminders.apply(enabled, leadDays, time)) {
             errorFlow.value = AppError.SCHEDULE_FAILED
         }
     }

@@ -7,6 +7,7 @@
 
     <string name="search_label">Поиск</string>
     <string name="action_clear_search">Очистить поиск</string>
+    <string name="action_close_search">Закрыть поиск</string>
     <string name="contacts_empty">Контакты не найдены</string>
     <string name="contacts_empty_cta_create">Создать контакт</string>
     <string name="contacts_empty_cta_import">Импортировать из файла</string>
@@ -95,6 +96,9 @@
     <string name="details_field_organization">Организация</string>
     <string name="details_field_note">Заметка</string>
     <string name="details_field_birthday">День рождения</string>
+    <string name="details_section_email_messaging">Почта и сообщения</string>
+    <string name="details_section_address_web">Адреса и сайты</string>
+    <string name="details_section_dates">Даты</string>
     <string name="details_copy_to_account">Копировать в другой аккаунт</string>
     <string name="details_move_to_account">Перенести в другой аккаунт</string>
     <string name="details_copy_done">Контакт скопирован</string>
@@ -132,7 +136,7 @@
     <string name="editor_name_phonetic_middle">Фонетическое отчество</string>
     <string name="editor_name_phonetic_family">Фонетическая фамилия</string>
     <string name="editor_name_details">Дополнительно</string>
-    <string name="editor_phone_label">Номер телефона</string>
+    <string name="editor_phone_label">Телефон</string>
     <string name="editor_kind_label">Подпись</string>
     <string name="editor_add_phone">Добавить номер</string>
     <string name="editor_save">Сохранить</string>
@@ -226,11 +230,15 @@
     <string name="batch_delete_failed">Не удалось удалить контакты</string>
     <string name="action_more">Дополнительные действия</string>
     <string name="action_import">Импорт из файла</string>
+    <string name="action_scan_qr">Сканировать QR-код</string>
     <string name="action_export">Экспорт в файл</string>
     <string name="contacts_my_profile">Мой профиль</string>
     <string name="import_empty">В файле не найдены контакты</string>
     <string name="import_failed">Не удалось импортировать контакты</string>
     <string name="import_no_permission">Нет разрешения на импорт контактов</string>
+    <string name="scan_qr_prompt">Наведите камеру на QR-код с контактом</string>
+    <string name="scan_qr_no_permission">Нет разрешения на камеру</string>
+    <string name="scan_qr_not_contact">В этом QR-коде нет контакта</string>
     <string name="import_preview_title">Импорт контактов</string>
     <string name="import_preview_total">Контактов в файле: %1$d</string>
     <string name="import_preview_duplicates">Дубликатов: %1$d</string>
@@ -266,16 +274,21 @@
     <string name="import_action_import">Импортировать</string>
     <string name="import_action_done">Готово</string>
     <string name="import_parse_failed">Не удалось прочитать файл</string>
+    <string name="import_progress">Импорт контактов…</string>
     <string name="export_empty">Нет контактов для экспорта</string>
+    <string name="export_progress">Экспорт контактов…</string>
     <string name="export_failed">Не удалось экспортировать контакты</string>
 
     <string name="recents_title">Недавние</string>
     <string name="recents_device_wide">Звонки и сообщения на этом устройстве</string>
     <string name="recents_empty">Нет недавних контактов</string>
+    <string name="recents_empty_desc">Здесь появятся контакты, которые вы открывали, кому звонили или писали.</string>
 
     <string name="duplicates_title">Дубликаты</string>
+    <string name="duplicates_select_prompt">Выберите группу дублей для предпросмотра</string>
     <string name="duplicates_menu">Найти дубликаты</string>
     <string name="duplicates_empty">Дубликаты не найдены</string>
+    <string name="duplicates_empty_desc">Здесь появятся контакты с одинаковым именем или номером, чтобы их можно было объединить.</string>
     <string name="duplicates_primary_label">Основной контакт</string>
     <string name="duplicates_name_only_hint">Совпадение только по имени — проверьте, что это один человек</string>
     <string name="duplicates_merged">Дубликаты объединены</string>
@@ -302,12 +315,39 @@
     <string name="app_lock_wrong_pin">Неверный PIN-код</string>
     <string name="app_lock_too_many_attempts">Слишком много попыток. Повторите через %1$d с</string>
     <string name="app_lock_unlock">Разблокировать</string>
+
+    <string name="app_lock_use_pin">Ввести PIN</string>
+    <string name="app_lock_setup_next">Далее</string>
+    <string name="app_lock_setup_step_first">Придумайте PIN-код</string>
+    <string name="app_lock_setup_step_repeat">Повторите PIN-код</string>
+
+    <string name="app_lock_length_hint">От 4 до 8 цифр</string>
+    <string name="app_lock_key_delete">Удалить последнюю цифру</string>
+    <string name="app_lock_dots_state">%1$d из %2$d цифр</string>
+    <string name="settings_forgot_pin">Забыли PIN? Сброс данных приложения отключит защиту. Контакты не пострадают.</string>
+    <plurals name="app_lock_digits_entered">
+        <item quantity="one">Введена %1$d цифра</item>
+        <item quantity="few">Введено %1$d цифры</item>
+        <item quantity="many">Введено %1$d цифр</item>
+        <item quantity="other">Введено %1$d цифры</item>
+    </plurals>
+    <string name="app_lock_retry_biometrics">Повторить разблокировку по биометрии</string>
+    <string name="settings_app_lock_biometrics">Разблокировка по биометрии</string>
+    <string name="settings_app_lock_biometrics_desc">Использовать отпечаток или лицо вместо PIN, когда они доступны</string>
     <string name="details_favorite_failed">Не удалось обновить избранное. Проверьте право на запись контактов</string>
     <string name="app_lock_show_pin">Показать PIN-код</string>
     <string name="app_lock_hide_pin">Скрыть PIN-код</string>
     <string name="settings_language">Язык</string>
     <string name="settings_language_system">Язык системы</string>
     <string name="settings_appearance">Оформление</string>
+    <string name="settings_behavior">Поведение</string>
+    <string name="settings_security">Безопасность</string>
+    <string name="settings_danger_zone">Опасная зона</string>
+    <string name="settings_app_lock_state_on">Включено · 4–8 цифр</string>
+    <string name="settings_app_lock_state_off">Выключено</string>
+    <string name="settings_app_lock_change_pin">Изменить PIN-код</string>
+    <string name="settings_licenses">Лицензии открытого кода</string>
+    <string name="settings_licenses_note">Сторонние библиотеки, которые использует приложение</string>
     <string name="settings_dynamic_color">Динамические цвета</string>
     <string name="settings_dynamic_color_desc">Цвета обоев на Android 12 и новее</string>
     <string name="settings_show_photos">Показывать фото</string>
@@ -330,6 +370,7 @@
     <string name="reminders_birthday">день рождения</string>
     <string name="reminders_event">событие</string>
     <string name="settings_reminders">Напоминания</string>
+    <string name="settings_reminders_enable">Дни рождения и события</string>
     <string name="settings_reminders_permission">Для напоминаний нужно разрешение на уведомления</string>
     <string name="settings_reminders_blocked">Уведомления отключены для приложения. Напоминания не будут доставлены</string>
     <string name="settings_reminders_desc">Уведомлять о ближайших днях рождения и событиях</string>
@@ -339,6 +380,8 @@
         <item quantity="many">за %1$d дней до</item>
         <item quantity="other">за %1$d дня до</item>
     </plurals>
+    <string name="settings_reminder_time">Время напоминания</string>
+    <string name="settings_reminder_time_desc">Ежедневное уведомление приходит в это время</string>
     <string name="shortcut_new_contact">Новый контакт</string>
     <string name="shortcut_favorites">Избранное</string>
     <string name="action_add_to_calendar">В календарь</string>
@@ -346,6 +389,9 @@
     <string name="calendar_event_title">%1$s — событие</string>
     <string name="share_contact_text">Поделиться текстом</string>
     <string name="share_contact_qr">Поделиться QR-кодом</string>
+    <string name="show_qr">Показать QR-код</string>
+    <string name="qr_scan_hint">Наведите камеру другого телефона на код, чтобы добавить контакт</string>
+    <string name="qr_preview_share">Поделиться картинкой</string>
     <string name="widget_title">Избранное</string>
     <string name="widget_empty">Отметьте контакт как избранный, чтобы он появился здесь</string>
     <string name="widget_description">Избранные контакты на главном экране</string>
@@ -373,7 +419,11 @@
     <string name="groups_manage">Управление группами</string>
     <string name="groups_new">Новая группа</string>
     <string name="groups_title">Группы</string>
+    <string name="group_select_prompt">Выберите группу из списка</string>
     <string name="groups_empty">Групп пока нет</string>
+    <string name="groups_empty_desc">Создавайте группы, чтобы фильтровать контакты и быстрее находить нужных людей.</string>
+    <string name="groups_create_action">Создать группу</string>
+    <string name="action_browse_contacts">К списку контактов</string>
     <string name="group_name_label">Название группы</string>
     <string name="group_label">Группа</string>
     <string name="group_add_members">Добавить контакты</string>
@@ -451,7 +501,7 @@
     <string name="editor_email_label">Email</string>
     <string name="editor_im_label">Аккаунт</string>
     <string name="editor_im_service">Сервис</string>
-    <string name="editor_sip_label">SIP-адрес</string>
+    <string name="editor_sip_label">SIP</string>
     <string name="editor_address_street">Улица</string>
     <string name="editor_address_po_box">Абонентский ящик</string>
     <string name="editor_address_neighborhood">Район</string>
@@ -465,8 +515,10 @@
     <string name="editor_organization_department">Отдел</string>
     <string name="editor_organization_job_description">Описание работы</string>
     <string name="editor_organization_office_location">Офис</string>
-    <string name="editor_primary_value">Основной</string>
-    <string name="editor_make_primary">Сделать основным</string>
+    <string name="editor_primary_value">Основное значение</string>
+    <string name="editor_make_primary">Сделать основным значением</string>
+    <string name="editor_row_actions">Действия с полем</string>
+    <string name="editor_reorder_handle">Переставить поле</string>
     <string name="editor_note_label">Заметка</string>
     <string name="editor_nickname_label">Никнейм</string>
     <string name="editor_relation_label">Имя</string>

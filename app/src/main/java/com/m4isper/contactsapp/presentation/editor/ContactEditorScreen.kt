@@ -26,6 +26,7 @@ import com.m4isper.contactsapp.presentation.common.messageRes
 import com.m4isper.contactsapp.presentation.common.permissions.PermissionRequest
 import com.m4isper.contactsapp.presentation.common.permissions.hasPermission
 import com.m4isper.contactsapp.presentation.common.permissions.openAppSettings
+import com.m4isper.contactsapp.presentation.common.permissions.openSettingsIfPermanentlyDenied
 import com.m4isper.contactsapp.presentation.editor.components.EditorTopBar
 import com.m4isper.contactsapp.ui.components.ConfirmDialog
 import com.m4isper.contactsapp.ui.components.HapticImpact
@@ -58,6 +59,7 @@ fun ContactEditorScreen(
             contract = ActivityResultContracts.RequestPermission(),
         ) { isGranted ->
             hasWritePermission = isGranted
+            openSettingsIfPermanentlyDenied(context, Manifest.permission.WRITE_CONTACTS)
         }
 
     LaunchedEffect(contactId, sessionId, hasWritePermission) {

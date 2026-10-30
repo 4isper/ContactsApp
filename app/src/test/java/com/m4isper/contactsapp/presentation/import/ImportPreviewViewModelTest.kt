@@ -34,15 +34,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 private class PreviewContactsRepository(
     var contacts: List<ContactDetails> = emptyList(),
+    var createDelayMillis: Long = 0,
 ) : ContactsReader,
     ContactsAccounts,
     ContactsWriter,
@@ -79,6 +82,7 @@ private class PreviewContactsRepository(
         form: ContactForm,
         account: ContactAccount,
     ): Long {
+        if (createDelayMillis > 0) kotlinx.coroutines.delay(createDelayMillis)
         created += form
         return created.size.toLong()
     }
@@ -222,6 +226,31 @@ class ImportPreviewViewModelTest {
             assertEquals(2, outcome?.created)
             assertEquals(listOf("Anna", "Bob"), repository.created.map { it.name.display })
             assertTrue(!viewModel.uiState.value.canImport)
+        }
+
+    @Test
+    fun `import reports progress until contacts are created`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = PreviewContactsRepository(createDelayMillis = 100)
+            val viewModel = viewModel(repository, FakeVCardCodec(forms = listOf(form("Anna"))))
+
+            viewModel.prepare("file")
+            advanceUntilIdle()
+            viewModel.onImport()
+            runCurrent()
+
+            assertTrue(viewModel.uiState.value.isImporting)
+            assertFalse(viewModel.uiState.value.canImport)
+
+            advanceUntilIdle()
+
+            assertFalse(viewModel.uiState.value.isImporting)
+            assertEquals(
+                1,
+                viewModel.uiState.value.outcome
+                    ?.created,
+            )
         }
 
     @Test

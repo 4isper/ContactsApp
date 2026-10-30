@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
@@ -33,24 +34,28 @@ internal fun letterIndexAt(
     return ((y / height) * size).toInt().coerceIn(0, size - 1)
 }
 
+/**
+ * Алфавитный индекс справа: каждая буква секции — видимая цель касания.
+ * Ширина 48 dp — это и цель касания, и место для TalkBack-действий.
+ *
+ * @param activeLetter буква под пальцем (или после jump).
+ * @param currentLetter секция, в которой стоит список; от неё TalkBack шагает дальше.
+ */
 @Composable
 internal fun FastScroller(
     letters: List<Char>,
     activeLetter: Char?,
+    currentLetter: Char?,
     barDescription: String,
     onLetter: (Char) -> Unit,
     onRelease: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    fun letterAt(
-        y: Float,
-        height: Int,
-    ): Char? = letterIndexAt(y, height, letters.size)?.let { letters[it] }
-
+    val highlighted = activeLetter ?: currentLetter
     val nextLabel = stringResource(R.string.a11y_next_section)
     val previousLabel = stringResource(R.string.a11y_previous_section)
     val stateText =
-        activeLetter
+        currentLetter
             ?.let { letter ->
                 val index = letters.indexOf(letter)
                 stringResource(R.string.a11y_section_state, letter, index + 1, letters.size)
@@ -63,52 +68,85 @@ internal fun FastScroller(
             modifier
                 .fillMaxHeight()
                 .width(48.dp)
+                .testTag("fast_scroller")
                 .semantics {
                     contentDescription = barDescription
                     stateDescription = stateText
                     customActions =
-                        sectionActions(letters, activeLetter, nextLabel, previousLabel, onLetter)
-                }.pointerInput(letters) {
-                    awaitEachGesture {
-                        val down = awaitFirstDown(requireUnconsumed = false)
-                        letterAt(down.position.y, size.height)?.let(onLetter)
-                        do {
-                            val event = awaitPointerEvent()
-                            val change = event.changes.firstOrNull { it.id == down.id }
-                            if (change == null || !change.pressed) break
-                            letterAt(change.position.y, size.height)?.let(onLetter)
-                            change.consume()
-                        } while (true)
-                        onRelease()
-                    }
-                },
+                        sectionActions(letters, currentLetter, nextLabel, previousLabel, onLetter)
+                }.letterDragGestures(letters, onLetter, onRelease),
     ) {
         letters.forEach { letter ->
-            Text(
-                text = letter.toString(),
-                fontSize = 10.sp,
-                fontWeight = if (letter == activeLetter) FontWeight.Bold else FontWeight.Normal,
-                color =
-                    if (letter == activeLetter) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-            )
+            AlphabetLetter(letter = letter, highlighted = letter == highlighted)
         }
     }
 }
 
+@Composable
+private fun AlphabetLetter(
+    letter: Char,
+    highlighted: Boolean,
+) {
+    Text(
+        text = letter.toString(),
+        fontSize = 10.sp,
+        fontWeight = if (highlighted) FontWeight.Bold else FontWeight.Normal,
+        color =
+            if (highlighted) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
+        modifier = Modifier.testTag("fast_scroller_letter_$letter"),
+    )
+}
+
+/**
+ * Перетаскивание по алфавиту: буква под пальцем меняется — сразу прыгаем.
+ * Повторную букву в одном жесте не переспрашиваем, чтобы не плодить скроллы.
+ */
+private fun Modifier.letterDragGestures(
+    letters: List<Char>,
+    onLetter: (Char) -> Unit,
+    onRelease: () -> Unit,
+): Modifier =
+    pointerInput(letters) {
+        awaitEachGesture {
+            var lastLetter: Char? = null
+
+            fun emit(y: Float) {
+                val letter =
+                    letterIndexAt(y, size.height, letters.size)?.let { letters[it] } ?: return
+                if (letter == lastLetter) return
+                lastLetter = letter
+                onLetter(letter)
+            }
+            try {
+                val down = awaitFirstDown(requireUnconsumed = false)
+                emit(down.position.y)
+                do {
+                    val event = awaitPointerEvent()
+                    val change = event.changes.firstOrNull { it.id == down.id }
+                    if (change == null || !change.pressed) break
+                    emit(change.position.y)
+                    change.consume()
+                } while (true)
+            } finally {
+                onRelease()
+            }
+        }
+    }
+
 /** Кастомные действия TalkBack: перейти к следующей или предыдущей секции. */
 private fun sectionActions(
     letters: List<Char>,
-    activeLetter: Char?,
+    currentLetter: Char?,
     nextLabel: String,
     previousLabel: String,
     onLetter: (Char) -> Unit,
 ): List<CustomAccessibilityAction> {
-    val nextIndex = activeLetter?.let { letters.indexOf(it) + 1 } ?: 0
-    val previousIndex = activeLetter?.let { letters.indexOf(it) - 1 } ?: letters.lastIndex
+    val nextIndex = currentLetter?.let { letters.indexOf(it) + 1 } ?: 0
+    val previousIndex = currentLetter?.let { letters.indexOf(it) - 1 } ?: letters.lastIndex
     return listOf(
         CustomAccessibilityAction(nextLabel) {
             letters.getOrNull(nextIndex)?.let(onLetter)

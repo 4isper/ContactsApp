@@ -58,6 +58,7 @@ internal class FakeContactsRepository(
 
     /** Удаление этих контактов падает технически (в отличие от [failure], не влияет на загрузку). */
     val failDeleteFor = mutableSetOf<Long>()
+    var pageLoadDelayMillis: Long = 0
 
     override suspend fun getContacts(): List<ContactDetails> {
         failure?.let { throw it }
@@ -68,6 +69,7 @@ internal class FakeContactsRepository(
         offset: Int,
         limit: Int,
     ): List<ContactDetails> {
+        if (pageLoadDelayMillis > 0) kotlinx.coroutines.delay(pageLoadDelayMillis)
         failure?.let { throw it }
         return contacts.drop(offset).take(limit)
     }

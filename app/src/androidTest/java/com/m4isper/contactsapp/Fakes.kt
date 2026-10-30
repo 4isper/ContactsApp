@@ -23,6 +23,7 @@ import com.m4isper.contactsapp.domain.model.contact.RawContactRef
 import com.m4isper.contactsapp.domain.model.settings.AppSettings
 import com.m4isper.contactsapp.domain.model.settings.ContactSortOrder
 import com.m4isper.contactsapp.domain.model.settings.ListDensity
+import com.m4isper.contactsapp.domain.model.settings.ReminderTime
 import com.m4isper.contactsapp.domain.model.settings.ThemeMode
 import com.m4isper.contactsapp.domain.repository.ContactsAccounts
 import com.m4isper.contactsapp.domain.repository.ContactsChangeSource
@@ -43,6 +44,7 @@ import com.m4isper.contactsapp.domain.vcard.VCardCodec
 import com.m4isper.contactsapp.domain.vcard.VCardContact
 import com.m4isper.contactsapp.domain.vcard.VCardExportContact
 import com.m4isper.contactsapp.domain.vcard.VCardParseResult
+import com.m4isper.contactsapp.presentation.settings.SystemAppLanguage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -98,6 +100,9 @@ internal class FakeAndroidRepository(
     private val favoritesFlow = MutableStateFlow(initialFavorites)
     val created = mutableListOf<ContactForm>()
     val createdAccounts = mutableListOf<ContactAccount>()
+
+    /** Задержка записи: тесты успевают увидеть промежуточное состояние импорта. */
+    var createDelayMillis: Long = 0
     var accounts: List<ContactAccount> = listOf(ContactAccount.Local)
     val updated = mutableListOf<Pair<Long, ContactForm>>()
     val deleted = mutableListOf<Long>()
@@ -144,6 +149,7 @@ internal class FakeAndroidRepository(
         account: ContactAccount,
     ): Long {
         failure?.let { throw it }
+        if (createDelayMillis > 0) kotlinx.coroutines.delay(createDelayMillis)
         created += form
         createdAccounts += account
         return created.size.toLong()
@@ -352,8 +358,9 @@ internal class FakeSettingsRepository(
     val languages = mutableListOf<String>()
     val dynamicColorValues = mutableListOf<Boolean>()
     val showPhotosValues = mutableListOf<Boolean>()
-    val appLocks = mutableListOf<Pair<Boolean, String>>()
+    val appLocks = mutableListOf<Triple<Boolean, String, Int>>()
     val secureWindowValues = mutableListOf<Boolean>()
+    val reminderValues = mutableListOf<Triple<Boolean, Int, ReminderTime>>()
     var resetCalled = false
 
     override fun observeSettings(): Flow<AppSettings> = state
@@ -406,9 +413,11 @@ internal class FakeSettingsRepository(
     override suspend fun setAppLock(
         enabled: Boolean,
         pinHash: String,
+        pinLength: Int,
     ) {
-        appLocks += enabled to pinHash
-        state.value = state.value.copy(appLockEnabled = enabled, appLockPinHash = pinHash)
+        appLocks += Triple(enabled, pinHash, pinLength)
+        state.value =
+            state.value.copy(appLockEnabled = enabled, appLockPinHash = pinHash, appLockPinLength = pinLength)
     }
 
     override suspend fun setSecureWindow(enabled: Boolean) {
@@ -416,13 +425,31 @@ internal class FakeSettingsRepository(
         state.value = state.value.copy(secureWindow = enabled)
     }
 
+    override suspend fun setAppLockBiometrics(enabled: Boolean) = Unit
+
     override suspend fun setReminders(
         enabled: Boolean,
         leadDays: Int,
-    ) = Unit
+        time: ReminderTime,
+    ) {
+        reminderValues += Triple(enabled, leadDays, time)
+        state.value =
+            state.value.copy(remindersEnabled = enabled, reminderLeadDays = leadDays, reminderTime = time)
+    }
 
     override suspend fun resetSettings() {
         resetCalled = true
         state.value = AppSettings()
+    }
+}
+
+/** Системный выбор языка в памяти: инструментальные тесты не трогают LocaleManager устройства. */
+internal class NoopSystemAppLanguage : SystemAppLanguage {
+    var language: String = ""
+
+    override fun current(): String = language
+
+    override fun set(language: String) {
+        this.language = language
     }
 }

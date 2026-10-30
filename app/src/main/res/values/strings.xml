@@ -7,6 +7,7 @@
 
     <string name="search_label">Search</string>
     <string name="action_clear_search">Clear search</string>
+    <string name="action_close_search">Close search</string>
     <string name="contacts_empty">No contacts found</string>
     <string name="contacts_empty_cta_create">Create contact</string>
     <string name="contacts_empty_cta_import">Import from file</string>
@@ -95,6 +96,9 @@
     <string name="details_field_organization">Organization</string>
     <string name="details_field_note">Note</string>
     <string name="details_field_birthday">Birthday</string>
+    <string name="details_section_email_messaging">Email &amp; messaging</string>
+    <string name="details_section_address_web">Address &amp; web</string>
+    <string name="details_section_dates">Dates</string>
     <string name="details_copy_to_account">Copy to another account</string>
     <string name="details_move_to_account">Move to another account</string>
     <string name="details_copy_done">Contact copied</string>
@@ -132,7 +136,7 @@
     <string name="editor_name_phonetic_middle">Phonetic middle name</string>
     <string name="editor_name_phonetic_family">Phonetic last name</string>
     <string name="editor_name_details">More fields</string>
-    <string name="editor_phone_label">Phone number</string>
+    <string name="editor_phone_label">Phone</string>
     <string name="editor_kind_label">Label</string>
     <string name="editor_add_phone">Add number</string>
     <string name="editor_save">Save</string>
@@ -218,11 +222,15 @@
     <string name="batch_delete_failed">Couldn\'t delete contacts</string>
     <string name="action_more">More actions</string>
     <string name="action_import">Import from file</string>
+    <string name="action_scan_qr">Scan QR code</string>
     <string name="action_export">Export to file</string>
     <string name="contacts_my_profile">My profile</string>
     <string name="import_empty">No contacts found in the file</string>
     <string name="import_failed">Couldn\'t import contacts</string>
     <string name="import_no_permission">No permission to import contacts</string>
+    <string name="scan_qr_prompt">Point the camera at a QR code with a contact</string>
+    <string name="scan_qr_no_permission">No permission to use the camera</string>
+    <string name="scan_qr_not_contact">This QR code doesn\'t contain a contact</string>
     <string name="import_preview_title">Import contacts</string>
     <string name="import_preview_total">Contacts in file: %1$d</string>
     <string name="import_preview_duplicates">Duplicates: %1$d</string>
@@ -256,16 +264,21 @@
     <string name="import_action_import">Import</string>
     <string name="import_action_done">Done</string>
     <string name="import_parse_failed">Couldn\'t read the file</string>
+    <string name="import_progress">Importing contacts…</string>
     <string name="export_empty">Nothing to export</string>
     <string name="export_failed">Couldn\'t export contacts</string>
+    <string name="export_progress">Exporting contacts…</string>
 
     <string name="recents_title">Recents</string>
     <string name="recents_device_wide">Calls and messages on this device</string>
     <string name="recents_empty">No recent contacts</string>
+    <string name="recents_empty_desc">Contacts you open, call, or message appear here.</string>
 
     <string name="duplicates_title">Duplicates</string>
+    <string name="duplicates_select_prompt">Select a duplicate group to review</string>
     <string name="duplicates_menu">Find duplicates</string>
     <string name="duplicates_empty">No duplicates found</string>
+    <string name="duplicates_empty_desc">Contacts with the same name or number appear here so you can merge them.</string>
     <string name="duplicates_primary_label">Primary contact</string>
     <string name="duplicates_name_only_hint">Matched by name only — make sure this is the same person</string>
     <string name="duplicates_merged">Duplicates merged</string>
@@ -292,12 +305,37 @@
     <string name="app_lock_wrong_pin">Wrong PIN code</string>
     <string name="app_lock_too_many_attempts">Too many attempts. Try again in %1$d s</string>
     <string name="app_lock_unlock">Unlock</string>
+
+    <string name="app_lock_use_pin">Use PIN</string>
+    <string name="app_lock_setup_next">Next</string>
+    <string name="app_lock_setup_step_first">Enter a PIN</string>
+    <string name="app_lock_setup_step_repeat">Repeat the PIN</string>
+
+    <string name="app_lock_length_hint">4–8 digits</string>
+    <string name="app_lock_key_delete">Delete the last digit</string>
+    <string name="app_lock_dots_state">%1$d of %2$d digits</string>
+    <string name="settings_forgot_pin">Forgot the PIN? Clearing the app\'s data resets it. Contacts are not affected.</string>
+    <plurals name="app_lock_digits_entered">
+        <item quantity="one">%1$d digit entered</item>
+        <item quantity="other">%1$d digits entered</item>
+    </plurals>
+    <string name="app_lock_retry_biometrics">Retry biometric unlock</string>
+    <string name="settings_app_lock_biometrics">Unlock with biometrics</string>
+    <string name="settings_app_lock_biometrics_desc">Use fingerprint or face instead of the PIN when available</string>
     <string name="details_favorite_failed">Couldn\'t update favorites. Check the write permission for contacts</string>
     <string name="app_lock_show_pin">Show PIN code</string>
     <string name="app_lock_hide_pin">Hide PIN code</string>
     <string name="settings_language">Language</string>
     <string name="settings_language_system">System language</string>
     <string name="settings_appearance">Appearance</string>
+    <string name="settings_behavior">Behavior</string>
+    <string name="settings_security">Security</string>
+    <string name="settings_danger_zone">Danger zone</string>
+    <string name="settings_app_lock_state_on">Enabled · 4–8 digits</string>
+    <string name="settings_app_lock_state_off">Disabled</string>
+    <string name="settings_app_lock_change_pin">Change PIN</string>
+    <string name="settings_licenses">Open-source licenses</string>
+    <string name="settings_licenses_note">Third-party libraries used by the app</string>
     <string name="settings_dynamic_color">Dynamic colors</string>
     <string name="settings_dynamic_color_desc">Use the wallpaper colors on Android 12 and newer</string>
     <string name="settings_show_photos">Show photos</string>
@@ -320,6 +358,7 @@
     <string name="reminders_birthday">birthday</string>
     <string name="reminders_event">event</string>
     <string name="settings_reminders">Reminders</string>
+    <string name="settings_reminders_enable">Birthdays and events</string>
     <string name="settings_reminders_permission">Reminders need the notification permission</string>
     <string name="settings_reminders_blocked">Notifications are turned off for the app. Reminders cannot be delivered</string>
     <string name="settings_reminders_desc">Notify about upcoming birthdays and events</string>
@@ -327,6 +366,8 @@
         <item quantity="one">%1$d day before</item>
         <item quantity="other">%1$d days before</item>
     </plurals>
+    <string name="settings_reminder_time">Reminder time</string>
+    <string name="settings_reminder_time_desc">The daily notification arrives at this time</string>
     <string name="shortcut_new_contact">New contact</string>
     <string name="shortcut_favorites">Favorites</string>
     <string name="action_add_to_calendar">Add to calendar</string>
@@ -334,6 +375,9 @@
     <string name="calendar_event_title">%1$s — event</string>
     <string name="share_contact_text">Share as text</string>
     <string name="share_contact_qr">Share as QR code</string>
+    <string name="show_qr">Show QR code</string>
+    <string name="qr_scan_hint">Point another phone\'s camera at this code to add the contact</string>
+    <string name="qr_preview_share">Share image</string>
     <string name="widget_title">Favorites</string>
     <string name="widget_empty">Mark a contact as favorite to see it here</string>
     <string name="widget_description">Favorites on the home screen</string>
@@ -361,7 +405,11 @@
     <string name="groups_manage">Manage groups</string>
     <string name="groups_new">New group</string>
     <string name="groups_title">Groups</string>
+    <string name="group_select_prompt">Select a group from the list</string>
     <string name="groups_empty">No groups yet</string>
+    <string name="groups_empty_desc">Create groups to filter contacts and find people faster.</string>
+    <string name="groups_create_action">Create group</string>
+    <string name="action_browse_contacts">Browse contacts</string>
     <string name="group_name_label">Group name</string>
     <string name="group_label">Group</string>
     <string name="group_add_members">Add contacts</string>
@@ -435,7 +483,7 @@
     <string name="editor_email_label">Email</string>
     <string name="editor_im_label">Account</string>
     <string name="editor_im_service">Service</string>
-    <string name="editor_sip_label">SIP address</string>
+    <string name="editor_sip_label">SIP</string>
     <string name="editor_address_street">Street</string>
     <string name="editor_address_po_box">PO box</string>
     <string name="editor_address_neighborhood">Neighborhood</string>
@@ -449,8 +497,10 @@
     <string name="editor_organization_department">Department</string>
     <string name="editor_organization_job_description">Job description</string>
     <string name="editor_organization_office_location">Office location</string>
-    <string name="editor_primary_value">Primary</string>
-    <string name="editor_make_primary">Make primary</string>
+    <string name="editor_primary_value">Primary value</string>
+    <string name="editor_make_primary">Set as primary value</string>
+    <string name="editor_row_actions">Field actions</string>
+    <string name="editor_reorder_handle">Reorder field</string>
     <string name="editor_note_label">Note</string>
     <string name="editor_nickname_label">Nickname</string>
     <string name="editor_relation_label">Name</string>

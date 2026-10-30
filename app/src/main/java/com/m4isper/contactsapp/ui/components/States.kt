@@ -17,11 +17,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -44,6 +44,7 @@ import com.m4isper.contactsapp.R
 import com.m4isper.contactsapp.domain.model.common.AppError
 import com.m4isper.contactsapp.presentation.common.message
 import com.m4isper.contactsapp.ui.theme.LocalSpacing
+import com.m4isper.contactsapp.ui.theme.PillShape
 
 @Composable
 fun LoadingState(modifier: Modifier = Modifier) {
@@ -51,11 +52,11 @@ fun LoadingState(modifier: Modifier = Modifier) {
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
-        CircularProgressIndicator()
+        AppLoadingIndicator()
     }
 }
 
-/** Скелетон-карточки контактов: показывают структуру списка пока загружаются реальные данные. */
+/** Скелетон-карточки контактов: показывают ту же форму строк, пока грузятся данные. */
 @Composable
 fun ListSkeleton(
     modifier: Modifier = Modifier,
@@ -184,7 +185,10 @@ fun ErrorState(
                 textAlign = TextAlign.Center,
             )
             Spacer(modifier = Modifier.height(spacing.m))
-            Button(onClick = onRetry) {
+            Button(
+                onClick = onRetry,
+                shape = PillShape,
+            ) {
                 Text(stringResource(R.string.action_retry))
             }
         }
@@ -196,6 +200,7 @@ fun EmptyState(
     icon: ImageVector,
     title: String,
     modifier: Modifier = Modifier,
+    description: String? = null,
     primaryLabel: String? = null,
     onPrimaryClick: (() -> Unit)? = null,
     secondaryLabel: String? = null,
@@ -213,25 +218,47 @@ fun EmptyState(
             modifier =
                 Modifier
                     .padding(spacing.xl)
+                    .widthIn(max = spacing.contentMaxWidth)
                     .semantics(mergeDescendants = true) {},
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.outline,
-                modifier = Modifier.size(spacing.xxl + spacing.m),
-            )
+            // Тонированный контейнер даёт экрану акцент, а текст — контекст,
+            // почему здесь пусто и что сделать дальше.
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier =
+                    Modifier
+                        .size(spacing.xxl * 2)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(spacing.xxl),
+                )
+            }
             Spacer(modifier = Modifier.height(spacing.m))
             Text(
                 text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
             )
+            if (description != null) {
+                Spacer(modifier = Modifier.height(spacing.xs))
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
             if (primaryLabel != null && onPrimaryClick != null) {
                 Spacer(modifier = Modifier.height(spacing.l))
                 Button(
                     onClick = onPrimaryClick,
+                    shape = PillShape,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(text = primaryLabel)
@@ -241,6 +268,7 @@ fun EmptyState(
                 Spacer(modifier = Modifier.height(spacing.s))
                 OutlinedButton(
                     onClick = onSecondaryClick,
+                    shape = PillShape,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(text = secondaryLabel)
