@@ -3,6 +3,7 @@ package com.m4isper.contactsapp.presentation.widget
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.widget.FrameLayout
 import android.widget.RemoteViews
 import android.widget.TextView
@@ -48,9 +49,12 @@ class ContactsWidgetProviderTest {
     @Test
     fun update_does_not_fail_without_widget_instances() {
         val manager = AppWidgetManager.getInstance(context)
-        val provider = ContactsWidgetProvider()
 
-        provider.onUpdate(context, manager, intArrayOf())
+        context.sendBroadcast(
+            Intent(context, ContactsWidgetProvider::class.java)
+                .setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE)
+                .putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf()),
+        )
 
         assertEquals(0, manager.getAppWidgetIds(ComponentName(context, ContactsWidgetProvider::class.java)).size)
     }

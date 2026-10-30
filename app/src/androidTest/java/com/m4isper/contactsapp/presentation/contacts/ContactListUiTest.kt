@@ -1,5 +1,7 @@
 package com.m4isper.contactsapp.presentation.contacts
 
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -8,7 +10,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.WindowInfo
-import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.longClick
@@ -323,7 +324,9 @@ class ContactListUiTest {
     @Test
     fun headerCollapsesOnScrollDownAndExpandsOnScrollUp() {
         val contacts = (1..20).map { testDetails((it - 1).toLong(), "Name%02d".format(it), "123") }
+        var statusBarHeightPx = 0f
         compose.setContent {
+            statusBarHeightPx = WindowInsets.statusBars.getTop(LocalDensity.current).toFloat()
             ContactList(
                 uiState = ContactsUiState(content = Loadable.Content(contacts)),
                 onAction = {},
@@ -370,7 +373,7 @@ class ContactListUiTest {
             }
             compose.waitForIdle()
         }
-        bar.assertHeightIsEqualTo(0.dp)
+        assertEquals(statusBarHeightPx, bar.fetchSemanticsNode().boundsInRoot.height, 2f)
 
         // Те же шаги назад: панель раскрывается, список запоминает скролл.
         repeat(4) {
