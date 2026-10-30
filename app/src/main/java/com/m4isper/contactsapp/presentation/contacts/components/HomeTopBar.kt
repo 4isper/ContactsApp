@@ -65,10 +65,12 @@ internal fun HomeTopBar(
     Column(
         modifier =
             modifier
-                // Тег снаружи collapse-layout: высота узла = высота панели (0 при полном сжатии).
+                // Инсет статус-бара снаружи collapse-layout: панель сжимается
+                // до нуля, но сам узел стоит ниже инсета, поэтому закреплённые
+                // фильтры под панелью не поднимаются в статус-бар.
                 .testTag(if (isSearchMode) "home_search_row" else "home_top_bar")
-                .collapsingHeader(collapse)
                 .statusBarsPadding()
+                .collapsingHeader(collapse)
                 .fillMaxWidth(),
     ) {
         ContactsSearchField(
