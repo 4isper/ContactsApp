@@ -8,6 +8,28 @@ plugins {
     alias(libs.plugins.kover)
 }
 
+// Имя приложения в именах собранных файлов — константой: чтение rootProject.name
+// из скрипта модуля мешает configuration cache.
+val appFileName = "ContactsApp"
+
+// versionName ведётся руками, versionCode — число коммитов: растёт сам, ручной
+// бамп не нужен. Rebase или squash уменьшают счётчик, и следующий билд получит
+// меньший versionCode, чем уже выпущенный, — после переписывания истории
+// проверить счётчик перед релизом.
+val appVersionName = "1.0.7"
+
+fun git(vararg args: String): String =
+    providers
+        .exec {
+            workingDir(rootDir)
+            commandLine("git", *args)
+        }.standardOutput.asText
+            .get()
+            .trim()
+
+val commitCount = git("rev-list", "--count", "HEAD").toInt()
+val commitHash = git("rev-parse", "--short", "HEAD")
+
 android {
     namespace = "com.m4isper.contactsapp"
     compileSdk = 37
@@ -16,8 +38,8 @@ android {
         applicationId = "com.m4isper.contactsapp"
         minSdk = 26
         targetSdk = 37
-        versionCode = 8
-        versionName = "1.0.7"
+        versionCode = commitCount
+        versionName = appVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -25,6 +47,9 @@ android {
     buildTypes {
         debug {
             enableAndroidTestCoverage = true
+            // Суффикс виден в настройках телефона: сразу ясно, что стоит не
+            // релиз, и виден коммит этой сборки.
+            versionNameSuffix = "-dev-$commitHash"
         }
         release {
             isMinifyEnabled = true
@@ -64,6 +89,18 @@ android {
     bundle {
         language {
             enableSplit = false
+        }
+    }
+}
+
+// Имя APK: ContactsApp-debug-1.0.7-252-208a967.apk — вариант, версия и коммит
+// видны без открывания build/outputs. На имя .aab в Play это не влияет.
+androidComponents {
+    onVariants { variant ->
+        variant.outputs.forEach { output ->
+            output.outputFileName.set(
+                "$appFileName-${variant.name}-$appVersionName-$commitCount-$commitHash.apk",
+            )
         }
     }
 }
